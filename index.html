@@ -11,11 +11,11 @@
 <style>
 :root{
   color-scheme: light;
-  --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F6F6F8; --row:#FFFFFF; --ink:#111114; --muted:#6B6B75; --line:#E8E8EC; --line-strong:#D6D6DC;
-  --accent:#111114; --accent-ink:#FFFFFF; --brand:#6A5AE0; --link:#2563EB; --focus:#2563EB; --soft:#F4F1FF;
+  --bg:#F7F7F8; --surface:#FFFFFF; --surface-2:#F3F3F5; --row:#FFFFFF; --ink:#17171C; --muted:#71717A; --line:#E8E8EB; --line-strong:#D4D4D8;
+  --accent:#17171C; --accent-ink:#FFFFFF; --brand:#6A5AE0; --link:#3B5BDB; --focus:#3B5BDB; --soft:#EEF1FB;
   --card-hi:transparent; --shadow:none;
-  --g:#16A34A; --g-bg:#EEF9F2; --y:#C2410C; --y-bg:#FFF5EB; --r:#DC2626; --r-bg:#FEF1F1;
-  --b:#7C3AED; --b-bg:#F4EFFF; --w:#2563EB; --n:#9A9AA3; --n-bg:#F4F4F6; --d:#6B6B75; --d-bg:#F8F8FA;
+  --g:#15803D; --g-bg:#EFF8F2; --y:#B45309; --y-bg:#FEF6E7; --r:#DC2626; --r-bg:#FDF0F0;
+  --b:#2563EB; --b-bg:#EEF3FE; --w:#15803D; --n:#A1A1AA; --n-bg:#F4F4F5; --d:#71717A; --d-bg:#F7F7F8;
   --radius:12px; --cell-w:140px;
   font-family:"Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   box-sizing:border-box;
@@ -24,20 +24,20 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme: dark;
-    --bg:#0C0C0E; --surface:#161618; --surface-2:#1F1F22; --row:#161618; --ink:#F2F2F3; --muted:#90909A; --line:#26262A; --line-strong:#38383E;
-    --accent:#F2F2F3; --accent-ink:#0C0C0E; --brand:#7C6CF6; --link:#7DB3FF; --focus:#7DB3FF; --soft:#262338;
-    --card-hi:rgba(255,255,255,.025); --shadow:none;
-    --g:#4ADE80; --g-bg:#0E2216; --y:#FBBF24; --y-bg:#261E08; --r:#F87171; --r-bg:#2A1213; --b:#B39DFF; --b-bg:#1D1832; --w:#60A5FA;
-    --n:#6E6E77; --n-bg:#1A1A1D; --d:#90909A; --d-bg:#111113;
+    --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --row:#16161A; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-strong:#3A3A42;
+    --accent:#EDEDEF; --accent-ink:#0F0F12; --brand:#7C6CF6; --link:#8DA2F7; --focus:#8DA2F7; --soft:#1C2033;
+    --card-hi:transparent; --shadow:none;
+    --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80;
+    --n:#71717A; --n-bg:#1F1F24; --d:#8A8A93; --d-bg:#18181C;
   }
 }
 :root[data-theme="dark"]{
   color-scheme: dark;
-  --bg:#0C0C0E; --surface:#161618; --surface-2:#1F1F22; --row:#161618; --ink:#F2F2F3; --muted:#90909A; --line:#26262A; --line-strong:#38383E;
-  --accent:#F2F2F3; --accent-ink:#0C0C0E; --brand:#7C6CF6; --link:#7DB3FF; --focus:#7DB3FF; --soft:#262338;
-  --card-hi:rgba(255,255,255,.025); --shadow:none;
-  --g:#4ADE80; --g-bg:#0E2216; --y:#FBBF24; --y-bg:#261E08; --r:#F87171; --r-bg:#2A1213; --b:#B39DFF; --b-bg:#1D1832; --w:#60A5FA;
-  --n:#6E6E77; --n-bg:#1A1A1D; --d:#90909A; --d-bg:#111113;
+  --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --row:#16161A; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-strong:#3A3A42;
+  --accent:#EDEDEF; --accent-ink:#0F0F12; --brand:#7C6CF6; --link:#8DA2F7; --focus:#8DA2F7; --soft:#1C2033;
+  --card-hi:transparent; --shadow:none;
+  --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80;
+  --n:#71717A; --n-bg:#1F1F24; --d:#8A8A93; --d-bg:#18181C;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -1143,13 +1143,12 @@ table.cx{border-collapse:collapse}
 .ticks{display:inline-flex;gap:2px;height:16px;align-items:stretch}
 .ticks i{width:4px;border-radius:1.5px;background:color-mix(in srgb,var(--ink) 16%,transparent);align-self:center;height:12px}
 .ticks{gap:3px;align-items:center;flex:none;height:18px}
-.ticks i.on{background:color-mix(in srgb,var(--fc) 60%,transparent)}
 .ticks i.cur{background:var(--fc);height:18px;box-shadow:0 0 8px color-mix(in srgb,var(--fc) 45%,transparent)}
 .tprog{min-width:0}
 .tp-n{font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .tp-n b{color:var(--muted);font-weight:500;margin-right:4px}
 .mc-stage{display:grid;gap:2px}.mc-subnow{color:var(--muted);font-size:12.5px}
-.ticks i.on{background:var(--fc)}
+.ticks i.on{background:var(--ink)}
 .tprog b{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums}
 .cx .tprog + small{margin-top:2px}
 /* статус в цветной рамке */
