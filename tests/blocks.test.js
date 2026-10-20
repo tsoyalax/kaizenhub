@@ -101,6 +101,21 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   fire($('#ceForm'), 'submit'); await wait(100); $('#tSave').click(); await wait(300);
   L = LS();
   assert.ok(L.tasks.filter(t => others.some(x => x.id === t.id)).every(t => t.blocks.length === 6 && t.blocks.some(b => b.value === 'Новый блок из шаблона'))); ok('шаблон → проекты: новые блоки пришли во все проекты процесса');
+  // старые поля «регламент» и «видео» превращаются в блоки (в проекте и в шаблоне)
+  const anyP = LS().projects.find(p => p.state === 'active');
+  w.mergeSnapshot({ meta: { cardTpls: { [anyP.template_id + '|старый подэтап']: { sub: 'Старый подэтап', d: 'описание', reg: 'https://docs.example/old', vid: 'https://youtu.be/dQw4w9WgXcQ', c: ['a'] } } }, projects: [],
+    tasks: [{ id: 'legacy1', project_id: anyP.id, stage_id: anyP.stages[0].id, substage_id: null, title: 'Старая карточка', description: 'x', regulation_link: 'https://docs.example/reg', video_url: 'https://vimeo.com/1', checklist: [], blocks: [{ id: 'kb', type: 'text', title: 'Было', value: 'текст' }] }] }, { keepDemo: true });
+  w.commit(); await wait(100);
+  L = LS(); const lt = L.tasks.find(t => t.id === 'legacy1');
+  assert.deepEqual(lt.blocks.map(b => [b.type, b.title, b.value]), [['link', 'Регламент', 'https://docs.example/reg'], ['video', 'Видео', 'https://vimeo.com/1'], ['text', 'Было', 'текст']]);
+  assert.ok(!lt.regulation_link && !lt.video_url); ok('перенос: регламент и видео старой карточки стали первыми блоками');
+  const lc = L.cardTpls[anyP.template_id + '|старый подэтап'];
+  assert.deepEqual(lc.b.map(b => b.type), ['link', 'video']); assert.ok(!lc.reg && !lc.vid); ok('перенос: и в шаблоне карточки тоже');
+  w.openTask('legacy1'); await wait(100);
+  assert.ok(D.querySelector('.tk-modal a[href="https://docs.example/reg"]') && D.querySelector('.tk-modal .vthumb')); ok('перенос: в окне карточки ссылка и видео видны как блоки');
+  $('[data-tedit]').click(); await wait(100);
+  assert.ok(!D.querySelector('[data-td="video_url"]') && !D.querySelector('[data-td="regulation_link"]') && !D.querySelector('#tkVideoFile')); ok('редактирование: полей «регламент», «видео» и «проверить локальный файл» нет');
+  w.closeTask(); await wait(50);
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('ошибок нет');
   o.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);

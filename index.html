@@ -2401,7 +2401,8 @@ function tplSubsHtml(st, i){
 }
 function openCardEditor(i, j){
   const x = ui.draft.stages[i].subs[j]; const c = x.card || { d:'', reg:'', vid:'', c:[], b:[] };
-  ui.ce = { i, j, d:c.d || '', reg:c.reg || '', vid:c.vid || '', c:(c.c || []).join('\n'), b:clone(c.b || []), err:'' };
+  const lc = clone(c); linksToBlocks(lc, 'reg', 'vid', 'b');   // старые поля «регламент» и «видео» показываем блоками
+  ui.ce = { i, j, d:lc.d || '', c:(lc.c || []).join('\n'), b:lc.b || [], err:'' };
   renderCardEditor('#ceD');
 }
 function renderCardEditor(focusSel){
@@ -2413,8 +2414,6 @@ function renderCardEditor(focusSel){
     <p class="lead">${esc(ui.draft.name || 'Шаблон')} · этап «${esc(st.name)}». Так будет выглядеть карточка в каждом проекте процесса.</p>
     <form class="form" id="ceForm">
       <div class="field"><label for="ceD">Описание и регламент</label><textarea id="ceD" class="tk-desc" rows="6" data-cef="d">${esc(ce.d)}</textarea></div>
-      <div class="field"><label for="ceReg">Ссылка на регламент, шаблон или РНП</label><input id="ceReg" data-cef="reg" value="${esc(ce.reg)}" placeholder="https://docs.google.com/…" inputmode="url"></div>
-      <div class="field"><label for="ceVid">Ссылка на видео</label><input id="ceVid" data-cef="vid" value="${esc(ce.vid)}" placeholder="YouTube, Vimeo, Google Drive, Loom или MP4" inputmode="url"></div>
       ${blocksEditor(ce.b, 'ce')}
       <div class="field"><label for="ceC">Чек-лист — по одному пункту в строке</label><textarea id="ceC" class="tk-desc" rows="7" data-cef="c" placeholder="Изучил бриф&#10;Сделал черновик&#10;Сдал результат">${esc(ce.c)}</textarea></div>
       <div class="err" id="ceErr">${esc(ce.err || '')}</div>
@@ -2426,15 +2425,13 @@ function renderCardEditor(focusSel){
 document.addEventListener('input', e => { const f = e.target.dataset?.cef; if (f && ui.ce) ui.ce[f] = e.target.value; });
 document.addEventListener('submit', e => {
   if (e.target.id !== 'ceForm' || !ui.ce) return; e.preventDefault();
-  const ce = ui.ce; ce.d = $('#ceD').value; ce.reg = $('#ceReg').value; ce.vid = $('#ceVid').value; ce.c = $('#ceC').value;
-  const reg = ce.reg.trim(), vid = ce.vid.trim();
+  const ce = ui.ce; ce.d = $('#ceD').value; ce.c = $('#ceC').value;
   const fail = m => { ce.err = m; const el = $('#ceErr'); if (el) el.textContent = m; };
-  if ((reg && !safeUrl(reg)) || (vid && !safeUrl(vid))) return fail('Ссылки должны начинаться с https://');
   if (ce.b.some(b => b.uploading)) return fail('Подождите: файл ещё загружается');
   const badBk = ce.b.find(b => (b.type === 'link' || b.type === 'video') && String(b.value || '').trim() && !safeUrl(b.value));
   if (badBk) return fail(`Блок «${badBk.title || BLOCK_T[badBk.type]}»: ссылка должна начинаться с https://`);
   const x = ui.draft.stages[ce.i].subs[ce.j];
-  x.card = { d:ce.d.trim(), reg, vid, c:ce.c.split('\n').map(v => v.trim()).filter(Boolean), b:cleanBlocks(ce.b) };
+  x.card = { d:ce.d.trim(), reg:'', vid:'', c:ce.c.split('\n').map(v => v.trim()).filter(Boolean), b:cleanBlocks(ce.b) };
   ui.ce = null; ui.draftDirty = true; layer.innerHTML = ''; renderTemplates();
   toast('Карточка готова. Нажмите «Сохранить шаблон», чтобы она попала в проекты');
 });
@@ -3592,6 +3589,23 @@ function askCloseTaskEdit(){
   askConfirm({ title:'Закрыть без сохранения?', text:'Изменения в подэтапе не сохранятся.', ok:'Закрыть', danger:true }).then(yes => { if (yes) closeTask(); });
 }
 function closeTask(){ ui.taskId = null; ui.taskDraft = null; ui.vplay = null; ui.localVideo && URL.revokeObjectURL(ui.localVideo); ui.localVideo = null; taskLayer().innerHTML = ''; }
+// Поля «Ссылка на регламент» и «Ссылка на видео» заменены блоками: старые значения становятся первыми блоками карточки
+function linksToBlocks(o, regKey, vidKey, bKey){
+  if (!o) return false;
+  const reg = String(o[regKey] || '').trim(), vid = String(o[vidKey] || '').trim();
+  if (!reg && !vid) return false;
+  const add = [];
+  if (reg) add.push({ id:uid(), type:'link', title:'Регламент', value:reg });
+  if (vid && !vid.startsWith('blob:')) add.push({ id:uid(), type:'video', title:'Видео', value:vid });
+  o[bKey] = [...add, ...(o[bKey] || [])]; o[regKey] = ''; o[vidKey] = '';
+  return true;
+}
+function migrateLinks(){
+  let n = 0;
+  (db.tasks || []).forEach(t => { if (linksToBlocks(t, 'regulation_link', 'video_url', 'blocks')) n++; });
+  Object.values(db.cardTpls || {}).forEach(c => { if (linksToBlocks(c, 'reg', 'vid', 'b')) n++; });
+  return n;
+}
 // =====================================================================
 //  БЛОКИ КАРТОЧКИ: текст, ссылка, видео, файл. Добавляет руководство в режиме редактирования (и в шаблоне),
 //  исполнители видят. Блоки — часть шаблона карточки и расходятся по проектам вместе с ней.
@@ -3730,8 +3744,9 @@ document.addEventListener('click', e => {
   if (e.target.closest?.('[data-vstop]')){ e.preventDefault(); e.stopPropagation(); ui.vplay = null; renderTaskModal(); }
 }, true);
 function draftOf(t){
+  const lt = { regulation_link:t.regulation_link || '', video_url:t.video_url || '', blocks:clone(t.blocks || []) }; linksToBlocks(lt, 'regulation_link', 'video_url', 'blocks');
   return { title:t.title, substage_id:t.substage_id || '', assignee_id:t.assignee_id || '', description:t.description || '',
-    regulation_link:t.regulation_link || '', video_url:t.video_url || '', items:t.checklist.map(i => ({ id:i.id, text:i.text, done:i.done })), blocks:clone(t.blocks || []), asTpl:true };
+    regulation_link:'', video_url:'', items:t.checklist.map(i => ({ id:i.id, text:i.text, done:i.done })), blocks:lt.blocks, asTpl:true };
 }
 function renderTaskModal(focusSel){
   const t = taskById(ui.taskId); if (!t){ closeTask(); return; }
@@ -3773,10 +3788,6 @@ function renderTaskModal(focusSel){
         ${p._ext ? '<div></div>' : `<div class="field"><label for="tdAs">Ответственный</label><select id="tdAs" data-td="assignee_id"><option value="">${s?.assignee_id ? `Как у этапа: ${esc(short(s.assignee_id))}` : execLabel(p)}</option>${db.users.map(u => `<option value="${u.id}" ${u.id === d.assignee_id ? 'selected' : ''}>${esc(u.name || 'Вы')}</option>`).join('')}</select></div>`}
       </div>
       <div class="field"><label for="tdDesc">Описание и регламент</label><textarea id="tdDesc" data-td="description" rows="6" placeholder="Что сделать, требования, критерии приёмки">${esc(d.description)}</textarea></div>
-      <div class="field"><label for="tdReg">Ссылка на регламент, шаблон или РНП</label><input id="tdReg" data-td="regulation_link" value="${esc(d.regulation_link)}" inputmode="url" placeholder="https://docs.google.com/…"></div>
-      <div class="field"><label for="tdVid">Ссылка на видео</label><div class="row"><input id="tdVid" data-td="video_url" value="${esc(d.video_url)}" inputmode="url" placeholder="YouTube, Vimeo, Google Drive, Loom или MP4">
-        <label class="ghost file-btn">Проверить локальный файл<input type="file" id="tkVideoFile" accept="video/*"></label></div></div>
-      ${d.video_url || ui.localVideo ? taskPlayer(ui.localVideo || d.video_url) : ''}
       ${blocksEditor(d.blocks, 'td')}
       <div class="field"><label>Конструктор чек-листа</label>
         <ol class="ckb">${d.items.map((it, k) => `<li data-ckb="${k}">
@@ -4246,7 +4257,7 @@ function cloudApply(r){
   Object.assign(db, { ver:r.meta.ver, onboarded:r.meta.onboarded, users:r.meta.users, templates:r.meta.templates, prefs:r.meta.prefs, cardTpls:r.meta.cardTpls || {}, cardTplsInit:!!r.meta.cardTplsInit, savedAt:r.meta.savedAt,
     projects:r.projects, tasks:r.tasks, reports:r.reports });
   migrate(); if (!db.cardTplsInit){ migrateCardTpls(); scheduleCloud(); }
-  if (replanAll()) scheduleCloud();
+  if (migrateLinks() + replanAll()) scheduleCloud();
   if (ui.open && !projById(ui.open)) closeLayer();
   if (db.onboarded && layer.querySelector('#mForm')) layer.innerHTML = '';
   if (ui.taskId){ if (taskById(ui.taskId)) renderTaskModal(); else closeTask(); }
@@ -4381,7 +4392,7 @@ function mergeSnapshot(snap, opts = {}){
   db.reports = db.reports || []; (snap.reports || []).forEach(r => put(db.reports, clone(r)));
   db.cardTpls = db.cardTpls || {};
   Object.entries(meta.cardTpls || {}).forEach(([k, v]) => { const i = k.indexOf('|'); const nk = i < 0 ? k : tid(k.slice(0, i)) + k.slice(i); if (!db.cardTpls[nk]) db.cardTpls[nk] = clone(v); });
-  db.onboarded = true; ui.clients = []; ui.pms = [];
+  db.onboarded = true; ui.clients = []; ui.pms = []; migrateLinks();
   return { projects:(snap.projects || []).length, tasks:(snap.tasks || []).length, demo:demoIds.size };
 }
 document.addEventListener('change', async e => {
@@ -4982,6 +4993,7 @@ if (!db.reports) db.reports = [];
 if (!db.tasks){ db.tasks = []; seedDemoTasks(); save(); }
 migrateCardTpls();
 db.tasks = db.tasks.filter(t => projById(t.project_id));   // задачи удалённых проектов
+migrateLinks();
 replanAll();
 localSave();
 setInterval(() => { if (!GUEST && replanAll()) commit(); }, 3600e3);

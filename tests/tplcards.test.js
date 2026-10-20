@@ -36,6 +36,12 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   await wait(4500);
   const w = o.w, D = w.document, $ = s => D.querySelector(s), LS = () => JSON.parse(w.localStorage.getItem('agency-pipeline-demo-v2'));
   const fire = (el, t) => el.dispatchEvent(new w.Event(t, { bubbles: true, cancelable: true }));
+  // добавить блок в конструкторе (ctx: 'ce' — карточка шаблона, 'td' — карточка проекта)
+  const addBlock = async (ctx, type, value, title = '') => { D.querySelector(`.bk-add[data-bkctx="${ctx}"] [data-bkadd="${type}"]`).click(); await wait(30);
+    const k = D.querySelectorAll(`.bk-list[data-bkctx="${ctx}"] .bk`).length - 1;
+    const v = D.querySelector(`.bk-list[data-bkctx="${ctx}"] [data-bkf="value"][data-bki="${k}"]`); v.value = value; fire(v, 'input');
+    if (title){ const t = D.querySelector(`.bk-list[data-bkctx="${ctx}"] [data-bkf="title"][data-bki="${k}"]`); t.value = title; fire(t, 'input'); } return k; };
+  const bval = (o, type) => ((o.blocks || o.b || []).find(b => b.type === type) || {}).value;
   D.querySelector('.tabs [data-view="templates"]').click(); await wait(100);
   $('[data-settab="templates"]').click(); await wait(100);
   const tpl = LS().templates[0];
@@ -47,9 +53,11 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const rows = [...D.querySelectorAll('.tsub')]; const row = rows.find(r => r.querySelector('input').value === 'Тестовый подэтап');
   assert.ok(row); ok('шаблон: подэтап добавлен');
   row.querySelector('[data-tcard]').click(); await wait(100);
-  $('#ceD').value = 'Как делать: по регламенту'; $('#ceReg').value = 'ftp://bad'; fire($('#ceForm'), 'submit'); await wait(50);
+  assert.ok(!$('#ceReg') && !$('#ceVid')); ok('карточка шаблона: отдельных полей «регламент» и «видео» больше нет');
+  $('#ceD').value = 'Как делать: по регламенту'; fire($('#ceD'), 'input'); const bad = await addBlock('ce', 'link', 'ftp://bad', 'Регламент'); fire($('#ceForm'), 'submit'); await wait(50);
   assert.ok(/https/.test($('#ceErr').textContent)); ok('карточка: ссылка без https:// не принимается');
-  $('#ceReg').value = 'https://docs.example/reg'; $('#ceVid').value = 'https://youtu.be/x'; $('#ceC').value = 'Пункт А\n\nПункт Б\nПункт В'; fire($('#ceForm'), 'submit'); await wait(100);
+  { const v = D.querySelector(`.bk-list[data-bkctx="ce"] [data-bkf="value"][data-bki="${bad}"]`); v.value = 'https://docs.example/reg'; fire(v, 'input'); }
+  await addBlock('ce', 'video', 'https://youtu.be/x'); $('#ceC').value = 'Пункт А\n\nПункт Б\nПункт В'; fire($('#ceC'), 'input'); fire($('#ceForm'), 'submit'); await wait(100);
   assert.ok([...D.querySelectorAll('.tcard.on')].some(b => /Карточка · 3 пункта/.test(b.textContent))); ok('карточка: оформлена, 3 пункта чек-листа');
   assert.ok([...D.querySelectorAll('.tcard:not(.on)')].every(b => b.textContent.trim() === '+ Карточка')); ok('карточка: пустые подписаны «+ Карточка»');
   assert.ok(!D.querySelector('[data-move],[data-smove]')); ok('шаблон: стрелок нет, порядок меняется перетаскиванием');
@@ -73,7 +81,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok($('#tSave').classList.contains('t-dirty')); ok('шаблон: кнопка «Сохранить» подсвечена, пока не сохранили');
   $('#tSave').click(); await wait(150);
   let L = LS(); const key = tpl.id + '|тестовый подэтап';
-  assert.ok(L.cardTpls[key] && L.cardTpls[key].c.length === 3 && L.cardTpls[key].reg === 'https://docs.example/reg'); ok('шаблон сохранён: карточка записана');
+  assert.ok(L.cardTpls[key] && L.cardTpls[key].c.length === 3 && bval(L.cardTpls[key], 'link') === 'https://docs.example/reg'); ok('шаблон сохранён: карточка записана');
   assert.ok(L.templates.find(t => t.id === tpl.id).stages[0].subs.some(x => x.name === 'Тестовый подэтап' && !('card' in x))); ok('шаблон: подэтап в шаблоне, карточка хранится отдельно');
   assert.ok($('.set-nav')); ok('шаблон: после сохранения переключатель настроек на месте');
 
@@ -84,7 +92,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   L = LS(); const np = L.projects.find(p => p.name === 'Проект по шаблону');
   const sub = np.stages[0].subs.find(x => x.name === 'Тестовый подэтап');
   const tk = L.tasks.find(t => t.project_id === np.id && t.substage_id === sub.id);
-  assert.ok(tk && tk.checklist.length === 3 && tk.description === 'Как делать: по регламенту' && tk.regulation_link === 'https://docs.example/reg' && tk.video_url === 'https://youtu.be/x'); ok('новый проект: подэтап и карточка скопированы из шаблона');
+  assert.ok(tk && tk.checklist.length === 3 && tk.description === 'Как делать: по регламенту' && bval(tk, 'link') === 'https://docs.example/reg' && bval(tk, 'video') === 'https://youtu.be/x'); ok('новый проект: подэтап и карточка скопированы из шаблона');
 
   // идущий проект получил подэтап и карточку сразу при сохранении шаблона
   const old = L.projects.find(p => p.template_id === tpl.id && p.state === 'active' && p.id !== np.id && p.stages.find(s => s.name === st0.name).status !== 'done');
@@ -101,14 +109,16 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   if (!D.querySelector('.tsub')) { $(`[data-tsubtog="${st0.id}"]`).click(); await wait(100); }
   const rowT = [...D.querySelectorAll('.tsub')].find(r => r.querySelector('input').value === 'Тестовый подэтап');
   rowT.querySelector('[data-tcard]').click(); await wait(100);
-  $('#ceVid').value = 'https://youtu.be/dQw4w9WgXcQ'; $('#ceC').value = 'Пункт А\nПункт Б\nПункт В\nПункт Г'; fire($('#ceForm'), 'submit'); await wait(100);
+  { const k = [...D.querySelectorAll('.bk-list[data-bkctx="ce"] .bk')].findIndex(li => li.querySelector('.bk-type').textContent === 'Видео');
+    const v = D.querySelector(`.bk-list[data-bkctx="ce"] [data-bkf="value"][data-bki="${k}"]`); v.value = 'https://youtu.be/dQw4w9WgXcQ'; fire(v, 'input'); }
+  $('#ceC').value = 'Пункт А\nПункт Б\nПункт В\nПункт Г'; fire($('#ceC'), 'input'); fire($('#ceForm'), 'submit'); await wait(100);
   $('#tSave').click(); await wait(200);
   let ot = otk();
-  assert.equal(ot.video_url, 'https://youtu.be/dQw4w9WgXcQ'); ok('шаблон → проекты: видео появилось в карточке идущего проекта');
+  assert.equal(bval(ot, 'video'), 'https://youtu.be/dQw4w9WgXcQ'); ok('шаблон → проекты: видео появилось в карточке идущего проекта');
   assert.deepEqual(ot.checklist.map(i => i.text), ['Пункт А', 'Пункт Б', 'Пункт В', 'Пункт Г']); ok('шаблон → проекты: новый пункт чек-листа добавлен');
   assert.ok(ot.checklist[0].done); ok('шаблон → проекты: отмеченный пункт остался отмеченным');
   const ntk = () => LS().tasks.find(t => t.project_id === np.id && t.substage_id === sub.id);
-  assert.equal(ntk().video_url, 'https://youtu.be/dQw4w9WgXcQ'); ok('шаблон → проекты: и в новом проекте тоже');
+  assert.equal(bval(ntk(), 'video'), 'https://youtu.be/dQw4w9WgXcQ'); ok('шаблон → проекты: и в новом проекте тоже');
   // проекты другого шаблона с тем же подэтапом и завершённый проект этого шаблона
   const tpl2 = LS().templates.find(t => t.id !== tpl.id).id;
   const mk = (id, tplId, state, stStatus, done) => ({ id, name: id, client: 'К', template_id: tplId, pm_id: 'me', start_date: '2026-09-01', deadline: '2026-12-01', state,
@@ -122,24 +132,27 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   w.openTask(ntk().id); await wait(100); $('[data-tedit]').click(); await wait(100);
   assert.ok($('#tdTpl').checked && /во всех проектах процесса/.test($('.tpl-check').textContent) && /других процессов не изменятся/.test($('.tpl-check').textContent)); ok('карточка: галочка «Сохранить как шаблон» объясняет, что обновит все проекты');
   const desc = $('#tdDesc') || D.querySelector('[data-td="description"]'); desc.value = 'Новое описание из проекта'; fire(desc, 'input'); fire(desc, 'change');
-  const vin = D.querySelector('[data-td="video_url"]'); vin.value = 'https://vimeo.com/76979871'; fire(vin, 'input'); fire(vin, 'change');
+  assert.ok(!D.querySelector('[data-td="video_url"]') && !D.querySelector('[data-td="regulation_link"]')); ok('карточка проекта: отдельных полей ссылок больше нет');
+  { const k = [...D.querySelectorAll('.bk-list[data-bkctx="td"] .bk')].findIndex(li => li.querySelector('.bk-type').textContent === 'Видео');
+    const v = D.querySelector(`.bk-list[data-bkctx="td"] [data-bkf="value"][data-bki="${k}"]`); v.value = 'https://vimeo.com/76979871'; fire(v, 'input'); }
   $('#tkForm').dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true })); await wait(200); w.closeTask(); await wait(50);
   ot = otk();
-  assert.equal(ot.description, 'Новое описание из проекта'); assert.equal(ot.video_url, 'https://vimeo.com/76979871'); ok('проект → другие проекты: описание и видео обновились');
+  assert.equal(ot.description, 'Новое описание из проекта'); assert.equal(bval(ot, 'video'), 'https://vimeo.com/76979871'); ok('проект → другие проекты: описание и видео обновились');
   assert.ok(ot.checklist[0].done); ok('проект → другие проекты: отметки сохранились');
-  assert.equal(LS().cardTpls[key].vid, 'https://vimeo.com/76979871'); ok('проект → шаблон: шаблон карточки обновлён');
+  assert.equal(bval(LS().cardTpls[key], 'video'), 'https://vimeo.com/76979871'); ok('проект → шаблон: шаблон карточки обновлён');
   const tf = LS().tasks.find(t => t.id === 'tforeign');
-  assert.equal(tf.description, 'Своё описание другого шаблона'); assert.equal(tf.video_url, ''); ok('проект другого шаблона с таким же подэтапом не изменился');
+  assert.equal(tf.description, 'Своё описание другого шаблона'); assert.ok(!(tf.blocks || []).length); ok('проект другого шаблона с таким же подэтапом не изменился');
   const tc = LS().tasks.find(t => t.id === 'tclosed');
-  assert.equal(tc.video_url, 'https://vimeo.com/76979871'); assert.equal(tc.description, 'Новое описание из проекта'); ok('завершённый проект этого шаблона: описание и видео обновились');
+  assert.equal(bval(tc, 'video'), 'https://vimeo.com/76979871'); assert.equal(tc.description, 'Новое описание из проекта'); ok('завершённый проект этого шаблона: описание и видео обновились');
   assert.deepEqual(tc.checklist.map(i => [i.text, i.done]), [['Старый пункт', true]]); assert.equal(LS().projects.find(p => p.id === 'closedp').stages[0].status, 'done'); ok('завершённый проект: чек-лист и сданный этап не тронуты');
   // 3) пустая карточка не стирает шаблон и другие проекты
   const tplBefore = JSON.stringify(LS().cardTpls[key]);
   const empty = LS().tasks.find(t => t.id === ntk().id); w.openTask(empty.id); await wait(100); $('[data-tedit]').click(); await wait(100);
-  for (const f of ['description', 'video_url', 'regulation_link']) { const el = D.querySelector(`[data-td="${f}"]`); el.value = ''; fire(el, 'input'); fire(el, 'change'); }
+  { const el = D.querySelector('[data-td="description"]'); el.value = ''; fire(el, 'input'); fire(el, 'change'); }
+  while (D.querySelector('.bk-list[data-bkctx="td"] [data-bkdel]')) { D.querySelector('.bk-list[data-bkctx="td"] [data-bkdel]').click(); await wait(20); }
   while (D.querySelector('[data-ckbdel]')) { D.querySelector('[data-ckbdel]').click(); await wait(20); }
   $('#tkForm').dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true })); await wait(200); w.closeTask(); await wait(50);
-  assert.equal(JSON.stringify(LS().cardTpls[key]), tplBefore); assert.equal(otk().video_url, 'https://vimeo.com/76979871'); ok('пустая карточка не стирает шаблон и карточки в других проектах');
+  assert.equal(JSON.stringify(LS().cardTpls[key]), tplBefore); assert.equal(bval(otk(), 'video'), 'https://vimeo.com/76979871'); ok('пустая карточка не стирает шаблон и карточки в других проектах');
   D.querySelector('.tabs [data-view="templates"]').click(); await wait(100); $('[data-settab="templates"]').click(); await wait(100); $(`[data-tpl="${tpl.id}"]`).click(); await wait(100);
   // правка карточки в шаблоне не перезаписывает карточки в проектах; удаление подэтапа убирает карточку шаблона
   $(`[data-tsubtog="${st0.id}"]`) || null;
