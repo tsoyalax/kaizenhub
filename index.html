@@ -3287,6 +3287,13 @@ const ROLE_RU = { owner:'Владелец', lead:'Руководитель', wor
 const roleOf = p => p?._ext ? p._ext.role : 'owner';
 const canEditProject = p => ['owner', 'lead'].includes(roleOf(p));
 function openTask(id){ ui.taskId = id; ui.taskDraft = null; renderTaskModal(); }
+// закрыть окно подэтапа в режиме правки: без изменений — сразу, с изменениями — после подтверждения
+function askCloseTaskEdit(){
+  const t = taskById(ui.taskId);
+  const dirty = t && ui.taskDraft && JSON.stringify(ui.taskDraft) !== JSON.stringify(draftOf(t));
+  if (!dirty){ closeTask(); return; }
+  askConfirm({ title:'Закрыть без сохранения?', text:'Изменения в подэтапе не сохранятся.', ok:'Закрыть', danger:true }).then(yes => { if (yes) closeTask(); });
+}
 function closeTask(){ ui.taskId = null; ui.taskDraft = null; ui.localVideo && URL.revokeObjectURL(ui.localVideo); ui.localVideo = null; taskLayer().innerHTML = ''; }
 function taskPlayer(url){
   const vid = videoEmbed(url); if (!vid) return '';
@@ -3439,7 +3446,13 @@ document.addEventListener('click', e => {
   const ts = tg.closest('[data-tsubs]'); if (ts){ const [pid, sid] = ts.dataset.tsubs.split('|'); const p = projById(pid); const n = tasksFromSubs(p, p.stages.find(s => s.id === sid)); commit(); toast(`Создано задач: ${n}`); return; }
   if (!tg.closest('#taskLayer')) return;
   if (tg.closest('[data-open]')){ closeTask(); return; }
-  if (tg.closest('[data-tclose]')){ if (ui.taskDraft) return; closeTask(); return; }   // в режиме правки закрываем только кнопками
+  if (tg.closest('[data-tclose]')){
+    if (ui.taskDraft){
+      if (tg.closest('.tk-back')) return;   // в режиме правки щелчок мимо окна не закрывает его, чтобы не потерять правки
+      askCloseTaskEdit(); return;
+    }
+    closeTask(); return;
+  }
   const t = taskById(ui.taskId); if (!t) return;
   if (tg.closest('[data-tfill]')){
     const p = projById(t.project_id); const sub = p.stages.find(x => x.id === t.stage_id)?.subs?.find(x => x.id === t.substage_id); const c = sub && cardTplFor(p, sub.name); if (!c) return;

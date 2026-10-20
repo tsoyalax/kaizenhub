@@ -199,6 +199,20 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(!$q('#fitDl') && /в срок/.test($q('.drawer').textContent)); ok('карточка: после этого — «в срок»');
   assert.ok(!/Ответственный \(Исп\)/.test($q('.drawer').innerHTML)); ok('карточка: понятные подписи «Как у проекта» вместо «Ответственный (Исп)»');
   w.closeLayer && w.closeLayer();
+  // 10) окно подэтапа в режиме редактирования закрывается крестиком
+  const tl = () => Dc.getElementById('taskLayer').innerHTML;
+  w.openTask('tk1'); await wait(100);
+  $q('[data-tedit]').click(); await wait(100);
+  assert.ok($q('#tkForm')); $q('.tk-back').click(); await wait(100);
+  assert.ok(tl()); ok('подэтап: в режиме правки щелчок мимо окна не закрывает его');
+  $q('.tk-modal [data-tclose]').click(); await wait(100);
+  assert.ok(!tl()); ok('подэтап: крестик закрывает окно, если ничего не меняли');
+  w.openTask('tk1'); await wait(100); $q('[data-tedit]').click(); await wait(100);
+  const ti = $q('#tdTitle'); ti.value = 'Изменённое название'; fire(ti, 'input'); fire(ti, 'change'); await wait(50);
+  $q('.tk-modal [data-tclose]').click(); await wait(100);
+  assert.ok(tl() && $q('#cfmOk')); ok('подэтап: есть несохранённые правки — спрашивает «Закрыть без сохранения?»');
+  $q('#cfmOk').click(); await wait(150);
+  assert.ok(!tl()); assert.notEqual(LS().tasks.find(x => x.id === 'tk1').title, 'Изменённое название'); ok('подэтап: после подтверждения окно закрыто, правки не сохранены');
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('ошибок на странице нет');
   o.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
