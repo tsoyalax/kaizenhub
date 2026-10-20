@@ -2141,15 +2141,15 @@ function renderCompact(list){
       const due = c ? `${fmt(c.due_date)}<small>${h.note}</small>` : `${fmt(last.completed_at || last.due_date)}<small>Сдан</small>`;
       return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
         <td title="${esc(p.name)}"><span class="cx-name"><span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
-        <td class="start">${fmt(p.start_date)}<small>${startDay(p)}</small></td>
+        <td>${stPill(h.key, h.label)}</td>
         <td>${stage}</td>
         <td>${progress}</td>
-        <td>${stPill(h.key, h.label)}</td>
+        <td class="start">${fmt(p.start_date)}<small>${startDay(p)}</small></td>
         <td class="due">${due}</td></tr>`;
     }).join('');
     return `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2>
-      <div class="scroll"><table class="cx"><colgroup><col class="c1"><col class="c6"><col class="c2"><col class="c5"><col class="c3"><col class="c4"></colgroup>
-      <thead><tr><th>Проект</th><th>Старт</th><th>Этап</th><th>Прогресс</th><th>Статус</th><th>Срок</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+      <div class="scroll"><table class="cx"><colgroup><col class="c1"><col class="c3"><col class="c2"><col class="c5"><col class="c6"><col class="c4"></colgroup>
+      <thead><tr><th>Проект</th><th>Статус</th><th>Этап</th><th>Прогресс</th><th>Старт</th><th>Срок</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
   }).join('');
 }
 
