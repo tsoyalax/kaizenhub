@@ -437,6 +437,7 @@ body.selecting .cell, body.selecting .pc-st{pointer-events:none;opacity:.55}
 .sel-bar button[disabled]{opacity:.45;pointer-events:none}
 body.selecting #app{padding-bottom:90px}
 @media (max-width:640px){.sel-bar{bottom:76px;left:16px;right:16px;transform:none;max-width:none}.sel-bar .sel-sp{display:none}}
+.m-out{margin-right:auto}
 .team-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
 .cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
@@ -2372,7 +2373,7 @@ async function openProfile(first){
       <p class="hint" style="margin:0">Имя, фото, должность и контакт видят коллеги по проектам и команде.</p>
       ${first ? `<label class="check"><input type="checkbox" id="mDemo" checked> Показать демо-проекты, чтобы посмотреть, как всё работает. Их можно удалить в любой момент.</label>` : ''}
       <div class="err" id="mErr"></div>
-      <div class="actions">${first ? '' : '<button type="button" class="ghost" data-close>Отмена</button>'}<button class="primary" id="mSave">${first ? 'Начать работу' : 'Сохранить'}</button></div>
+      <div class="actions">${!first && window.kzSignOut ? '<button type="button" class="ghost danger m-out" id="mOut">Выйти из аккаунта</button>' : ''}${first ? '' : '<button type="button" class="ghost" data-close>Отмена</button>'}<button class="primary" id="mSave">${first ? 'Начать работу' : 'Сохранить'}</button></div>
     </form></div>`;
   $('#mName').focus();
   $('#mForm').onsubmit = async e => {
@@ -4777,7 +4778,7 @@ function openCloudInfo(){
 }
 document.addEventListener('click', e => {
   if (e.target.closest('#cloudBtn')){ openCloudInfo(); return; }
-  if (e.target.id === 'kzOut'){ window.kzSignOut && window.kzSignOut(); return; }
+  if (e.target.id === 'kzOut' || e.target.id === 'mOut'){ signOutNow(); return; }
   if (e.target.id === 'cloudNow'){ flushCloud().then(() => { if (cloud.status === 'saved') toast('Сохранено в аккаунте'); openCloudInfo(); }); }
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden && cloud.pending) flushCloud(); });
@@ -5425,6 +5426,13 @@ async function refreshProfiles(force){
     linked.forEach(u => put(u, prof[u.account_id]));
     if (changed) commit();
   } catch(e) { /* профили — не критично */ }
+}
+// выход из аккаунта: сначала дописываем несохранённое в облако, потом выходим
+async function signOutNow(){
+  if (!window.kzSignOut) return;
+  try { if (cloud.pending || cloud.writing){ toast('Сохраняю изменения перед выходом…'); await flushCloud(); } } catch(e) {}
+  try { if (typeof flushShared === 'function') await flushShared(); } catch(e) {}
+  window.kzSignOut();
 }
 function paintMeBtn(){
   const b = $('#meBtn'); if (!b) return;

@@ -170,6 +170,17 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(!be.rows.has('inv/' + ccode) && !own.w.eval('db.prefs.teamLink')); ok('общая ссылка: отключается');
   e1.w.close(); e2.w.close();
 
+  // 5) выход из аккаунта — в окне профиля, у руководителя и у исполнителя
+  for (const [o, who] of [[own, 'руководитель'], [wk, 'исполнитель']]){
+    let out = 0; o.w.kzSignOut = () => { out++; };
+    o.w.document.getElementById('meBtn').click(); await wait(300);
+    const b = o.w.document.getElementById('mOut');
+    assert.ok(b && /Выйти/.test(b.textContent), who); ok(`выход: у ${who === 'руководитель' ? 'руководителя' : 'исполнителя'} в профиле есть «Выйти из аккаунта»`);
+    b.click(); await wait(300);
+    assert.equal(out, 1); ok(`выход: кнопка выходит из аккаунта (${who})`);
+    o.w.document.querySelector('[data-close]')?.click(); await wait(50);
+  }
+
   assert.equal(own.errors.length, 0, own.errors.join('\n')); assert.equal(wk.errors.length, 0, wk.errors.join('\n')); assert.equal(gw.errors.length, 0, gw.errors.join('\n')); ok('ошибок на страницах нет');
   own.w.close(); wk.w.close(); gw.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
