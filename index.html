@@ -1172,7 +1172,11 @@ const plannedEnd = p => p.stages.reduce((m,s) => s.due_date > m ? s.due_date : m
 
 // ---------- данные ----------
 let db = null;
-function localSave(){ try { localStorage.setItem(KEY, JSON.stringify(db)); } catch(e) {} }
+function localSave(){
+  try { localStorage.setItem(KEY, JSON.stringify(db)); } catch(e) {}
+  // что было в облаке при последней сверке: по нему отличаем свои правки от чужих
+  try { if (typeof cloud !== 'undefined' && cloud.hashes.size) localStorage.setItem(KEY + '-sync', JSON.stringify({ h:[...cloud.hashes], m:cloud.baseMeta || null })); } catch(e) {}
+}
 // Любое изменение: кэш в браузере + отложенное сохранение в аккаунт Claude
 function save(){ db.savedAt = Date.now(); try { replanAll(); } catch(e) {} try { syncAutoShares(); } catch(e) {} localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
 
@@ -1200,10 +1204,15 @@ const DEFAULT_SUBS = {
 const norm = x => String(x ?? '').trim().toLowerCase();
 const subsFor = (tid, name) => (DEFAULT_SUBS[tid]?.[name] || []).map(n => ({ id:uid(), name:n }));
 // Подэтапы проекта по списку шаблона: отметки о выполнении сохраняются по названию
-const mergeSubs = (old = [], tpl = [], allDone = false) => tpl.map(t => {
-  const o = old.find(x => norm(x.name) === norm(t.name));
-  return { id: o ? o.id : uid(), name: t.name, done: allDone || !!o?.done };
-});
+const mergeSubs = (old = [], tpl = [], allDone = false, keepExtra = false) => {
+  const out = tpl.map(t => {
+    const o = old.find(x => norm(x.name) === norm(t.name));
+    return { id: o ? o.id : uid(), name: t.name, done: allDone || !!o?.done };
+  });
+  // подэтапы, добавленные только в этом проекте, при обновлении по шаблону не теряются
+  if (keepExtra) old.forEach((x, i) => { if (!tpl.some(t => norm(t.name) === norm(x.name))) out.splice(Math.min(i, out.length), 0, x); });
+  return out;
+};
 // Подэтап с задачей показывается кнопкой с прогрессом чек-листа: его состояние ведёт задача
 const subChk = (p, s, x) => {
   const t = taskFor(p.id, s.id, x.id);
@@ -2603,7 +2612,7 @@ function applyTplToProjects(t){
   activeOf(t.id).forEach(p => {
     let ch = false;
     t.stages.forEach(ts => { const s = stageByName(p, ts.name); if (!s) return;
-      const before = (s.subs || []).length; s.subs = mergeSubs(s.subs, ts.subs || [], s.status === 'done');
+      const before = (s.subs || []).length; s.subs = mergeSubs(s.subs, ts.subs || [], s.status === 'done', true);
       const extra = (s.subs.length > before) ? s.subs.length - before : 0; subs += extra; if (extra) ch = true; });
     const k = copyCards(p); cards += k; if (k) ch = true;
     if (ch){ projs++; addLog(p, `Обновлено по шаблону «${t.name}»`); }
@@ -4103,7 +4112,13 @@ function saveTaskDraft(){
   let synced = 0;
   // пустая карточка шаблоном не становится — иначе она стёрла бы эту карточку во всех проектах
   const filled = !!(t.description || t.regulation_link || t.video_url || t.checklist.length || (t.blocks || []).length);
-  if (d.asTpl && subX && !p._ext && filled){ saveCardTpl(p, subX.name, t); synced = syncCardToProjects(p.template_id, subX.name, db.cardTpls[cardKey(p.template_id, subX.name)], t.id); promoteTplFiles(p.template_id, subX.name); }
+  if (d.asTpl && subX && !p._ext && filled){ saveCardTpl(p, subX.name, t); synced = syncCardToProjects(p.template_id, subX.name, db.cardTpls[cardKey(p.template_id, subX.name)], t.id); promoteTplFiles(p.template_id, subX.name);
+    // подэтап добавляли только в этом проекте — теперь он часть процесса: попадает в шаблон и во все идущие проекты
+    const tpl = tplById(p.template_id); const st = p.stages.find(x => x.id === t.stage_id); const ts = tpl && st && tpl.stages.find(x => norm(x.name) === norm(st.name));
+    if (ts && !(ts.subs || []).some(x => norm(x.name) === norm(subX.name))){
+      const at = (st.subs || []).findIndex(x => x.id === subX.id); (ts.subs = ts.subs || []).splice(Math.min(at < 0 ? ts.subs.length : at, ts.subs.length), 0, { id:uid(), name:subX.name });
+      synced += applyTplToProjects(tpl).cards;
+    } }
   if (d.asTpl && subX && !filled) d.asTpl = false;
   addLog(p, `Подэтап «${t.title}» отредактирован${d.asTpl && subX ? ' и сохранён как шаблон' : ''}`);
   ui.taskDraft = null; ui.localVideo && URL.revokeObjectURL(ui.localVideo); ui.localVideo = null;
@@ -4488,7 +4503,7 @@ document.addEventListener('change', e => { if (e.target.id === 'pfSelect'){ ui[u
 //  Каждая сущность — отдельный документ (meta, p_*, t_*, r_*); большие
 //  делятся на части по ~60 тыс. символов (лимит документа 256 КБ).
 // =====================================================================
-const cloud = { status:'local', col:null, ready:false, hashes:new Map(), timer:null, pending:false, writing:false, dirty:false, lastSaved:null, err:'' };
+const cloud = { status:'local', col:null, ready:false, hashes:new Map(), baseMeta:null, timer:null, pending:false, writing:false, dirty:false, lastSaved:null, err:'' };
 const CHUNK = 60000;
 const cloudCanon = b => JSON.stringify([b.k, b.kind, b.base ?? null, b.part ?? null, b.of ?? null, b.v ?? null, b.json]);
 const hashStr = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
@@ -4543,6 +4558,28 @@ function cloudApply(r){
   render();
   if (typeof processTeamJoins === 'function') processTeamJoins();
 }
+// Слияние с облаком: из облака берём всё, что изменили на другом устройстве или вкладке,
+// а свои правки (проекты, задачи, отчёты и поля настроек, изменённые здесь с последней сверки) оставляем свои.
+// Так вкладка со старыми данными больше не затирает чужие изменения своими устаревшими копиями.
+const META_FIELDS = ['ver','onboarded','users','templates','categories','prefs','cardTpls','cardTplsInit'];
+const metaOf = () => ({ ver:db.ver, onboarded:db.onboarded, users:db.users, templates:db.templates, categories:db.categories || [], prefs:db.prefs || {}, cardTpls:db.cardTpls || {}, cardTplsInit:!!db.cardTplsInit });
+function mergeRemote(remote, base, baseMeta){
+  const local = cloudDocs(); const mine = new Set(), gone = new Set();
+  for (const [k, b] of local) if (k !== 'meta' && base.get(k) !== cloudCanon(b)) mine.add(b.base || k);
+  for (const k of base.keys()){ const bk = k.split('~')[0]; if (bk !== 'meta' && !local.has(bk)) gone.add(bk); }
+  const pick = (list, pre, remoteList) => {
+    const loc = new Map(list.filter(x => mine.has(pre + x.id)).map(x => [x.id, x]));
+    const out = remoteList.filter(x => !gone.has(pre + x.id)).map(x => { const l = loc.get(x.id); loc.delete(x.id); return l || x; });
+    return out.concat([...loc.values()]);
+  };
+  remote.projects = pick(db.projects, 'p_', remote.projects);
+  remote.tasks = pick(db.tasks || [], 't_', remote.tasks);
+  remote.reports = pick(db.reports || [], 'r_', remote.reports);
+  let metaMine = 0;
+  if (baseMeta){ const lm = metaOf(); META_FIELDS.forEach(f => { if (JSON.stringify(lm[f] ?? null) !== JSON.stringify(baseMeta[f] ?? null)){ remote.meta[f] = lm[f]; metaMine++; } }); }
+  return mine.size + gone.size + metaMine;
+}
+const metaBase = m => Object.fromEntries(META_FIELDS.map(f => [f, m?.[f]]));
 function scheduleCloud(){
   if (!cloud.col || !cloud.ready) return;
   cloud.pending = true; clearTimeout(cloud.timer);
@@ -4555,11 +4592,13 @@ async function flushCloud(){
   if (cloud.writing){ cloud.dirty = true; return; }
   cloud.writing = true; cloud.pending = false; setCloudStatus('saving');
   try {
-    const docs = cloudDocs();
+    const docs = cloudDocs(); const start = new Map(cloud.hashes); const meta = metaBase(metaOf());
     for (const [k, body] of docs){
       const s = cloudCanon(body);
       if (cloud.hashes.get(k) === s) continue;
+      if (cloud.hashes.get(k) !== start.get(k)){ cloud.dirty = true; continue; }   // пока писали, документ изменили на другом устройстве — сначала сольём
       await cloud.col.doc(k).set(body); cloud.hashes.set(k, s);       // по одной записи на документ
+      if (k === 'meta') cloud.baseMeta = meta;
     }
     for (const k of [...cloud.hashes.keys()]) if (!docs.has(k)){ await cloud.col.doc(k).delete(); cloud.hashes.delete(k); }
     db.syncedOnce = true; localSave();
@@ -4585,21 +4624,35 @@ function onCloudSnapshot(snap){
     }
     const remote = cloudAssemble(docs);
     if (!remote){ cloud.ready = false; return; }                  // часть документов ещё в пути
+    let saved = null; try { saved = JSON.parse(localStorage.getItem(KEY + '-sync') || 'null'); } catch(e) {}
     docs.forEach((b, k) => cloud.hashes.set(k, cloudCanon(b)));
-    if (db.syncedOnce && (db.savedAt || 0) > (remote.meta.savedAt || 0)){ flushCloud(); return; }   // здесь есть несохранённые правки
+    if (db.syncedOnce && saved?.h){
+      // с прошлого раза здесь могли остаться несохранённые правки: сливаем их с облаком, а не перезаписываем облако целиком
+      const n = mergeRemote(remote, new Map(saved.h), saved.m);
+      cloud.baseMeta = metaBase(remote.meta); cloudApply(remote); localSave();
+      cloud.lastSaved = new Date(remote.meta.savedAt || Date.now()); setCloudStatus('saved');
+      if (n) scheduleCloud();
+      return;
+    }
+    if (db.syncedOnce && (db.savedAt || 0) > (remote.meta.savedAt || 0)){ cloud.baseMeta = metaBase(remote.meta); flushCloud(); return; }   // здесь есть несохранённые правки
     if (!db.syncedOnce && db.onboarded){ try { localStorage.setItem(KEY + '-backup', JSON.stringify(db)); } catch(e) {} }
-    cloudApply(remote); db.syncedOnce = true; localSave();
+    cloud.baseMeta = metaBase(remote.meta); cloudApply(remote); db.syncedOnce = true; localSave();
     cloud.lastSaved = new Date(remote.meta.savedAt || Date.now()); setCloudStatus('saved');
     return;
   }
   // изменения с другого устройства или вкладки
   if (snap.metadata?.hasPendingWrites) return;
-  let changed = false;
+  const remote = cloudAssemble(docs); if (!remote) return;      // часть документов ещё в пути — дождёмся
+  const prev = new Map(cloud.hashes); let changed = false;
   for (const [k, b] of docs){ const s = cloudCanon(b); if (cloud.hashes.get(k) !== s){ cloud.hashes.set(k, s); changed = true; } }
   for (const k of [...cloud.hashes.keys()]) if (!docs.has(k)){ cloud.hashes.delete(k); changed = true; }
-  if (!changed || cloud.pending || cloud.writing) return;        // свои несохранённые правки важнее: их запишет flush
-  const remote = cloudAssemble(docs); if (!remote) return;
+  if (!changed) return;
+  // есть свои несохранённые правки — берём чужие изменения и оставляем свои, их потом допишет flush
+  const busy = cloud.pending || cloud.writing;
+  const n = busy ? mergeRemote(remote, prev, cloud.baseMeta) : 0;
+  cloud.baseMeta = metaBase(remote.meta);
   cloudApply(remote); localSave();
+  if (n){ if (cloud.writing) cloud.dirty = true; else scheduleCloud(); return; }
   cloud.lastSaved = new Date(); setCloudStatus('saved');
 }
 const CLOUD_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H8a5 5 0 1 1 1.1-9.9A6 6 0 0 1 20.5 11a4 4 0 0 1-3 8Z"/></svg>';
