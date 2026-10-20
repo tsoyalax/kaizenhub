@@ -67,6 +67,11 @@ function makeBackend() {
           async updateUser(a) { self.updateCalls = (self.updateCalls || []).concat([a]); session.user = { ...session.user, user_metadata: { ...session.user.user_metadata, ...a.data } }; return { data: { user: session.user }, error: null }; }
         },
         from, rpc,
+        storage: { from() { const st = self.storage = self.storage || new Map(); return {
+          async upload(path, file) { if (st.has(path)) return { error: { message: 'The resource already exists' } }; st.set(path, { file, by: userId }); return { data: { path }, error: null }; },
+          async createSignedUrl(path) { return st.has(path) ? { data: { signedUrl: 'https://files.test/' + path + '?token=1' }, error: null } : { data: null, error: { message: 'Object not found', statusCode: '404' } }; },
+          async copy(a, b) { if (!st.has(a)) return { error: { message: 'Object not found' } }; st.set(b, { ...st.get(a), by: userId }); self.copies = (self.copies || []).concat([[a, b]]); return { data: { path: b }, error: null }; }
+        }; } },
         channel() { const ch = { on(t, f, h) { self.handlers.push(h); return ch; }, subscribe(cb) { cb && cb('SUBSCRIBED'); return ch; } }; return ch; }
       };
     }

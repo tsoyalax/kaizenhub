@@ -86,6 +86,24 @@ select pg_temp.expect('команда: владелец открывает пр�
 select pg_temp.expect('команда: участник видит назначенный проект', pg_temp.rows_as(:T, $q$select * from docs where path = 'sp/p2'$q$) = 1, true);
 select pg_temp.expect('команда: участник не видит чужой проект', pg_temp.rows_as(:T, $q$select * from docs where path = 'sp/p1'$q$) = 0, true);
 select pg_temp.expect('команда: владелец убирает участника', pg_temp.try(:O, $q$select doc_delete('team/00000000-0000-0000-0000-00000000000a/members/00000000-0000-0000-0000-00000000000e')$q$), true);
+-- ---------- файлы карточек ----------
+-- O делится проектом sp/p1 с M (участник) и G (по ссылке); S посторонний
+select pg_temp.expect('файлы: загрузить в свою папку проекта', pg_temp.try(:O, $q$insert into storage.objects (bucket_id, name) values ('kz-files', '00000000-0000-0000-0000-00000000000a/p/p1/a.pdf')$q$), true);
+select pg_temp.expect('файлы: нельзя загрузить в чужую папку', pg_temp.try(:S, $q$insert into storage.objects (bucket_id, name) values ('kz-files', '00000000-0000-0000-0000-00000000000a/p/p1/evil.pdf')$q$), false);
+select pg_temp.expect('файлы: нельзя загрузить мимо папок проекта/шаблона', pg_temp.try(:S, $q$insert into storage.objects (bucket_id, name) values ('kz-files', '00000000-0000-0000-0000-00000000000d/x.pdf')$q$), false);
+select pg_temp.expect('файлы: владелец видит свой файл', pg_temp.rows_as(:O, $q$select * from storage.objects where name like '%/p/p1/a.pdf'$q$) = 1, true);
+select pg_temp.expect('файлы: участник проекта видит файл проекта', pg_temp.rows_as(:M, $q$select * from storage.objects where name like '%/p/p1/a.pdf'$q$) = 1, true);
+select pg_temp.expect('файлы: вошедший по ссылке видит файл проекта', pg_temp.rows_as(:G, $q$select * from storage.objects where name like '%/p/p1/a.pdf'$q$) = 1, true);
+select pg_temp.expect('файлы: посторонний не видит файл проекта', pg_temp.rows_as(:S, $q$select * from storage.objects where name like '%/p/p1/a.pdf'$q$) = 0, true);
+select pg_temp.try(:S, $q$delete from storage.objects where name like '%/p/p1/a.pdf'$q$);
+select pg_temp.expect('файлы: посторонний не удаляет чужой файл', (select count(*) from storage.objects where name like '%/p/p1/a.pdf') = 1, true);
+-- файл шаблона: виден участникам общих проектов этого владельца по этому шаблону
+select pg_temp.expect('файлы: файл шаблона загружен', pg_temp.try(:O, $q$insert into storage.objects (bucket_id, name) values ('kz-files', '00000000-0000-0000-0000-00000000000a/t/tplA/guide.pdf')$q$), true);
+select pg_temp.expect('файлы: проект p3 по шаблону tplA', pg_temp.try(:O, $q$select doc_set('sp/p3', '{"ownerId":"00000000-0000-0000-0000-00000000000a","members":[{"id":"00000000-0000-0000-0000-00000000000b","role":"worker"}],"memberIds":["00000000-0000-0000-0000-00000000000b"],"json":"{\"template_id\":\"tplA\"}"}')$q$), true);
+select pg_temp.expect('файлы: участник проекта по шаблону видит файл шаблона', pg_temp.rows_as(:M, $q$select * from storage.objects where name like '%/t/tplA/guide.pdf'$q$) = 1, true);
+select pg_temp.expect('файлы: участник проекта другого шаблона не видит файл шаблона', pg_temp.rows_as(:G, $q$select * from storage.objects where name like '%/t/tplA/guide.pdf'$q$) = 0, true);
+select pg_temp.expect('файлы: посторонний не видит файл шаблона', pg_temp.rows_as(:S, $q$select * from storage.objects where name like '%/t/tplA/guide.pdf'$q$) = 0, true);
+select pg_temp.expect('файлы: владелец удаляет свой файл', pg_temp.try(:O, $q$delete from storage.objects where name like '%/t/tplA/guide.pdf'$q$), true);
 select pg_temp.expect('без входа ничего не читается', pg_temp.rows_as('', $q$select * from docs$q$) = 0, true);
 
 select (case when ok then 'PASS ' else 'FAIL ' end) || name from results;

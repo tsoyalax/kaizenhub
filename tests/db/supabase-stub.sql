@@ -17,3 +17,11 @@ grant execute on function auth.uid() to authenticated, anon;
 do $$ begin
   if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then create publication supabase_realtime; end if;
 end $$;
+
+-- хранилище файлов (минимум для проверки правил)
+create schema if not exists storage;
+grant usage on schema storage to authenticated, anon;
+create table if not exists storage.buckets (id text primary key, name text, public boolean default false, file_size_limit bigint);
+create table if not exists storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text, owner uuid default auth.uid());
+alter table storage.objects enable row level security;
+grant select, insert, delete on storage.objects to authenticated;

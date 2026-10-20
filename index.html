@@ -589,6 +589,24 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .tk-link{margin-top:12px}
 .tk-link label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
 .player{position:relative;aspect-ratio:16/9;margin-top:10px;border-radius:10px;overflow:hidden;background:#000}
+.bk-list{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:8px}
+.bk{display:grid;grid-template-columns:20px minmax(0,1fr) 28px;gap:6px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:8px 6px 8px 4px;background:var(--surface)}
+.bk .grip{margin-top:4px}
+.bk:hover .tx,.bk .tx:focus-visible{opacity:1}
+.bk-body{display:grid;gap:6px;min-width:0}
+.bk-top{display:flex;gap:8px;align-items:center}
+.bk-type{flex:none;font-size:11.5px;font-weight:600;color:var(--muted);background:var(--surface-2);border-radius:6px;padding:2px 7px}
+.bk-top input{flex:1;min-width:0;height:30px;border:1px solid transparent;border-radius:7px;background:transparent;padding:0 7px;font-weight:600;font-size:13.5px}
+.bk-top input:hover,.bk-top input:focus{border-color:var(--line);outline:0}
+.bk-body textarea,.bk-body > input{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:7px 9px;font-size:14px;line-height:1.45;resize:vertical}
+.bk-body > input{height:34px}
+.bk-file{gap:10px;align-items:center}
+.bk-add{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.bk-add .ghost{height:30px;padding:0 10px;font-size:13px;border-style:dashed}
+.fchip{display:inline-flex;align-items:center;gap:8px;max-width:100%;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);padding:7px 11px;font:inherit;font-size:14px;color:var(--ink);cursor:pointer;text-align:left}
+.fchip:hover{border-color:var(--line-strong)}
+.fchip small{color:var(--muted);font-size:12px}
+.fchip.static{cursor:default}
 .vbox{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-start;margin-top:6px}
 .player.mini{width:min(100%,360px);margin-top:0}
 .vthumb{position:relative;flex:none;width:min(100%,220px);aspect-ratio:16/9;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#111;cursor:pointer;padding:0}
@@ -604,7 +622,7 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .ck.sortable li{grid-template-columns:20px minmax(0,1fr);column-gap:6px}
 .ck.sortable li .grip{grid-row:1}
 .ck.sortable li small{grid-column:2}
-.ckb-chk{width:18px;height:18px;flex:none;margin:0 2px;accent-color:var(--g);cursor:pointer}
+.ckb li input.ckb-chk{flex:none;width:18px;height:18px;min-width:18px;margin:0 4px;padding:0;border:0;accent-color:var(--g);cursor:pointer}
 .ckb li input.is-done{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line-strong)}
 .ck-box{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:14px}
 .ck-box input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--g);flex:none;cursor:pointer}
@@ -2360,12 +2378,12 @@ document.addEventListener('change', e => {
   if (e.target.id === 'sTpl'){ db.prefs = { ...(db.prefs || {}), useTplDays:e.target.checked }; commit(); }
 });
 // ---------- Подэтапы и карточки в шаблоне ----------
-const cardHas = c => !!(c && ((c.d || '').trim() || (c.reg || '').trim() || (c.vid || '').trim() || (c.c || []).length));
+const cardHas = c => !!(c && ((c.d || '').trim() || (c.reg || '').trim() || (c.vid || '').trim() || (c.c || []).length || (c.b || []).length));
 // к подэтапам черновика подставляем их карточки из db.cardTpls (только этого шаблона)
 function attachCards(d){
   (d.stages || []).forEach(st => { st.subs = (st.subs || []).map(x => {
     const c = d.id ? (db.cardTpls || {})[cardKey(d.id, x.name)] : null;
-    return { ...x, card: x.card || (c ? { d:c.d || '', reg:c.reg || '', vid:c.vid || '', c:[...(c.c || [])] } : null) }; }); });
+    return { ...x, card: x.card || (c ? { d:c.d || '', reg:c.reg || '', vid:c.vid || '', c:[...(c.c || [])], b:clone(c.b || []) } : null) }; }); });
 }
 function tplSubsHtml(st, i){
   const subs = st.subs || []; const open = ui.tplOpen?.[st.id]; const nc = subs.filter(x => cardHas(x.card)).length;
@@ -2382,38 +2400,53 @@ function tplSubsHtml(st, i){
   </div>`;
 }
 function openCardEditor(i, j){
-  const st = ui.draft.stages[i], x = st.subs[j]; const c = x.card || { d:'', reg:'', vid:'', c:[] };
+  const x = ui.draft.stages[i].subs[j]; const c = x.card || { d:'', reg:'', vid:'', c:[], b:[] };
+  ui.ce = { i, j, d:c.d || '', reg:c.reg || '', vid:c.vid || '', c:(c.c || []).join('\n'), b:clone(c.b || []), err:'' };
+  renderCardEditor('#ceD');
+}
+function renderCardEditor(focusSel){
+  const ce = ui.ce; if (!ce) return; const st = ui.draft.stages[ce.i], x = st.subs[ce.j];
+  const keep = layer.querySelector('.modal')?.scrollTop;
   layer.innerHTML = `<div class="backdrop" data-close></div>
   <div class="modal tk-modal" role="dialog" aria-modal="true" aria-labelledby="ceT">
     <h2 id="ceT">Карточка подэтапа «${esc(x.name)}»</h2>
-    <p class="lead">${esc(ui.draft.name || 'Шаблон')} · этап «${esc(st.name)}». Так будет выглядеть карточка в каждом новом проекте.</p>
+    <p class="lead">${esc(ui.draft.name || 'Шаблон')} · этап «${esc(st.name)}». Так будет выглядеть карточка в каждом проекте процесса.</p>
     <form class="form" id="ceForm">
-      <div class="field"><label for="ceD">Описание и регламент</label><textarea id="ceD" class="tk-desc" rows="6">${esc(c.d || '')}</textarea></div>
-      <div class="field"><label for="ceReg">Ссылка на регламент, шаблон или РНП</label><input id="ceReg" value="${esc(c.reg || '')}" placeholder="https://docs.google.com/…" inputmode="url"></div>
-      <div class="field"><label for="ceVid">Ссылка на видео</label><input id="ceVid" value="${esc(c.vid || '')}" placeholder="YouTube, Vimeo, Google Drive, Loom или MP4" inputmode="url"></div>
-      <div class="field"><label for="ceC">Чек-лист — по одному пункту в строке</label><textarea id="ceC" class="tk-desc" rows="7" placeholder="Изучил бриф&#10;Сделал черновик&#10;Сдал результат">${esc((c.c || []).join('\n'))}</textarea></div>
-      <div class="err" id="ceErr"></div>
+      <div class="field"><label for="ceD">Описание и регламент</label><textarea id="ceD" class="tk-desc" rows="6" data-cef="d">${esc(ce.d)}</textarea></div>
+      <div class="field"><label for="ceReg">Ссылка на регламент, шаблон или РНП</label><input id="ceReg" data-cef="reg" value="${esc(ce.reg)}" placeholder="https://docs.google.com/…" inputmode="url"></div>
+      <div class="field"><label for="ceVid">Ссылка на видео</label><input id="ceVid" data-cef="vid" value="${esc(ce.vid)}" placeholder="YouTube, Vimeo, Google Drive, Loom или MP4" inputmode="url"></div>
+      ${blocksEditor(ce.b, 'ce')}
+      <div class="field"><label for="ceC">Чек-лист — по одному пункту в строке</label><textarea id="ceC" class="tk-desc" rows="7" data-cef="c" placeholder="Изучил бриф&#10;Сделал черновик&#10;Сдал результат">${esc(ce.c)}</textarea></div>
+      <div class="err" id="ceErr">${esc(ce.err || '')}</div>
       <div class="actions"><button type="button" class="ghost" data-close>Отмена</button><button class="primary">Готово</button></div>
     </form></div>`;
-  $('#ceD').focus();
-  $('#ceForm').onsubmit = e => {
-    e.preventDefault();
-    const reg = $('#ceReg').value.trim(), vid = $('#ceVid').value.trim();
-    if ((reg && !safeUrl(reg)) || (vid && !safeUrl(vid))){ $('#ceErr').textContent = 'Ссылки должны начинаться с https://'; return; }
-    x.card = { d:$('#ceD').value.trim(), reg, vid, c:$('#ceC').value.split('\n').map(v => v.trim()).filter(Boolean) };
-    ui.draftDirty = true; layer.innerHTML = ''; renderTemplates();
-    toast('Карточка готова. Нажмите «Сохранить шаблон», чтобы она попала в проекты');
-  };
+  if (keep) layer.querySelector('.modal').scrollTop = keep;
+  if (focusSel) layer.querySelector(focusSel)?.focus();
 }
+document.addEventListener('input', e => { const f = e.target.dataset?.cef; if (f && ui.ce) ui.ce[f] = e.target.value; });
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'ceForm' || !ui.ce) return; e.preventDefault();
+  const ce = ui.ce; ce.d = $('#ceD').value; ce.reg = $('#ceReg').value; ce.vid = $('#ceVid').value; ce.c = $('#ceC').value;
+  const reg = ce.reg.trim(), vid = ce.vid.trim();
+  const fail = m => { ce.err = m; const el = $('#ceErr'); if (el) el.textContent = m; };
+  if ((reg && !safeUrl(reg)) || (vid && !safeUrl(vid))) return fail('Ссылки должны начинаться с https://');
+  if (ce.b.some(b => b.uploading)) return fail('Подождите: файл ещё загружается');
+  const badBk = ce.b.find(b => (b.type === 'link' || b.type === 'video') && String(b.value || '').trim() && !safeUrl(b.value));
+  if (badBk) return fail(`Блок «${badBk.title || BLOCK_T[badBk.type]}»: ссылка должна начинаться с https://`);
+  const x = ui.draft.stages[ce.i].subs[ce.j];
+  x.card = { d:ce.d.trim(), reg, vid, c:ce.c.split('\n').map(v => v.trim()).filter(Boolean), b:cleanBlocks(ce.b) };
+  ui.ce = null; ui.draftDirty = true; layer.innerHTML = ''; renderTemplates();
+  toast('Карточка готова. Нажмите «Сохранить шаблон», чтобы она попала в проекты');
+});
 // записать карточки черновика в db.cardTpls и убрать карточки удалённых подэтапов этого шаблона
 function storeCards(d){
   db.cardTpls = db.cardTpls || {};
   const keep = new Set(); const changed = [];
   d.stages.forEach(st => (st.subs || []).forEach(x => {
     const k = cardKey(d.id, x.name); keep.add(k);
-    const was = db.cardTpls[k]; const sig = c => c ? JSON.stringify([c.d || '', c.reg || '', c.vid || '', c.c || []]) : '';
+    const was = db.cardTpls[k]; const sig = c => c ? JSON.stringify([c.d || '', c.reg || '', c.vid || '', c.c || [], c.b || []]) : '';
     if (cardHas(x.card)){
-      const nc = { sub:x.name, d:x.card.d || '', reg:x.card.reg || '', vid:x.card.vid || '', c:[...(x.card.c || [])], at:new Date().toISOString() };
+      const nc = { sub:x.name, d:x.card.d || '', reg:x.card.reg || '', vid:x.card.vid || '', c:[...(x.card.c || [])], b:cleanBlocks(x.card.b), at:new Date().toISOString() };
       if (sig(was) !== sig(nc)) changed.push({ sub:x.name, card:nc });
       db.cardTpls[k] = nc;
     } else delete db.cardTpls[k];
@@ -2429,7 +2462,7 @@ function copyCards(p){
     const c = T[cardKey(p.template_id, x.name)];
     if (!cardHas(c) || taskFor(p.id, st.id, x.id)) return;
     const t = makeTask({ project_id:p.id, stage_id:st.id, substage_id:x.id, title:x.name, description:c.d || '', assignee_id:null, checklist:c.c || [] });
-    t.regulation_link = c.reg || ''; t.video_url = c.vid || '';
+    t.regulation_link = c.reg || ''; t.video_url = c.vid || ''; t.blocks = clone(c.b || []);
     if (x.done) t.checklist.forEach(it => { it.done = true; it.completed_at = new Date().toISOString(); it.completed_by = meName(); });
     syncTaskToSub(t); db.tasks.push(t); n++;
   }));
@@ -2451,13 +2484,13 @@ function syncCardToProjects(tplId, subName, c, skipTaskId){
       if (!t){
         if (!cardHas(c) || closed) return;
         t = makeTask({ project_id:p.id, stage_id:st.id, substage_id:x.id, title:x.name, description:c.d || '', assignee_id:null, checklist:c.c || [] });
-        t.regulation_link = c.reg || ''; t.video_url = c.vid || '';
+        t.regulation_link = c.reg || ''; t.video_url = c.vid || ''; t.blocks = clone(c.b || []);
         if (x.done) t.checklist.forEach(it => { it.done = true; it.completed_at = new Date().toISOString(); it.completed_by = meName(); });
         db.tasks.push(t); syncTaskToSub(t); n++; addLog(p, `Карточка «${x.name}» создана по шаблону`); return;
       }
-      const sig = () => JSON.stringify([t.description, t.regulation_link, t.video_url, t.checklist.map(i => [i.text, i.done])]);
+      const sig = () => JSON.stringify([t.description, t.regulation_link, t.video_url, t.checklist.map(i => [i.text, i.done]), t.blocks || []]);
       const before = sig();
-      t.description = c.d || ''; t.regulation_link = c.reg || ''; t.video_url = c.vid || '';
+      t.description = c.d || ''; t.regulation_link = c.reg || ''; t.video_url = c.vid || ''; t.blocks = clone(c.b || []);
       if (!closed && !taskProgress(t).done){
         const byText = new Map(t.checklist.map(i => [norm(i.text), i]));
         const next = (c.c || []).map((txt, k) => { const o = byText.get(norm(txt)); if (o){ byText.delete(norm(txt)); return { ...o, text:txt, position:k }; }
@@ -2639,7 +2672,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('click', e => {
   const o = e.target.closest('[data-open]');
   if (o){ openProject(o.dataset.open, o.dataset.stage); return; }
-  if (e.target.closest('[data-close]')){ closeLayer(); return; }
+  if (e.target.closest('[data-close]')){ ui.ce = null; closeLayer(); return; }
   if (e.target.id === 'emptyReset'){ resetFilters(); return; }
   if (e.target.id === 'emptyCreate'){ openCreate(); return; }
   if (e.target.closest('[data-invite]')){ openInvite(); return; }
@@ -3408,11 +3441,11 @@ function cardTplFor(p, subName){
   const T = db.cardTpls || {};
   return T[cardKey(p?.template_id, subName)] || null;
 }
-const taskPreset = (name, p) => { const c = p && !p._ext ? cardTplFor(p, name) : null; return c ? { d:c.d || '', c:c.c || [], reg:c.reg || '', vid:c.vid || '' } : { d:'', c:[] }; };
+const taskPreset = (name, p) => { const c = p && !p._ext ? cardTplFor(p, name) : null; return c ? { d:c.d || '', c:c.c || [], reg:c.reg || '', vid:c.vid || '', b:c.b || [] } : { d:'', c:[], b:[] }; };
 function saveCardTpl(p, subName, t){
   if (!p || p._ext || !subName) return;
   db.cardTpls = db.cardTpls || {};
-  db.cardTpls[cardKey(p.template_id, subName)] = { sub:subName, d:t.description || '', reg:t.regulation_link || '', vid:t.video_url || '', c:t.checklist.map(i => i.text), at:new Date().toISOString() };
+  db.cardTpls[cardKey(p.template_id, subName)] = { sub:subName, d:t.description || '', reg:t.regulation_link || '', vid:t.video_url || '', c:t.checklist.map(i => i.text), b:clone(t.blocks || []), at:new Date().toISOString() };
 }
 // Один раз: уже заполненные карточки подэтапов становятся шаблонами (демо-заготовки пропускаем)
 function migrateCardTpls(){
@@ -3466,7 +3499,7 @@ function tasksFromSubs(p, s){
     if (taskFor(p.id, s.id, x.id)) return;
     const pr = taskPreset(x.name, p);
     const t = makeTask({ project_id:p.id, stage_id:s.id, substage_id:x.id, title:x.name, description:pr.d || '', assignee_id:s.assignee_id, checklist:pr.c });
-    t.regulation_link = pr.reg || ''; t.video_url = pr.vid || '';
+    t.regulation_link = pr.reg || ''; t.video_url = pr.vid || ''; t.blocks = clone(pr.b || []);
     if (x.done) t.checklist.forEach(i => { i.done = true; i.completed_at = new Date().toISOString(); i.completed_by = meName(); });
     syncTaskToSub(t); (p._ext ? ext.tasks : db.tasks).push(t); n++;
   });
@@ -3559,6 +3592,121 @@ function askCloseTaskEdit(){
   askConfirm({ title:'Закрыть без сохранения?', text:'Изменения в подэтапе не сохранятся.', ok:'Закрыть', danger:true }).then(yes => { if (yes) closeTask(); });
 }
 function closeTask(){ ui.taskId = null; ui.taskDraft = null; ui.vplay = null; ui.localVideo && URL.revokeObjectURL(ui.localVideo); ui.localVideo = null; taskLayer().innerHTML = ''; }
+// =====================================================================
+//  БЛОКИ КАРТОЧКИ: текст, ссылка, видео, файл. Добавляет руководство в режиме редактирования (и в шаблоне),
+//  исполнители видят. Блоки — часть шаблона карточки и расходятся по проектам вместе с ней.
+//  Файлы лежат в закрытой корзине Supabase: <кто загрузил>/p/<проект>/… или <кто загрузил>/t/<шаблон>/…
+// =====================================================================
+const BLOCK_T = { text:'Текст', link:'Ссылка', video:'Видео', file:'Файл' };
+const clone = o => JSON.parse(JSON.stringify(o ?? null));
+const blkOk = b => b && (b.type === 'file' ? !!b.path : !!String(b.value || '').trim());
+const cleanBlocks = list => (list || []).filter(blkOk).map(b => ({ id:b.id || uid(), type:b.type, title:String(b.title || '').trim(), value:String(b.value || '').trim(),
+  ...(b.type === 'file' ? { path:b.path, name:b.name || 'Файл', size:b.size || 0 } : {}) }));
+const fsize = n => !n ? '' : n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} КБ` : `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} МБ`;
+const safeFileName = n => String(n || 'file').replace(/[^\w.\-а-яё ]+/gi, '_').replace(/\s+/g, '_').slice(-80) || 'file';
+function blocksView(list){
+  return (list || []).filter(blkOk).map(b => {
+    const h = `<h3>${esc(b.title || BLOCK_T[b.type])}</h3>`;
+    if (b.type === 'text') return `<section class="tk-sec bk-v">${h}<div class="tk-text">${linkify(b.value)}</div></section>`;
+    if (b.type === 'link'){ const u = safeUrl(b.value); return `<section class="tk-sec bk-v">${h}${u ? `<a class="ghost tk-reg" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(b.title ? 'Открыть' : u.replace(/^https?:\/\//, '').slice(0, 60))} ↗</a>` : `<span class="hint">${esc(b.value)}</span>`}</section>`; }
+    if (b.type === 'video') return `<section class="tk-sec bk-v">${h}${taskPlayer(b.value)}</section>`;
+    return `<section class="tk-sec bk-v">${h}<button type="button" class="fchip" data-fopen="${esc(b.path)}"><span aria-hidden="true">📎</span>${esc(b.name)}<small>${fsize(b.size)}</small></button></section>`;
+  }).join('');
+}
+function blocksEditor(list, ctx){
+  return `<div class="field bk-field"><label>Блоки карточки</label>
+    <ol class="bk-list" data-bkctx="${ctx}">${(list || []).map((b, k) => `<li class="bk" data-bk="${k}">
+      <span class="grip" data-bkdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить блок ${k + 1}. Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
+      <div class="bk-body"><div class="bk-top"><span class="bk-type">${BLOCK_T[b.type]}</span><input data-bkf="title" data-bki="${k}" value="${esc(b.title || '')}" placeholder="Заголовок (необязательно)" aria-label="Заголовок блока ${k + 1}"></div>
+        ${b.type === 'text' ? `<textarea data-bkf="value" data-bki="${k}" rows="3" placeholder="Текст" aria-label="Текст блока ${k + 1}">${esc(b.value || '')}</textarea>`
+        : b.type === 'file' ? `<div class="row bk-file">${b.uploading ? '<span class="hint">Загружаю…</span>' : b.path ? `<span class="fchip static"><span aria-hidden="true">📎</span>${esc(b.name)}<small>${fsize(b.size)}</small></span><label class="link file-btn">Заменить<input type="file" data-bkfile="${k}"></label>` : `<label class="ghost file-btn">Выбрать файл<input type="file" data-bkfile="${k}"></label><span class="hint">до 25 МБ</span>`}</div>`
+        : `<input data-bkf="value" data-bki="${k}" value="${esc(b.value || '')}" inputmode="url" placeholder="${b.type === 'video' ? 'YouTube, Vimeo, Google Drive, Loom или MP4' : 'https://…'}" aria-label="Ссылка блока ${k + 1}">`}
+      </div>
+      <button type="button" class="tx bk-x" data-bkdel="${k}" aria-label="Удалить блок ${k + 1}" title="Удалить блок">×</button></li>`).join('')}</ol>
+    <div class="bk-add" data-bkctx="${ctx}"><span class="hint">Добавить блок:</span>${Object.entries(BLOCK_T).map(([k, v]) => `<button type="button" class="ghost" data-bkadd="${k}">+ ${v}</button>`).join('')}</div></div>`;
+}
+const bkList = ctx => ctx === 'ce' ? (ui.ce.b = ui.ce.b || []) : (ui.taskDraft.blocks = ui.taskDraft.blocks || []);
+const bkRender = ctx => ctx === 'ce' ? renderCardEditor() : renderTaskModal();
+document.addEventListener('click', e => {
+  const add = e.target.closest?.('[data-bkadd]'); const del = e.target.closest?.('[data-bkdel]');
+  const ctxEl = e.target.closest?.('[data-bkctx]') || e.target.closest?.('.bk-field')?.querySelector('[data-bkctx]'); if (!ctxEl || (!add && !del)) return;
+  const ctx = ctxEl.dataset.bkctx; if ((ctx === 'td' && !ui.taskDraft) || (ctx === 'ce' && !ui.ce)) return;
+  e.preventDefault(); const list = bkList(ctx);
+  if (add) list.push({ id:uid(), type:add.dataset.bkadd, title:'', value:'' }); else list.splice(+del.dataset.bkdel, 1);
+  bkRender(ctx);
+  if (add) document.querySelector(`[data-bkctx="${ctx}"] .bk:last-child ${add.dataset.bkadd === 'file' ? 'input[type=file]' : '[data-bkf="value"]'}`)?.focus();
+});
+document.addEventListener('input', e => {
+  const f = e.target.dataset?.bkf; if (!f) return; const ctx = e.target.closest('[data-bkctx]')?.dataset.bkctx; if (!ctx) return;
+  const b = bkList(ctx)[+e.target.dataset.bki]; if (b) b[f] = e.target.value;
+});
+document.addEventListener('change', async e => {
+  const k = e.target.dataset?.bkfile; if (k == null) return; const ctx = e.target.closest('[data-bkctx]')?.dataset.bkctx; if (!ctx) return;
+  const file = e.target.files?.[0]; e.target.value = ''; if (!file) return;
+  const F = window.claude?.use ? await window.claude.use('files').catch(() => null) : null;
+  if (!F || !cloud.uid){ toast('Файлы можно добавлять, когда вы вошли в аккаунт'); return; }
+  if (file.size > F.maxSize){ toast('Файл больше 25 МБ. Загрузите его в облако и добавьте блок «Ссылка»'); return; }
+  let base;
+  if (ctx === 'ce'){ if (!ui.draft?.id){ toast('Сначала сохраните шаблон, потом добавляйте файлы'); return; } base = `${cloud.uid}/t/${ui.draft.id}`; }
+  else { const t = taskById(ui.taskId); if (!t) return; base = `${cloud.uid}/p/${t.project_id}`; }
+  const list = bkList(ctx); const b = list[+k]; if (!b) return;
+  b.uploading = true; bkRender(ctx);
+  try { const path = await F.upload(`${base}/${uid()}-${safeFileName(file.name)}`, file); Object.assign(b, { path, name:file.name, size:file.size }); }
+  catch(err) { toast(err?.message ? `Не удалось загрузить файл: ${err.message}` : 'Не удалось загрузить файл'); }
+  delete b.uploading; if (bkList(ctx).includes(b)) bkRender(ctx);
+});
+// открыть файл: временная ссылка на скачивание
+document.addEventListener('click', async e => {
+  const f = e.target.closest?.('[data-fopen]'); if (!f) return; e.preventDefault();
+  let win = null; try { win = window.open('about:blank', '_blank'); } catch(x) {}
+  try { const F = await window.claude.use('files'); const url = await F.url(f.dataset.fopen); if (win) win.location = url; else location.href = url; ui.lastFileUrl = url; }
+  catch(err) { try { win?.close(); } catch(x) {} toast(err?.code === 'not_granted' ? 'Нет доступа к этому файлу' : err?.code === 'not_found' ? 'Файл не найден: возможно, его удалили' : 'Не удалось открыть файл'); }
+});
+// перетаскивание блоков (мышь, палец) и клавиши ↑ ↓
+const bkDrag = { ctx:null, from:-1, li:null, to:null };
+document.addEventListener('pointerdown', e => {
+  const g = e.target.closest?.('[data-bkdrag]'); if (!g || (e.button != null && e.button > 0)) return;
+  const ctx = g.closest('[data-bkctx]')?.dataset.bkctx; if (!ctx) return;
+  e.preventDefault(); Object.assign(bkDrag, { ctx, from:+g.dataset.bkdrag, to:null, li:g.closest('li') }); bkDrag.li.classList.add('dragging'); document.body.classList.add('is-sorting');
+  try { g.setPointerCapture?.(e.pointerId); } catch(x) {}
+});
+document.addEventListener('pointermove', e => {
+  if (!bkDrag.ctx) return; e.preventDefault();
+  const under = (typeof document.elementFromPoint === 'function' && document.elementFromPoint(e.clientX, e.clientY)) || e.target;
+  const li = under?.closest?.(`[data-bkctx="${bkDrag.ctx}"] [data-bk]`); document.querySelectorAll('.bk.drop-before,.bk.drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after'));
+  if (!li){ bkDrag.to = null; return; }
+  const r = li.getBoundingClientRect(); const after = e.clientY > r.top + r.height / 2; const k = +li.dataset.bk;
+  bkDrag.to = after ? k + 1 : k; li.classList.add(after ? 'drop-after' : 'drop-before');
+});
+function endBkDrag(apply){
+  if (!bkDrag.ctx) return; const { ctx, from, to } = bkDrag; bkDrag.ctx = null;
+  bkDrag.li?.classList.remove('dragging'); document.body.classList.remove('is-sorting');
+  document.querySelectorAll('.bk.drop-before,.bk.drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after'));
+  if (!apply || to === null || to === from || to === from + 1) return;
+  const list = bkList(ctx); const [x] = list.splice(from, 1); list.splice(to > from ? to - 1 : to, 0, x); bkRender(ctx);
+}
+document.addEventListener('pointerup', () => endBkDrag(true));
+document.addEventListener('pointercancel', () => endBkDrag(false));
+document.addEventListener('keydown', e => {
+  const g = e.target.closest?.('[data-bkdrag]'); if (!g || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+  const ctx = g.closest('[data-bkctx]')?.dataset.bkctx; if (!ctx) return;
+  e.preventDefault(); const list = bkList(ctx); const k = +g.dataset.bkdrag, to = k + (e.key === 'ArrowUp' ? -1 : 1);
+  if (to < 0 || to >= list.length) return; [list[k], list[to]] = [list[to], list[k]]; bkRender(ctx);
+  document.querySelector(`[data-bkctx="${ctx}"] [data-bkdrag="${to}"]`)?.focus();
+});
+// файлы карточки, сохранённой шаблоном: копируем в папку шаблона, чтобы их видели участники всех проектов процесса
+async function promoteTplFiles(tplId, subName){
+  const key = cardKey(tplId, subName); const c = (db.cardTpls || {})[key]; if (!c || !cloud.uid) return;
+  const moves = (c.b || []).filter(b => b.type === 'file' && b.path && b.path.split('/')[1] !== 't'); if (!moves.length) return;
+  let F; try { F = await window.claude.use('files'); } catch(e) { return; }
+  const map = {};
+  for (const b of moves){ const to = `${cloud.uid}/t/${tplId}/${uid()}-${safeFileName(b.name)}`; try { await F.copy(b.path, to); map[b.path] = to; } catch(e) { /* останется ссылка проекта */ } }
+  if (!Object.keys(map).length) return;
+  const swap = list => (list || []).forEach(b => { if (b.type === 'file' && map[b.path]) b.path = map[b.path]; });
+  swap(c.b); db.projects.filter(p => p.template_id === tplId).forEach(p => (db.tasks || []).filter(t => t.project_id === p.id).forEach(t => swap(t.blocks)));
+  save(); if (ui.taskId) renderTaskModal();
+}
+
 // Видео в карточке: сначала миниатюра (обложка YouTube или ▶), по нажатию — небольшой плеер прямо в карточке
 const ytId = u => (String(u || '').match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/) || [])[1];
 const vHost = u => ytId(u) ? 'YouTube' : /vimeo/i.test(u) ? 'Vimeo' : /drive\.google/i.test(u) ? 'Google Drive' : /loom/i.test(u) ? 'Loom' : 'Видео';
@@ -3583,7 +3731,7 @@ document.addEventListener('click', e => {
 }, true);
 function draftOf(t){
   return { title:t.title, substage_id:t.substage_id || '', assignee_id:t.assignee_id || '', description:t.description || '',
-    regulation_link:t.regulation_link || '', video_url:t.video_url || '', items:t.checklist.map(i => ({ id:i.id, text:i.text, done:i.done })), asTpl:true };
+    regulation_link:t.regulation_link || '', video_url:t.video_url || '', items:t.checklist.map(i => ({ id:i.id, text:i.text, done:i.done })), blocks:clone(t.blocks || []), asTpl:true };
 }
 function renderTaskModal(focusSel){
   const t = taskById(ui.taskId); if (!t){ closeTask(); return; }
@@ -3606,6 +3754,7 @@ function renderTaskModal(focusSel){
         <div class="tk-text">${t.description ? linkify(t.description) : '<span class="hint">Инструкции пока нет.</span>'}</div>
         ${reg ? `<p><a class="ghost tk-reg" href="${esc(reg)}" target="_blank" rel="noopener noreferrer">Открыть регламент ↗</a></p>` : ''}</section>
       ${t.video_url || ui.localVideo ? `<section class="tk-sec"><h3>Видео</h3>${taskPlayer(ui.localVideo || t.video_url)}</section>` : ''}
+      ${blocksView(t.blocks)}
       <section class="tk-sec"><h3>Чек-лист</h3>
         ${t.checklist.length ? `<ul class="ck${t.checklist.length > 1 ? ' sortable' : ''}">${t.checklist.map((i, k) => `<li class="${i.done ? 'on' : ''}" data-ckv="${k}">
           ${t.checklist.length > 1 ? `<span class="grip" data-ckvdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить пункт «${esc(i.text)}». Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>` : ''}
@@ -3628,6 +3777,7 @@ function renderTaskModal(focusSel){
       <div class="field"><label for="tdVid">Ссылка на видео</label><div class="row"><input id="tdVid" data-td="video_url" value="${esc(d.video_url)}" inputmode="url" placeholder="YouTube, Vimeo, Google Drive, Loom или MP4">
         <label class="ghost file-btn">Проверить локальный файл<input type="file" id="tkVideoFile" accept="video/*"></label></div></div>
       ${d.video_url || ui.localVideo ? taskPlayer(ui.localVideo || d.video_url) : ''}
+      ${blocksEditor(d.blocks, 'td')}
       <div class="field"><label>Конструктор чек-листа</label>
         <ol class="ckb">${d.items.map((it, k) => `<li data-ckb="${k}">
           <span class="grip" data-ckdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить пункт ${k + 1}. Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
@@ -3651,10 +3801,13 @@ function saveTaskDraft(){
   const err = m => { const e = $('#tdErr'); if (e) e.textContent = m; };
   if (!d.title.trim()) return err('Укажите название');
   for (const [k, label] of [['regulation_link','регламент'],['video_url','видео']]) if (d[k].trim() && !safeUrl(d[k])) return err(`Ссылка на ${label} должна начинаться с http:// или https://`);
+  if ((d.blocks || []).some(b => b.uploading)) return err('Подождите: файл ещё загружается');
+  const badBk = (d.blocks || []).find(b => (b.type === 'link' || b.type === 'video') && String(b.value || '').trim() && !safeUrl(b.value));
+  if (badBk) return err(`Блок «${badBk.title || BLOCK_T[badBk.type]}»: ссылка должна начинаться с https://`);
   const p = projById(t.project_id);
   const old = new Map(t.checklist.map(i => [i.id, i]));
   Object.assign(t, { title:d.title.trim(), substage_id:d.substage_id || null, assignee_id: p._ext ? t.assignee_id : (d.assignee_id || null),
-    description:d.description.trim(), regulation_link:d.regulation_link.trim(), video_url:d.video_url.trim() });
+    description:d.description.trim(), regulation_link:d.regulation_link.trim(), video_url:d.video_url.trim(), blocks:cleanBlocks(d.blocks) });
   t.checklist = d.items.filter(i => i.text.trim()).map((i, k) => {
     const o = i.id && old.get(i.id);
     const at = i.done ? (o?.done ? o.completed_at : new Date().toISOString()) : null, by = i.done ? (o?.done ? o.completed_by : meName()) : null;
@@ -3664,8 +3817,8 @@ function saveTaskDraft(){
   const subX = p.stages.find(x => x.id === t.stage_id)?.subs?.find(x => x.id === t.substage_id);
   let synced = 0;
   // пустая карточка шаблоном не становится — иначе она стёрла бы эту карточку во всех проектах
-  const filled = !!(t.description || t.regulation_link || t.video_url || t.checklist.length);
-  if (d.asTpl && subX && !p._ext && filled){ saveCardTpl(p, subX.name, t); synced = syncCardToProjects(p.template_id, subX.name, db.cardTpls[cardKey(p.template_id, subX.name)], t.id); }
+  const filled = !!(t.description || t.regulation_link || t.video_url || t.checklist.length || (t.blocks || []).length);
+  if (d.asTpl && subX && !p._ext && filled){ saveCardTpl(p, subX.name, t); synced = syncCardToProjects(p.template_id, subX.name, db.cardTpls[cardKey(p.template_id, subX.name)], t.id); promoteTplFiles(p.template_id, subX.name); }
   if (d.asTpl && subX && !filled) d.asTpl = false;
   addLog(p, `Подэтап «${t.title}» отредактирован${d.asTpl && subX ? ' и сохранён как шаблон' : ''}`);
   ui.taskDraft = null; ui.localVideo && URL.revokeObjectURL(ui.localVideo); ui.localVideo = null;
