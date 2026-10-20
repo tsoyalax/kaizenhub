@@ -109,9 +109,18 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(ot.checklist[0].done); ok('шаблон → проекты: отмеченный пункт остался отмеченным');
   const ntk = () => LS().tasks.find(t => t.project_id === np.id && t.substage_id === sub.id);
   assert.equal(ntk().video_url, 'https://youtu.be/dQw4w9WgXcQ'); ok('шаблон → проекты: и в новом проекте тоже');
+  // проекты другого шаблона с тем же подэтапом и завершённый проект этого шаблона
+  const tpl2 = LS().templates.find(t => t.id !== tpl.id).id;
+  const mk = (id, tplId, state, stStatus, done) => ({ id, name: id, client: 'К', template_id: tplId, pm_id: 'me', start_date: '2026-09-01', deadline: '2026-12-01', state,
+    stages: [{ id: id + 's', position: 0, name: st0.name, days: 2, status: stStatus, planned_start: '2026-09-01', due_date: '2026-09-03', started_at: '2026-09-01', completed_at: stStatus === 'done' ? '2026-09-03' : null, subs: [{ id: id + 'x', name: 'Тестовый подэтап', done }] }], log: [] });
+  w.mergeSnapshot({ meta: {}, projects: [mk('foreign', tpl2, 'active', 'in_progress', false), mk('closedp', tpl.id, 'completed', 'done', true)],
+    tasks: [{ id: 'tforeign', project_id: 'foreign', stage_id: 'foreigns', substage_id: 'foreignx', title: 'Тестовый подэтап', description: 'Своё описание другого шаблона', regulation_link: '', video_url: '', checklist: [{ id: 'f1', text: 'Своё', done: false }] },
+            { id: 'tclosed', project_id: 'closedp', stage_id: 'closedps', substage_id: 'closedpx', title: 'Тестовый подэтап', description: 'Старое', regulation_link: '', video_url: '', checklist: [{ id: 'c1', text: 'Старый пункт', done: true }] }] }, { keepDemo: true });
+  w.commit(); await wait(100);
+  assert.equal(w.cardTplFor({ template_id: tpl2 }, 'Тестовый подэтап'), null); ok('карточка другого шаблона не подставляется в проекты чужого процесса');
   // 2) правка из карточки проекта с галочкой «Сохранить как шаблон» доходит до других проектов
   w.openTask(ntk().id); await wait(100); $('[data-tedit]').click(); await wait(100);
-  assert.ok($('#tdTpl').checked && /во всех активных проектах/.test($('.tpl-check').textContent)); ok('карточка: галочка «Сохранить как шаблон» объясняет, что обновит все проекты');
+  assert.ok($('#tdTpl').checked && /во всех проектах процесса/.test($('.tpl-check').textContent) && /других процессов не изменятся/.test($('.tpl-check').textContent)); ok('карточка: галочка «Сохранить как шаблон» объясняет, что обновит все проекты');
   const desc = $('#tdDesc') || D.querySelector('[data-td="description"]'); desc.value = 'Новое описание из проекта'; fire(desc, 'input'); fire(desc, 'change');
   const vin = D.querySelector('[data-td="video_url"]'); vin.value = 'https://vimeo.com/76979871'; fire(vin, 'input'); fire(vin, 'change');
   $('#tkForm').dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true })); await wait(200); w.closeTask(); await wait(50);
@@ -119,6 +128,11 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.equal(ot.description, 'Новое описание из проекта'); assert.equal(ot.video_url, 'https://vimeo.com/76979871'); ok('проект → другие проекты: описание и видео обновились');
   assert.ok(ot.checklist[0].done); ok('проект → другие проекты: отметки сохранились');
   assert.equal(LS().cardTpls[key].vid, 'https://vimeo.com/76979871'); ok('проект → шаблон: шаблон карточки обновлён');
+  const tf = LS().tasks.find(t => t.id === 'tforeign');
+  assert.equal(tf.description, 'Своё описание другого шаблона'); assert.equal(tf.video_url, ''); ok('проект другого шаблона с таким же подэтапом не изменился');
+  const tc = LS().tasks.find(t => t.id === 'tclosed');
+  assert.equal(tc.video_url, 'https://vimeo.com/76979871'); assert.equal(tc.description, 'Новое описание из проекта'); ok('завершённый проект этого шаблона: описание и видео обновились');
+  assert.deepEqual(tc.checklist.map(i => [i.text, i.done]), [['Старый пункт', true]]); assert.equal(LS().projects.find(p => p.id === 'closedp').stages[0].status, 'done'); ok('завершённый проект: чек-лист и сданный этап не тронуты');
   // 3) пустая карточка не стирает шаблон и другие проекты
   const tplBefore = JSON.stringify(LS().cardTpls[key]);
   const empty = LS().tasks.find(t => t.id === ntk().id); w.openTask(empty.id); await wait(100); $('[data-tedit]').click(); await wait(100);

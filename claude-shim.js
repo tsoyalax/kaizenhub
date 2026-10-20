@@ -472,6 +472,39 @@
   };
   sample.limits = async function () { return { images: { mediaTypes: OK_TYPES.slice(), maxCount: MAX_IMAGES } }; };
 
+  /* ----------------------------------------------------------------- files */
+  // Файлы карточек: закрытая корзина kz-files, ссылки на скачивание — временные (1 час)
+  var BUCKET = 'kz-files', MAX_FILE = 25 * 1024 * 1024;
+  function stErr(e) {
+    var m = String((e && (e.message || e.error)) || '');
+    if (/exceed|too large|payload/i.test(m)) return { code: 'too_large', message: 'Файл больше 25 МБ' };
+    if (/row-level|security|not authorized|unauthorized|403/i.test(m + (e && e.statusCode))) return { code: 'not_granted', message: 'Нет доступа к файлу' };
+    if (/not found|404/i.test(m + (e && e.statusCode))) return { code: 'not_found', message: 'Файл не найден' };
+    return { code: 'unavailable', message: m };
+  }
+  var files = {
+    maxSize: MAX_FILE,
+    upload: async function (path, file) {
+      await ensureSession();
+      if (file.size > MAX_FILE) throw { code: 'too_large', message: 'Файл больше 25 МБ' };
+      var r = await sb.storage.from(BUCKET).upload(path, file, { upsert: false, contentType: file.type || 'application/octet-stream' });
+      if (r.error) throw stErr(r.error);
+      return path;
+    },
+    url: async function (path) {
+      await ensureSession();
+      var r = await sb.storage.from(BUCKET).createSignedUrl(path, 3600);
+      if (r.error) throw stErr(r.error);
+      return r.data.signedUrl;
+    },
+    copy: async function (from, to) {
+      await ensureSession();
+      var r = await sb.storage.from(BUCKET).copy(from, to);
+      if (r.error) throw stErr(r.error);
+      return to;
+    }
+  };
+
   /* ----------------------------------------------------------- точка входа */
   window.claude = {
     use: async function (name) {
@@ -479,6 +512,7 @@
       if (name === 'user') return user;
       if (name === 'db') return store;
       if (name === 'sample') return sample;
+      if (name === 'files') return files;
       return null;
     }
   };

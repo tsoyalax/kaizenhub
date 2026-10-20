@@ -226,6 +226,23 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.deepEqual(items(), ['x', 'Пункт В', 'Пункт Б']); ok('чек-лист: клавиша ↓ на ручке переставляет');
   $q('#tkForm').dispatchEvent(new o.w.Event('submit', { bubbles: true, cancelable: true })); await wait(150);
   assert.deepEqual(LS().tasks.find(x => x.id === 'tk1').checklist.map(i => i.text), ['x', 'Пункт В', 'Пункт Б']); ok('чек-лист: новый порядок сохранён');
+  // чек-боксы в конструкторе
+  w.closeTask(); await wait(50); w.openTask('tk1'); await wait(100); $q('[data-tedit]').click(); await wait(100);
+  const cbs = [...Dc.querySelectorAll('.ckb [data-ckbdone]')];
+  assert.equal(cbs.length, 3); ok('конструктор: у каждого пункта чек-бокс');
+  cbs[2].checked = true; cbs[2].dispatchEvent(new o.w.Event('change', { bubbles: true }));
+  cbs[0].checked = false; cbs[0].dispatchEvent(new o.w.Event('change', { bubbles: true }));
+  $q('#tkForm').dispatchEvent(new o.w.Event('submit', { bubbles: true, cancelable: true })); await wait(150);
+  const ckl = LS().tasks.find(x => x.id === 'tk1').checklist;
+  assert.deepEqual(ckl.map(i => i.done), [false, false, true]); assert.ok(ckl[2].completed_at && !ckl[0].completed_at); ok('конструктор: отметки из чек-боксов сохраняются');
+  // перетаскивание в окне карточки без режима редактирования
+  const vitems = () => [...Dc.querySelectorAll('.tk-modal .ck .ck-txt')].map(x => x.textContent);
+  assert.ok(Dc.querySelectorAll('.tk-modal .ck [data-ckvdrag]').length === 3 && !$q('#tkForm')); ok('карточка: у пунктов есть ручка прямо в режиме просмотра');
+  pe('pointerdown', $q('[data-ckvdrag="2"]'), 0); pe('pointermove', $q('.ck [data-ckv="0"]'), -1e6); pe('pointerup', $q('.ck [data-ckv="0"]'), -1e6); await wait(80);
+  assert.deepEqual(vitems(), ['Пункт Б', 'x', 'Пункт В']); assert.deepEqual(LS().tasks.find(x => x.id === 'tk1').checklist.map(i => i.text), ['Пункт Б', 'x', 'Пункт В']); ok('карточка: перетаскивание в окне сразу сохраняет порядок');
+  assert.ok(LS().tasks.find(x => x.id === 'tk1').checklist[0].done); ok('карточка: отметка переехала вместе с пунктом');
+  $q('[data-ckvdrag="0"]').dispatchEvent(new o.w.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })); await wait(80);
+  assert.deepEqual(vitems(), ['x', 'Пункт Б', 'Пункт В']); ok('карточка: клавиши ↑ ↓ на ручке тоже работают');
   w.closeTask(); await wait(50);
   // 12) видео в карточке: миниатюра, маленький плеер, карточка не закрывается
   const L12 = LS(); const t12 = L12.tasks.find(x => x.id === 'tk1'); t12.video_url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
