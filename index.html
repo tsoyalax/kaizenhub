@@ -133,6 +133,7 @@ table.mx{border-collapse:separate;border-spacing:0;min-width:100%}
 .cell .who{font-size:12px;color:var(--muted);margin-top:auto}
 .cell .who.none{opacity:.7}
 .cell .who.inherit{opacity:.75;font-style:italic}
+.cell .age{font-size:11.5px;color:var(--muted)}
 .cell-wrap .who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cell .who i{font-style:normal;font-size:10px;opacity:.6}
 .cell-wrap{position:relative;width:var(--cell-w)}
@@ -1024,7 +1025,7 @@ const plannedEnd = p => p.stages.reduce((m,s) => s.due_date > m ? s.due_date : m
 let db = null;
 function localSave(){ try { localStorage.setItem(KEY, JSON.stringify(db)); } catch(e) {} }
 // Любое изменение: кэш в браузере + отложенное сохранение в аккаунт Claude
-function save(){ db.savedAt = Date.now(); try { syncAutoShares(); } catch(e) {} localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
+function save(){ db.savedAt = Date.now(); try { replanAll(); } catch(e) {} try { syncAutoShares(); } catch(e) {} localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
 
 const userById = id => db.users.find(u => u.id === id);
 const tplById = id => db.templates.find(t => t.id === id);
@@ -1145,6 +1146,25 @@ function shiftFrom(p, pos, delta){
   p.stages.forEach(s => { if (s.position > pos && s.status !== 'done'){ s.planned_start = addDays(s.planned_start, delta); s.due_date = addDays(s.due_date, delta); n++; } });
   return n;
 }
+// Живой пересчёт сроков. Незавершённые этапы выстраиваются от фактического конца предыдущего:
+//  • идущий этап не двигаем — его срок показывает, опаздываем ли мы; но если он просрочен, следующие начнутся не раньше сегодня;
+//  • этап закрыли раньше — следующие подтягиваются; не начатый этап не может стартовать в прошлом.
+// Длительность каждого этапа сохраняется. Дедлайн клиента (p.deadline) не меняется — по нему видно отставание.
+function replan(p, now = today()){
+  if (!p || p._ext || p.state === 'archived' || !p.stages?.length) return false;
+  let cursor = p.start_date, changed = false;
+  for (const s of [...p.stages].sort((a, b) => a.position - b.position)){
+    if (s.status === 'done'){ cursor = s.completed_at || s.due_date; continue; }
+    if (s.status === 'in_progress' || s.status === 'client_review'){ cursor = s.due_date > now ? s.due_date : now; continue; }
+    const dur = stageDur(s);
+    const start = [cursor, p.start_date, now].reduce((m, d) => d > m ? d : m);
+    const due = addDays(start, dur);
+    if (s.planned_start !== start || s.due_date !== due){ s.planned_start = start; s.due_date = due; changed = true; }
+    cursor = due;
+  }
+  return changed;
+}
+const replanAll = () => db.projects.reduce((n, p) => replan(p) ? n + 1 : n, 0);
 function commit(){ save(); render(); }
 
 // POST /api/projects
@@ -1492,12 +1512,13 @@ function renderMatrix(){
         const dim = dimOn && h.key !== ui.risk ? ' dim' : '';
         return `<td><div class="cell-wrap"><button class="cell s-${h.key}${cur && cur.id===s.id ? ' cur':''}${dim}" data-open="${p.id}" data-stage="${s.id}" title="${esc(s.name)}: ${esc(STATUS[s.status])}">
           ${g.tpl ? '' : `<span class="sn">${esc(s.name)}</span>`}
-          <span class="st">${h.label}</span><span class="dl">${h.note}</span>
+          <span class="st">${h.label}</span><span class="dl">${h.note}</span>${stageAge(s)}
           ${cellWho(p, s)}</button>
           <select class="cell-as" data-qassign="${p.id}|${s.id}" aria-label="Ответственный за этап «${esc(s.name)}», проект ${esc(p.name)}" title="Сменить ответственного">${peopleOpts(s.assignee_id, p.worker_id ? `Как у проекта: ${short(p.worker_id)}` : 'Не назначен')}</select></div></td>`;
       }).join('');
       return `<tr><th class="pcol"><button class="prow" data-open="${p.id}"><b>${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</b>
         <small>${esc(p.client)}</small>
+        <small>Старт ${fmt(p.start_date)}${p.state !== 'completed' && p.start_date <= today() ? `, ${diffDays(today(), p.start_date) + 1}-й день` : ''}</small>
         <small class="${late ? 'late' : p.state === 'completed' ? '' : 'ut-' + urg(p.deadline || end).k}">Финиш ${fmt(end)}${late ? `, позже дедлайна ${fmt(p.deadline)}` : p.state === 'completed' ? '' : `, ${urg(p.deadline || end).txt}`}</small></button>
         <div class="prow-people">
           <label>PM <select data-ppm="${p.id}" aria-label="PM проекта ${esc(p.name)}">${pmOpts(p)}</select></label>
@@ -3395,6 +3416,13 @@ function productionCursor(p){
 }
 // Подэтап закрыт: если у него есть задача — по её чек-листу, иначе по отметке в воронке
 function subDone(p, s, x){ const t = taskFor(p.id, s.id, x.id); return t && t.checklist.length ? taskProgress(t).done : !!x.done; }
+// сколько дней идёт этап (или сколько занял, если закрыт)
+function stageAge(s){
+  const from = s.started_at || (s.status !== 'not_started' ? s.planned_start : null);
+  if (!from) return '';
+  if (s.status === 'done') return s.completed_at ? `<span class="age">занял ${days(Math.max(1, diffDays(s.completed_at, from) + 1))}</span>` : '';
+  return `<span class="age">идёт ${days(Math.max(1, diffDays(today(), from) + 1))}</span>`;
+}
 // своё назначение этапа — обычным цветом; если у этапа нет ответственного, показываем исполнителя проекта серым
 const cellWho = (p, s) => {
   if (s.assignee_id) return `<span class="who">${esc(short(s.assignee_id))} <i aria-hidden="true">▾</i></span>`;
@@ -3584,6 +3612,7 @@ function cloudApply(r){
   Object.assign(db, { ver:r.meta.ver, onboarded:r.meta.onboarded, users:r.meta.users, templates:r.meta.templates, prefs:r.meta.prefs, cardTpls:r.meta.cardTpls || {}, cardTplsInit:!!r.meta.cardTplsInit, savedAt:r.meta.savedAt,
     projects:r.projects, tasks:r.tasks, reports:r.reports });
   migrate(); if (!db.cardTplsInit){ migrateCardTpls(); scheduleCloud(); }
+  if (replanAll()) scheduleCloud();
   if (ui.open && !projById(ui.open)) closeLayer();
   if (db.onboarded && layer.querySelector('#mForm')) layer.innerHTML = '';
   if (ui.taskId){ if (taskById(ui.taskId)) renderTaskModal(); else closeTask(); }
@@ -3668,7 +3697,9 @@ function openCloudInfo(){
     <h3><span class="cdot" data-state="${cloud.status}"></span>${esc(cloudText())}</h3>
     ${ok ? `<p>Проекты, команда, шаблоны, задачи, чек-листы и AI-отчёты сохраняются в вашем аккаунте. Откройте приложение на любом устройстве под этой учётной записью — данные будут на месте.</p>
       <p class="hint">Раздел личный: его не видят другие люди, даже если вы поделитесь приложением. Изменения с другого устройства подтягиваются автоматически.</p>
-      <div class="actions"><button class="ghost" id="cloudNow">Сохранить сейчас</button><button class="ghost" id="kzOut">Выйти</button></div>`
+      <div class="actions"><button class="ghost" id="cloudNow">Сохранить сейчас</button><button class="ghost" id="kzOut">Выйти</button></div>
+      <p class="hint" style="margin-top:10px">Перенести проекты из прошлой версии (выгрузка .json):</p>
+      <label class="ghost file-btn">Импорт данных из файла<input type="file" id="impFile" accept=".json,application/json"></label>`
     : `<p>${cloud.status === 'loading' ? 'Подключаюсь к хранилищу аккаунта…' : 'Сохранение в аккаунт работает, когда вы вошли в свою учётную запись. Сейчас данные хранятся только в этом браузере.'}</p>`}
   </div>`;
 }
@@ -3678,6 +3709,60 @@ document.addEventListener('click', e => {
   if (e.target.id === 'cloudNow'){ flushCloud().then(() => { if (cloud.status === 'saved') toast('Сохранено в аккаунте'); openCloudInfo(); }); }
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden && cloud.pending) flushCloud(); });
+// ---------- импорт выгрузки (kaizenhub-snapshot.json из версии на claude.ai) ----------
+// Добавляет проекты, задачи, отчёты, шаблоны и людей к тому, что уже есть; демо-проекты удаляет.
+// Совпадение номера шаблона с другим названием — шаблон получает новый номер, чтобы проекты не перепутались.
+function mergeSnapshot(snap){
+  const meta = snap.meta || {}, clone = o => JSON.parse(JSON.stringify(o));
+  const tplMap = {};
+  (meta.templates || []).forEach(t => {
+    const cur = tplById(t.id);
+    if (cur && norm(cur.name) === norm(t.name)){ Object.assign(cur, clone(t)); return; }
+    const same = db.templates.find(x => norm(x.name) === norm(t.name));
+    if (same){ tplMap[t.id] = same.id; return; }
+    const id = cur ? 't' + uid() : t.id; tplMap[t.id] = id; db.templates.push({ ...clone(t), id });
+  });
+  const tid = id => tplMap[id] || id;
+  const userMap = {};
+  (meta.users || []).forEach(u => {
+    if (u.id === ME) return;
+    const mail = (u.email || '').toLowerCase();
+    const have = (mail && db.users.find(x => (x.email || '').toLowerCase() === mail)) || db.users.find(x => x.id === u.id);
+    if (have){ userMap[u.id] = have.id; return; }
+    const { account_id, invite, ...rest } = u; db.users.push(clone(rest));
+  });
+  const um = id => id ? (userMap[id] || (userById(id) ? id : null)) : null;
+  const demoIds = new Set(db.projects.filter(p => p.demo).map(p => p.id));
+  db.projects = db.projects.filter(p => !p.demo);
+  db.tasks = (db.tasks || []).filter(t => !demoIds.has(t.project_id));
+  db.reports = (db.reports || []).filter(r => !demoIds.has(r.project_id));
+  const put = (list, x) => { const i = list.findIndex(y => y.id === x.id); if (i >= 0) list[i] = x; else list.push(x); };
+  (snap.projects || []).forEach(p0 => {
+    const p = clone(p0); delete p.share; delete p._ext; delete p.demo;
+    p.template_id = tid(p.template_id); p.pm_id = um(p.pm_id) || ME; p.worker_id = um(p.worker_id);
+    p.stages.forEach(s => { s.assignee_id = um(s.assignee_id); });
+    put(db.projects, p);
+  });
+  (snap.tasks || []).forEach(t0 => { const t = clone(t0); t.assignee_id = um(t.assignee_id); if (projById(t.project_id)) put(db.tasks, t); });
+  db.reports = db.reports || []; (snap.reports || []).forEach(r => put(db.reports, clone(r)));
+  db.cardTpls = db.cardTpls || {};
+  Object.entries(meta.cardTpls || {}).forEach(([k, v]) => { const i = k.indexOf('|'); const nk = i < 0 ? k : tid(k.slice(0, i)) + k.slice(i); if (!db.cardTpls[nk]) db.cardTpls[nk] = clone(v); });
+  db.onboarded = true; ui.clients = []; ui.pms = [];
+  return { projects:(snap.projects || []).length, tasks:(snap.tasks || []).length, demo:demoIds.size };
+}
+document.addEventListener('change', async e => {
+  if (e.target.id !== 'impFile') return;
+  const f = e.target.files?.[0]; e.target.value = ''; if (!f) return;
+  let snap; try { snap = JSON.parse(await f.text()); } catch(err) { toast('Не удалось прочитать файл: это не выгрузка KaizenHub'); return; }
+  if (!Array.isArray(snap?.projects) || !snap.projects.length){ toast('В файле нет проектов'); return; }
+  const demo = db.projects.filter(p => p.demo).length;
+  const names = snap.projects.slice(0, 4).map(p => p.name).join(', ') + (snap.projects.length > 4 ? ' и др.' : '');
+  const yes = await askConfirm({ title:`Перенести ${snap.projects.length} ${plural(snap.projects.length, 'проект', 'проекта', 'проектов')}?`,
+    text:`${names}. Вместе с задачами, чек-листами, отчётами и шаблонами.${demo ? ` Демо-проекты (${demo}) будут удалены.` : ''} Ваша команда и приглашения сохранятся.`, ok:'Перенести', danger:false });
+  if (!yes) return;
+  const r = mergeSnapshot(snap); commit(); if (cloud.col) flushCloud();
+  toast(`Перенесено: ${r.projects} ${plural(r.projects, 'проект', 'проекта', 'проектов')}, ${r.tasks} ${plural(r.tasks, 'задача', 'задачи', 'задач')}`);
+});
 async function initCloud(){
   const btn = document.getElementById('cloudBtn'); if (btn) btn.innerHTML = CLOUD_ICON;
   setCloudStatus('local');
@@ -4263,7 +4348,9 @@ if (!db.reports) db.reports = [];
 if (!db.tasks){ db.tasks = []; seedDemoTasks(); save(); }
 migrateCardTpls();
 db.tasks = db.tasks.filter(t => projById(t.project_id));   // задачи удалённых проектов
+replanAll();
 localSave();
+setInterval(() => { if (!GUEST && replanAll()) commit(); }, 3600e3);
 { let m = null; try { m = localStorage.getItem(MODE_KEY); } catch(e) {}
   if (URL_INVITE && m !== 'owner') m = 'guest';
   if (m === 'guest') setMode('guest');
