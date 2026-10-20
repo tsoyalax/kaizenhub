@@ -1350,6 +1350,16 @@ function completeStage(p, s){
 function setStatus(p, s, status){
   if (status === s.status) return;
   const t = today();
+  // этап взят в работу, на согласование или закрыт — все этапы до него считаются завершёнными;
+  // этапы после него, числившиеся в работе, возвращаются в «Не начат» (в работе один этап)
+  if (status !== 'not_started'){
+    const at = p.stages.indexOf(s); const closed = [];
+    p.stages.forEach((x, i) => {
+      if (i < at && x.status !== 'done'){ x.status='done'; x.completed_at=t; x.started_at = x.started_at || t; completeStage(p, x); closed.push(x.name); }
+      if (i > at && status !== 'done' && (x.status === 'in_progress' || x.status === 'client_review')){ x.status='not_started'; x.started_at=null; x.completed_at=null; }
+    });
+    if (closed.length) addLog(p, `Завершены предыдущие этапы: ${closed.map(n => `«${n}»`).join(', ')}`);
+  }
   if (status === 'done'){
     s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; completeStage(p, s);
     const late = diffDays(t, s.due_date); let n = 0;

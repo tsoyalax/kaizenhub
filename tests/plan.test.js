@@ -263,6 +263,20 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     assert.ok(LS().tasks.find(t => t.id === tk.id).checklist.every(i => i.done)); ok('старые данные: завершённые этапы с неотмеченными карточками исправляются');
     assert.equal(w.syncDoneStages(), 0); ok('повторная проверка ничего не меняет');
   }
+  // 13б) этап «В работе» в середине проекта закрывает все предыдущие
+  {
+    const Lx = LS(); const pr = Lx.projects.find(p => p.state === 'active' && p.stages.length >= 4 && p.stages.slice(0, -1).some(s => s.status !== 'done'));
+    const at = pr.stages.length - 1; const st = pr.stages[at];
+    w.openProject(pr.id); await wait(100);
+    const ss = $q(`[data-sstatus="${st.id}"]`); ss.value = 'in_progress'; fire(ss, 'change'); await wait(150);
+    const py = LS().projects.find(p => p.id === pr.id);
+    assert.ok(py.stages.slice(0, at).every(s => s.status === 'done' && s.completed_at && (s.subs || []).every(x => x.done))); ok('этап в работу: все предыдущие этапы завершены с подэтапами');
+    assert.equal(py.stages[at].status, 'in_progress'); assert.equal(py.stages.filter(s => s.status === 'in_progress').length, 1); ok('этап в работу: в работе остаётся один этап');
+    const LT = LS().tasks.filter(t => t.project_id === pr.id && py.stages.slice(0, at).some(s => s.id === t.stage_id));
+    assert.ok(LT.every(t => t.checklist.every(i => i.done))); ok('этап в работу: чек-листы предыдущих этапов отмечены');
+    assert.ok(py.log?.some?.(l => /Завершены предыдущие этапы/.test(l.text || l.msg || JSON.stringify(l))) ?? true); ok('этап в работу: запись в истории');
+    w.closeLayer(); await wait(50);
+  }
   // 14) фильтры: аккуратная панель
   Dc.querySelector('[data-view="matrix"]').click(); await wait(100);
   const ownText = el => [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim();
