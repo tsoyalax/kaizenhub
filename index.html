@@ -11,11 +11,11 @@
 <style>
 :root{
   color-scheme: light;
-  --bg:#F4F4F6; --surface:#FFFFFF; --surface-2:#F1F1F4; --ink:#141418; --muted:#6E6E78; --line:#E6E6EA; --line-strong:#D3D3DA;
-  --accent:#6A5AE0; --accent-ink:#FFFFFF; --link:#5B4BD6; --focus:#6A5AE0; --soft:#F0EEFF;
-  --side:#FBFBFC; --card-hi:rgba(255,255,255,.9); --shadow:0 1px 2px rgba(16,16,24,.04),0 6px 20px rgba(16,16,24,.05);
-  --g:#15803D; --g-bg:#EFF8F2; --y:#B45309; --y-bg:#FEF6E7; --r:#DC2626; --r-bg:#FDF0F0;
-  --b:#2563EB; --b-bg:#EEF3FE; --n:#A1A1AA; --n-bg:#F4F4F5; --d:#71717A; --d-bg:#F7F7F8;
+  --bg:#F4F4F6; --surface:#FFFFFF; --surface-2:#F2F2F5; --row:#F4F4F7; --ink:#111114; --muted:#6B6B75; --line:#E5E5EA; --line-strong:#D2D2D9;
+  --accent:#111114; --accent-ink:#FFFFFF; --brand:#6A5AE0; --link:#4F5BD5; --focus:#4F5BD5; --soft:#EEF0FD;
+  --card-hi:rgba(255,255,255,.9); --shadow:0 1px 2px rgba(16,16,24,.04),0 6px 20px rgba(16,16,24,.05);
+  --g:#16A34A; --g-bg:#ECF8F0; --y:#C2410C; --y-bg:#FFF4E8; --r:#DC2626; --r-bg:#FDF0F0;
+  --b:#4F5BD5; --b-bg:#EEF0FD; --n:#9A9AA3; --n-bg:#F2F2F4; --d:#6B6B75; --d-bg:#F6F6F8;
   --radius:12px; --cell-w:140px;
   font-family:"Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   box-sizing:border-box;
@@ -24,20 +24,20 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme: dark;
-    --bg:#0C0C0E; --surface:#151518; --surface-2:#1D1D21; --ink:#F2F2F4; --muted:#8F8F98; --line:#232328; --line-strong:#34343C;
-    --accent:#7C6CF6; --accent-ink:#FFFFFF; --link:#A99CFF; --focus:#A99CFF; --soft:#1D1A33;
-    --side:#111113; --card-hi:rgba(255,255,255,.035); --shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 30px rgba(0,0,0,.35);
-    --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A;
-    --n:#71717A; --n-bg:#1F1F24; --d:#8A8A93; --d-bg:#18181C;
+    --bg:#0D0D0F; --surface:#161618; --surface-2:#1E1E21; --row:#1C1C1F; --ink:#F4F4F5; --muted:#8D8D96; --line:#242428; --line-strong:#35353B;
+    --accent:#F4F4F5; --accent-ink:#0D0D0F; --brand:#7C6CF6; --link:#8C9DFF; --focus:#8C9DFF; --soft:#171B33;
+    --card-hi:rgba(255,255,255,.035); --shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 30px rgba(0,0,0,.35);
+    --g:#4ADE80; --g-bg:#0F2418; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#7B8CFF; --b-bg:#161C3A;
+    --n:#6B6B74; --n-bg:#1D1D21; --d:#8D8D96; --d-bg:#18181B;
   }
 }
 :root[data-theme="dark"]{
   color-scheme: dark;
-  --bg:#0C0C0E; --surface:#151518; --surface-2:#1D1D21; --ink:#F2F2F4; --muted:#8F8F98; --line:#232328; --line-strong:#34343C;
-  --accent:#7C6CF6; --accent-ink:#FFFFFF; --link:#A99CFF; --focus:#A99CFF; --soft:#1D1A33;
-  --side:#111113; --card-hi:rgba(255,255,255,.035); --shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 30px rgba(0,0,0,.35);
-  --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A;
-  --n:#71717A; --n-bg:#1F1F24; --d:#8A8A93; --d-bg:#18181C;
+  --bg:#0D0D0F; --surface:#161618; --surface-2:#1E1E21; --row:#1C1C1F; --ink:#F4F4F5; --muted:#8D8D96; --line:#242428; --line-strong:#35353B;
+  --accent:#F4F4F5; --accent-ink:#0D0D0F; --brand:#7C6CF6; --link:#8C9DFF; --focus:#8C9DFF; --soft:#171B33;
+  --card-hi:rgba(255,255,255,.035); --shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 30px rgba(0,0,0,.35);
+  --g:#4ADE80; --g-bg:#0F2418; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#7B8CFF; --b-bg:#161C3A;
+  --n:#6B6B74; --n-bg:#1D1D21; --d:#8D8D96; --d-bg:#18181B;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -1071,12 +1071,12 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
    ===================================================================== */
 body{letter-spacing:-.005em}
 .logo{width:28px;height:28px;border-radius:9px;display:grid;grid-template-columns:repeat(3,4px);gap:3px;place-content:center;
-  background:linear-gradient(145deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#000));box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 35%,transparent)}
+  background:linear-gradient(145deg,var(--brand),color-mix(in srgb,var(--brand) 55%,#000));box-shadow:0 4px 14px color-mix(in srgb,var(--brand) 30%,transparent)}
 .logo i{width:4px;height:4px;border-radius:50%;background:#fff;opacity:.95}
 .logo i:nth-child(2){opacity:.7}.logo i:nth-child(3){opacity:.45}
 .brand-t{font-weight:650;letter-spacing:-.02em}
-.primary{background:var(--accent);color:var(--accent-ink);border-radius:10px;box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 6px 16px color-mix(in srgb,var(--accent) 28%,transparent)}
-.primary:hover{opacity:1;filter:brightness(1.08)}
+.primary{background:var(--accent);color:var(--accent-ink);border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.primary:hover{opacity:.9}
 .ghost{background:var(--surface);border-color:var(--line);box-shadow:0 1px 0 var(--card-hi) inset}
 .ghost:hover{background:var(--surface-2)}
 .panel,.grp .scroll,.modal,.pop,#tags,.members,.kcol,.pc{box-shadow:var(--shadow)}
@@ -1094,7 +1094,7 @@ body{letter-spacing:-.005em}
 .kd-card{position:relative;text-align:left;border:1px solid var(--line);border-radius:16px;padding:16px 18px;min-height:108px;cursor:pointer;
   background:linear-gradient(180deg,var(--card-hi),transparent 60%),var(--surface);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:2px;overflow:hidden;transition:border-color .15s,transform .15s}
 .kd-card:hover{border-color:var(--line-strong);transform:translateY(-1px)}
-.kd-card.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow)}
+.kd-card.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink),var(--shadow)}
 .kd-l{color:var(--muted);font-size:13.5px}
 .kd-n{font-size:34px;line-height:1.15;font-weight:600;letter-spacing:-.03em}
 .kd-sub{color:var(--muted);font-size:12.5px}
@@ -1104,46 +1104,48 @@ body{letter-spacing:-.005em}
   box-shadow:0 1px 0 var(--card-hi) inset,0 8px 18px rgba(0,0,0,.12)}
 .kd-ico svg{width:22px;height:22px}
 .kd-card[data-kdrisk="red"] .kd-ico{color:var(--r)}.kd-card[data-kdrisk="blue"] .kd-ico{color:var(--b)}.kd-card[data-kdrisk="done"] .kd-ico{color:var(--g)}
-.kd-card:not([data-kdrisk]) .kd-ico,.kd-card[data-kdrisk=""] .kd-ico{color:var(--accent)}
+.kd-card:not([data-kdrisk]) .kd-ico,.kd-card[data-kdrisk=""] .kd-ico{color:var(--brand)}
 @media (max-width:1100px){.kd-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
-/* компьютер: боковое меню слева */
-@media (min-width:1024px){
-  :root{--side-w:236px}
-  body{padding-left:var(--side-w)}
-  body::before{display:none}
-  .top{position:fixed;inset:0 auto 0 0;width:var(--side-w);flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:0;padding:16px 12px 14px;
-    background:var(--side);border-bottom:0;border-right:1px solid var(--line);min-height:0;overflow-y:auto;z-index:8}
-  .brand{padding:2px 8px 16px;margin-bottom:12px;border-bottom:1px solid var(--line);font-size:16px}
-  .space-name{margin-left:auto}
-  .tabs{flex-direction:column;align-self:stretch;gap:2px;overflow:visible}
-  .tabs button{display:flex;align-items:center;gap:11px;height:38px;padding:0 11px;border-radius:10px;font-size:14px;color:var(--muted);border:1px solid transparent}
-  .tabs button svg{display:block;width:18px;height:18px;flex:none;stroke-width:1.8}
-  .tabs button:hover{background:var(--surface-2);color:var(--ink)}
-  .tabs button[aria-current="page"]{background:var(--surface);color:var(--ink);border-color:var(--line);box-shadow:var(--shadow)}
+/* верхнее меню: вкладки-плашки с иконками */
+@media (min-width:641px){
+  .top{background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px)}
+  .tabs{gap:4px;align-items:center;padding:8px 0}
+  .tabs button{display:flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:9px;border:1px solid transparent;font-size:14px}
+  .tabs button:hover{background:var(--surface-2)}
+  .tabs button[aria-current="page"]{background:var(--surface);border-color:var(--line);box-shadow:var(--shadow)}
   .tabs button[aria-current="page"]::after{display:none}
-  .tabs button[data-view="reports"]{margin-top:10px;position:relative}
-  .tabs button[data-view="reports"]::before{content:"";position:absolute;left:4px;right:4px;top:-7px;height:1px;background:var(--line)}
-  /* значки и «Новый проект» — справа в строке раздела */
-  .top-actions{position:fixed;top:0;right:24px;height:64px;margin:0;padding:0;z-index:9;gap:4px}
-  .side-user{display:flex;align-items:center;gap:10px;margin-top:auto;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--surface);
-    cursor:pointer;text-align:left;box-shadow:var(--shadow);min-width:0}
-  .side-user:hover{border-color:var(--line-strong)}
-  .su-t{display:grid;min-width:0}
-  .su-t b{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .su-t small{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .pagebar{display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:7;height:64px;padding:0 28px;border-bottom:1px solid var(--line);
-    background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px)}
-  .pagebar h1{margin:0;font-size:16px;font-weight:500;color:var(--muted)}
-  .pb-ico{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;border:1px solid var(--line);color:var(--muted);background:var(--surface)}
-  .pb-ico svg{width:16px;height:16px}
-  .drawer,.modal,.pop{z-index:30}
-  .backdrop{z-index:29}
-  .pop{top:70px}
-  .sel-bar{left:calc(50% + var(--side-w) / 2)}
-  .toast{left:calc(50% + var(--side-w) / 2)}
 }
-@media (min-width:1024px) and (max-height:620px){.side-user{display:none}}
+@media (min-width:1100px){.top{flex-wrap:nowrap;gap:0 18px}.tabs{flex:0 1 auto;min-width:0;scrollbar-width:none}.top-actions{flex:none}}
+@media (min-width:1480px){.tabs button svg{display:block;width:16px;height:16px;flex:none;stroke-width:1.9}}
+
+/* ---------- Список проектов (компактный вид) ---------- */
+table.cx{border-collapse:separate;border-spacing:0 6px;margin-top:-6px}
+.grp .scroll:has(table.cx){background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px 14px 8px}
+.cx th{background:transparent;border-bottom:0;padding:12px 14px 4px;font-size:12.5px;font-weight:500;color:var(--muted)}
+.cx td{background:var(--row);border-bottom:0;padding:11px 14px;transition:background .12s}
+.cx td:first-child{border-radius:11px 0 0 11px}
+.cx td:last-child{border-radius:0 11px 11px 0}
+.cx tbody tr:hover td,.cx tbody tr:focus-visible td{background:color-mix(in srgb,var(--row) 70%,var(--line-strong))}
+.cx-name{display:flex;align-items:center;gap:12px;min-width:0}
+.cx-nt{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.fold{flex:none;width:26px;height:22px;display:grid;place-items:center}
+.fold svg{width:26px;height:22px;fill:var(--fc);filter:drop-shadow(0 2px 4px color-mix(in srgb,var(--fc) 35%,transparent))}
+.t-prog{--fc:var(--b)}.t-done{--fc:var(--g)}.t-red{--fc:var(--r)}.t-yellow{--fc:var(--y)}.t-blue{--fc:#8B5CF6}.t-gray{--fc:var(--n)}
+/* прогресс штрихами */
+.tprog{display:flex;align-items:center;gap:10px}
+.ticks{display:inline-flex;gap:2px;height:16px;align-items:stretch}
+.ticks i{width:2.5px;border-radius:1px;background:color-mix(in srgb,var(--ink) 16%,transparent)}
+.ticks i.on{background:var(--fc)}
+.tprog b{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.cx .tprog + small{margin-top:2px}
+/* статус в цветной рамке */
+.pill.st-pill{gap:6px;padding:3px 9px 3px 7px;border-radius:8px;font-size:12.5px;border:1px solid color-mix(in srgb,currentColor 38%,transparent);
+  background:color-mix(in srgb,currentColor 12%,transparent)}
+.pill.st-pill .pi{width:13px;height:13px;flex:none}
+.pill.st-pill.s-green{color:var(--b)}
+.pill.st-pill.s-gray{color:var(--muted)}
+.pill.st-pill.s-done{color:var(--g)}
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -1173,9 +1175,7 @@ body{letter-spacing:-.005em}
     </button>
     <button class="primary" id="newBtn">Новый проект</button>
   </div>
-  <button class="side-user" id="sideUser" type="button" aria-label="Мой профиль"></button>
 </header>
-<div class="pagebar" id="pagebar"><span class="pb-ico" id="pbIco" aria-hidden="true"></span><h1 id="pageTitle"></h1></div>
 <section class="kh-dash" id="khDash" hidden aria-label="Сводка"></section>
 
 <section class="filters" id="filters" aria-label="Фильтры проектов">
@@ -2107,6 +2107,16 @@ document.addEventListener('click', e => {
 
 // Компактный вид: одна строка на проект — название, текущий этап, статус, срок
 const density = () => db.prefs?.density || 'detailed';
+// значки статусов в плашках списка
+const sico = path => `<svg class="pi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+const STATUS_ICO = {
+  green:sico('<path d="M12 3a9 9 0 1 1-9 9" stroke-dasharray="3 3.2"/><path d="M12 3a9 9 0 0 0-9 9"/>'),
+  yellow:sico('<path d="M12 3c3 3.5 5 6 5 9a5 5 0 0 1-10 0c0-1.6.6-3 1.6-4.2.4 1.4 1.3 2.2 2.4 2.2 0-2.6.3-4.6 1-7Z"/>'),
+  red:sico('<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5M12 16.2v.3"/>'),
+  blue:sico('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/>'),
+  gray:sico('<circle cx="12" cy="12" r="9" stroke-dasharray="2.6 3"/>'),
+  done:sico('<circle cx="12" cy="12" r="9"/><path d="m8 12.2 2.8 2.8L16 9.6"/>'),
+};
 function renderCompact(list){
   app.innerHTML = groupsFor(list).map(g => {
     const rows = g.items.map(p => {
@@ -2118,15 +2128,17 @@ function renderCompact(list){
       const doneN = p.stages.filter(s => s.status === 'done').length;
       const pct = Math.round(doneN / n * 100);
       const segs = p.stages.map(s => `<i class="pseg p-${s.status === 'done' ? 'done' : (c && s.id === c.id ? h.key : 'todo')}" title="${esc(s.name)}"></i>`).join('');
-      const progress = `<div class="pbar" role="img" aria-label="Пройдено ${doneN} из ${n} этапов, ${pct}%">${segs}</div><small>${pct}%, ${doneN} из ${n} этапов</small>`;
+      const tk = !c ? 'done' : h.key === 'green' ? 'prog' : h.key;
+      const TICKS = 14, on = Math.round(pct / 100 * TICKS);
+      const progress = `<div class="tprog t-${tk}" role="img" aria-label="Пройдено ${doneN} из ${n} этапов, ${pct}%"><span class="ticks">${Array.from({ length:TICKS }, (_, i) => `<i${i < on ? ' class="on"' : ''}></i>`).join('')}</span><b>${pct}%</b></div><small>${doneN} из ${n} этапов</small>`;
       const last = p.stages.at(-1);
       const due = c ? `${fmt(c.due_date)}<small>${h.note}</small>` : `${fmt(last.completed_at || last.due_date)}<small>Сдан</small>`;
       return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
-        <td title="${esc(p.name)}">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></td>
+        <td title="${esc(p.name)}"><span class="cx-name"><span class="fold t-${!c ? 'done' : h.key === 'green' ? 'prog' : h.key}" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.6l2 2h7.4A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5Z"/></svg></span><span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
         <td class="start">${fmt(p.start_date)}<small>${startDay(p)}</small></td>
         <td>${stage}</td>
         <td>${progress}</td>
-        <td><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span></td>
+        <td><span class="pill st-pill s-${h.key}">${STATUS_ICO[h.key] || STATUS_ICO.gray}${h.label}</span></td>
         <td class="due">${due}</td></tr>`;
     }).join('');
     return `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2>
@@ -5523,7 +5535,7 @@ async function signOutNow(){
 function paintMeBtn(){
   const b = $('#meBtn'); if (!b) return;
   const u = GUEST ? ui.meAcc : userById(ME);
-  const su = $('#sideUser');
+  const su = null;
   if (su) su.innerHTML = `${u && (avatarOk(u) || u.name) ? avHtml(u, 'av av-sm') : '<span class="av av-sm">?</span>'}<span class="su-t"><b>${esc(u?.name || 'Мой профиль')}</b><small>${esc(u?.title || u?.email || (GUEST ? 'Исполнитель' : 'Руководитель'))}</small></span>`;
   b.innerHTML = u && (avatarOk(u) || u.name) ? avHtml(u, 'av av-sm') : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
 }
@@ -5554,10 +5566,7 @@ document.querySelectorAll('.tabs [data-view]').forEach(b => { const m = MNAV[b.d
 
 // ---------- Строка раздела и сводка на главной ----------
 function paintPage(){
-  const m = MNAV[ui.view]; const t = $('#pageTitle'); if (!t) return;
-  t.textContent = NAV_FULL[ui.view] || (m ? m[0] : '');
-  $('#pbIco').innerHTML = m ? m[1] : '';
-  const d = $('#khDash'); const show = ui.view === 'matrix' && !GUEST && !IS_PHONE.matches && db.projects.some(p => p.state !== 'archived');
+  const d = $('#khDash'); if (!d) return; const show = ui.view === 'matrix' && !GUEST && !IS_PHONE.matches && db.projects.some(p => p.state !== 'archived');
   d.hidden = !show; d.innerHTML = show ? dashHtml() : '';
 }
 function dashHtml(){
