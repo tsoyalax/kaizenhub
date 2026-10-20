@@ -881,6 +881,9 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
 }
 @media (max-width:360px){ .tiles{grid-template-columns:repeat(2,1fr)} .hero h2{font-size:19px} }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="/config.js"></script>
+<script src="/claude-shim.js"></script>
 </head>
 <body>
 <header class="top">
@@ -2366,10 +2369,10 @@ async function getSample(){
   return _sample;
 }
 const SAMPLE_ERR = {
-  not_granted:'Нужно разрешить приложению обращаться к Claude — подтвердите запрос и попробуйте снова.',
+  not_granted:'Нужно войти в аккаунт, чтобы пользоваться распознаванием. Обновите страницу и войдите снова.',
   rate_limited:'Слишком много запросов подряд. Подождите минуту и повторите.',
   invalid_json:'Claude ответил не в том формате. Попробуйте ещё раз или пришлите скриншот крупнее.',
-  images_unavailable:'В этом окне распознавание изображений недоступно. Откройте опубликованное приложение на claude.ai.',
+  images_unavailable:'Распознавание изображений сейчас недоступно. Попробуйте позже или загрузите таблицу CSV/XLSX.',
   image_rejected:'Файл не принят: подходят PNG, JPEG, WebP до 20 МБ.',
   prompt_too_large:'Слишком много данных для одного запроса.'
 };
@@ -2656,7 +2659,7 @@ async function recognizeShots(rep, files, platform){
     { type:'image', name:[...files].map(f => f.name).join(', '), platform: res.platform || platform, currency: curMap[res.currency] || res.currency || '', warnings, total });
 }
 async function generateSummary(rep, onText){
-  const sample = await getSample(); if (!sample) throw { message:'AI-резюме работает в опубликованном приложении на claude.ai.' };
+  const sample = await getSample(); if (!sample) throw { message:'AI-резюме сейчас недоступно. Попробуйте позже.' };
   const r = computeReport(rep); const p = projById(rep.project_id); const cur = rep.currency;
   const rd = n => n == null ? null : Math.round(n * 1000) / 1000;
   const data = {
@@ -3502,7 +3505,7 @@ async function flushCloud(){
     cloud.lastSaved = new Date(); cloud.retry = 0; setCloudStatus('saved');
   } catch(e) {
     const msg = { quota_exceeded:'Хранилище аккаунта заполнено. Удалите старые отчёты или проекты.',
-      invalid_argument:'Аккаунт не может сохранять данные в этом приложении (нужен доступ уровня «Участник» или выше).',
+      invalid_argument:'Аккаунт не может сохранять данные в этом приложении (проверьте, что вы вошли в аккаунт).',
       resource_exhausted:'Слишком частые сохранения, повторю через минуту.', revoked:'Доступ к хранилищу отозван.' }[e?.code];
     setCloudStatus('error', msg || 'Не удалось сохранить в аккаунт. Данные сохранены в браузере, повторю попытку.');
     if (['unavailable','resource_exhausted'].includes(e?.code) || !e?.code){ cloud.retry = (cloud.retry || 0) + 1; if (cloud.retry <= 5) setTimeout(flushCloud, Math.min(60000, 3000 * 2 ** cloud.retry) + Math.random() * 1500); }
@@ -3542,7 +3545,7 @@ const CLOUD_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 function cloudText(){
   const t = cloud.lastSaved ? cloud.lastSaved.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' }) : '';
   return { local:'Данные хранятся только в этом браузере', loading:'Загружаю данные из аккаунта…', saving:'Сохраняю в аккаунт…',
-    saved:`Сохранено в аккаунте Claude${t ? ` в ${t}` : ''}`, error:cloud.err || 'Ошибка сохранения' }[cloud.status];
+    saved:`Сохранено в аккаунте${t ? ` в ${t}` : ''}`, error:cloud.err || 'Ошибка сохранения' }[cloud.status];
 }
 function setCloudStatus(s, err){
   cloud.status = s; if (err) cloud.err = err;
@@ -3554,14 +3557,15 @@ function openCloudInfo(){
   layer.innerHTML = `<div class="backdrop" data-close style="background:transparent"></div>
   <div class="pop cloud-pop" role="dialog" aria-label="Сохранение данных">
     <h3><span class="cdot" data-state="${cloud.status}"></span>${esc(cloudText())}</h3>
-    ${ok ? `<p>Проекты, команда, шаблоны, задачи, чек-листы и AI-отчёты сохраняются в вашем аккаунте Claude. Откройте приложение на любом устройстве под этой учётной записью — данные будут на месте.</p>
+    ${ok ? `<p>Проекты, команда, шаблоны, задачи, чек-листы и AI-отчёты сохраняются в вашем аккаунте. Откройте приложение на любом устройстве под этой учётной записью — данные будут на месте.</p>
       <p class="hint">Раздел личный: его не видят другие люди, даже если вы поделитесь приложением. Изменения с другого устройства подтягиваются автоматически.</p>
-      <div class="actions"><button class="ghost" id="cloudNow">Сохранить сейчас</button></div>`
-    : `<p>${cloud.status === 'loading' ? 'Подключаюсь к хранилищу аккаунта…' : 'Сохранение в аккаунт работает в опубликованном приложении на claude.ai, когда вы вошли в свою учётную запись. Сейчас данные хранятся только в этом браузере.'}</p>`}
+      <div class="actions"><button class="ghost" id="cloudNow">Сохранить сейчас</button><button class="ghost" id="kzOut">Выйти</button></div>`
+    : `<p>${cloud.status === 'loading' ? 'Подключаюсь к хранилищу аккаунта…' : 'Сохранение в аккаунт работает, когда вы вошли в свою учётную запись. Сейчас данные хранятся только в этом браузере.'}</p>`}
   </div>`;
 }
 document.addEventListener('click', e => {
   if (e.target.closest('#cloudBtn')){ openCloudInfo(); return; }
+  if (e.target.id === 'kzOut'){ window.kzSignOut && window.kzSignOut(); return; }
   if (e.target.id === 'cloudNow'){ flushCloud().then(() => { if (cloud.status === 'saved') toast('Сохранено в аккаунте'); openCloudInfo(); }); }
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden && cloud.pending) flushCloud(); });
@@ -3646,7 +3650,7 @@ async function flushShared(){
     syncSharedSubs();
   } catch(e) {
     toast(e?.code === 'invalid_argument' || e?.code === 'not_granted'
-      ? 'Не удалось сохранить общий проект: у вашего доступа к приложению нет права на изменения'
+      ? 'Не удалось сохранить общий проект: у вас нет права на это изменение'
       : 'Не удалось синхронизировать общий проект, повторю попытку');
     if (!['invalid_argument','not_granted','revoked'].includes(e?.code)) setTimeout(flushShared, 4000);
   }
@@ -3758,7 +3762,7 @@ function rebuildExt(){
 //  inv/<code>                     — ссылка: какой проект, чей, с какой ролью. Отключить ссылку = удалить документ
 //  sp/<pid>/joins/<id>            — кто вошёл по ссылке и его роль (владелец меняет роль или удаляет запись)
 //  data/users/<id>/links/joined/<pid> — личный список проектов, открытых этим человеком по ссылке
-const APP_URL = 'https://claude.ai/artifact/LBGoyVwQSr4hewfVKnT5DX';
+const APP_URL = location.origin + location.pathname;
 const inviteUrl = code => `${APP_URL}?invite=${code}`;
 const inviteFrom = t => { const x = String(t || '').trim(); const m = x.match(/invite[=:\/]([a-z0-9]{8,32})/i) || x.match(/^([a-z0-9]{8,32})$/i); return m ? m[1].toLowerCase() : null; };
 const URL_INVITE = (() => { try { return inviteFrom(location.search) || inviteFrom(location.hash) || inviteFrom(document.referrer); } catch(e) { return null; } })();
@@ -3767,14 +3771,14 @@ const newCode = () => Array.from(crypto.getRandomValues(new Uint8Array(14)), b =
 function joinBoxHtml(){
   return `<div class="join-box"><h2>${GUEST ? 'Ваши проекты' : 'Мои проекты'}</h2>
     <p>${ext.projects.length ? '' : 'Здесь появятся проекты, к которым вам открыли доступ. '}Если вам прислали ссылку-приглашение, а проект не открылся сам, вставьте ссылку сюда.</p>
-    <form id="joinForm"><input id="joinIn" placeholder="https://claude.ai/artifact/…?invite=…" aria-label="Ссылка-приглашение" autocomplete="off"><button class="primary">Открыть проект</button></form>
+    <form id="joinForm"><input id="joinIn" placeholder="https://ваш-сайт/?invite=…" aria-label="Ссылка-приглашение" autocomplete="off"><button class="primary">Открыть проект</button></form>
     <div class="err" id="joinErr" aria-live="polite">${esc(ui.joinErr || '')}</div></div>`;
 }
 async function acceptInvite(code){
   ui.joinErr = '';
   const err = m => { ui.joinErr = m; const el = $('#joinErr'); if (el) el.textContent = m; else toast(m); };
   if (!code) return err('Не нашёл в ссылке код приглашения. Скопируйте ссылку целиком.');
-  if (!cloud.store || !cloud.uid) return err('Чтобы открыть проект, войдите в свой аккаунт Claude и откройте ссылку снова.');
+  if (!cloud.store || !cloud.uid) return err('Чтобы открыть проект, войдите в аккаунт и откройте ссылку снова.');
   try {
     const inv = await cloud.store.doc(`inv/${code}`).get();
     if (!inv.exists) return err('Ссылка недействительна: владелец отключил её или она скопирована не полностью.');
@@ -3790,7 +3794,7 @@ async function acceptInvite(code){
     render();
   } catch(e) {
     err(e?.code === 'invalid_argument' || e?.code === 'not_granted'
-      ? 'Не получилось открыть проект: у вашего доступа к приложению нет права на изменения. Попросите владельца открыть приложение с уровнем «Участник» (Contributor).'
+      ? 'Не получилось открыть проект: не удалось записать данные. Проверьте, что ссылка не отключена, и попробуйте ещё раз.'
       : 'Не получилось открыть проект. Проверьте связь и попробуйте ещё раз.');
   }
 }
@@ -3886,7 +3890,7 @@ async function openShare(pid){
   const p = projById(pid); if (!p || p._ext) return;
   if (!cloud.store || !cloud.user){
     layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal" role="dialog" aria-modal="true" aria-labelledby="shT">
-      <h2 id="shT">Поделиться проектом</h2><p class="lead">Совместная работа доступна в опубликованном приложении на claude.ai, когда вы вошли в аккаунт.</p>
+      <h2 id="shT">Поделиться проектом</h2><p class="lead">Совместная работа доступна, когда вы вошли в аккаунт.</p>
       <div class="actions"><button class="primary" data-close>Понятно</button></div></div>`; return;
   }
   ui.shareId = pid; ui.shareRole = ui.shareRole || 'worker';
@@ -3902,7 +3906,7 @@ async function openShare(pid){
       <select id="shRole" aria-label="Роль">${ROLES_SHARE.map(([k,v]) => `<option value="${k}" ${k===ui.shareRole?'selected':''}>${v}</option>`).join('')}</select></div>
     <ul class="sh-res" id="shRes" aria-live="polite"></ul>
     <h3 class="sh-h">Доступ есть</h3><ul class="sh-mem" id="shMem"></ul>
-    <p class="hint">Исполнитель отмечает чек-листы и сдаёт результат, руководитель ещё и редактирует подэтапы. Важно: само приложение должно быть открыто человеку через «Поделиться» в Claude с уровнем «Contributor» (участник) или выше, иначе ссылка не сработает.</p>
+    <p class="hint">Исполнитель отмечает чек-листы и сдаёт результат, руководитель ещё и редактирует подэтапы. Человеку достаточно открыть ссылку и создать аккаунт или войти.</p>
     <div class="actions"><button class="primary" data-close>Готово</button></div>
   </div>`;
   renderShareLinks(); renderShareMembers(); shareSearch('');
