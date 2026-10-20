@@ -209,14 +209,35 @@
     me: async function () {
       var u = (await ensureSession()).user;
       var meta = u.user_metadata || {};
-      return { id: u.id, email: u.email, name: meta.name || (u.email || '').split('@')[0], isOwner: meta.role !== 'guest' };
+      var p = null;
+      try { var r = await sb.from('profiles').select('name,avatar_url,job_title,contact').eq('id', u.id).maybeSingle(); p = r.data; } catch (e) { /* профиль не обязателен */ }
+      return {
+        id: u.id, email: u.email, isOwner: meta.role !== 'guest',
+        name: (p && p.name) || meta.name || meta.full_name || (u.email || '').split('@')[0],
+        avatar: (p && p.avatar_url) || meta.avatar_url || meta.picture || '',
+        title: (p && p.job_title) || '', contact: (p && p.contact) || ''
+      };
+    },
+    // Человек меняет свой профиль: имя, должность, контакт. Фото и почта приходят из аккаунта
+    updateProfile: async function (f) {
+      var u = (await ensureSession()).user;
+      var patch = {};
+      if (f.name != null) patch.name = String(f.name).trim().slice(0, 120);
+      if (f.title != null) patch.job_title = String(f.title).trim().slice(0, 120);
+      if (f.contact != null) patch.contact = String(f.contact).trim().slice(0, 200);
+      var r = await sb.from('profiles').update(patch).eq('id', u.id);
+      if (r.error) throw toErr(r.error);
     },
     profiles: async function (ids) {
       var list = (ids || []).filter(function (x) { return UUID_RE.test(String(x)); });
       var out = {};
       if (!list.length) return out;
-      var rows = await rpc('get_profiles', { ids: list });
-      (rows || []).forEach(function (p) { out[p.id] = { name: p.name, email: p.email }; });
+      var rows;
+      try { rows = await rpc('get_profiles_full', { ids: list }); }
+      catch (e) { rows = await rpc('get_profiles', { ids: list }); }   // база ещё без новых полей
+      (rows || []).forEach(function (p) {
+        out[p.id] = { name: p.name, email: p.email, avatar: p.avatar_url || '', title: p.job_title || '', contact: p.contact || '' };
+      });
       return out;
     },
     search: async function (q) {

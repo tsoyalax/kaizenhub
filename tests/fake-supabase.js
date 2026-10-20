@@ -1,17 +1,33 @@
 // Упрощённая имитация Supabase для проверки «переходника»: таблица docs в памяти + нужные RPC.
 function makeBackend() {
   const rows = new Map();       // path -> {path,parent,data,updated_at}
+  const profiles = new Map();   // id -> {id,name,email,avatar_url,job_title,contact}
   let tick = 0;
   const parentOf = p => { const i = p.lastIndexOf('/'); return i < 0 ? '' : p.slice(0, i); };
   const put = (path, data) => { rows.set(path, { path, parent: parentOf(path), data: JSON.parse(JSON.stringify(data)), updated_at: '2026-10-20T00:00:' + String(++tick).padStart(6, '0') }); };
   const handlers = [];
   return {
-    rows, put, handlers,
+    rows, put, handlers, profiles,
     emit(row) { handlers.forEach(h => h({ new: row })); },
     client(userId, extra = {}) {
       const session = { access_token: 'tok-' + userId, user: { id: userId, email: userId + '@t.test', user_metadata: extra.meta || {} } };
       const self = this;
-      const from = () => {
+      if (!profiles.has(userId)) profiles.set(userId, { id: userId, name: (extra.meta || {}).name || userId.slice(0, 4), email: userId + '@t.test', avatar_url: (extra.meta || {}).avatar_url || '', job_title: '', contact: '' });
+      // таблица profiles: читать и менять можно только свою строку (как в RLS)
+      const profilesTable = () => {
+        let patch = null, id = null;
+        const b = {
+          select() { return b; }, update(p) { patch = p; return b; }, eq(c, v) { id = v; return b; }, maybeSingle() { return b; },
+          then(res, rej) {
+            if (id !== userId) return Promise.resolve({ data: null, error: null }).then(res, rej);
+            if (patch) { Object.assign(profiles.get(id), patch); return Promise.resolve({ data: null, error: null }).then(res, rej); }
+            return Promise.resolve({ data: { ...profiles.get(id) }, error: null }).then(res, rej);
+          }
+        };
+        return b;
+      };
+      const from = (table) => {
+        if (table === 'profiles') return profilesTable();
         let cols = '*', filters = [], rng = null, order = null, single = false;
         const b = {
           select(c) { cols = c; return b; },
@@ -37,6 +53,7 @@ function makeBackend() {
         if (name === 'doc_update') { const r = rows.get(a.p_path); if (!r) return { data: null, error: { code: 'P0002', message: 'nf' } }; self.put(a.p_path, { ...r.data, ...a.p_patch }); return { data: null, error: null }; }
         if (name === 'doc_delete') { rows.delete(a.p_path); for (const k of [...rows.keys()]) if (a.p_path.split('/').length === 2 && k.startsWith(a.p_path + '/')) rows.delete(k); return { data: null, error: null }; }
         if (name === 'invite_get') { const r = rows.get('inv/' + a.p_code); return { data: r ? r.data : null, error: null }; }
+        if (name === 'get_profiles_full') return { data: a.ids.filter(id => profiles.has(id)).map(id => ({ ...profiles.get(id) })), error: null };
         if (name === 'get_profiles') return { data: a.ids.map(id => ({ id, name: 'N-' + id.slice(0, 4), email: id.slice(0, 4) + '@x.y' })), error: null };
         if (name === 'search_users') return { data: a.q.length >= 2 ? [{ id: '11111111-1111-1111-1111-111111111111', name: 'Bob', email: 'bob@x.y' }] : [], error: null };
         return { data: null, error: { code: 'X', message: 'unknown rpc ' + name } };
