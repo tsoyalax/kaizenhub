@@ -1860,6 +1860,8 @@ function renderProduction(){
 }
 
 // ---------- Загрузка команды ----------
+// кто отвечает за этап: свой ответственный, иначе исполнитель проекта (так же, как показано в матрице)
+const stageWho = (p, s) => s.assignee_id || p.worker_id || null;
 function workload(){
   const t = today();
   const active = db.projects.filter(p => p.state === 'active');
@@ -1867,7 +1869,7 @@ function workload(){
   const weeks = Array.from({length:6}, (_,i) => ({ from:addDays(start, i*7), to:addDays(start, i*7+6) }));
   const rows = db.users.map(u => {
     const mine = [];
-    active.forEach(p => p.stages.forEach(s => { if (s.assignee_id === u.id && s.status !== 'done') mine.push({ p, s, h:health(s) }); }));
+    active.forEach(p => p.stages.forEach(s => { if (stageWho(p, s) === u.id && s.status !== 'done') mine.push({ p, s, h:health(s) }); }));
     const cur = mine.filter(x => x.s.status === 'in_progress' || x.s.status === 'client_review');
     const by = { red:0, yellow:0, blue:0, green:0 }; cur.forEach(x => by[x.h.key]++);
     const upcoming = mine.filter(x => x.s.status === 'not_started' && diffDays(x.s.planned_start, t) <= 14).length;
@@ -1875,11 +1877,14 @@ function workload(){
       const end = x.s.status !== 'not_started' && x.s.due_date < t ? t : x.s.due_date; // просроченное всё ещё в работе
       return x.s.planned_start <= w.to && end >= w.from;
     }).length);
-    return { u, cur:cur.length, by, upcoming, heat, pmOf:active.filter(p => p.pm_id === u.id).length };
+    // во скольких активных проектах человек участвует: PM, исполнитель проекта, ответственный за этап или подэтап
+    const inProj = active.filter(p => p.pm_id === u.id || p.worker_id === u.id || p.stages.some(s => s.assignee_id === u.id)
+      || (db.tasks || []).some(x => x.project_id === p.id && x.assignee_id === u.id)).length;
+    return { u, cur:cur.length, by, upcoming, heat, inProj, pmOf:active.filter(p => p.pm_id === u.id).length };
   });
   const unassigned = [];
   active.forEach(p => p.stages.forEach(s => {
-    if (!s.assignee_id && s.status !== 'done' && diffDays(s.planned_start, t) <= 14) unassigned.push({ p, s });
+    if (!stageWho(p, s) && s.status !== 'done' && diffDays(s.planned_start, t) <= 14) unassigned.push({ p, s });
   }));
   unassigned.sort((a,b) => a.s.planned_start.localeCompare(b.s.planned_start));
   return { rows, weeks, unassigned, active };
@@ -1907,9 +1912,9 @@ function renderLoad(){
     const segs = ['red','yellow','blue','green'].map(k => r.by[k] ? `<div class="seg ${k}" style="width:${r.by[k]/scale*100}%" title="${r.by[k]}"></div>` : '').join('')
       + (r.upcoming ? `<div class="seg up" style="width:${r.upcoming/scale*100}%" title="Скоро: ${r.upcoming}"></div>` : '');
     return `<div class="lrow">
-      <div class="who-cell"><span class="av">${esc(initials(r.u))}</span><div><b>${esc(r.u.name || 'Вы')}</b><small>${esc(r.u.dept)}${r.pmOf ? `, PM в ${r.pmOf} ${plural(r.pmOf,'проекте','проектах','проектах')}` : ''}</small></div></div>
+      <div class="who-cell">${avHtml(r.u)}<div><b>${esc(r.u.name || 'Вы')}</b><small>${esc(r.u.dept)}</small><small>${r.inProj ? `в ${r.inProj} ${plural(r.inProj,'проекте','проектах','проектах')}${r.pmOf ? `, PM в ${r.pmOf}` : ''}` : 'нет проектов'}</small></div></div>
       <div class="trackwrap"><div class="track">${segs}</div><span class="cap" style="left:calc(${cap/scale*100}% - 1px)" title="Норма: ${cap}"></span></div>
-      <div class="lstat"><b>${r.cur} из ${cap}</b><span class="${cls}">${txt}</span>${r.upcoming ? `<br><span class="hint">ещё ${r.upcoming} в ближайшие 2 недели</span>` : ''}</div>
+      <div class="lstat"><b>${r.cur} ${plural(r.cur,'этап','этапа','этапов')} из ${cap}</b><span class="${cls}">${txt}</span>${r.upcoming ? `<br><span class="hint">ещё ${r.upcoming} в ближайшие 2 недели</span>` : ''}</div>
     </div>`;
   }).join('');
 
@@ -1930,7 +1935,7 @@ function renderLoad(){
     ${onlyMe ? `<div class="note-box"><p>В команде пока только вы. Пригласите сотрудников и назначьте их на этапы, чтобы увидеть, кто перегружен, а у кого есть свободное время.</p><button class="primary" data-invite>Пригласить в команду</button></div>` : ''}
     <section class="panel">
       <h2>Загрузка сейчас</h2>
-      <p class="hint">Сколько этапов у человека в работе против его нормы. Норма меняется во вкладке «Команда».</p>
+      <p class="hint">Шкала — этапы, которые идут у человека сейчас, против его нормы (сколько этапов он ведёт одновременно). Считаются этапы, где он ответственный, и этапы без своего ответственного в проектах, где он исполнитель. Роль PM на шкалу не влияет — она показана под именем. Норма меняется во вкладке «Команда».</p>
       <div class="row" style="margin-bottom:10px">
         <button class="tag" data-dept="" aria-pressed="${!ui.dept}">Все отделы</button>
         ${depts.map(d => `<button class="tag" data-dept="${esc(d)}" aria-pressed="${ui.dept===d}">${esc(d)}</button>`).join('')}

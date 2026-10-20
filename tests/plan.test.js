@@ -133,6 +133,17 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   o.w.document.querySelector('[data-view="production"]').click(); await wait(150);
   assert.ok(o.w.document.querySelector(`.pf-item[data-pfsel="${demoP.id}"]`) && !o.w.document.querySelector('.pf-item .subnow')); ok('производство: в списке проектов слева подэтапа нет');
   assert.ok(o.w.document.querySelector('.pf-card.here')); ok('производство: на доске метка «Сейчас здесь» осталась');
+  // 8) загрузка: этап без своего ответственного засчитывается исполнителю проекта
+  w.mergeSnapshot({ meta: {}, projects: [{ id: 'imp2', name: 'Без ответственных', client: 'К2', template_id: 't1', pm_id: 'me', worker_id: 'uvlad', start_date: d(-2), deadline: d(10), state: 'active',
+    stages: [st('z1', 0, 'in_progress', d(-2), d(3)), st('z2', 1, 'not_started', d(3), d(6))], log: [] }], tasks: [] }); w.commit(); await wait(200);
+  const vladId = JSON.parse(w.localStorage.getItem('agency-pipeline-demo-v2')).users.find(u => u.email === 'vlad@x.y').id;
+  const W = w.workload(); const vr = W.rows.find(r => r.u.id === vladId), mr = W.rows.find(r => r.u.id === 'me');
+  assert.equal(vr.cur, 2); ok('загрузка: Влад ведёт 2 этапа — свой и этап без ответственного в проекте, где он исполнитель');
+  assert.ok(!W.unassigned.some(x => x.p.id === 'imp2')); ok('загрузка: такие этапы не считаются «без ответственного»');
+  assert.equal(vr.inProj, 2); ok('загрузка: Влад участвует в 2 проектах');
+  assert.ok(mr.inProj >= 2 && mr.pmOf >= 2); ok('загрузка: PM видит число своих проектов');
+  o.w.document.querySelector('[data-view="load"]').click(); await wait(150);
+  assert.ok(/в 2 проектах/.test(o.w.document.getElementById('app').textContent) && /2 этапа из 3/.test(o.w.document.getElementById('app').textContent)); ok('загрузка: подписи «в 2 проектах» и «2 этапа из 3»');
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('ошибок на странице нет');
   o.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
