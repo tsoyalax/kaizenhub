@@ -86,17 +86,47 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const tk = L.tasks.find(t => t.project_id === np.id && t.substage_id === sub.id);
   assert.ok(tk && tk.checklist.length === 3 && tk.description === 'Как делать: по регламенту' && tk.regulation_link === 'https://docs.example/reg' && tk.video_url === 'https://youtu.be/x'); ok('новый проект: подэтап и карточка скопированы из шаблона');
 
-  // идущий проект шаблона обновляется кнопкой, заполненные карточки не меняются
-  const old = L.projects.find(p => p.template_id === tpl.id && p.state === 'active' && p.id !== np.id);
-  const oldTasks = L.tasks.filter(t => t.project_id === old.id).map(t => JSON.stringify(t));
-  assert.ok(!old.stages.find(s => s.name === st0.name).subs.some(x => x.name === 'Тестовый подэтап')); ok('идущий проект до обновления без нового подэтапа');
-  $('#tApply').click(); await wait(100); $('#cfmOk').click(); await wait(300);
-  L = LS(); const op = L.projects.find(p => p.id === old.id); const os = op.stages.find(s => s.name === st0.name).subs.find(x => x.name === 'Тестовый подэтап');
-  assert.ok(os && L.tasks.some(t => t.project_id === old.id && t.substage_id === os.id && t.checklist.length === 3)); ok('«Обновить активные проекты»: подэтап и карточка добавлены');
-  assert.ok(oldTasks.every(j => L.tasks.some(t => JSON.stringify(t) === j))); ok('уже заполненные карточки идущего проекта не изменились');
-  const cnt = L.tasks.length; $('#tApply').click(); await wait(100); $('#cfmOk').click(); await wait(300);
-  assert.equal(LS().tasks.length, cnt); ok('повторное обновление ничего не дублирует');
-
+  // идущий проект получил подэтап и карточку сразу при сохранении шаблона
+  const old = L.projects.find(p => p.template_id === tpl.id && p.state === 'active' && p.id !== np.id && p.stages.find(s => s.name === st0.name).status !== 'done');
+  const os = old.stages.find(s => s.name === st0.name).subs.find(x => x.name === 'Тестовый подэтап');
+  const otk = () => LS().tasks.find(t => t.project_id === old.id && t.substage_id === os.id);
+  assert.ok(os && otk() && otk().checklist.length === 3); ok('сохранение шаблона сразу добавило подэтап и карточку в идущий проект');
+  assert.ok(!$('#tApply')); ok('отдельная кнопка «Обновить активные проекты» больше не нужна');
+  // отмечаем пункт в идущем проекте
+  w.openTask(otk().id); await wait(100);
+  const ck = D.querySelector('.tk-modal [data-ck]'); ck.checked = true; fire(ck, 'change'); await wait(100); w.closeTask(); await wait(50);
+  assert.ok(otk().checklist[0].done);
+  // 1) правка карточки в шаблоне доходит до проектов, отметки сохраняются
+  $(`[data-tpl="${tpl.id}"]`).click(); await wait(100);
+  if (!D.querySelector('.tsub')) { $(`[data-tsubtog="${st0.id}"]`).click(); await wait(100); }
+  const rowT = [...D.querySelectorAll('.tsub')].find(r => r.querySelector('input').value === 'Тестовый подэтап');
+  rowT.querySelector('[data-tcard]').click(); await wait(100);
+  $('#ceVid').value = 'https://youtu.be/dQw4w9WgXcQ'; $('#ceC').value = 'Пункт А\nПункт Б\nПункт В\nПункт Г'; fire($('#ceForm'), 'submit'); await wait(100);
+  $('#tSave').click(); await wait(200);
+  let ot = otk();
+  assert.equal(ot.video_url, 'https://youtu.be/dQw4w9WgXcQ'); ok('шаблон → проекты: видео появилось в карточке идущего проекта');
+  assert.deepEqual(ot.checklist.map(i => i.text), ['Пункт А', 'Пункт Б', 'Пункт В', 'Пункт Г']); ok('шаблон → проекты: новый пункт чек-листа добавлен');
+  assert.ok(ot.checklist[0].done); ok('шаблон → проекты: отмеченный пункт остался отмеченным');
+  const ntk = () => LS().tasks.find(t => t.project_id === np.id && t.substage_id === sub.id);
+  assert.equal(ntk().video_url, 'https://youtu.be/dQw4w9WgXcQ'); ok('шаблон → проекты: и в новом проекте тоже');
+  // 2) правка из карточки проекта с галочкой «Сохранить как шаблон» доходит до других проектов
+  w.openTask(ntk().id); await wait(100); $('[data-tedit]').click(); await wait(100);
+  assert.ok($('#tdTpl').checked && /во всех активных проектах/.test($('.tpl-check').textContent)); ok('карточка: галочка «Сохранить как шаблон» объясняет, что обновит все проекты');
+  const desc = $('#tdDesc') || D.querySelector('[data-td="description"]'); desc.value = 'Новое описание из проекта'; fire(desc, 'input'); fire(desc, 'change');
+  const vin = D.querySelector('[data-td="video_url"]'); vin.value = 'https://vimeo.com/76979871'; fire(vin, 'input'); fire(vin, 'change');
+  $('#tkForm').dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true })); await wait(200); w.closeTask(); await wait(50);
+  ot = otk();
+  assert.equal(ot.description, 'Новое описание из проекта'); assert.equal(ot.video_url, 'https://vimeo.com/76979871'); ok('проект → другие проекты: описание и видео обновились');
+  assert.ok(ot.checklist[0].done); ok('проект → другие проекты: отметки сохранились');
+  assert.equal(LS().cardTpls[key].vid, 'https://vimeo.com/76979871'); ok('проект → шаблон: шаблон карточки обновлён');
+  // 3) пустая карточка не стирает шаблон и другие проекты
+  const tplBefore = JSON.stringify(LS().cardTpls[key]);
+  const empty = LS().tasks.find(t => t.id === ntk().id); w.openTask(empty.id); await wait(100); $('[data-tedit]').click(); await wait(100);
+  for (const f of ['description', 'video_url', 'regulation_link']) { const el = D.querySelector(`[data-td="${f}"]`); el.value = ''; fire(el, 'input'); fire(el, 'change'); }
+  while (D.querySelector('[data-ckbdel]')) { D.querySelector('[data-ckbdel]').click(); await wait(20); }
+  $('#tkForm').dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true })); await wait(200); w.closeTask(); await wait(50);
+  assert.equal(JSON.stringify(LS().cardTpls[key]), tplBefore); assert.equal(otk().video_url, 'https://vimeo.com/76979871'); ok('пустая карточка не стирает шаблон и карточки в других проектах');
+  D.querySelector('.tabs [data-view="templates"]').click(); await wait(100); $('[data-settab="templates"]').click(); await wait(100); $(`[data-tpl="${tpl.id}"]`).click(); await wait(100);
   // правка карточки в шаблоне не перезаписывает карточки в проектах; удаление подэтапа убирает карточку шаблона
   $(`[data-tsubtog="${st0.id}"]`) || null;
   const row2 = [...D.querySelectorAll('.tsub')].find(r => r.querySelector('input').value === 'Тестовый подэтап') || (() => { $(`[data-tsubtog="${st0.id}"]`).click(); return null; })();

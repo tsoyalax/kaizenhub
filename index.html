@@ -2403,13 +2403,18 @@ function openCardEditor(i, j){
 // записать карточки черновика в db.cardTpls и убрать карточки удалённых подэтапов этого шаблона
 function storeCards(d){
   db.cardTpls = db.cardTpls || {};
-  const keep = new Set();
+  const keep = new Set(); const changed = [];
   d.stages.forEach(st => (st.subs || []).forEach(x => {
     const k = cardKey(d.id, x.name); keep.add(k);
-    if (cardHas(x.card)) db.cardTpls[k] = { sub:x.name, d:x.card.d || '', reg:x.card.reg || '', vid:x.card.vid || '', c:[...(x.card.c || [])], at:new Date().toISOString() };
-    else delete db.cardTpls[k];
+    const was = db.cardTpls[k]; const sig = c => c ? JSON.stringify([c.d || '', c.reg || '', c.vid || '', c.c || []]) : '';
+    if (cardHas(x.card)){
+      const nc = { sub:x.name, d:x.card.d || '', reg:x.card.reg || '', vid:x.card.vid || '', c:[...(x.card.c || [])], at:new Date().toISOString() };
+      if (sig(was) !== sig(nc)) changed.push({ sub:x.name, card:nc });
+      db.cardTpls[k] = nc;
+    } else delete db.cardTpls[k];
   }));
   Object.keys(db.cardTpls).forEach(k => { if (k.startsWith(d.id + '|') && !keep.has(k)) delete db.cardTpls[k]; });
+  return changed;
 }
 // скопировать в проект карточки подэтапов из его шаблона (только тем подэтапам, у которых карточки ещё нет)
 function copyCards(p){
@@ -2422,6 +2427,40 @@ function copyCards(p){
     t.regulation_link = c.reg || ''; t.video_url = c.vid || '';
     if (x.done) t.checklist.forEach(it => { it.done = true; it.completed_at = new Date().toISOString(); it.completed_by = meName(); });
     syncTaskToSub(t); db.tasks.push(t); n++;
+  }));
+  return n;
+}
+// Карточка шаблона изменилась — обновляем эту карточку во всех активных проектах процесса.
+//  Описание, регламент и видео заменяются. Чек-лист выстраивается по шаблону, отмеченные пункты остаются отмеченными
+//  (отмеченные пункты, которых нет в шаблоне, не теряются). Сданные этапы и полностью выполненные чек-листы не открываются заново.
+function syncCardToProjects(tplId, subName, c, skipTaskId){
+  if (!tplId || !c) return 0;
+  let n = 0;
+  db.projects.filter(p => p.template_id === tplId && p.state === 'active' && !p._ext).forEach(p => p.stages.forEach(st => {
+    if (st.status === 'done') return;
+    (st.subs || []).forEach(x => {
+      if (norm(x.name) !== norm(subName)) return;
+      let t = taskFor(p.id, st.id, x.id);
+      if (t && t.id === skipTaskId) return;
+      if (!t){
+        if (!cardHas(c)) return;
+        t = makeTask({ project_id:p.id, stage_id:st.id, substage_id:x.id, title:x.name, description:c.d || '', assignee_id:null, checklist:c.c || [] });
+        t.regulation_link = c.reg || ''; t.video_url = c.vid || '';
+        if (x.done) t.checklist.forEach(it => { it.done = true; it.completed_at = new Date().toISOString(); it.completed_by = meName(); });
+        db.tasks.push(t); syncTaskToSub(t); n++; addLog(p, `Карточка «${x.name}» создана по шаблону`); return;
+      }
+      const sig = () => JSON.stringify([t.description, t.regulation_link, t.video_url, t.checklist.map(i => [i.text, i.done])]);
+      const before = sig();
+      t.description = c.d || ''; t.regulation_link = c.reg || ''; t.video_url = c.vid || '';
+      if (!taskProgress(t).done){
+        const byText = new Map(t.checklist.map(i => [norm(i.text), i]));
+        const next = (c.c || []).map((txt, k) => { const o = byText.get(norm(txt)); if (o){ byText.delete(norm(txt)); return { ...o, text:txt, position:k }; }
+          return { id:uid(), text:txt, done:false, position:k, completed_at:null, completed_by:null }; });
+        byText.forEach(o => { if (o.done) next.push({ ...o, position:next.length }); });
+        t.checklist = next; syncTaskToSub(t);
+      }
+      if (sig() !== before){ n++; addLog(p, `Карточка «${x.name}» обновлена по шаблону`); }
+    });
   }));
   return n;
 }
@@ -2447,13 +2486,7 @@ document.addEventListener('click', e => {
   if (sm || sd){ const row = e.target.closest('.tsub'); const st = ui.draft.stages[+row.dataset.i]; const j = +row.dataset.j;
     if (sd) st.subs.splice(j, 1); else { const k = j + +sm.dataset.smove; if (k >= 0 && k < st.subs.length) [st.subs[j], st.subs[k]] = [st.subs[k], st.subs[j]]; }
     ui.draftDirty = true; renderTemplates(); return; }
-  if (e.target.id === 'tApply'){
-    const t = tplById(ui.draft.id); if (!t) return;
-    if (ui.draftDirty){ toast('Сначала сохраните шаблон'); return; }
-    askConfirm({ title:`Обновить проекты по шаблону «${t.name}»?`, text:`В активных проектах (${activeOf(t.id).length}) появятся недостающие подэтапы и карточки из шаблона. Уже заполненные карточки и отметки не изменятся.`, ok:'Обновить', danger:false })
-      .then(yes => { if (!yes) return; const r = applyTplToProjects(t); commit();
-        toast(r.projs ? `Обновлено проектов: ${r.projs}. Подэтапов добавлено: ${r.subs}, карточек: ${r.cards}` : 'Все проекты уже соответствуют шаблону'); });
-  }
+
 });
 // ---------- перетаскивание этапов и подэтапов в шаблоне (мышь, палец, перо) ----------
 const tdrag = { kind:null, i:-1, j:-1, row:null, spot:null };
@@ -2524,7 +2557,7 @@ function renderTemplates(){
     </div>
     <div class="tpl-ed">
       <input class="name" id="tName" value="${esc(d.name)}" placeholder="Название шаблона" aria-label="Название шаблона">
-      <p class="hint">${d.stages.length} ${plural(d.stages.length, 'этап', 'этапа', 'этапов')}, ${days(total)}${useTplD ? '' : ` (по ${days(defDays())} — меняется в «Дедлайнах»)`}. Порядок меняется перетаскиванием за ⠿. Новые проекты получают подэтапы и карточки автоматически.${used ? ` Активных проектов по шаблону: ${used}.` : ''}</p>
+      <p class="hint">${d.stages.length} ${plural(d.stages.length, 'этап', 'этапа', 'этапов')}, ${days(total)}${useTplD ? '' : ` (по ${days(defDays())} — меняется в «Дедлайнах»)`}. Порядок меняется перетаскиванием за ⠿. Сохранение шаблона сразу обновляет подэтапы и карточки в активных проектах (${used}) и в новых. Отметки выполнения сохраняются.</p>
       <div id="tRows">${d.stages.map((s,i) => `<div class="tstage" data-dz="stage" data-i="${i}"><div class="trow${useTplD ? ' wd' : ''}" data-i="${i}">
         <span class="grip" data-drag="stage" data-i="${i}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить этап ${i+1}. Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
         <span class="n">${i+1}</span>
@@ -2535,7 +2568,7 @@ function renderTemplates(){
       </div>${tplSubsHtml(s, i)}</div>`).join('')}</div>
       <p><button class="ghost" id="tAdd">Добавить этап</button></p>
       <div class="err" id="tErr"></div>
-      <div class="actions">${d.id && !used ? '<button class="ghost danger" id="tDel">Удалить шаблон</button>' : ''}${d.id && used ? `<button class="ghost" id="tApply">Обновить активные проекты (${used})</button>` : ''}<button class="primary${ui.draftDirty ? ' t-dirty' : ''}" id="tSave">Сохранить шаблон</button></div>
+      <div class="actions">${d.id && !used ? '<button class="ghost danger" id="tDel">Удалить шаблон</button>' : ''}<button class="primary${ui.draftDirty ? ' t-dirty' : ''}" id="tSave">Сохранить шаблон</button></div>
     </div></div>`;
 }
 
@@ -2684,12 +2717,15 @@ document.addEventListener('click', e => {
     const dupe = d.stages.find(s => new Set(s.subs.map(x => norm(x.name))).size !== s.subs.length);
     if (dupe) return $('#tErr').textContent = `Этап «${dupe.name}»: подэтапы с одинаковыми названиями`;
     if (!d.id) d.id = 't' + uid();
-    storeCards(d);
+    const changed = storeCards(d);
     const clean = JSON.parse(JSON.stringify(d)); clean.stages.forEach(s => s.subs.forEach(x => delete x.card));
     const at = db.templates.findIndex(t => t.id === d.id); if (at >= 0) db.templates[at] = clean; else db.templates.push(clean);
-    const used = activeOf(d.id).length;
+    // активные проекты процесса сразу получают новые подэтапы, новые и изменённые карточки
+    const r = applyTplToProjects(clean); let upd = 0;
+    changed.forEach(c => { upd += syncCardToProjects(clean.id, c.sub, c.card); });
     ui.tplSel = d.id; ui.draft = null; ui.draftDirty = false; commit();
-    toast(used ? `Шаблон сохранён. Чтобы добавить новое в идущие проекты, нажмите «Обновить активные проекты»` : 'Шаблон сохранён. Новые проекты получат подэтапы и карточки'); return;
+    const bits = [r.subs && `подэтапов добавлено: ${r.subs}`, (r.cards + upd) && `карточек обновлено: ${r.cards + upd}`].filter(Boolean);
+    toast(bits.length ? `Шаблон сохранён. В активных проектах ${bits.join(', ')}` : 'Шаблон сохранён'); return;
   }
   if (e.target.id === 'tDel'){ db.templates = db.templates.filter(t => t.id !== ui.draft.id); ui.draft = null; ui.tplSel = null; commit(); toast('Шаблон удалён'); }
 });
@@ -3592,7 +3628,7 @@ function renderTaskModal(focusSel){
           <input data-ckbtext="${k}" value="${esc(it.text)}" aria-label="Пункт ${k + 1}">${it.done ? '<span class="ckb-done" title="Уже отмечен">✓</span>' : ''}
           <button type="button" class="ckb-x" data-ckbdel="${k}" aria-label="Удалить пункт ${k + 1}" title="Удалить пункт">×</button></li>`).join('')}</ol>
         <div class="row ckb-add"><input id="ckbNew" placeholder="Новый пункт, Enter — добавить" aria-label="Новый пункт чек-листа"><button type="button" class="ghost" data-ckbadd>Добавить</button></div></div>
-      ${sub && !p._ext ? `<label class="tpl-check"><input type="checkbox" id="tdTpl" ${d.asTpl ? 'checked' : ''}><span>Сохранить как шаблон карточки «${esc(sub.name)}»${tplById(p.template_id) ? ` для процесса «${esc(tplById(p.template_id).name)}»` : ''}<small>Новые карточки этого подэтапа в других проектах будут создаваться с этим описанием, ссылками и чек-листом.</small></span></label>` : ''}
+      ${sub && !p._ext ? `<label class="tpl-check"><input type="checkbox" id="tdTpl" ${d.asTpl ? 'checked' : ''}><span>Сохранить как шаблон карточки «${esc(sub.name)}»${tplById(p.template_id) ? ` для процесса «${esc(tplById(p.template_id).name)}»` : ''}<small>Описание, ссылки, видео и чек-лист обновятся в этом подэтапе во всех активных проектах процесса${(() => { const k = activeOf(p.template_id).filter(x => x.id !== p.id).length; return k ? ` (ещё ${k})` : ''; })()} и попадут в новые проекты. Отметки выполнения сохранятся.</small></span></label>` : ''}
       <div class="err" id="tdErr"></div>
       <div class="tk-actions"><button type="button" class="ghost danger" data-tdel>Удалить подэтап</button>
         <span><button type="button" class="ghost" data-tcancel>Отмена</button> <button class="primary">Сохранить</button></span></div>
@@ -3618,10 +3654,15 @@ function saveTaskDraft(){
   });
   syncTaskToSub(t);
   const subX = p.stages.find(x => x.id === t.stage_id)?.subs?.find(x => x.id === t.substage_id);
-  if (d.asTpl && subX) saveCardTpl(p, subX.name, t);
+  let synced = 0;
+  // пустая карточка шаблоном не становится — иначе она стёрла бы эту карточку во всех проектах
+  const filled = !!(t.description || t.regulation_link || t.video_url || t.checklist.length);
+  if (d.asTpl && subX && !p._ext && filled){ saveCardTpl(p, subX.name, t); synced = syncCardToProjects(p.template_id, subX.name, db.cardTpls[cardKey(p.template_id, subX.name)], t.id); }
+  if (d.asTpl && subX && !filled) d.asTpl = false;
   addLog(p, `Подэтап «${t.title}» отредактирован${d.asTpl && subX ? ' и сохранён как шаблон' : ''}`);
   ui.taskDraft = null; ui.localVideo && URL.revokeObjectURL(ui.localVideo); ui.localVideo = null;
-  save(); render(); renderTaskModal(); toast(d.asTpl && subX ? 'Сохранено. Шаблон карточки обновлён' : 'Подэтап сохранён');
+  save(); render(); renderTaskModal();
+  toast(d.asTpl && subX ? (synced ? `Сохранено. Шаблон обновлён, карточка обновлена ещё в ${synced} ${plural(synced, 'проекте', 'проектах', 'проектах')}` : 'Сохранено. Шаблон карточки обновлён') : 'Подэтап сохранён');
 }
 
 function openNewTask(pref = {}){
