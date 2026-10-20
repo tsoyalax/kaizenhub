@@ -575,6 +575,10 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .pf-card.done{background:var(--g-bg);border-color:var(--g)}
 .pf-card.done .tk-bar i{background:var(--g)}
 .pf-card.here{border:2px solid var(--b);padding:9px 10px;box-shadow:0 0 0 4px var(--b-bg)}
+.pf-tick{cursor:pointer}
+.pf-tick-row{display:flex;gap:8px;align-items:flex-start}
+.pf-tick-row input{width:16px;height:16px;margin:2px 0 0;flex:none;accent-color:var(--g);cursor:pointer}
+.pf-status{margin-top:6px;height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 8px;font-size:13px;max-width:100%}
 .pf-here{justify-self:start;font-size:11px;font-weight:600;color:#fff;background:var(--b);border-radius:6px;padding:1px 7px}
 .pf-add{display:flex;gap:6px;margin-top:8px}
 .pf-add input{flex:1;min-width:0;height:32px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;padding:0 9px;font-size:13px}
@@ -1561,6 +1565,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
     const cards = subs.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
+      if (mine && !t) return tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<b>${esc(x.name)}</b>
         <small>${esc(short(whoId(p, s, t)))}</small>
@@ -1569,7 +1574,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
     }).join('');
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" data-pmcol="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
-        <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small></header>
+        <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : ''}</header>
       <div class="pf-cards">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
       ${canEdit ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
     </section>`;
@@ -3323,6 +3328,16 @@ function productionCursor(p){
 }
 // Подэтап закрыт: если у него есть задача — по её чек-листу, иначе по отметке в воронке
 function subDone(p, s, x){ const t = taskFor(p.id, s.id, x.id); return t && t.checklist.length ? taskProgress(t).done : !!x.done; }
+// «Мои проекты»: исполнитель сам меняет статус этапа и отмечает подэтапы без чек-листа — владелец видит это сразу
+const stageStatusSelect = (p, s) => `<select class="pf-status" data-mstatus="${p.id}|${s.id}" aria-label="Статус этапа ${esc(s.name)}">${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('')}</select>`;
+const tickCard = (p, s, x, here) => `<label class="pf-card pf-tick${x.done ? ' done' : ''}${here ? ' here' : ''}">
+  ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<span class="pf-tick-row"><input type="checkbox" data-sub="${p.id}|${s.id}|${x.id}" ${x.done ? 'checked' : ''}><b>${esc(x.name)}</b></span>
+  <small>${x.done ? 'Выполнено' : 'Отметьте, когда сделаете'}</small></label>`;
+document.addEventListener('change', e => {
+  const v = e.target.dataset?.mstatus; if (!v) return;
+  const [pid, sid] = v.split('|'); const p = projById(pid); const s = p?.stages.find(y => y.id === sid);
+  if (s) setStatus(p, s, e.target.value);
+});
 function projectProgress(p){
   let n = 0, total = 0;
   p.stages.forEach(s => (s.subs || []).forEach(x => { total++; if (subDone(p, s, x)) n++; }));
@@ -3363,6 +3378,7 @@ function renderProjectFocus(mine = false){
     const cards = subs.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
+      if (mine && !t) return tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
         <b>${esc(x.name)}</b>
@@ -3373,7 +3389,7 @@ function renderProjectFocus(mine = false){
     }).join('');
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
-        <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small></header>
+        <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : ''}</header>
       <div class="pf-cards">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
       ${canEdit ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
     </section>`;

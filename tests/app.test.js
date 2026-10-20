@@ -67,5 +67,41 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(a3.w.document.body.classList.contains('guest')); ok('приглашённый: включён режим гостя');
   assert.ok(![...be.rows.keys()].some(p => p.startsWith('data/users/' + G + '/meta')), 'гость создал личные данные'); ok('гость не создаёт личные данные');
   a3.w.close();
+
+  // 4) владелец делится проектом по ссылке, исполнитель меняет статус и ставит галочку — владелец видит это сразу
+  const W = 'wwwwwwww-0000-0000-0000-000000000007';
+  const pdoc = [...be.rows.values()].find(r => r.path.startsWith('data/users/' + A + '/p_') && !r.data.base);
+  const proj = JSON.parse(pdoc.data.json);
+  const own = openApp(be, A);
+  await wait(3500);
+  await own.w.createLink(proj.id, 'worker'); await wait(500);
+  const inv = [...be.rows.values()].find(r => r.path.startsWith('inv/') && r.data.pid === proj.id);
+  assert.ok(inv && be.rows.has('sp/' + proj.id), 'ссылка не создана'); ok('владелец создал ссылку-приглашение на проект');
+  const CODE = inv.path.slice(4);
+  const wk = openApp(be, W, 'https://kz.test/?invite=' + CODE, { meta: { role: 'guest' } });
+  await wait(3500);
+  assert.ok(be.rows.has(`sp/${proj.id}/joins/${W}`)); ok('исполнитель вошёл по ссылке');
+  const wd = wk.w.document;
+  assert.ok(wd.body.classList.contains('guest')); ok('исполнитель видит версию только с «Моими проектами»');
+  const sel = [...wd.querySelectorAll('select.pf-status')];
+  assert.equal(sel.length, proj.stages.length); ok('у каждого этапа есть выбор статуса');
+  const stage = proj.stages.find(s => s.status !== 'client_review');
+  const se = wd.querySelector(`select[data-mstatus="${proj.id}|${stage.id}"]`);
+  se.value = 'client_review'; se.dispatchEvent(new wk.w.Event('change', { bubbles: true }));
+  await wait(2500);
+  const sp = JSON.parse(be.rows.get('sp/' + proj.id).data.json);
+  assert.equal(sp.stages.find(s => s.id === stage.id).status, 'client_review'); ok('статус от исполнителя записан в общий проект');
+  const ownDb = () => JSON.parse(own.w.localStorage.getItem('agency-pipeline-demo-v2'));
+  assert.equal(ownDb().projects.find(p => p.id === proj.id).stages.find(s => s.id === stage.id).status, 'client_review'); ok('владелец видит новый статус без перезагрузки');
+  const box = wd.querySelector('input[type=checkbox][data-sub]:not(:checked)');
+  if (box) {
+    const [, sid, xid] = box.dataset.sub.split('|');
+    box.checked = true; box.dispatchEvent(new wk.w.Event('change', { bubbles: true }));
+    await wait(2500);
+    const x = ownDb().projects.find(p => p.id === proj.id).stages.find(s => s.id === sid).subs.find(y => y.id === xid);
+    assert.equal(x.done, true); ok('галочка исполнителя на подэтапе видна владельцу');
+  } else console.log('  (в демо-проекте у всех подэтапов есть чек-листы — проверка галочки пропущена)');
+  assert.equal(wk.errors.length, 0, wk.errors.join('\n')); assert.equal(own.errors.length, 0, own.errors.join('\n')); ok('у владельца и исполнителя нет ошибок на странице');
+  wk.w.close(); own.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });

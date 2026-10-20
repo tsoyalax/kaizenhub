@@ -45,7 +45,9 @@ function makeBackend() {
         auth: {
           async getSession() { return { data: { session: extra.noSession ? null : session } }; },
           onAuthStateChange() { return { data: { subscription: { unsubscribe() {} } } }; },
-          async signOut() {}, async signInWithPassword() { return { error: null }; }, async signUp() { return { data: { session: null }, error: null }; }
+          async signOut() {}, async signInWithPassword() { return { error: null }; }, async signUp() { return { data: { session: null }, error: null }; },
+          async signInWithOAuth(a) { self.oauthCalls = (self.oauthCalls || []).concat([a]); return { data: {}, error: null }; },
+          async updateUser(a) { self.updateCalls = (self.updateCalls || []).concat([a]); session.user = { ...session.user, user_metadata: { ...session.user.user_metadata, ...a.data } }; return { data: { user: session.user }, error: null }; }
         },
         from, rpc,
         channel() { const ch = { on(t, f, h) { self.handlers.push(h); return ch; }, subscribe(cb) { cb && cb('SUBSCRIBED'); return ch; } }; return ch; }
