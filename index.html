@@ -1018,7 +1018,11 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
 .mc-stage small{color:var(--muted);font-weight:400;font-size:13px}
 .mc-n{color:var(--muted);font-weight:500;margin-right:2px}
 .mc .pbar{margin:2px 0 0}
-.mc-foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.mc-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;color:var(--muted)}
+.mc-sub{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
+.mc-dl{display:inline-flex;align-items:center;gap:5px;margin-left:auto;font-size:13px;color:var(--muted);white-space:nowrap}
+.mc-dl svg{width:14px;height:14px}
+.mc-dl.dl-over{color:var(--r)}.mc-dl.dl-hot{color:var(--y)}
 .mc-more{display:block;width:100%;border:0;background:none;padding:2px 14px 11px;text-align:left;font:inherit;font-size:12.5px;color:var(--muted);cursor:pointer}
 .mc-more:hover{color:var(--ink)}
 @media (max-width:640px){.kb-tip,.dash .panel > .hint,.team-head + .members + .hint{display:none}.stats{grid-template-columns:repeat(2,1fr)}.stat{padding:11px 13px}.stat b{font-size:20px}}
@@ -2024,12 +2028,10 @@ function renderPhoneList(list){
     return `<article class="pc mc">
       <button class="mc-main" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''}>
         <span class="mc-r1"><b>${esc(p.name)}</b>${stPill(risk, risk === 'green' ? 'В работе' : RISK_RU[risk])}</span>
-        <small class="mc-sub">${esc(p.client)} · PM ${esc(short(p.pm_id))}${p.priority === 'high' ? ' · <span class="hp">Высокий</span>' : ''}</small>
-        <span class="mc-stage">${ticksHtml(p, risk)}${sub ? `<small class="mc-subnow">${esc(sub)}</small>` : ''}</span>
-        <span class="mc-foot"><span>${c ? `${stageDue}${whoId(p, c) ? ` · ${esc(short(whoId(p, c)))}` : ''}` : ''}</span><span>${dlTxt}</span></span>
+        <small class="mc-sub"><span>${esc(p.client)}</span><span>PM ${esc(short(p.pm_id))}</span>${p.priority === 'high' ? '<span class="hp">Высокий</span>' : ''}</small>
+        <span class="mc-stage">${ticksHtml(p, risk)}</span>
+        <span class="mc-foot"><small class="mc-subnow">${sub ? esc(sub) : ''}</small>${target || p.state === 'completed' ? `<span class="mc-dl dl-${p.state === 'completed' ? 'ok' : late ? 'over' : tu.k}">${FLAG}${p.state === 'completed' ? 'Завершён' : fmt(target)}</span>` : ''}</span>
       </button>
-      <button class="mc-more" data-mxtoggle="${p.id}" aria-expanded="${open}">${open ? 'Скрыть этапы' : `Этапы · ${doneN} из ${n}`}</button>
-      ${stages}
     </article>`;
   };
   app.innerHTML = hero + (list.length ? '' : `<div class="empty">Под фильтры не попал ни один проект.<br><button class="primary" id="emptyReset">Сбросить фильтры</button></div>`) + groupsFor(list).map(g => `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2><div class="pc-list">${g.items.map(card).join('')}</div></section>`).join('');
