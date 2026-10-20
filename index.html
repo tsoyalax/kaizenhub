@@ -2436,14 +2436,15 @@ function copyCards(p){
 function syncCardToProjects(tplId, subName, c, skipTaskId){
   if (!tplId || !c) return 0;
   let n = 0;
-  db.projects.filter(p => p.template_id === tplId && p.state === 'active' && !p._ext).forEach(p => p.stages.forEach(st => {
-    if (st.status === 'done') return;
+  // все проекты этого шаблона, кроме архива; в сданных этапах и завершённых проектах обновляются только описание, ссылки и видео
+  db.projects.filter(p => p.template_id === tplId && p.state !== 'archived' && !p._ext).forEach(p => p.stages.forEach(st => {
+    const closed = st.status === 'done' || p.state === 'completed';
     (st.subs || []).forEach(x => {
       if (norm(x.name) !== norm(subName)) return;
       let t = taskFor(p.id, st.id, x.id);
       if (t && t.id === skipTaskId) return;
       if (!t){
-        if (!cardHas(c)) return;
+        if (!cardHas(c) || closed) return;
         t = makeTask({ project_id:p.id, stage_id:st.id, substage_id:x.id, title:x.name, description:c.d || '', assignee_id:null, checklist:c.c || [] });
         t.regulation_link = c.reg || ''; t.video_url = c.vid || '';
         if (x.done) t.checklist.forEach(it => { it.done = true; it.completed_at = new Date().toISOString(); it.completed_by = meName(); });
@@ -2452,7 +2453,7 @@ function syncCardToProjects(tplId, subName, c, skipTaskId){
       const sig = () => JSON.stringify([t.description, t.regulation_link, t.video_url, t.checklist.map(i => [i.text, i.done])]);
       const before = sig();
       t.description = c.d || ''; t.regulation_link = c.reg || ''; t.video_url = c.vid || '';
-      if (!taskProgress(t).done){
+      if (!closed && !taskProgress(t).done){
         const byText = new Map(t.checklist.map(i => [norm(i.text), i]));
         const next = (c.c || []).map((txt, k) => { const o = byText.get(norm(txt)); if (o){ byText.delete(norm(txt)); return { ...o, text:txt, position:k }; }
           return { id:uid(), text:txt, done:false, position:k, completed_at:null, completed_by:null }; });
@@ -3397,11 +3398,10 @@ const demoPreset = name => TASK_PRESETS[norm(name)] || { c:GENERIC_CHECK };   //
 //  db.cardTpls[«процесс|подэтап»] = { d, reg, vid, c:[пункты], sub, at } — по нему создаются новые карточки этого подэтапа.
 //  Нет шаблона — карточка создаётся пустой, без чек-листа.
 const cardKey = (tplId, subName) => `${tplId || '*'}|${norm(subName)}`;
+// карточка подэтапа берётся только из шаблона своего процесса — карточки других шаблонов не подставляются
 function cardTplFor(p, subName){
-  const T = db.cardTpls || {}; const k = cardKey(p?.template_id, subName);
-  if (T[k]) return T[k];
-  const same = Object.entries(T).filter(([key]) => key.endsWith('|' + norm(subName))).sort((a, b) => String(b[1].at).localeCompare(String(a[1].at)));
-  return same[0]?.[1] || null;
+  const T = db.cardTpls || {};
+  return T[cardKey(p?.template_id, subName)] || null;
 }
 const taskPreset = (name, p) => { const c = p && !p._ext ? cardTplFor(p, name) : null; return c ? { d:c.d || '', c:c.c || [], reg:c.reg || '', vid:c.vid || '' } : { d:'', c:[] }; };
 function saveCardTpl(p, subName, t){
@@ -3628,7 +3628,7 @@ function renderTaskModal(focusSel){
           <input data-ckbtext="${k}" value="${esc(it.text)}" aria-label="Пункт ${k + 1}">${it.done ? '<span class="ckb-done" title="Уже отмечен">✓</span>' : ''}
           <button type="button" class="ckb-x" data-ckbdel="${k}" aria-label="Удалить пункт ${k + 1}" title="Удалить пункт">×</button></li>`).join('')}</ol>
         <div class="row ckb-add"><input id="ckbNew" placeholder="Новый пункт, Enter — добавить" aria-label="Новый пункт чек-листа"><button type="button" class="ghost" data-ckbadd>Добавить</button></div></div>
-      ${sub && !p._ext ? `<label class="tpl-check"><input type="checkbox" id="tdTpl" ${d.asTpl ? 'checked' : ''}><span>Сохранить как шаблон карточки «${esc(sub.name)}»${tplById(p.template_id) ? ` для процесса «${esc(tplById(p.template_id).name)}»` : ''}<small>Описание, ссылки, видео и чек-лист обновятся в этом подэтапе во всех активных проектах процесса${(() => { const k = activeOf(p.template_id).filter(x => x.id !== p.id).length; return k ? ` (ещё ${k})` : ''; })()} и попадут в новые проекты. Отметки выполнения сохранятся.</small></span></label>` : ''}
+      ${sub && !p._ext ? `<label class="tpl-check"><input type="checkbox" id="tdTpl" ${d.asTpl ? 'checked' : ''}><span>Сохранить как шаблон карточки «${esc(sub.name)}»${tplById(p.template_id) ? ` для процесса «${esc(tplById(p.template_id).name)}»` : ''}<small>Описание, ссылки, видео и чек-лист обновятся в этом подэтапе во всех проектах процесса «${esc(tplById(p.template_id)?.name || '')}»${(() => { const k = db.projects.filter(x => x.template_id === p.template_id && x.state !== 'archived' && x.id !== p.id).length; return k ? ` (ещё ${k})` : ''; })()} и в новых. Проекты других процессов не изменятся. Отметки выполнения сохранятся.</small></span></label>` : ''}
       <div class="err" id="tdErr"></div>
       <div class="tk-actions"><button type="button" class="ghost danger" data-tdel>Удалить подэтап</button>
         <span><button type="button" class="ghost" data-tcancel>Отмена</button> <button class="primary">Сохранить</button></span></div>
@@ -4148,7 +4148,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && clo
 // ---------- импорт выгрузки (kaizenhub-snapshot.json из версии на claude.ai) ----------
 // Добавляет проекты, задачи, отчёты, шаблоны и людей к тому, что уже есть; демо-проекты удаляет.
 // Совпадение номера шаблона с другим названием — шаблон получает новый номер, чтобы проекты не перепутались.
-function mergeSnapshot(snap){
+function mergeSnapshot(snap, opts = {}){
   const meta = snap.meta || {}, clone = o => JSON.parse(JSON.stringify(o));
   const tplMap = {};
   (meta.templates || []).forEach(t => {
@@ -4168,8 +4168,8 @@ function mergeSnapshot(snap){
     const { account_id, invite, ...rest } = u; db.users.push(clone(rest));
   });
   const um = id => id ? (userMap[id] || (userById(id) ? id : null)) : null;
-  const demoIds = new Set(db.projects.filter(p => p.demo).map(p => p.id));
-  db.projects = db.projects.filter(p => !p.demo);
+  const demoIds = new Set(opts.keepDemo ? [] : db.projects.filter(p => p.demo).map(p => p.id));
+  db.projects = db.projects.filter(p => !demoIds.has(p.id));
   db.tasks = (db.tasks || []).filter(t => !demoIds.has(t.project_id));
   db.reports = (db.reports || []).filter(r => !demoIds.has(r.project_id));
   const put = (list, x) => { const i = list.findIndex(y => y.id === x.id); if (i >= 0) list[i] = x; else list.push(x); };
