@@ -213,6 +213,36 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(tl() && $q('#cfmOk')); ok('подэтап: есть несохранённые правки — спрашивает «Закрыть без сохранения?»');
   $q('#cfmOk').click(); await wait(150);
   assert.ok(!tl()); assert.notEqual(LS().tasks.find(x => x.id === 'tk1').title, 'Изменённое название'); ok('подэтап: после подтверждения окно закрыто, правки не сохранены');
+  // 11) чек-лист в карточке: без стрелок, перетаскивание и клавиши
+  w.openTask('tk1'); await wait(100); $q('[data-tedit]').click(); await wait(100);
+  for (const v of ['Пункт Б', 'Пункт В']) { $q('#ckbNew').value = v; $q('[data-ckbadd]').click(); await wait(50); }
+  const items = () => [...Dc.querySelectorAll('.ckb [data-ckbtext]')].map(i => i.value);
+  assert.deepEqual(items(), ['x', 'Пункт Б', 'Пункт В']);
+  assert.ok(!Dc.querySelector('[data-ckbmove]') && Dc.querySelectorAll('.ckb [data-ckdrag]').length === 3); ok('чек-лист: стрелок нет, у каждого пункта ручка для перетаскивания');
+  const pe = (type, el, y) => el.dispatchEvent(new o.w.MouseEvent(type, { bubbles: true, cancelable: true, clientY: y, button: 0 }));
+  pe('pointerdown', $q('[data-ckdrag="2"]'), 0); pe('pointermove', $q('.ckb [data-ckb="0"]'), -1e6); pe('pointerup', $q('.ckb [data-ckb="0"]'), -1e6); await wait(50);
+  assert.deepEqual(items(), ['Пункт В', 'x', 'Пункт Б']); ok('чек-лист: пункт перетащен наверх');
+  $q('[data-ckdrag="0"]').dispatchEvent(new o.w.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })); await wait(50);
+  assert.deepEqual(items(), ['x', 'Пункт В', 'Пункт Б']); ok('чек-лист: клавиша ↓ на ручке переставляет');
+  $q('#tkForm').dispatchEvent(new o.w.Event('submit', { bubbles: true, cancelable: true })); await wait(150);
+  assert.deepEqual(LS().tasks.find(x => x.id === 'tk1').checklist.map(i => i.text), ['x', 'Пункт В', 'Пункт Б']); ok('чек-лист: новый порядок сохранён');
+  w.closeTask(); await wait(50);
+  // 12) видео в карточке: миниатюра, маленький плеер, карточка не закрывается
+  const L12 = LS(); const t12 = L12.tasks.find(x => x.id === 'tk1'); t12.video_url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+  w.localStorage.setItem('agency-pipeline-demo-v2', JSON.stringify(L12));
+  w.mergeSnapshot({ meta: {}, projects: [], tasks: [t12] }); await wait(50);
+  w.openTask('tk1'); await wait(100);
+  const th = $q('.tk-modal .vthumb');
+  assert.ok(th && !$q('.tk-modal iframe')); ok('видео: сначала миниатюра, плеер не загружается сразу');
+  assert.equal(th.querySelector('img').getAttribute('src'), 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg'); ok('видео: обложка ролика YouTube');
+  th.click(); await wait(100);
+  const fr = $q('.tk-modal .player.mini iframe');
+  assert.ok(fr && /youtube-nocookie\.com\/embed\/dQw4w9WgXcQ\?autoplay=1/.test(fr.getAttribute('src')) && /autoplay/.test(fr.getAttribute('allow'))); ok('видео: по нажатию — небольшой плеер YouTube с автозапуском');
+  assert.ok(tl() && $q('.tk-modal')); ok('видео: карточка подэтапа остаётся открытой');
+  $q('[data-vstop]').click(); await wait(100);
+  assert.ok($q('.tk-modal .vthumb') && !$q('.tk-modal iframe')); ok('видео: «Свернуть» возвращает миниатюру');
+  assert.ok(/Открыть в YouTube/.test($q('.vmeta').textContent)); ok('видео: есть ссылка «Открыть в YouTube»');
+  w.closeTask(); await wait(50);
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('ошибок на странице нет');
   o.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
