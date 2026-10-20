@@ -72,7 +72,20 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .badge{position:absolute;top:1px;right:1px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--r);color:#fff;font-size:10.5px;font-weight:600;display:grid;place-items:center}
 
 /* ---------- Фильтры ---------- */
-.filters{padding:20px 28px 0;display:grid;gap:12px}
+.filters{padding:18px 28px 0;display:grid;gap:10px}
+.filters #q{flex:0 1 320px}
+.filters label.inl select{height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 10px;font-size:13.5px;color:var(--ink)}
+.filters .row > label.inl:first-of-type{margin-left:auto}
+.f-toggle{display:inline-flex;align-items:center;gap:6px;height:36px;font-size:13.5px}
+.f-toggle i{display:none}
+.f-n{min-width:18px;height:18px;border-radius:9px;background:var(--ink);color:var(--surface);font-size:11px;display:none;place-items:center;padding:0 5px}
+.f-toggle.on .f-n{display:inline-grid}
+.filters:not(.open) #tags{display:none}
+#tags{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+#activeF:empty,.filters.open #activeF{display:none}
+.tag.on-x{background:var(--surface-2);border-color:var(--line-strong)}
+.tag.on-x span{opacity:.6;margin-left:2px}
+#chips .chip{padding:4px 11px 4px 9px;font-size:13px}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .row input[type=search],.row select{height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 11px;min-width:0;font-size:14px}
 .row input[type=search]:focus,.row select:focus{border-color:var(--line-strong);outline:0}
@@ -398,6 +411,18 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .set-panel{max-width:760px}
 .set-days .row{gap:12px;align-items:center}.set-days input{width:90px;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px;font-size:15px}
 .set-rules{margin:12px 0;padding-left:20px;color:var(--muted);font-size:13.5px;display:grid;gap:4px}
+.space-name{margin-left:10px;border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:2px 10px;font:inherit;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.space-name:hover{color:var(--ink);border-color:var(--line-strong)}
+.sp-list{list-style:none;margin:12px 0;padding:0;display:grid;gap:4px}
+.sp-row{display:grid;grid-template-columns:minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line)}
+.sp-row b{padding:0 8px}
+.sp-row:hover .tx{opacity:1}
+.sp-row input{height:34px;border:1px solid transparent;border-radius:8px;background:transparent;padding:0 8px;font-weight:600;font-size:14.5px;min-width:0}
+.sp-row input:hover{border-color:var(--line)}.sp-row input:focus{border-color:var(--line-strong);outline:0;background:var(--surface)}
+.sp-new{display:grid;gap:10px;margin-top:6px;max-width:460px}
+.sp-new #spNewName{height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px;font-size:14.5px}
+.sp-new .primary{justify-self:start}
+@media (max-width:640px){.space-name{max-width:110px}}
 .cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
 .cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
 .cat-row:hover .tx{opacity:1}
@@ -772,7 +797,7 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
    МОБИЛЬНАЯ ВЕРСИЯ (телефон до 640px)
    ===================================================================== */
 .dash>*{min-width:0}
-.mnav,.f-toggle,.more-sheet{display:none}
+.mnav,.more-sheet{display:none}
 @media (max-width:640px){
   body{font-size:15px}
   input,select,textarea{font-size:16px!important}                 /* iOS не приближает поле при фокусе */
@@ -810,8 +835,12 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
   .f-toggle i{width:7px;height:7px;border-radius:50%;background:var(--r);display:none}
   .f-toggle.on i{display:block}
   .filters:not(.open) label.inl,.filters:not(.open) #density,.filters:not(.open) #tags,.filters:not(.open) #reset{display:none!important}
+  .filters .row > label.inl:first-of-type{margin-left:0}
+  .filters #q{flex:1 1 0;min-width:0}
+  .filters.open .row > label.inl{flex:1 1 100%}
+  #tags{padding:0;border:0;background:none}
   .filters.open label.inl{flex:1 1 100%;display:flex;justify-content:space-between;align-items:center}
-  .filters.open label.inl select{flex:0 1 60%}
+  .filters.open label.inl select{flex:1 1 100%;width:100%}
   #tags{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -12px;padding:0 12px 2px}
   #tags>*{flex:none;white-space:nowrap}
   /* окна — снизу, как в приложениях */
@@ -1025,7 +1054,7 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
 </head>
 <body>
 <header class="top">
-  <div class="brand"><span class="brand-mark" aria-hidden="true"><i style="background:var(--g)"></i><i style="background:var(--y)"></i><i style="background:var(--r)"></i></span>Конвейер</div>
+  <div class="brand"><span class="brand-mark" aria-hidden="true"><i style="background:var(--g)"></i><i style="background:var(--y)"></i><i style="background:var(--r)"></i></span>Конвейер<button class="space-name" id="spaceName" hidden title="Пространство — сменить в настройках"></button></div>
   <nav class="tabs" aria-label="Разделы">
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
@@ -1052,30 +1081,31 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
   <div class="row" id="chips" role="group" aria-label="Фильтр по риску"></div>
   <div class="row">
     <input type="search" id="q" placeholder="Поиск: проект, клиент, PM, ответственный" aria-label="Поиск">
-    <label class="inl" for="sort">Сортировка
-      <select id="sort">
-        <option value="risk">По риску</option>
-        <option value="finish">По финишу</option>
-        <option value="deadline">По общему дедлайну</option>
-        <option value="priority">По приоритету</option>
-        <option value="name">По названию</option>
+    <label class="inl" for="sort">
+      <select id="sort" aria-label="Сортировка" title="Сортировка">
+        <option value="risk">Сортировка: по риску</option>
+        <option value="finish">Сортировка: по финишу</option>
+        <option value="deadline">Сортировка: по дедлайну</option>
+        <option value="priority">Сортировка: по приоритету</option>
+        <option value="name">Сортировка: по названию</option>
       </select></label>
-    <label class="inl" for="group" id="groupWrap">Группировка
-      <select id="group">
-        <option value="category">По категории</option>
-        <option value="template">По процессу</option>
-        <option value="pm">По PM</option>
-        <option value="client">По клиенту</option>
-        <option value="priority">По приоритету</option>
-        <option value="none">Без группировки</option>
+    <label class="inl" for="group" id="groupWrap">
+      <select id="group" aria-label="Группировка" title="Группировка">
+        <option value="category">Группы: по категориям</option>
+        <option value="template">Группы: по процессу</option>
+        <option value="pm">Группы: по PM</option>
+        <option value="client">Группы: по клиенту</option>
+        <option value="priority">Группы: по приоритету</option>
+        <option value="none">Без групп</option>
       </select></label>
     <div class="seg-toggle" id="density" role="group" aria-label="Вид таблицы">
       <button data-density="compact">Компактный</button>
       <button data-density="detailed">Подробный</button>
     </div>
-    <button class="link" id="reset" hidden>Сбросить фильтры</button>
+    <button class="link" id="reset" hidden>Сбросить</button>
   </div>
   <div class="tags" id="tags"></div>
+  <div class="tags" id="activeF"></div>
 </section>
 <main id="app"></main>
 <nav class="mnav" id="mnav" aria-label="Разделы"></nav>
@@ -1089,7 +1119,12 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
 //  ДЕМО-РЕЖИМ: данные хранятся в браузере. Для работы с сервером замените
 //  функции из блока ACTIONS на вызовы API (см. README).
 // =====================================================================
-const KEY = 'agency-pipeline-demo-v2';
+// Пространства: отдельные наборы проектов в одном аккаунте. Основное — data/users/<id>,
+// остальные — data/users/<id>/spaces/list/<пространство>/items. Текущее помнит браузер.
+const SPACE_KEY = 'kz-space';
+const SPACE = (() => { try { const v = localStorage.getItem(SPACE_KEY) || ''; return /^s[a-z0-9]{4,24}$/.test(v) ? v : ''; } catch(e) { return ''; } })();
+const KEY = SPACE ? `agency-pipeline-demo-v2-${SPACE}` : 'agency-pipeline-demo-v2';
+const spacePath = (uid, sp) => sp ? `data/users/${uid}/spaces/list/${sp}/items` : `data/users/${uid}`;
 const ME = 'me';
 const STATUS = { not_started:'Не начат', in_progress:'В работе', client_review:'На согласовании у клиента', done:'Завершён' };
 const RISK = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике'],['gray','Не стартовали'],['done','Завершены']];
@@ -1172,7 +1207,7 @@ const mergeSubs = (old = [], tpl = [], allDone = false) => tpl.map(t => {
 // Подэтап с задачей показывается кнопкой с прогрессом чек-листа: его состояние ведёт задача
 const subChk = (p, s, x) => {
   const t = taskFor(p.id, s.id, x.id);
-  if (t){ const pr = taskProgress(t); return `<button class="sub-task${pr.done ? ' done' : ''}" data-task="${t.id}" title="Открыть задачу">${esc(x.name)}<small>${pr.total ? `${pr.n}/${pr.total}` : 'задача'}</small></button>`; }
+  if (t){ const pr = taskProgress(t); return `<button class="sub-task${subDone(p, s, x) ? ' done' : ''}" data-task="${t.id}" title="Открыть задачу">${esc(x.name)}<small>${pr.total ? `${pr.n}/${pr.total}` : 'задача'}</small></button>`; }
   return `<label class="sub-chk"><input type="checkbox" data-sub="${p.id}|${s.id}|${x.id}" ${x.done ? 'checked' : ''}>${esc(x.name)}</label>`;
 };
 // Данные из прошлых версий: добавляем подэтапы, ничего не теряя
@@ -1301,12 +1336,32 @@ function setDue(p, s, value){
   commit();
   toast(`Дедлайн сдвинут на ${delta>0?'+':'−'}${days(Math.abs(delta))}` + (n ? `. Пересчитано этапов: ${n}` : ''));
 }
+// Этап завершён — все его подэтапы и пункты чек-листов в карточках отмечаются выполненными
+function completeStage(p, s){
+  const now = new Date().toISOString(); let n = 0;
+  (s.subs || []).forEach(x => { x.done = true; });
+  (p._ext ? ext.tasks : (db.tasks || [])).filter(t => t.project_id === p.id && t.stage_id === s.id).forEach(t => {
+    t.checklist.forEach(i => { if (!i.done){ i.done = true; i.completed_at = now; i.completed_by = meName(); n++; } });
+    if (t.checklist.length && !t.completed_at) t.completed_at = now;
+  });
+  return n;
+}
 // PATCH /api/stages/:id { status }
 function setStatus(p, s, status){
   if (status === s.status) return;
   const t = today();
+  // этап взят в работу, на согласование или закрыт — все этапы до него считаются завершёнными;
+  // этапы после него, числившиеся в работе, возвращаются в «Не начат» (в работе один этап)
+  if (status !== 'not_started'){
+    const at = p.stages.indexOf(s); const closed = [];
+    p.stages.forEach((x, i) => {
+      if (i < at && x.status !== 'done'){ x.status='done'; x.completed_at=t; x.started_at = x.started_at || t; completeStage(p, x); closed.push(x.name); }
+      if (i > at && status !== 'done' && (x.status === 'in_progress' || x.status === 'client_review')){ x.status='not_started'; x.started_at=null; x.completed_at=null; }
+    });
+    if (closed.length) addLog(p, `Завершены предыдущие этапы: ${closed.map(n => `«${n}»`).join(', ')}`);
+  }
   if (status === 'done'){
-    s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; (s.subs || []).forEach(x => x.done = true);
+    s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; completeStage(p, s);
     const late = diffDays(t, s.due_date); let n = 0;
     if (late > 0) n = shiftFrom(p, s.position, late);
     const next = p.stages.find(x => x.position > s.position && x.status !== 'done');
@@ -1337,7 +1392,7 @@ function assignNote(id, p){
 function moveTo(p, pos){
   const t = today();
   p.stages.forEach(s => {
-    if (s.position < pos){ if (s.status !== 'done'){ s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; (s.subs || []).forEach(x => x.done = true); } }
+    if (s.position < pos){ if (s.status !== 'done'){ s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; completeStage(p, s); } }
     else if (s.position === pos){ if (!['in_progress','client_review'].includes(s.status)) s.status='in_progress'; s.started_at = s.started_at || t; s.completed_at=null; }
     else { s.status='not_started'; s.started_at=null; s.completed_at=null; }
   });
@@ -1454,10 +1509,11 @@ function removeStage(p, s){
   addLog(p, `Этап «${s.name}» удалён из проекта`); commit();
 }
 // POST /api/stages/:id/move — переставлять можно только неначатые этапы
-const canMove = (p, s, dir) => { const o = p.stages[s.position + dir]; return s.status === 'not_started' && o && o.status === 'not_started'; };
+// соседа ищем по месту в списке, а не по номеру — номер мог разойтись с порядком
+const canMove = (p, s, dir) => { const o = p.stages[p.stages.indexOf(s) + dir]; return s.status === 'not_started' && o && o.status === 'not_started'; };
 function moveStage(p, s, dir){
   if (!canMove(p, s, dir)) return;
-  const i = s.position, j = i + dir, a = p.stages[Math.min(i,j)], b = p.stages[Math.max(i,j)];
+  const i = p.stages.indexOf(s), j = i + dir, a = p.stages[Math.min(i,j)], b = p.stages[Math.max(i,j)];
   const start = a.planned_start, da = stageDur(a), db_ = stageDur(b);
   // b встаёт на место a, a — сразу после него; общая длительность пары не меняется
   b.planned_start = start; b.due_date = addDays(start, db_);
@@ -1528,7 +1584,7 @@ function toggleSub(p, s, x, checked){
 }
 function moveToDone(p){
   const t = today();
-  p.stages.forEach(s => { if (s.status !== 'done'){ s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; (s.subs || []).forEach(x => x.done = true); } });
+  p.stages.forEach(s => { if (s.status !== 'done'){ s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; completeStage(p, s); } });
   syncState(p); addLog(p, 'Все этапы отмечены завершёнными'); commit();
 }
 // PATCH /api/projects/:id
@@ -1614,6 +1670,7 @@ function renderFilters(){
   $('#chips').innerHTML = `<button class="chip" data-risk="" aria-pressed="${!ui.risk}"><span class="sw all"></span>Все активные <b>${activeCount}</b></button>` +
     RISK.map(([k,label]) => {
       const n = pool.filter(p => projectRisk(p) === k).length;
+      if (!n && ui.risk !== k) return '';   // пустые статусы не показываем
       return `<button class="chip" data-risk="${k}" aria-pressed="${ui.risk===k}" title="Показать только: ${label.toLowerCase()}"><span class="sw ${k}"></span>${label} <b>${n}</b></button>`;
     }).join('');
 
@@ -1624,10 +1681,25 @@ function renderFilters(){
   $('#tags').innerHTML =
     (pmIds.length ? `<span class="tlabel">PM:</span>` + pmIds.map(id => `<button class="tag" data-tag-pm="${id}" aria-pressed="${ui.pms.includes(id)}">${esc(short(id))}<small>${live.filter(p=>p.pm_id===id).length}</small></button>`).join('') : '') +
     (clientsSorted.length ? `<span class="tlabel">Клиенты:</span>` + clientsSorted.map(c => `<button class="tag" data-tag-client="${esc(c)}" aria-pressed="${ui.clients.includes(c)}">${esc(c)}<small>${clientCounts[c]}</small></button>`).join('') : '');
+  $('#activeF').innerHTML = [...ui.pms.map(id => `<button class="tag on-x" data-tag-pm="${id}" title="Убрать фильтр">PM: ${esc(short(id))} <span aria-hidden="true">×</span></button>`),
+    ...ui.clients.map(c => `<button class="tag on-x" data-tag-client="${esc(c)}" title="Убрать фильтр">${esc(c)} <span aria-hidden="true">×</span></button>`)].join('');
 }
 
+// открытый раздел помнит вкладка браузера: обновление страницы не выкидывает на главную
+const VIEW_KEY = 'kz-view';
+function rememberView(){ try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({ view:ui.view, setTab:ui.setTab || '', prodMode:ui.prodMode || '' })); } catch(e) {} }
+function restoreView(){
+  try {
+    const v = JSON.parse(sessionStorage.getItem(VIEW_KEY) || 'null'); if (!v) return;
+    const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine');
+    if (ok.includes(v.view)) ui.view = v.view;
+    if (['deadlines','templates','categories','spaces'].includes(v.setTab)) ui.setTab = v.setTab;
+    if (['project','funnel','tasks'].includes(v.prodMode)) ui.prodMode = v.prodMode;
+  } catch(e) {}
+}
 function render(){
   if (GUEST) ui.view = 'mine';
+  paintSpace(); rememberView();
   document.body.dataset.view = ui.view;
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
@@ -2365,10 +2437,11 @@ function openBell(){
 
 // ---------- Шаблоны ----------
 const setNav = () => `<div class="set-nav seg-toggle" role="tablist" aria-label="Разделы настроек">
-  <button data-settab="deadlines" aria-pressed="${!ui.setTab || ui.setTab === 'deadlines'}">Дедлайны</button><button data-settab="templates" aria-pressed="${ui.setTab === 'templates'}">Шаблоны</button><button data-settab="categories" aria-pressed="${ui.setTab === 'categories'}">Категории</button></div>`;
+  <button data-settab="deadlines" aria-pressed="${!ui.setTab || ui.setTab === 'deadlines'}">Дедлайны</button><button data-settab="templates" aria-pressed="${ui.setTab === 'templates'}">Шаблоны</button><button data-settab="categories" aria-pressed="${ui.setTab === 'categories'}">Категории</button><button data-settab="spaces" aria-pressed="${ui.setTab === 'spaces'}">Пространства</button></div>`;
 function renderSettings(){
   if (ui.setTab === 'templates'){ renderTemplates(); return; }
   if (ui.setTab === 'categories'){ renderCategories(); return; }
+  if (ui.setTab === 'spaces'){ renderSpaces(); return; }
   const n = defDays(), useTpl = !!db.prefs?.useTplDays;
   const left = db.projects.filter(p => p.state === 'active').reduce((m, p) => m + p.stages.filter(s => s.status === 'not_started').length, 0);
   app.innerHTML = `${setNav()}<div class="panel set-panel">
@@ -2600,6 +2673,85 @@ document.addEventListener('input', e => {
   const el = e.target; if (!el.dataset?.sf || !ui.draft) return;
   const row = el.closest('.tsub'); const x = ui.draft.stages[+row.dataset.i].subs[+row.dataset.j]; x.name = el.value; ui.draftDirty = true;
 });
+// ---------- Пространства ----------
+const spaces = { list:[], ready:false };
+const spaceName = () => SPACE ? (spaces.list.find(x => x.id === SPACE)?.name || 'Пространство') : 'Основное';
+function emptySpace(){
+  return { users:[{ id:ME, name:'', email:'', role:'admin', dept:'Руководство', capacity:4, status:'active' }], templates:[], categories:[], projects:[], tasks:[], reports:[],
+    cardTpls:{}, cardTplsInit:true, onboarded:true, ver:3, prefs:{} };
+}
+function watchSpaces(){
+  if (!cloud.store || !cloud.uid || GUEST || shared.subs.has('__spaces')) return;
+  shared.subs.set('__spaces', [cloud.store.collection(`data/users/${cloud.uid}/spaces/list`).onSnapshot(snap => {
+    spaces.list = snap.docs.map(d => ({ id:d.id, name:d.data().name || 'Пространство', at:d.data().at || '' })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    spaces.ready = true; paintSpace(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
+  }, () => {})]);
+}
+function paintSpace(){
+  const b = $('#spaceName'); if (!b) return;
+  b.textContent = spaceName(); b.hidden = GUEST || (!SPACE && !spaces.list.length);
+}
+// переключение: запоминаем пространство и перезагружаем страницу (в тестах — подменяемая функция)
+function switchSpace(id){
+  try { if (id) localStorage.setItem(SPACE_KEY, id); else localStorage.removeItem(SPACE_KEY); } catch(e) {}
+  if (cloud.pending) flushCloud();
+  setTimeout(() => (window.kzReloadHook || (() => location.reload()))(), cloud.writing ? 900 : 150);
+}
+function renderSpaces(){
+  const online = !!(cloud.store && cloud.uid);
+  const row = (id, name, cur, extra) => `<li class="sp-row${cur ? ' cur' : ''}">
+      ${id ? `<input data-spname="${id}" value="${esc(name)}" maxlength="60" aria-label="Название пространства">` : `<b>${esc(name)}</b>`}
+      ${cur ? '<span class="pill s-green"><i class="sw green"></i>Открыто</span>' : `<button class="ghost" data-spopen="${id}">Открыть</button>`}
+      ${extra || ''}</li>`;
+  app.innerHTML = `${setNav()}<div class="panel set-panel">
+    <h2>Пространства</h2>
+    <p class="hint">Отдельное пустое поле для проектов в этом же аккаунте: свои проекты, задачи, команда, шаблоны, категории и настройки. Удобно, чтобы развести, например, агентство и личные проекты. Переключаются здесь, текущее показано в шапке рядом с названием.</p>
+    ${online ? '' : '<p class="warn">Пространства работают, когда вы вошли в аккаунт.</p>'}
+    <ol class="sp-list">${row('', 'Основное', !SPACE)}${spaces.list.map(x => row(x.id, x.name, x.id === SPACE, `<button type="button" class="tx" data-spdel="${x.id}" aria-label="Удалить пространство ${esc(x.name)}" title="Удалить пространство">×</button>`)).join('')}</ol>
+    ${online ? `<form class="sp-new" id="spNew"><input id="spNewName" placeholder="Название нового пространства" maxlength="60" aria-label="Название нового пространства">
+      <label class="check"><input type="checkbox" id="spCopy" checked> Взять из текущего пространства шаблоны, категории и команду</label>
+      <button class="primary">Создать и открыть</button></form>` : ''}
+  </div>`;
+}
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'spNew') return; e.preventDefault();
+  const name = $('#spNewName').value.trim(); if (!name){ toast('Назовите пространство'); return; }
+  if (!cloud.store || !cloud.uid){ toast('Пространства работают, когда вы вошли в аккаунт'); return; }
+  const id = 's' + uid().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12);
+  const fresh = emptySpace();
+  if ($('#spCopy').checked){ Object.assign(fresh, clone({ templates:db.templates, categories:db.categories || [], cardTpls:db.cardTpls || {}, prefs:db.prefs || {} }));
+    fresh.users = clone(db.users.map(u => { const { invite, ...rest } = u; return rest; })); }
+  else { const me = userById(ME); if (me) fresh.users = [clone(me)]; }
+  fresh.savedAt = Date.now();
+  try {
+    await cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).set({ name, at:new Date().toISOString() });
+    localStorage.setItem(`agency-pipeline-demo-v2-${id}`, JSON.stringify(fresh));
+  } catch(err) { toast('Не удалось создать пространство. Проверьте связь и попробуйте ещё раз.'); return; }
+  toast(`Пространство «${name}» создано, открываю`); switchSpace(id);
+});
+document.addEventListener('click', e => {
+  const o = e.target.closest?.('[data-spopen]'); if (o){ switchSpace(o.dataset.spopen); return; }
+  const d = e.target.closest?.('[data-spdel]'); if (!d) return;
+  const sp = spaces.list.find(x => x.id === d.dataset.spdel); if (!sp) return;
+  askConfirm({ title:`Удалить пространство «${sp.name}»?`, text:'Все его проекты, задачи, команда и шаблоны удалятся из аккаунта навсегда. Восстановить их будет нельзя.', ok:'Удалить навсегда' }).then(async yes => {
+    if (!yes) return;
+    try {
+      const col = cloud.store.collection(spacePath(cloud.uid, sp.id)); const snap = await col.get();
+      for (const doc of snap.docs) await col.doc(doc.id).delete();
+      await cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${sp.id}`).delete();
+      try { localStorage.removeItem(`agency-pipeline-demo-v2-${sp.id}`); } catch(x) {}
+      spaces.list = spaces.list.filter(x => x.id !== sp.id); toast(`Пространство «${sp.name}» удалено`);
+      if (sp.id === SPACE) switchSpace(''); else renderSpaces();
+    } catch(err) { toast('Не удалось удалить пространство. Попробуйте ещё раз.'); }
+  });
+});
+document.addEventListener('change', e => {
+  const id = e.target.dataset?.spname; if (!id) return; const v = e.target.value.trim(); const sp = spaces.list.find(x => x.id === id);
+  if (!sp) return; if (!v){ e.target.value = sp.name; return; }
+  cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).update({ name:v }).then(() => { sp.name = v; paintSpace(); toast('Название сохранено'); }, () => toast('Не удалось переименовать'));
+});
+document.addEventListener('click', e => { if (e.target.closest?.('#spaceName')){ ui.view = 'templates'; ui.setTab = 'spaces'; render(); } });
+
 // ---------- Категории проектов ----------
 const catById = id => (db.categories || []).find(c => c.id === id) || null;
 const catDot = () => '';   // категории без цветовой маркировки
@@ -2747,7 +2899,7 @@ $('#density').onclick = e => {
   db.prefs = { ...(db.prefs || {}), density: b.dataset.density }; save(); render();
 };
 $('#chips').onclick = e => { const c = e.target.closest('[data-risk]'); if (!c) return; const k = c.dataset.risk; ui.risk = ui.risk === k ? '' : k; render(); };
-$('#tags').onclick = e => {
+$('#tags').onclick = $('#activeF').onclick = e => {
   const t = e.target.closest('.tag'); if (!t) return;
   if (t.dataset.tagPm) ui.pms = toggle(ui.pms, t.dataset.tagPm);
   if (t.dataset.tagClient !== undefined) ui.clients = toggle(ui.clients, t.dataset.tagClient);
@@ -3052,14 +3204,18 @@ function crmRows(rep){
     return { d: date != null ? parseDateAny(r[date]) : null, a, src: source != null ? r[source] : '', won: status != null ? won.has(st) : a > 0 };
   }).filter(r => (!rep.from || !r.d || r.d >= rep.from) && (!rep.to || !r.d || r.d <= rep.to));
 }
+// отчёт из старой версии или импорта может быть неполным — достраиваем пустые части
+function fixReport(r){ if (!r) return r; r.spend = Array.isArray(r.spend) ? r.spend : []; r.imports = Array.isArray(r.imports) ? r.imports : [];
+  if (r.crm && (!r.crm.map || !Array.isArray(r.crm.raw))) r.crm = null; return r; }
 function computeReport(rep){
+  fixReport(rep);
   const margin = (rep.margin ?? 100) / 100;
   const rows = crmRows(rep);
   const bySrc = rep.crm?.map?.source != null;
   const map = new Map();
   const ch = k => { if (!map.has(k)) map.set(k, { name:k, spend:0, impressions:0, clicks:0, adLeads:0, leads:0, sales:0, revenue:0 }); return map.get(k); };
   rows.forEach(r => { if (!bySrc) return; const c = ch(canonChannel(r.src)); c.leads++; if (r.won){ c.sales++; c.revenue += r.a; } });
-  rep.spend.forEach(e => {
+  (rep.spend || []).forEach(e => {
     const c = ch(canonChannel(e.source || e.campaign));
     c.spend += +e.spend || 0; c.impressions += +e.impressions || 0; c.clicks += +e.clicks || 0; c.adLeads += +e.leads || 0;
   });
@@ -3692,6 +3848,31 @@ function linksToBlocks(o, regKey, vidKey, bKey){
   if (vid && !vid.startsWith('blob:')) add.push({ id:uid(), type:'video', title:'Видео', value:vid });
   o[bKey] = [...add, ...(o[bKey] || [])]; o[regKey] = ''; o[vidKey] = '';
   return true;
+}
+// завершённые этапы с неотмеченными пунктами (данные до этой правки) приводим в порядок; повторный запуск ничего не меняет
+function syncDoneStages(){
+  let n = 0;
+  db.projects.forEach(p => p.stages.forEach(s => { if (s.status === 'done' && ((s.subs || []).some(x => !x.done) || (db.tasks || []).some(t => t.project_id === p.id && t.stage_id === s.id && t.checklist.some(i => !i.done)))) n += completeStage(p, s) || 1; }));
+  return n;
+}
+// Номера этапов всегда совпадают с порядком; один раз восстанавливаем порядок этапов по шаблону процесса
+// (этапы, которых нет в шаблоне, остаются рядом с тем, за кем стояли). Дальше ручной порядок проекта не трогаем.
+function repairStageOrder(){
+  let n = 0;
+  db.projects.forEach(p => {
+    if (p._ext || !p.stages?.length) return;
+    p.stages.forEach((s, i) => { s.position = i; });
+    if (p.orderChecked) return; p.orderChecked = true; n++;
+    const t = tplById(p.template_id); if (!t) return;
+    const at = name => t.stages.findIndex(ts => norm(ts.name) === norm(name));
+    let last = -1;
+    const keyed = p.stages.map((s, i) => { const k = at(s.name); const key = k >= 0 ? k : last + 0.5; if (k >= 0) last = k; return { s, key, i }; });
+    const sorted = [...keyed].sort((a, b) => a.key - b.key || a.i - b.i);
+    if (sorted.every((x, j) => x.s === p.stages[j])) return;
+    p.stages = sorted.map(x => x.s); p.stages.forEach((s, i) => { s.position = i; });
+    addLog(p, 'Порядок этапов восстановлен по шаблону процесса');
+  });
+  return n;
 }
 function migrateLinks(){
   let n = 0;
@@ -4353,7 +4534,8 @@ function cloudApply(r){
   Object.assign(db, { ver:r.meta.ver, onboarded:r.meta.onboarded, users:r.meta.users, templates:r.meta.templates, categories:'categories' in r.meta ? (r.meta.categories || []) : (db.categories || []), prefs:r.meta.prefs, cardTpls:r.meta.cardTpls || {}, cardTplsInit:!!r.meta.cardTplsInit, savedAt:r.meta.savedAt,
     projects:r.projects, tasks:r.tasks, reports:r.reports });
   migrate(); if (!db.cardTplsInit){ migrateCardTpls(); scheduleCloud(); }
-  if (migrateLinks() + replanAll()) scheduleCloud();
+  (db.reports || []).forEach(fixReport);
+  if (migrateLinks() + repairStageOrder() + syncDoneStages() + replanAll()) scheduleCloud();
   if (ui.open && !projById(ui.open)) closeLayer();
   if (db.onboarded && layer.querySelector('#mForm')) layer.innerHTML = '';
   if (ui.taskId){ if (taskById(ui.taskId)) renderTaskModal(); else closeTask(); }
@@ -4519,7 +4701,8 @@ async function initCloud(){
     try { initShared(); } catch(e) { console.warn('Общие проекты недоступны', e); }   // ошибка шеринга не должна отключать личное сохранение
     if (URL_INVITE) acceptInvite(URL_INVITE);
     if (GUEST){ setCloudStatus('local'); return; }               // приглашённому личное хранилище не нужно: он работает в общих проектах
-    cloud.col = store.collection('data/users/' + id);
+    cloud.col = store.collection(spacePath(id, SPACE));
+    watchSpaces();
     cloud.col.onSnapshot(onCloudSnapshot, err => setCloudStatus('error', err?.code === 'revoked' ? 'Доступ к хранилищу отозван' : 'Нет связи с хранилищем аккаунта. Данные сохраняются в браузере.'));
   } catch(e) { setCloudStatus('local'); if (!GUEST){ setMode('owner'); bootOwner(); } }
 }
@@ -5067,7 +5250,7 @@ function renderMobileNav(){
   const inMore = !MNAV_MAIN.includes(ui.view);
   nav.innerHTML = MNAV_MAIN.map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')
     + `<button data-mmore aria-current="${inMore ? 'page' : 'false'}" aria-haspopup="dialog">${inMore ? MNAV[ui.view][1] : MORE_ICON}<span>${inMore ? MNAV[ui.view][0] : 'Ещё'}</span></button>`;
-  const f = $('#fToggle'); if (f) f.classList.toggle('on', !!(ui.pms.length || ui.clients.length));
+  const f = $('#fToggle'); if (f){ const k = ui.pms.length + ui.clients.length; f.classList.toggle('on', !!k); const nb = f.querySelector('.f-n'); if (nb) nb.textContent = k || ''; }
 }
 function openMore(){
   layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal more-sheet" role="dialog" aria-modal="true" aria-label="Другие разделы">
@@ -5080,19 +5263,23 @@ document.addEventListener('click', e => {
   if (e.target.closest('#fToggle')){ $('#filters').classList.toggle('open'); $('#fToggle').setAttribute('aria-expanded', $('#filters').classList.contains('open')); }
 });
 // кнопка «Фильтры» рядом с поиском (видна только на телефоне)
-$('#q').insertAdjacentHTML('afterend', '<button class="ghost f-toggle" id="fToggle" aria-expanded="false" aria-controls="filters">Фильтры<i aria-hidden="true"></i></button>');
+$('#q').insertAdjacentHTML('afterend', '<button class="ghost f-toggle" id="fToggle" aria-expanded="false" aria-controls="tags">Фильтры<i aria-hidden="true"></i><b class="f-n"></b></button>');
 
 try { db = JSON.parse(localStorage.getItem(KEY)); } catch(e) {}
-if (!db || !db.projects || !db.users) db = seed();
+if (!db || !db.projects || !db.users) db = SPACE ? emptySpace() : seed();
 migrate();
 if (!db.reports) db.reports = [];
 if (!db.tasks){ db.tasks = []; seedDemoTasks(); save(); }
 migrateCardTpls();
 db.tasks = db.tasks.filter(t => projById(t.project_id));   // задачи удалённых проектов
 migrateLinks();
+repairStageOrder();
+syncDoneStages();
+(db.reports || []).forEach(fixReport);
 replanAll();
 localSave();
 setInterval(() => { if (!GUEST && replanAll()) commit(); }, 3600e3);
+restoreView();
 { let m = null; try { m = localStorage.getItem(MODE_KEY); } catch(e) {}
   if (URL_INVITE && m !== 'owner') m = 'guest';
   if (m === 'guest') setMode('guest');
