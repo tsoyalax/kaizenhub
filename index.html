@@ -411,6 +411,18 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .set-panel{max-width:760px}
 .set-days .row{gap:12px;align-items:center}.set-days input{width:90px;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px;font-size:15px}
 .set-rules{margin:12px 0;padding-left:20px;color:var(--muted);font-size:13.5px;display:grid;gap:4px}
+.space-name{margin-left:10px;border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:2px 10px;font:inherit;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.space-name:hover{color:var(--ink);border-color:var(--line-strong)}
+.sp-list{list-style:none;margin:12px 0;padding:0;display:grid;gap:4px}
+.sp-row{display:grid;grid-template-columns:minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line)}
+.sp-row b{padding:0 8px}
+.sp-row:hover .tx{opacity:1}
+.sp-row input{height:34px;border:1px solid transparent;border-radius:8px;background:transparent;padding:0 8px;font-weight:600;font-size:14.5px;min-width:0}
+.sp-row input:hover{border-color:var(--line)}.sp-row input:focus{border-color:var(--line-strong);outline:0;background:var(--surface)}
+.sp-new{display:grid;gap:10px;margin-top:6px;max-width:460px}
+.sp-new #spNewName{height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px;font-size:14.5px}
+.sp-new .primary{justify-self:start}
+@media (max-width:640px){.space-name{max-width:110px}}
 .cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
 .cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
 .cat-row:hover .tx{opacity:1}
@@ -1042,7 +1054,7 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
 </head>
 <body>
 <header class="top">
-  <div class="brand"><span class="brand-mark" aria-hidden="true"><i style="background:var(--g)"></i><i style="background:var(--y)"></i><i style="background:var(--r)"></i></span>Конвейер</div>
+  <div class="brand"><span class="brand-mark" aria-hidden="true"><i style="background:var(--g)"></i><i style="background:var(--y)"></i><i style="background:var(--r)"></i></span>Конвейер<button class="space-name" id="spaceName" hidden title="Пространство — сменить в настройках"></button></div>
   <nav class="tabs" aria-label="Разделы">
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
@@ -1107,7 +1119,12 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
 //  ДЕМО-РЕЖИМ: данные хранятся в браузере. Для работы с сервером замените
 //  функции из блока ACTIONS на вызовы API (см. README).
 // =====================================================================
-const KEY = 'agency-pipeline-demo-v2';
+// Пространства: отдельные наборы проектов в одном аккаунте. Основное — data/users/<id>,
+// остальные — data/users/<id>/spaces/list/<пространство>/items. Текущее помнит браузер.
+const SPACE_KEY = 'kz-space';
+const SPACE = (() => { try { const v = localStorage.getItem(SPACE_KEY) || ''; return /^s[a-z0-9]{4,24}$/.test(v) ? v : ''; } catch(e) { return ''; } })();
+const KEY = SPACE ? `agency-pipeline-demo-v2-${SPACE}` : 'agency-pipeline-demo-v2';
+const spacePath = (uid, sp) => sp ? `data/users/${uid}/spaces/list/${sp}/items` : `data/users/${uid}`;
 const ME = 'me';
 const STATUS = { not_started:'Не начат', in_progress:'В работе', client_review:'На согласовании у клиента', done:'Завершён' };
 const RISK = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике'],['gray','Не стартовали'],['done','Завершены']];
@@ -1482,10 +1499,11 @@ function removeStage(p, s){
   addLog(p, `Этап «${s.name}» удалён из проекта`); commit();
 }
 // POST /api/stages/:id/move — переставлять можно только неначатые этапы
-const canMove = (p, s, dir) => { const o = p.stages[s.position + dir]; return s.status === 'not_started' && o && o.status === 'not_started'; };
+// соседа ищем по месту в списке, а не по номеру — номер мог разойтись с порядком
+const canMove = (p, s, dir) => { const o = p.stages[p.stages.indexOf(s) + dir]; return s.status === 'not_started' && o && o.status === 'not_started'; };
 function moveStage(p, s, dir){
   if (!canMove(p, s, dir)) return;
-  const i = s.position, j = i + dir, a = p.stages[Math.min(i,j)], b = p.stages[Math.max(i,j)];
+  const i = p.stages.indexOf(s), j = i + dir, a = p.stages[Math.min(i,j)], b = p.stages[Math.max(i,j)];
   const start = a.planned_start, da = stageDur(a), db_ = stageDur(b);
   // b встаёт на место a, a — сразу после него; общая длительность пары не меняется
   b.planned_start = start; b.due_date = addDays(start, db_);
@@ -1657,8 +1675,21 @@ function renderFilters(){
     ...ui.clients.map(c => `<button class="tag on-x" data-tag-client="${esc(c)}" title="Убрать фильтр">${esc(c)} <span aria-hidden="true">×</span></button>`)].join('');
 }
 
+// открытый раздел помнит вкладка браузера: обновление страницы не выкидывает на главную
+const VIEW_KEY = 'kz-view';
+function rememberView(){ try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({ view:ui.view, setTab:ui.setTab || '', prodMode:ui.prodMode || '' })); } catch(e) {} }
+function restoreView(){
+  try {
+    const v = JSON.parse(sessionStorage.getItem(VIEW_KEY) || 'null'); if (!v) return;
+    const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine');
+    if (ok.includes(v.view)) ui.view = v.view;
+    if (['deadlines','templates','categories','spaces'].includes(v.setTab)) ui.setTab = v.setTab;
+    if (['project','funnel','tasks'].includes(v.prodMode)) ui.prodMode = v.prodMode;
+  } catch(e) {}
+}
 function render(){
   if (GUEST) ui.view = 'mine';
+  paintSpace(); rememberView();
   document.body.dataset.view = ui.view;
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
@@ -2396,10 +2427,11 @@ function openBell(){
 
 // ---------- Шаблоны ----------
 const setNav = () => `<div class="set-nav seg-toggle" role="tablist" aria-label="Разделы настроек">
-  <button data-settab="deadlines" aria-pressed="${!ui.setTab || ui.setTab === 'deadlines'}">Дедлайны</button><button data-settab="templates" aria-pressed="${ui.setTab === 'templates'}">Шаблоны</button><button data-settab="categories" aria-pressed="${ui.setTab === 'categories'}">Категории</button></div>`;
+  <button data-settab="deadlines" aria-pressed="${!ui.setTab || ui.setTab === 'deadlines'}">Дедлайны</button><button data-settab="templates" aria-pressed="${ui.setTab === 'templates'}">Шаблоны</button><button data-settab="categories" aria-pressed="${ui.setTab === 'categories'}">Категории</button><button data-settab="spaces" aria-pressed="${ui.setTab === 'spaces'}">Пространства</button></div>`;
 function renderSettings(){
   if (ui.setTab === 'templates'){ renderTemplates(); return; }
   if (ui.setTab === 'categories'){ renderCategories(); return; }
+  if (ui.setTab === 'spaces'){ renderSpaces(); return; }
   const n = defDays(), useTpl = !!db.prefs?.useTplDays;
   const left = db.projects.filter(p => p.state === 'active').reduce((m, p) => m + p.stages.filter(s => s.status === 'not_started').length, 0);
   app.innerHTML = `${setNav()}<div class="panel set-panel">
@@ -2631,6 +2663,85 @@ document.addEventListener('input', e => {
   const el = e.target; if (!el.dataset?.sf || !ui.draft) return;
   const row = el.closest('.tsub'); const x = ui.draft.stages[+row.dataset.i].subs[+row.dataset.j]; x.name = el.value; ui.draftDirty = true;
 });
+// ---------- Пространства ----------
+const spaces = { list:[], ready:false };
+const spaceName = () => SPACE ? (spaces.list.find(x => x.id === SPACE)?.name || 'Пространство') : 'Основное';
+function emptySpace(){
+  return { users:[{ id:ME, name:'', email:'', role:'admin', dept:'Руководство', capacity:4, status:'active' }], templates:[], categories:[], projects:[], tasks:[], reports:[],
+    cardTpls:{}, cardTplsInit:true, onboarded:true, ver:3, prefs:{} };
+}
+function watchSpaces(){
+  if (!cloud.store || !cloud.uid || GUEST || shared.subs.has('__spaces')) return;
+  shared.subs.set('__spaces', [cloud.store.collection(`data/users/${cloud.uid}/spaces/list`).onSnapshot(snap => {
+    spaces.list = snap.docs.map(d => ({ id:d.id, name:d.data().name || 'Пространство', at:d.data().at || '' })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    spaces.ready = true; paintSpace(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
+  }, () => {})]);
+}
+function paintSpace(){
+  const b = $('#spaceName'); if (!b) return;
+  b.textContent = spaceName(); b.hidden = GUEST || (!SPACE && !spaces.list.length);
+}
+// переключение: запоминаем пространство и перезагружаем страницу (в тестах — подменяемая функция)
+function switchSpace(id){
+  try { if (id) localStorage.setItem(SPACE_KEY, id); else localStorage.removeItem(SPACE_KEY); } catch(e) {}
+  if (cloud.pending) flushCloud();
+  setTimeout(() => (window.kzReloadHook || (() => location.reload()))(), cloud.writing ? 900 : 150);
+}
+function renderSpaces(){
+  const online = !!(cloud.store && cloud.uid);
+  const row = (id, name, cur, extra) => `<li class="sp-row${cur ? ' cur' : ''}">
+      ${id ? `<input data-spname="${id}" value="${esc(name)}" maxlength="60" aria-label="Название пространства">` : `<b>${esc(name)}</b>`}
+      ${cur ? '<span class="pill s-green"><i class="sw green"></i>Открыто</span>' : `<button class="ghost" data-spopen="${id}">Открыть</button>`}
+      ${extra || ''}</li>`;
+  app.innerHTML = `${setNav()}<div class="panel set-panel">
+    <h2>Пространства</h2>
+    <p class="hint">Отдельное пустое поле для проектов в этом же аккаунте: свои проекты, задачи, команда, шаблоны, категории и настройки. Удобно, чтобы развести, например, агентство и личные проекты. Переключаются здесь, текущее показано в шапке рядом с названием.</p>
+    ${online ? '' : '<p class="warn">Пространства работают, когда вы вошли в аккаунт.</p>'}
+    <ol class="sp-list">${row('', 'Основное', !SPACE)}${spaces.list.map(x => row(x.id, x.name, x.id === SPACE, `<button type="button" class="tx" data-spdel="${x.id}" aria-label="Удалить пространство ${esc(x.name)}" title="Удалить пространство">×</button>`)).join('')}</ol>
+    ${online ? `<form class="sp-new" id="spNew"><input id="spNewName" placeholder="Название нового пространства" maxlength="60" aria-label="Название нового пространства">
+      <label class="check"><input type="checkbox" id="spCopy" checked> Взять из текущего пространства шаблоны, категории и команду</label>
+      <button class="primary">Создать и открыть</button></form>` : ''}
+  </div>`;
+}
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'spNew') return; e.preventDefault();
+  const name = $('#spNewName').value.trim(); if (!name){ toast('Назовите пространство'); return; }
+  if (!cloud.store || !cloud.uid){ toast('Пространства работают, когда вы вошли в аккаунт'); return; }
+  const id = 's' + uid().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12);
+  const fresh = emptySpace();
+  if ($('#spCopy').checked){ Object.assign(fresh, clone({ templates:db.templates, categories:db.categories || [], cardTpls:db.cardTpls || {}, prefs:db.prefs || {} }));
+    fresh.users = clone(db.users.map(u => { const { invite, ...rest } = u; return rest; })); }
+  else { const me = userById(ME); if (me) fresh.users = [clone(me)]; }
+  fresh.savedAt = Date.now();
+  try {
+    await cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).set({ name, at:new Date().toISOString() });
+    localStorage.setItem(`agency-pipeline-demo-v2-${id}`, JSON.stringify(fresh));
+  } catch(err) { toast('Не удалось создать пространство. Проверьте связь и попробуйте ещё раз.'); return; }
+  toast(`Пространство «${name}» создано, открываю`); switchSpace(id);
+});
+document.addEventListener('click', e => {
+  const o = e.target.closest?.('[data-spopen]'); if (o){ switchSpace(o.dataset.spopen); return; }
+  const d = e.target.closest?.('[data-spdel]'); if (!d) return;
+  const sp = spaces.list.find(x => x.id === d.dataset.spdel); if (!sp) return;
+  askConfirm({ title:`Удалить пространство «${sp.name}»?`, text:'Все его проекты, задачи, команда и шаблоны удалятся из аккаунта навсегда. Восстановить их будет нельзя.', ok:'Удалить навсегда' }).then(async yes => {
+    if (!yes) return;
+    try {
+      const col = cloud.store.collection(spacePath(cloud.uid, sp.id)); const snap = await col.get();
+      for (const doc of snap.docs) await col.doc(doc.id).delete();
+      await cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${sp.id}`).delete();
+      try { localStorage.removeItem(`agency-pipeline-demo-v2-${sp.id}`); } catch(x) {}
+      spaces.list = spaces.list.filter(x => x.id !== sp.id); toast(`Пространство «${sp.name}» удалено`);
+      if (sp.id === SPACE) switchSpace(''); else renderSpaces();
+    } catch(err) { toast('Не удалось удалить пространство. Попробуйте ещё раз.'); }
+  });
+});
+document.addEventListener('change', e => {
+  const id = e.target.dataset?.spname; if (!id) return; const v = e.target.value.trim(); const sp = spaces.list.find(x => x.id === id);
+  if (!sp) return; if (!v){ e.target.value = sp.name; return; }
+  cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).update({ name:v }).then(() => { sp.name = v; paintSpace(); toast('Название сохранено'); }, () => toast('Не удалось переименовать'));
+});
+document.addEventListener('click', e => { if (e.target.closest?.('#spaceName')){ ui.view = 'templates'; ui.setTab = 'spaces'; render(); } });
+
 // ---------- Категории проектов ----------
 const catById = id => (db.categories || []).find(c => c.id === id) || null;
 const catDot = () => '';   // категории без цветовой маркировки
@@ -3734,6 +3845,25 @@ function syncDoneStages(){
   db.projects.forEach(p => p.stages.forEach(s => { if (s.status === 'done' && ((s.subs || []).some(x => !x.done) || (db.tasks || []).some(t => t.project_id === p.id && t.stage_id === s.id && t.checklist.some(i => !i.done)))) n += completeStage(p, s) || 1; }));
   return n;
 }
+// Номера этапов всегда совпадают с порядком; один раз восстанавливаем порядок этапов по шаблону процесса
+// (этапы, которых нет в шаблоне, остаются рядом с тем, за кем стояли). Дальше ручной порядок проекта не трогаем.
+function repairStageOrder(){
+  let n = 0;
+  db.projects.forEach(p => {
+    if (p._ext || !p.stages?.length) return;
+    p.stages.forEach((s, i) => { s.position = i; });
+    if (p.orderChecked) return; p.orderChecked = true; n++;
+    const t = tplById(p.template_id); if (!t) return;
+    const at = name => t.stages.findIndex(ts => norm(ts.name) === norm(name));
+    let last = -1;
+    const keyed = p.stages.map((s, i) => { const k = at(s.name); const key = k >= 0 ? k : last + 0.5; if (k >= 0) last = k; return { s, key, i }; });
+    const sorted = [...keyed].sort((a, b) => a.key - b.key || a.i - b.i);
+    if (sorted.every((x, j) => x.s === p.stages[j])) return;
+    p.stages = sorted.map(x => x.s); p.stages.forEach((s, i) => { s.position = i; });
+    addLog(p, 'Порядок этапов восстановлен по шаблону процесса');
+  });
+  return n;
+}
 function migrateLinks(){
   let n = 0;
   (db.tasks || []).forEach(t => { if (linksToBlocks(t, 'regulation_link', 'video_url', 'blocks')) n++; });
@@ -4395,7 +4525,7 @@ function cloudApply(r){
     projects:r.projects, tasks:r.tasks, reports:r.reports });
   migrate(); if (!db.cardTplsInit){ migrateCardTpls(); scheduleCloud(); }
   (db.reports || []).forEach(fixReport);
-  if (migrateLinks() + syncDoneStages() + replanAll()) scheduleCloud();
+  if (migrateLinks() + repairStageOrder() + syncDoneStages() + replanAll()) scheduleCloud();
   if (ui.open && !projById(ui.open)) closeLayer();
   if (db.onboarded && layer.querySelector('#mForm')) layer.innerHTML = '';
   if (ui.taskId){ if (taskById(ui.taskId)) renderTaskModal(); else closeTask(); }
@@ -4561,7 +4691,8 @@ async function initCloud(){
     try { initShared(); } catch(e) { console.warn('Общие проекты недоступны', e); }   // ошибка шеринга не должна отключать личное сохранение
     if (URL_INVITE) acceptInvite(URL_INVITE);
     if (GUEST){ setCloudStatus('local'); return; }               // приглашённому личное хранилище не нужно: он работает в общих проектах
-    cloud.col = store.collection('data/users/' + id);
+    cloud.col = store.collection(spacePath(id, SPACE));
+    watchSpaces();
     cloud.col.onSnapshot(onCloudSnapshot, err => setCloudStatus('error', err?.code === 'revoked' ? 'Доступ к хранилищу отозван' : 'Нет связи с хранилищем аккаунта. Данные сохраняются в браузере.'));
   } catch(e) { setCloudStatus('local'); if (!GUEST){ setMode('owner'); bootOwner(); } }
 }
@@ -5125,18 +5256,20 @@ document.addEventListener('click', e => {
 $('#q').insertAdjacentHTML('afterend', '<button class="ghost f-toggle" id="fToggle" aria-expanded="false" aria-controls="tags">Фильтры<i aria-hidden="true"></i><b class="f-n"></b></button>');
 
 try { db = JSON.parse(localStorage.getItem(KEY)); } catch(e) {}
-if (!db || !db.projects || !db.users) db = seed();
+if (!db || !db.projects || !db.users) db = SPACE ? emptySpace() : seed();
 migrate();
 if (!db.reports) db.reports = [];
 if (!db.tasks){ db.tasks = []; seedDemoTasks(); save(); }
 migrateCardTpls();
 db.tasks = db.tasks.filter(t => projById(t.project_id));   // задачи удалённых проектов
 migrateLinks();
+repairStageOrder();
 syncDoneStages();
 (db.reports || []).forEach(fixReport);
 replanAll();
 localSave();
 setInterval(() => { if (!GUEST && replanAll()) commit(); }, 3600e3);
+restoreView();
 { let m = null; try { m = localStorage.getItem(MODE_KEY); } catch(e) {}
   if (URL_INVITE && m !== 'owner') m = 'guest';
   if (m === 'guest') setMode('guest');

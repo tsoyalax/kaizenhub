@@ -198,7 +198,7 @@
   window.kzSignOut = async function () {
     try { await sb.auth.signOut(); } catch (e) { /* всё равно выходим */ }
     try {
-      ['agency-pipeline-demo-v2', 'agency-pipeline-demo-v2-backup', 'agency-mode'].forEach(function (k) { localStorage.removeItem(k); });
+      Object.keys(localStorage).forEach(function (k) { if (k.indexOf('agency-pipeline-demo-v2') === 0 || k === 'agency-mode' || k === 'kz-space') localStorage.removeItem(k); });
     } catch (e) { /* ничего */ }
     location.href = location.pathname;
   };
