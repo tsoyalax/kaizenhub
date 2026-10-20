@@ -398,6 +398,18 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .set-panel{max-width:760px}
 .set-days .row{gap:12px;align-items:center}.set-days input{width:90px;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px;font-size:15px}
 .set-rules{margin:12px 0;padding-left:20px;color:var(--muted);font-size:13.5px;display:grid;gap:4px}
+.tsubs{margin:0 0 6px 36px;padding:6px 0 8px;border-bottom:1px solid var(--line)}
+.tsubs.closed{padding:2px 0 6px}
+.tsub-tog{font-size:13px}
+.tsub{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;margin-top:6px}
+.tsub input{height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 8px;min-width:0}
+.tsub .tools{display:flex;gap:2px}.tsub .tools button{width:28px;height:28px;border:1px solid var(--line);border-radius:7px;background:none;cursor:pointer}
+.tsub .tools button:disabled{opacity:.3;cursor:default}
+.tcard-btn{height:34px;padding:0 10px;font-size:13px;white-space:nowrap}
+.tcard-btn.on{border-color:var(--g);color:var(--g)}
+.tsub-add{display:flex;gap:8px;margin-top:8px}.tsub-add input{flex:1;min-width:0;height:34px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;padding:0 8px}
+.t-dirty{box-shadow:0 0 0 3px var(--soft)}
+@media (max-width:520px){.tsubs{margin-left:0}.tsub{grid-template-columns:1fr auto}.tsub .tools{grid-column:1/-1}}
 .tpl-wrap{display:grid;grid-template-columns:260px 1fr;gap:16px;margin-top:6px}
 @media (max-width:760px){.tpl-wrap{grid-template-columns:1fr}}
 .tpl-list{display:flex;flex-direction:column;gap:6px}
@@ -1212,7 +1224,7 @@ function createProject(data){
   const p = makeProject(data);
   if (data.start_date <= today()){ p.stages[0].status='in_progress'; p.stages[0].started_at=today(); }
   addLog(p, `Проект создан по шаблону «${tplById(data.template_id).name}»`);
-  db.projects.unshift(p); commit(); return p;
+  db.projects.unshift(p); copyCards(p); commit(); return p;
 }
 // PATCH /api/stages/:id { due_date }
 function setDue(p, s, value){
@@ -1307,7 +1319,7 @@ function changeTemplate(p, tplId){
   });
   const removed = old.length - used.size;
   p.stages = next; p.template_id = tpl.id;
-  normalizeChain(p); ensureActive(p); syncState(p);
+  normalizeChain(p); ensureActive(p); syncState(p); copyCards(p);
   addLog(p, `Шаблон изменён на «${tpl.name}»: сохранено этапов ${kept + keepDone.length}, добавлено ${added}, удалено ${removed}`);
   commit();
   toast(`Проект переведён на «${tpl.name}», финиш ${fmt(plannedEnd(p))}`);
@@ -2278,7 +2290,7 @@ function openBell(){
 const setNav = () => `<div class="set-nav seg-toggle" role="tablist" aria-label="Разделы настроек">
   <button data-settab="deadlines" aria-pressed="${ui.setTab !== 'templates'}">Дедлайны</button><button data-settab="templates" aria-pressed="${ui.setTab === 'templates'}">Шаблоны</button></div>`;
 function renderSettings(){
-  if (ui.setTab === 'templates'){ renderTemplates(); app.insertAdjacentHTML('afterbegin', setNav()); return; }
+  if (ui.setTab === 'templates'){ renderTemplates(); return; }
   const n = defDays(), useTpl = !!db.prefs?.useTplDays;
   const left = db.projects.filter(p => p.state === 'active').reduce((m, p) => m + p.stages.filter(s => s.status === 'not_started').length, 0);
   app.innerHTML = `${setNav()}<div class="panel set-panel">
@@ -2311,15 +2323,127 @@ document.addEventListener('change', e => {
     db.prefs = { ...(db.prefs || {}), stageDays:v }; commit(); toast(`Новые этапы: ${days(v)}`); }
   if (e.target.id === 'sTpl'){ db.prefs = { ...(db.prefs || {}), useTplDays:e.target.checked }; commit(); }
 });
+// ---------- Подэтапы и карточки в шаблоне ----------
+const cardHas = c => !!(c && ((c.d || '').trim() || (c.reg || '').trim() || (c.vid || '').trim() || (c.c || []).length));
+// к подэтапам черновика подставляем их карточки из db.cardTpls (только этого шаблона)
+function attachCards(d){
+  (d.stages || []).forEach(st => { st.subs = (st.subs || []).map(x => {
+    const c = d.id ? (db.cardTpls || {})[cardKey(d.id, x.name)] : null;
+    return { ...x, card: x.card || (c ? { d:c.d || '', reg:c.reg || '', vid:c.vid || '', c:[...(c.c || [])] } : null) }; }); });
+}
+function tplSubsHtml(st, i){
+  const subs = st.subs || []; const open = ui.tplOpen?.[st.id];
+  const head = `<button class="link tsub-tog" data-tsubtog="${st.id}" aria-expanded="${!!open}">${open ? '▾' : '▸'} Подэтапы · ${subs.length}${subs.length ? `, карточек ${subs.filter(x => cardHas(x.card)).length}` : ''}</button>`;
+  if (!open) return `<div class="tsubs closed">${head}</div>`;
+  return `<div class="tsubs" data-i="${i}">${head}
+    ${subs.map((x, j) => `<div class="tsub" data-i="${i}" data-j="${j}">
+      <input type="text" data-sf="name" value="${esc(x.name)}" aria-label="Подэтап ${j + 1} этапа ${esc(st.name)}">
+      <button class="ghost tcard-btn${cardHas(x.card) ? ' on' : ''}" data-tcard="${i}|${j}">${cardHas(x.card) ? `Карточка ✓${x.card.c?.length ? ` · ${x.card.c.length} п.` : ''}` : 'Оформить карточку'}</button>
+      <span class="tools"><button data-smove="-1" aria-label="Выше" ${j ? '' : 'disabled'}>↑</button><button data-smove="1" aria-label="Ниже" ${j < subs.length - 1 ? '' : 'disabled'}>↓</button><button data-sdel aria-label="Удалить подэтап">×</button></span>
+    </div>`).join('') || '<p class="hint">Подэтапов пока нет</p>'}
+    <form class="tsub-add" data-tsubadd="${i}"><input placeholder="Новый подэтап" aria-label="Новый подэтап этапа ${esc(st.name)}"><button class="ghost">Добавить</button></form>
+  </div>`;
+}
+function openCardEditor(i, j){
+  const st = ui.draft.stages[i], x = st.subs[j]; const c = x.card || { d:'', reg:'', vid:'', c:[] };
+  layer.innerHTML = `<div class="backdrop" data-close></div>
+  <div class="modal tk-modal" role="dialog" aria-modal="true" aria-labelledby="ceT">
+    <h2 id="ceT">Карточка подэтапа «${esc(x.name)}»</h2>
+    <p class="lead">${esc(ui.draft.name || 'Шаблон')} · этап «${esc(st.name)}». Так будет выглядеть карточка в каждом новом проекте.</p>
+    <form class="form" id="ceForm">
+      <div class="field"><label for="ceD">Описание и регламент</label><textarea id="ceD" class="tk-desc" rows="6">${esc(c.d || '')}</textarea></div>
+      <div class="field"><label for="ceReg">Ссылка на регламент, шаблон или РНП</label><input id="ceReg" value="${esc(c.reg || '')}" placeholder="https://docs.google.com/…" inputmode="url"></div>
+      <div class="field"><label for="ceVid">Ссылка на видео</label><input id="ceVid" value="${esc(c.vid || '')}" placeholder="YouTube, Vimeo, Google Drive, Loom или MP4" inputmode="url"></div>
+      <div class="field"><label for="ceC">Чек-лист — по одному пункту в строке</label><textarea id="ceC" class="tk-desc" rows="7" placeholder="Изучил бриф&#10;Сделал черновик&#10;Сдал результат">${esc((c.c || []).join('\n'))}</textarea></div>
+      <div class="err" id="ceErr"></div>
+      <div class="actions"><button type="button" class="ghost" data-close>Отмена</button><button class="primary">Готово</button></div>
+    </form></div>`;
+  $('#ceD').focus();
+  $('#ceForm').onsubmit = e => {
+    e.preventDefault();
+    const reg = $('#ceReg').value.trim(), vid = $('#ceVid').value.trim();
+    if ((reg && !safeUrl(reg)) || (vid && !safeUrl(vid))){ $('#ceErr').textContent = 'Ссылки должны начинаться с https://'; return; }
+    x.card = { d:$('#ceD').value.trim(), reg, vid, c:$('#ceC').value.split('\n').map(v => v.trim()).filter(Boolean) };
+    ui.draftDirty = true; layer.innerHTML = ''; renderTemplates();
+    toast('Карточка готова. Нажмите «Сохранить шаблон», чтобы она попала в проекты');
+  };
+}
+// записать карточки черновика в db.cardTpls и убрать карточки удалённых подэтапов этого шаблона
+function storeCards(d){
+  db.cardTpls = db.cardTpls || {};
+  const keep = new Set();
+  d.stages.forEach(st => (st.subs || []).forEach(x => {
+    const k = cardKey(d.id, x.name); keep.add(k);
+    if (cardHas(x.card)) db.cardTpls[k] = { sub:x.name, d:x.card.d || '', reg:x.card.reg || '', vid:x.card.vid || '', c:[...(x.card.c || [])], at:new Date().toISOString() };
+    else delete db.cardTpls[k];
+  }));
+  Object.keys(db.cardTpls).forEach(k => { if (k.startsWith(d.id + '|') && !keep.has(k)) delete db.cardTpls[k]; });
+}
+// скопировать в проект карточки подэтапов из его шаблона (только тем подэтапам, у которых карточки ещё нет)
+function copyCards(p){
+  if (!p || p._ext) return 0;
+  const T = db.cardTpls || {}; let n = 0;
+  p.stages.forEach(st => (st.subs || []).forEach(x => {
+    const c = T[cardKey(p.template_id, x.name)];
+    if (!cardHas(c) || taskFor(p.id, st.id, x.id)) return;
+    const t = makeTask({ project_id:p.id, stage_id:st.id, substage_id:x.id, title:x.name, description:c.d || '', assignee_id:null, checklist:c.c || [] });
+    t.regulation_link = c.reg || ''; t.video_url = c.vid || '';
+    if (x.done) t.checklist.forEach(it => { it.done = true; it.completed_at = new Date().toISOString(); it.completed_by = meName(); });
+    syncTaskToSub(t); db.tasks.push(t); n++;
+  }));
+  return n;
+}
+// обновить активные проекты шаблона: недостающие подэтапы и карточки (уже заполненные карточки не трогаем)
+function applyTplToProjects(t){
+  let subs = 0, cards = 0, projs = 0;
+  activeOf(t.id).forEach(p => {
+    let ch = false;
+    t.stages.forEach(ts => { const s = stageByName(p, ts.name); if (!s) return;
+      const before = (s.subs || []).length; s.subs = mergeSubs(s.subs, ts.subs || [], s.status === 'done');
+      const extra = (s.subs.length > before) ? s.subs.length - before : 0; subs += extra; if (extra) ch = true; });
+    const k = copyCards(p); cards += k; if (k) ch = true;
+    if (ch){ projs++; addLog(p, `Обновлено по шаблону «${t.name}»`); }
+  });
+  return { subs, cards, projs };
+}
+document.addEventListener('click', e => {
+  if (ui.view !== 'templates' || !ui.draft) return;
+  const tg = e.target.closest('[data-tsubtog]');
+  if (tg){ ui.tplOpen = ui.tplOpen || {}; ui.tplOpen[tg.dataset.tsubtog] = !ui.tplOpen[tg.dataset.tsubtog]; renderTemplates(); return; }
+  const tc = e.target.closest('[data-tcard]'); if (tc){ const [i, j] = tc.dataset.tcard.split('|').map(Number); openCardEditor(i, j); return; }
+  const sm = e.target.closest('[data-smove]'); const sd = e.target.closest('[data-sdel]');
+  if (sm || sd){ const row = e.target.closest('.tsub'); const st = ui.draft.stages[+row.dataset.i]; const j = +row.dataset.j;
+    if (sd) st.subs.splice(j, 1); else { const k = j + +sm.dataset.smove; if (k >= 0 && k < st.subs.length) [st.subs[j], st.subs[k]] = [st.subs[k], st.subs[j]]; }
+    ui.draftDirty = true; renderTemplates(); return; }
+  if (e.target.id === 'tApply'){
+    const t = tplById(ui.draft.id); if (!t) return;
+    if (ui.draftDirty){ toast('Сначала сохраните шаблон'); return; }
+    askConfirm({ title:`Обновить проекты по шаблону «${t.name}»?`, text:`В активных проектах (${activeOf(t.id).length}) появятся недостающие подэтапы и карточки из шаблона. Уже заполненные карточки и отметки не изменятся.`, ok:'Обновить', danger:false })
+      .then(yes => { if (!yes) return; const r = applyTplToProjects(t); commit();
+        toast(r.projs ? `Обновлено проектов: ${r.projs}. Подэтапов добавлено: ${r.subs}, карточек: ${r.cards}` : 'Все проекты уже соответствуют шаблону'); });
+  }
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest?.('[data-tsubadd]'); if (!f || !ui.draft) return;
+  e.preventDefault(); const st = ui.draft.stages[+f.dataset.tsubadd]; const v = f.querySelector('input').value.trim(); if (!v) return;
+  if ((st.subs || []).some(x => norm(x.name) === norm(v))){ toast('Такой подэтап уже есть'); return; }
+  (st.subs = st.subs || []).push({ id:uid(), name:v, card:null }); ui.draftDirty = true; renderTemplates();
+  app.querySelector(`[data-tsubadd="${f.dataset.tsubadd}"] input`)?.focus();
+});
+document.addEventListener('input', e => {
+  const el = e.target; if (!el.dataset?.sf || !ui.draft) return;
+  const row = el.closest('.tsub'); const x = ui.draft.stages[+row.dataset.i].subs[+row.dataset.j]; x.name = el.value; ui.draftDirty = true;
+});
 function renderTemplates(){
   if (!ui.draft){
     const t = tplById(ui.tplSel) || db.templates[0];
     ui.tplSel = t?.id ?? 'new';
     ui.draft = t ? JSON.parse(JSON.stringify(t)) : { id:null, name:'', stages:[{ id:uid(), name:'Бриф', days:2, approval:false }] };
+    attachCards(ui.draft);
   }
   const d = ui.draft; const total = d.stages.reduce((n,s) => n + (+s.days||0), 0);
   const used = d.id ? db.projects.filter(p => p.template_id === d.id && p.state !== 'archived').length : 0;
-  app.innerHTML = `<div class="tpl-wrap">
+  app.innerHTML = `${setNav()}<div class="tpl-wrap">
     <div class="tpl-list">
       ${db.templates.map(t => `<button class="tpl-item" data-tpl="${t.id}" aria-current="${t.id===ui.tplSel}"><b>${esc(t.name)}</b>
         <small>${t.stages.length} этапов, ${days(t.stages.reduce((n,s)=>n+s.days,0))}</small></button>`).join('')}
@@ -2327,17 +2451,17 @@ function renderTemplates(){
     </div>
     <div class="tpl-ed">
       <input class="name" id="tName" value="${esc(d.name)}" placeholder="Название шаблона" aria-label="Название шаблона">
-      <p class="hint">Длительность цепочки: ${days(total)}. ${used ? `Используется в проектах: ${used}. Изменения применятся только к новым проектам.` : ''}</p>
+      <p class="hint">Длительность цепочки: ${days(total)}. У каждого этапа — подэтапы, у подэтапа — карточка (описание, регламент, видео, чек-лист). Новые проекты по шаблону получают всё это автоматически.${used ? ` Используется в активных проектах: ${used}.` : ''}</p>
       <div id="tRows">${d.stages.map((s,i) => `<div class="trow" data-i="${i}">
         <span class="n">${i+1}</span>
         <input type="text" data-f="name" value="${esc(s.name)}" aria-label="Название этапа ${i+1}">
         <input type="number" min="1" data-f="days" value="${s.days}" aria-label="Дней на этап ${i+1}">
         <label><input type="checkbox" data-f="approval" ${s.approval?'checked':''}> согласование</label>
         <span class="tools"><button data-move="-1" aria-label="Выше">↑</button><button data-move="1" aria-label="Ниже">↓</button><button data-del aria-label="Удалить этап">×</button></span>
-      </div>`).join('')}</div>
+      </div>${tplSubsHtml(s, i)}`).join('')}</div>
       <p><button class="ghost" id="tAdd">Добавить этап</button></p>
       <div class="err" id="tErr"></div>
-      <div class="actions">${d.id && !used ? '<button class="ghost danger" id="tDel">Удалить шаблон</button>' : ''}<button class="primary" id="tSave">Сохранить шаблон</button></div>
+      <div class="actions">${d.id && !used ? '<button class="ghost danger" id="tDel">Удалить шаблон</button>' : ''}${d.id && used ? `<button class="ghost" id="tApply">Обновить активные проекты (${used})</button>` : ''}<button class="primary${ui.draftDirty ? ' t-dirty' : ''}" id="tSave">Сохранить шаблон</button></div>
     </div></div>`;
 }
 
@@ -2472,7 +2596,7 @@ document.addEventListener('click', e => {
   }
   // шаблоны
   const ti = e.target.closest('[data-tpl]');
-  if (ti){ ui.tplSel = ti.dataset.tpl; ui.draft = ti.dataset.tpl === 'new' ? { id:null, name:'', stages:[{ id:uid(), name:'Бриф', days:2, approval:false }] } : null; renderTemplates(); return; }
+  if (ti){ ui.tplSel = ti.dataset.tpl; ui.draftDirty = false; ui.draft = ti.dataset.tpl === 'new' ? { id:null, name:'', stages:[{ id:uid(), name:'Бриф', days:2, approval:false, subs:[] }] } : null; renderTemplates(); return; }
   if (e.target.id === 'tAdd'){ ui.draft.stages.push({ id:uid(), name:'', days:3, approval:false, subs:[] }); renderTemplates(); app.querySelector('.trow:last-child input')?.focus(); return; }
   const mv = e.target.closest('[data-move]');
   if (mv){ const i = +mv.closest('.trow').dataset.i, j = i + +mv.dataset.move, a = ui.draft.stages; if (j>=0 && j<a.length){ [a[i],a[j]] = [a[j],a[i]]; renderTemplates(); } return; }
@@ -2482,10 +2606,16 @@ document.addEventListener('click', e => {
     if (!d.name.trim()) return $('#tErr').textContent = 'Укажите название шаблона';
     const bad = d.stages.findIndex(s => !s.name.trim() || !(+s.days >= 1));
     if (bad >= 0) return $('#tErr').textContent = `Этап ${bad+1}: нужно название и срок от 1 дня`;
-    d.stages.forEach(s => { s.days = Math.round(+s.days); s.subs = s.subs || []; });
-    if (d.id){ db.templates[db.templates.findIndex(t => t.id === d.id)] = JSON.parse(JSON.stringify(d)); }
-    else { d.id = 't' + uid(); db.templates.push(JSON.parse(JSON.stringify(d))); }
-    ui.tplSel = d.id; ui.draft = null; commit(); toast('Шаблон сохранён'); return;
+    d.stages.forEach(s => { s.days = Math.round(+s.days); s.subs = (s.subs || []).filter(x => x.name.trim()); s.subs.forEach(x => { x.name = x.name.trim(); }); });
+    const dupe = d.stages.find(s => new Set(s.subs.map(x => norm(x.name))).size !== s.subs.length);
+    if (dupe) return $('#tErr').textContent = `Этап «${dupe.name}»: подэтапы с одинаковыми названиями`;
+    if (!d.id) d.id = 't' + uid();
+    storeCards(d);
+    const clean = JSON.parse(JSON.stringify(d)); clean.stages.forEach(s => s.subs.forEach(x => delete x.card));
+    const at = db.templates.findIndex(t => t.id === d.id); if (at >= 0) db.templates[at] = clean; else db.templates.push(clean);
+    const used = activeOf(d.id).length;
+    ui.tplSel = d.id; ui.draft = null; ui.draftDirty = false; commit();
+    toast(used ? `Шаблон сохранён. Чтобы добавить новое в идущие проекты, нажмите «Обновить активные проекты»` : 'Шаблон сохранён. Новые проекты получат подэтапы и карточки'); return;
   }
   if (e.target.id === 'tDel'){ db.templates = db.templates.filter(t => t.id !== ui.draft.id); ui.draft = null; ui.tplSel = null; commit(); toast('Шаблон удалён'); }
 });
