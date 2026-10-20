@@ -876,6 +876,28 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
 :root[data-theme="dark"] .u-over{color:#1a0b0b}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .u-over{color:#1a0b0b}}
 /* ---------- Главная на телефоне: сводка и карточки ---------- */
+.mh{margin:2px 0 4px}
+.mh h2{margin:0 0 10px;font-size:18px;font-weight:600;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.mh h2 small{font-size:13px;font-weight:400;color:var(--muted)}
+.mh-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.mh-chips .chip{flex:none}
+.mc{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.mc::before{display:none}
+.mc-main{display:grid;gap:5px;width:100%;text-align:left;border:0;background:none;padding:13px 14px 8px;cursor:pointer;color:var(--ink);font:inherit}
+.mc-r1{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.mc-r1 b{font-size:15.5px;font-weight:600;line-height:1.3}
+.mc-r1 .pill{flex:none}
+.mc-sub{color:var(--muted);font-size:13px}
+.mc-sub .hp{margin:0;vertical-align:0}
+.mc-stage{font-size:14px;font-weight:500;margin-top:4px}
+.mc-stage small{color:var(--muted);font-weight:400;font-size:13px}
+.mc-n{color:var(--muted);font-weight:500;margin-right:2px}
+.mc .pbar{margin:2px 0 0}
+.mc-foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.mc-more{display:block;width:100%;border:0;background:none;padding:2px 14px 11px;text-align:left;font:inherit;font-size:12.5px;color:var(--muted);cursor:pointer}
+.mc-more:hover{color:var(--ink)}
+@media (max-width:640px){.kb-tip,.dash .panel > .hint,.team-head + .members + .hint{display:none}.stats{grid-template-columns:repeat(2,1fr)}.stat{padding:11px 13px}.stat b{font-size:20px}}
+.mc .pc-stages{border-top:1px solid var(--line);padding-top:6px}
 .hero{border-radius:20px;padding:16px;margin:4px 0 6px;color:#fff;background:linear-gradient(135deg,#1F2A6B 0%,#3B5BDB 55%,#7C3AED 100%);box-shadow:0 10px 30px rgba(59,91,219,.25)}
 .hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
 .hero small{opacity:.8;font-size:12.5px}
@@ -1610,13 +1632,10 @@ function renderPhoneList(list){
   const week = pool.filter(p => { const c = currentStage(p); return c && c.status !== 'not_started' && urg(c.due_date).k !== 'ok'; }).length;
   const tiles = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике']].map(([k, l]) =>
     `<button class="tile t-${k}" data-htile="${k}" aria-pressed="${ui.risk === k}"><b>${cnt(k)}</b><span>${l}</span></button>`).join('');
-  const hero = `<section class="hero">
-    <div class="hero-top"><div><small>${new Date().toLocaleDateString('ru-RU', { weekday:'long', day:'numeric', month:'long' })}</small>
-      <h2>${pool.length} ${plural(pool.length, 'проект', 'проекта', 'проектов')} в работе</h2></div>
-      ${week ? `<span class="hero-week">${CLOCK}${week} ${plural(week, 'срок', 'срока', 'сроков')} на неделе</span>` : ''}</div>
-    <div class="tiles">${tiles}</div>
-    ${ui.risk ? `<button class="hero-reset" data-htile="">Показать все проекты</button>` : ''}
-  </section>`;
+  const chips = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике']].map(([k, l]) =>
+    `<button class="chip" data-htile="${k}" aria-pressed="${ui.risk === k}"><span class="sw ${k}"></span>${l} <b>${cnt(k)}</b></button>`).join('');
+  const hero = `<section class="mh"><h2>${pool.length} ${plural(pool.length, 'проект', 'проекта', 'проектов')} в работе${week ? `<small>${week} ${plural(week, 'срок', 'срока', 'сроков')} на неделе</small>` : ''}</h2>
+    <div class="mh-chips">${chips}${ui.risk ? `<button class="chip" data-htile="">Все</button>` : ''}</div></section>`;
   const card = p => {
     const c = currentStage(p); const h = c ? health(c) : { key:'done', label:'Завершён', note:'' };
     const risk = projectRisk(p); const n = p.stages.length; const doneN = p.stages.filter(s => s.status === 'done').length;
@@ -1635,20 +1654,20 @@ function renderPhoneList(list){
         return `<li><button class="pc-st${isCur ? ' cur' : ''}" data-open="${p.id}" data-stage="${s.id}"><i class="sw ${sh.key}"></i>
           <span class="pc-sn"><b>${i + 1}. ${esc(s.name)}</b><small>${esc(short(whoId(p, s)))}</small></span>
           <span class="pc-ss s-${sh.key}t">${sh.label}<small class="${su ? 'ut-' + su.k : ''}">${sh.note}</small></span></button></li>`; }).join('')}</ol>` : '';
-    return `<article class="pc pc2 r-${risk}">
-      <button class="pc-main" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''}>
-        <span class="pc-tags"><span class="pc-badge b-${risk}">${RISK_RU[risk]}</span>${p.priority === 'high' ? '<span class="hp">Высокий приоритет</span>' : ''}</span>
-        <span class="pc-head"><span class="pc-ttl"><b>${esc(p.name)}</b><small class="pc-sub">${esc(p.client)} · PM ${esc(short(p.pm_id))}${execTxt(p, ' · ')}</small><small class="pc-sub">${startTxt(p)}</small></span>${ring(pct, risk)}</span>
-        <span class="pc-stagebox">
-          <span class="pc-lbl">${c ? `Этап ${c.position + 1} из ${n}` : 'Этапы'}</span>
-          <b class="pc-sname">${c ? esc(c.name) : 'Все этапы пройдены'}</b>${c && curSubTxt(p) ? `<small class="subnow">Подэтап: ${esc(curSubTxt(p))}</small>` : ''}
-          ${c ? `<span class="pc-row">${stageChip}<span class="pc-who">${whoId(p, c) ? esc(short(whoId(p, c))) : '<span class="pc-none">без ответственного</span>'}</span></span>` : ''}
-          <span class="pbar" role="img" aria-label="Пройдено ${doneN} из ${n} этапов">${segs}</span>
-        </span>
-        ${worst ? `<span class="pc-warn">Этап ${worst.position + 1} «${esc(worst.name)}»: ${health(worst).note.toLowerCase()}</span>` : ''}
-        <span class="pc-foot2">${due}${late ? `<small class="late">по плану финиш ${fmt(end)}, на ${days(diffDays(end, p.deadline))} позже</small>` : ''}</span>
+    const sub = curSubTxt(p);
+    let stageDue = '';
+    if (c && c.status === 'not_started'){ const u = urg(c.planned_start); stageDue = `старт ${u.d <= 0 ? 'сегодня' : u.txt}`; }
+    else if (c){ const u = urg(c.due_date); stageDue = `<span class="ut-${u.k}">${u.k === 'over' ? u.txt : `сдать ${u.txt}`}</span>`; }
+    const dlTxt = p.state === 'completed' ? 'Проект завершён' : target ? `${p.deadline ? 'Дедлайн' : 'Финиш'} ${fmt(target)}${late ? ` · <span class="ut-over">план позже на ${days(diffDays(end, p.deadline))}</span>` : ''}` : '';
+    return `<article class="pc mc">
+      <button class="mc-main" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''}>
+        <span class="mc-r1"><b>${esc(p.name)}</b><span class="pill s-${risk}"><i class="sw ${risk}"></i>${RISK_RU[risk]}</span></span>
+        <small class="mc-sub">${esc(p.client)} · PM ${esc(short(p.pm_id))}${p.priority === 'high' ? ' · <span class="hp">Высокий</span>' : ''}</small>
+        <span class="mc-stage">${c ? `<span class="mc-n">${c.position + 1}/${n}</span> ${esc(c.name)}${sub ? `<small> · ${esc(sub)}</small>` : ''}` : 'Все этапы пройдены'}</span>
+        <span class="pbar" role="img" aria-label="Пройдено ${doneN} из ${n} этапов">${segs}</span>
+        <span class="mc-foot"><span>${c ? `${stageDue}${whoId(p, c) ? ` · ${esc(short(whoId(p, c)))}` : ''}` : ''}</span><span>${dlTxt}</span></span>
       </button>
-      <button class="pc-more" data-mxtoggle="${p.id}" aria-expanded="${open}">${open ? 'Скрыть этапы' : `Все этапы · ${doneN} из ${n} сдано`}</button>
+      <button class="mc-more" data-mxtoggle="${p.id}" aria-expanded="${open}">${open ? 'Скрыть этапы' : `Этапы · ${doneN} из ${n}`}</button>
       ${stages}
     </article>`;
   };
@@ -1799,7 +1818,7 @@ function renderKanban(){
       ${c.items.map(card).join('')}</section>`;
   };
   app.innerHTML = `<div class="kb-head"><select id="kbTpl" aria-label="Шаблон процесса">${db.templates.map(x => `<option value="${x.id}" ${x.id===t.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
-    <span class="hint">Перетащите карточку в колонку этапа. Свой этап добавляется кнопкой «Добавить этап» и становится частью процесса.</span></div>
+    <span class="hint kb-tip">Перетащите карточку в колонку этапа. Свой этап добавляется кнопкой «Добавить этап» и становится частью процесса.</span></div>
     <div class="kb">${cols.map(colHtml).join('')}<button class="col-add" id="kbAdd"><span aria-hidden="true">+</span>Добавить этап</button>${other.items.length ? colHtml(other) : ''}${colHtml(done)}</div>`;
 }
 
