@@ -1,6 +1,8 @@
 # KaizenHub
 
-Конвейер проектов для агентства. Один файл `index.html` + Supabase (вход и база) + Vercel (хостинг и `/api/sample`).
+Конвейер проектов для агентства. Сайт: https://kaizenhub-nu.vercel.app
+
+ Один файл `index.html` + Supabase (вход и база) + Vercel (хостинг и `/api/sample`).
 
 **Быстрый старт**
 1. Supabase: выполнить `supabase/migrations/20261020000000_init.sql` в SQL Editor.
