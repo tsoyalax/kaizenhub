@@ -147,6 +147,29 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const gtxt = gw.w.document.getElementById('app').textContent;
   assert.equal(gw.w.document.querySelectorAll('.pf-item[data-pfsel]').length, 2, gtxt.slice(0, 200)); ok('он видит оба проекта: по ссылке и по назначению');
 
+  // 4) общая ссылка для исполнителей: одна на всех, многоразовая
+  $(own, '[data-view="team"]').click(); await wait(100);
+  $(own, '#commonLink').click(); await wait(50);
+  $(own, '#clNew').click(); await wait(600);
+  const clink = $(own, '#clIn') && $(own, '#clIn').value;
+  assert.ok(clink && /\?invite=[a-z0-9]{8,32}$/.test(clink)); ok('общая ссылка: создана и показана');
+  const ccode = clink.split('invite=')[1];
+  assert.ok(be.rows.get('inv/' + ccode).data.common); ok('общая ссылка: записана в базу');
+  $(own, '[data-close]').click(); await wait(50);
+  const X1 = 'xxxxxxxx-0000-0000-0000-000000000011', X2 = 'xxxxxxxx-0000-0000-0000-000000000012';
+  const e1 = openApp(be, X1, clink, { meta: { name: 'Исполнитель Один' } }); await wait(4000);
+  const e2 = openApp(be, X2, clink, { meta: { name: 'Исполнитель Два' } }); await wait(4000);
+  assert.ok(be.rows.has(`team/${A}/members/${X1}`) && be.rows.has(`team/${A}/members/${X2}`)); ok('общая ссылка: по ней вошли двое');
+  assert.ok(e1.w.document.body.classList.contains('guest') && e2.w.document.body.classList.contains('guest')); ok('общая ссылка: оба видят версию исполнителя');
+  assert.ok(be.rows.has('inv/' + ccode)); ok('общая ссылка: после входа продолжает работать');
+  await wait(1500);
+  const users = own.w.eval('db.users');
+  assert.ok(users.some(u => u.account_id === X1) && users.some(u => u.account_id === X2)); ok('общая ссылка: оба появились в «Команде» руководителя');
+  assert.equal(users.filter(u => u.account_id === X1).length, 1); ok('общая ссылка: без дублей');
+  $(own, '#commonLink').click(); await wait(50); $(own, '#clOff').click(); await wait(400);
+  assert.ok(!be.rows.has('inv/' + ccode) && !own.w.eval('db.prefs.teamLink')); ok('общая ссылка: отключается');
+  e1.w.close(); e2.w.close();
+
   assert.equal(own.errors.length, 0, own.errors.join('\n')); assert.equal(wk.errors.length, 0, wk.errors.join('\n')); assert.equal(gw.errors.length, 0, gw.errors.join('\n')); ok('ошибок на страницах нет');
   own.w.close(); wk.w.close(); gw.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);

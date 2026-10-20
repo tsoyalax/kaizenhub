@@ -290,6 +290,36 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     assert.ok(b && b.classList.contains('done')); ok('карточка без чек-листа в завершённом этапе показана выполненной');
     w.closeLayer(); await wait(50);
   }
+  // 13в) выбор нескольких проектов: удалить и отправить в архив пачкой
+  {
+    Dc.querySelector('[data-view="matrix"]').click(); await wait(100);
+    const st = $q('#selToggle'); assert.ok(st && !st.hidden); ok('выбор: на главной есть кнопка «Выбрать»');
+    st.click(); await wait(100);
+    const rows = () => [...Dc.querySelectorAll('#app .prow[data-open], #app .cx tr[data-open], #app .mc-main[data-open]')];
+    assert.ok(rows().length >= 3 && rows().every(r => r.querySelector('.psel')) && $q('#selBar')); ok('выбор: у проектов галочки, внизу панель действий');
+    assert.ok($q('[data-seldel]').disabled); ok('выбор: пока ничего не выбрано, «Удалить» недоступно');
+    const ids = rows().slice(0, 2).map(r => r.dataset.open); const tasksBefore = LS().tasks.filter(t => ids.includes(t.project_id)).length;
+    rows()[0].click(); await wait(50); rows()[1].click(); await wait(50);
+    assert.ok(!$q('.drawer') || !Dc.querySelector('.drawer.open')); assert.ok(/Выбрано: 2/.test($q('#selBar').textContent)); ok('выбор: клик отмечает проект, а не открывает его');
+    rows()[1].click(); await wait(50); assert.ok(/Выбрано: 1/.test($q('#selBar').textContent)); rows()[1].click(); await wait(50); ok('выбор: повторный клик снимает отметку');
+    $q('[data-seldel]').click(); await wait(50);
+    assert.ok(/Удалить 2 проекта/.test($q('#cfmT').textContent)); ok('выбор: перед удалением спрашивает подтверждение');
+    $q('#cfmOk').click(); await wait(200);
+    const L = LS();
+    assert.ok(ids.every(id => !L.projects.some(p => p.id === id))); ok('выбор: выбранные проекты удалены');
+    assert.ok(tasksBefore >= 0 && !L.tasks.some(t => ids.includes(t.project_id))); ok('выбор: их карточки тоже удалены');
+    assert.ok(!$q('#selBar') && !Dc.body.classList.contains('selecting')); ok('выбор: после удаления режим выбора закрыт');
+    // архив пачкой
+    $q('#selToggle').click(); await wait(100);
+    const aid = rows()[0].dataset.open; rows()[0].click(); await wait(50);
+    $q('[data-selarch]').click(); await wait(50); $q('#cfmOk').click(); await wait(200);
+    assert.equal(LS().projects.find(p => p.id === aid).state, 'archived'); ok('выбор: «В архив» отправляет выбранные в архив');
+    // «Выбрать все» и выход по «Готово»
+    $q('#selToggle').click(); await wait(100); $q('[data-selall]').click(); await wait(50);
+    assert.ok(new RegExp(`Выбрано: ${w.eval('visible().length')}`).test($q('#selBar').textContent)); ok('выбор: «Выбрать все» отмечает все видимые проекты');
+    $q('[data-seldone]').click(); await wait(100);
+    assert.ok(!$q('#selBar')); ok('выбор: «Готово» выходит из режима, ничего не удаляя');
+  }
   // 14) фильтры: аккуратная панель
   Dc.querySelector('[data-view="matrix"]').click(); await wait(100);
   const ownText = el => [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim();

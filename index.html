@@ -423,6 +423,21 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .sp-new #spNewName{height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px;font-size:14.5px}
 .sp-new .primary{justify-self:start}
 @media (max-width:640px){.space-name{max-width:110px}}
+.sel-toggle[aria-pressed="true"]{border-color:var(--line-strong);color:var(--ink)}
+body.selecting .prow, body.selecting .cx tr[data-open], body.selecting .mc-main{cursor:pointer}
+body.selecting .cell, body.selecting .pc-st{pointer-events:none;opacity:.55}
+.psel{display:inline-grid;place-items:center;width:18px;height:18px;margin-right:8px;vertical-align:-3px;border:1.5px solid var(--line-strong);border-radius:5px;background:var(--surface);flex:none}
+.psel.on{background:var(--accent,#2563eb);border-color:var(--accent,#2563eb)}
+.psel.on::after{content:'';width:9px;height:5px;border:2px solid var(--accent-ink,#fff);border-top:0;border-right:0;transform:translateY(-1px) rotate(-45deg)}
+.prow.is-sel, .cx tr.is-sel td, .mc-main.is-sel{background:color-mix(in srgb,var(--accent,#2563eb) 10%,transparent)}
+.sel-bar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  max-width:calc(100vw - 32px);padding:10px 12px;border:1px solid var(--line-strong);border-radius:14px;background:var(--surface);box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.sel-bar b{padding:0 6px;font-size:14px;white-space:nowrap}
+.sel-bar .sel-sp{flex:1}
+.sel-bar button[disabled]{opacity:.45;pointer-events:none}
+body.selecting #app{padding-bottom:90px}
+@media (max-width:640px){.sel-bar{bottom:76px;left:16px;right:16px;transform:none;max-width:none}.sel-bar .sel-sp{display:none}}
+.team-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
 .cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
 .cat-row:hover .tx{opacity:1}
@@ -1669,6 +1684,7 @@ function renderFilters(){
   if (!show) return;
   $('#groupWrap').hidden = ui.view !== 'matrix';
   $('#density').hidden = ui.view !== 'matrix';
+  const st = $('#selToggle'); if (st){ st.hidden = ui.view !== 'matrix'; st.setAttribute('aria-pressed', !!ui.selMode); st.textContent = ui.selMode ? 'Отменить выбор' : 'Выбрать'; }
   $('#density').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.density === density()));
   $('#sort').value = ui.sort; $('#group').value = groupMode();
   if ($('#q').value !== ui.q) $('#q').value = ui.q;
@@ -1715,8 +1731,88 @@ function render(){
   renderFilters();
   ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:() => renderProjectFocus(true), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.open) renderDrawer();
+  paintSelect();
   renderMobileNav(); paintMeBtn();
 }
+
+// ---------- Выбор нескольких проектов: архив и удаление пачкой ----------
+// В режиме выбора у каждого проекта на главной галочка, клик по проекту выбирает его вместо открытия.
+const SEL_ROWS = '.prow[data-open], .cx tr[data-open], .mc-main[data-open]';
+function paintSelect(){
+  const on = !!ui.selMode && ui.view === 'matrix' && !GUEST;
+  document.body.classList.toggle('selecting', on);
+  let bar = $('#selBar');
+  if (!on){ bar?.remove(); return; }
+  ui.sel = ui.sel || new Set();
+  [...ui.sel].forEach(id => { if (!db.projects.some(p => p.id === id)) ui.sel.delete(id); });
+  app.querySelectorAll(SEL_ROWS).forEach(el => {
+    const id = el.dataset.open; const host = el.matches('tr') ? el.firstElementChild : el;
+    let cb = host.querySelector(':scope > .psel');
+    if (!cb){ host.insertAdjacentHTML('afterbegin', `<span class="psel" aria-hidden="true"></span>`); cb = host.firstElementChild; }
+    const sel = ui.sel.has(id); cb.classList.toggle('on', sel); el.classList.toggle('is-sel', sel);
+    el.setAttribute('aria-pressed', sel);
+  });
+  const vis = visible().map(p => p.id); const n = ui.sel.size; const all = vis.length && vis.every(id => ui.sel.has(id));
+  if (!bar){ document.body.insertAdjacentHTML('beforeend', '<div class="sel-bar" id="selBar" role="toolbar" aria-label="Выбранные проекты"></div>'); bar = $('#selBar'); }
+  bar.innerHTML = `<b>${n ? `Выбрано: ${n}` : 'Отметьте проекты'}</b>
+    <button class="ghost" data-selall>${all ? 'Снять все' : `Выбрать все (${vis.length})`}</button>
+    <span class="sel-sp"></span>
+    <button class="ghost" data-selarch ${n ? '' : 'disabled'}>В архив</button>
+    <button class="ghost danger" data-seldel ${n ? '' : 'disabled'}>Удалить</button>
+    <button class="primary" data-seldone>Готово</button>`;
+}
+function exitSelect(){ ui.selMode = false; ui.sel = new Set(); render(); }
+// клик по проекту в режиме выбора — отметить (перехватываем раньше, чем откроется карточка)
+document.addEventListener('click', e => {
+  if (!ui.selMode || ui.view !== 'matrix') return;
+  const el = e.target.closest?.('[data-open]'); if (!el || !app.contains(el)) return;
+  e.preventDefault(); e.stopPropagation();
+  const id = el.dataset.open; ui.sel = ui.sel || new Set();
+  if (ui.sel.has(id)) ui.sel.delete(id); else ui.sel.add(id);
+  paintSelect();
+}, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.selMode && !$('#confirmBox')?.innerHTML.trim()) exitSelect(); });
+// удалить проекты безвозвратно вместе с их задачами-карточками и отчётами
+function deleteProjects(ids){
+  const set = new Set(ids);
+  db.projects = db.projects.filter(x => !set.has(x.id));
+  db.tasks = (db.tasks || []).filter(t => !set.has(t.project_id));
+  db.reports = (db.reports || []).filter(r => !set.has(r.project_id));
+  if (ui.clients.length) ui.clients = ui.clients.filter(c => db.projects.some(x => x.client === c));
+  if (set.has(ui.open)){ ui.open = null; ui.focusStage = null; layer.innerHTML = ''; }
+  commit();
+}
+document.addEventListener('click', e => {
+  if (e.target.closest?.('#selToggle')){ if (ui.selMode) exitSelect(); else { ui.selMode = true; ui.sel = new Set(); ui.open = null; layer.innerHTML = ''; render(); } return; }
+  if (!ui.selMode) return;
+  if (e.target.closest('[data-seldone]')){ exitSelect(); return; }
+  if (e.target.closest('[data-selall]')){
+    const vis = visible().map(p => p.id); const all = vis.every(id => ui.sel.has(id));
+    vis.forEach(id => all ? ui.sel.delete(id) : ui.sel.add(id)); paintSelect(); return;
+  }
+  const list = () => db.projects.filter(p => ui.sel.has(p.id));
+  const names = ps => ps.slice(0, 5).map(p => `«${p.name}»`).join(', ') + (ps.length > 5 ? ` и ещё ${ps.length - 5}` : '');
+  if (e.target.closest('[data-seldel]')){
+    const ps = list(); if (!ps.length) return;
+    askConfirm({ title:`Удалить ${ps.length} ${plural(ps.length, 'проект', 'проекта', 'проектов')}?`,
+      text:`${names(ps)}. Этапы, карточки и история удалятся вместе с проектами, восстановить их будет нельзя. Если проекты могут понадобиться позже, отправьте их в архив.`,
+      ok:'Удалить навсегда' }).then(yes => {
+        if (!yes) return;
+        deleteProjects(ps.map(p => p.id)); exitSelect();
+        toast(`Удалено: ${ps.length} ${plural(ps.length, 'проект', 'проекта', 'проектов')}`);
+      });
+    return;
+  }
+  if (e.target.closest('[data-selarch]')){
+    const ps = list(); if (!ps.length) return;
+    askConfirm({ title:`Отправить в архив ${ps.length} ${plural(ps.length, 'проект', 'проекта', 'проектов')}?`, text:`${names(ps)}. Проекты пропадут с досок, данные и история сохранятся.`, ok:'В архив', danger:false })
+      .then(yes => {
+        if (!yes) return;
+        ps.forEach(p => { p.state = 'archived'; addLog(p, 'Проект отправлен в архив'); });
+        commit(); exitSelect(); toast(`В архиве: ${ps.length} ${plural(ps.length, 'проект', 'проекта', 'проектов')}`);
+      });
+  }
+});
 
 // ---------- Матрица ----------
 // по умолчанию главная группирует по категориям (если они заведены), иначе по процессу
@@ -2210,7 +2306,7 @@ function renderTeam(){
         ${!isMe ? `<button class="ghost danger" data-remove="${u.id}">${u.status === 'invited' ? 'Отозвать' : 'Удалить'}</button>` : ''}
       </div></div>`;
   }).join('');
-  app.innerHTML = `<div class="team-head"><h2>Команда <span>${db.users.length}</span></h2><button class="primary" data-invite>Пригласить</button></div>
+  app.innerHTML = `<div class="team-head"><h2>Команда <span>${db.users.length}</span></h2><div class="team-acts">${cloud.store && cloud.uid ? `<button class="ghost" id="commonLink">${db.prefs?.teamLink?.code ? 'Ссылка для исполнителей' : 'Общая ссылка для исполнителей'}</button>` : ''}<button class="primary" data-invite>Пригласить</button></div></div>
     <div class="members"><div class="mrow headr"><span>Сотрудник</span><span>Роль</span><span>Отдел</span><span>Норма</span><span>Статус</span><span></span></div>${rows}</div>
     <p class="hint">Норма — в скольких проектах человек может быть назначен одновременно без перегрузки. По ней считается вкладка «Загрузка».</p>
     ${demoCount ? `<div class="note-box"><p>В системе ${demoCount} демо-${plural(demoCount,'проект','проекта','проектов')} с выдуманными клиентами. Удалите их, когда будете готовы завести реальные.</p><button class="ghost danger" id="clearDemo">Удалить демо-проекты</button></div>` : ''}`;
@@ -5164,6 +5260,44 @@ async function teamLinkFor(u, fresh){
   } catch(e) { toast('Не удалось создать ссылку. Проверьте связь и попробуйте ещё раз.'); }
 }
 
+// Общая ссылка для исполнителей: одна на всю команду, многоразовая. Кто вошёл по ней — исполнитель,
+// попадает в «Команду» сам (или привязывается к сотруднику с той же почтой). Хранится в db.prefs.teamLink.
+async function createCommonLink(){
+  const code = newCode(), at = new Date().toISOString();
+  await cloud.store.doc(`inv/${code}`).set({ kind:'team', common:true, ownerId:cloud.uid, memberId:'', name:'', at });
+  const old = db.prefs?.teamLink?.code; if (old) cloud.store.doc(`inv/${old}`).delete().catch(() => {});
+  db.prefs = db.prefs || {}; db.prefs.teamLink = { code, at }; commit(); return code;
+}
+function openCommonLink(){
+  const L = db.prefs?.teamLink; const url = L?.code ? inviteUrl(L.code) : '';
+  layer.innerHTML = `<div class="backdrop" data-close></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="clT">
+    <h2 id="clT">Ссылка для исполнителей</h2>
+    <p class="lead">Одна ссылка для всех исполнителей. Человек открывает её, входит через Google или по почте и попадает в вашу команду
+      с версией для исполнителя: видит только «Мои проекты» — те, где вы его назначили.</p>
+    ${url ? `<div class="row"><input readonly id="clIn" value="${esc(url)}" aria-label="Ссылка для исполнителей" style="flex:1;min-width:0;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px"><button class="primary" id="clCopy">Копировать</button></div>
+      <p class="hint">Ссылка многоразовая. Если она попала не туда — сделайте новую: старая перестанет работать, а те, кто уже вошёл, останутся в команде.</p>
+      <div class="actions"><button class="ghost danger" id="clOff">Отключить ссылку</button><button class="ghost" id="clNew">Сделать новую</button><button class="ghost" data-close>Готово</button></div>`
+    : `<div class="actions"><button class="ghost" data-close>Отмена</button><button class="primary" id="clNew">Создать ссылку</button></div>`}
+  </div>`;
+  const cp = $('#clCopy'); if (cp) cp.onclick = () => {
+    const fallback = () => { $('#clIn').select(); toast('Ссылка выделена: нажмите ⌘C (Ctrl+C)'); };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).then(() => toast('Ссылка скопирована'), fallback); else fallback();
+  };
+}
+document.addEventListener('click', async e => {
+  if (e.target.id === 'commonLink'){ openCommonLink(); return; }
+  if (e.target.id === 'clNew'){
+    try { await createCommonLink(); openCommonLink(); toast('Ссылка готова'); } catch(err) { toast('Не удалось создать ссылку. Проверьте связь и попробуйте ещё раз.'); }
+    return;
+  }
+  if (e.target.id === 'clOff'){
+    const code = db.prefs?.teamLink?.code; if (!code) return;
+    try { await cloud.store.doc(`inv/${code}`).delete(); } catch(err) { toast('Не удалось отключить ссылку. Попробуйте ещё раз.'); return; }
+    db.prefs.teamLink = null; commit(); layer.innerHTML = ''; toast('Ссылка отключена');
+  }
+});
+
 // человек открыл ссылку в команду
 async function acceptTeam(code, inv){
   if (inv.ownerId === cloud.uid){ toast('Это ссылка в вашу собственную команду. Отправьте её сотруднику.'); return; }
@@ -5189,6 +5323,7 @@ function processTeamJoins(){
     const acc = d.id, b = d.data() || {};
     const u = db.users.find(x => x.id !== ME && x.invite?.code && x.invite.code === b.code);
     const had = db.users.find(x => x.account_id === acc);
+    if (!u && b.code && b.code === db.prefs?.teamLink?.code && !had && acc !== cloud.uid){ commonJoins.add(acc); continue; }
     if (!u || had === u) continue;
     if (had){ if (!had.viaLink) continue; mergeMember(had, u); }   // человек уже был в команде через ссылку на доску
     u.account_id = acc; u.status = 'active'; u.joined_at = new Date().toISOString();
@@ -5197,7 +5332,28 @@ function processTeamJoins(){
     toast(`${u.name} принял(а) приглашение и вошёл(ла) в приложение`);
   }
   if (changed){ commit(); refreshProfiles(true); }
-  addLinkedPeople();
+  addLinkedPeople(); addCommonJoins();
+}
+// вошедшие по общей ссылке: привязываем к сотруднику с той же почтой (ещё без входа) или добавляем исполнителем
+const commonJoins = new Set(); let commonBusy = false;
+async function addCommonJoins(){
+  if (commonBusy || !commonJoins.size || !cloud.user) return;
+  commonBusy = true;
+  try {
+    const ids = [...commonJoins].filter(a => !db.users.some(u => u.account_id === a));
+    const prof = ids.length ? await cloud.user.profiles(ids).catch(() => ({})) : {};
+    const names = [];
+    ids.forEach(a => {
+      if (db.users.some(u => u.account_id === a)) return;
+      const pr = prof[a] || {}; const mail = String(pr.email || '').toLowerCase();
+      let u = mail && db.users.find(x => x.id !== ME && !x.account_id && String(x.email || '').toLowerCase() === mail);
+      if (u){ if (u.invite?.code){ cloud.store.doc(`inv/${u.invite.code}`).delete().catch(() => {}); u.invite = null; } }
+      else { u = { id:'u' + uid(), name:pr.name || pr.email || 'Исполнитель', email:pr.email || '', role:'specialist', dept:'Другое', capacity:3, avatar:pr.avatar || '', title:pr.title || '', contact:pr.contact || '' }; db.users.push(u); }
+      u.account_id = a; u.status = 'active'; u.joined_at = new Date().toISOString(); names.push(u.name);
+    });
+    commonJoins.clear();
+    if (names.length){ commit(); toast(names.length === 1 ? `${names[0]} вошёл(ла) по ссылке для исполнителей и добавлен(а) в «Команду»` : `По ссылке для исполнителей вошли: ${names.join(', ')}`); }
+  } finally { commonBusy = false; }
 }
 // переносим назначения с одной записи сотрудника на другую (один человек — одна запись)
 function mergeMember(from, to){
@@ -5316,7 +5472,7 @@ document.addEventListener('click', e => {
   if (e.target.closest('#fToggle')){ $('#filters').classList.toggle('open'); $('#fToggle').setAttribute('aria-expanded', $('#filters').classList.contains('open')); }
 });
 // кнопка «Фильтры» рядом с поиском (видна только на телефоне)
-$('#q').insertAdjacentHTML('afterend', '<button class="ghost f-toggle" id="fToggle" aria-expanded="false" aria-controls="tags">Фильтры<i aria-hidden="true"></i><b class="f-n"></b></button>');
+$('#q').insertAdjacentHTML('afterend', '<button class="ghost f-toggle" id="fToggle" aria-expanded="false" aria-controls="tags">Фильтры<i aria-hidden="true"></i><b class="f-n"></b></button><button class="ghost sel-toggle" id="selToggle" aria-pressed="false">Выбрать</button>');
 
 try { db = JSON.parse(localStorage.getItem(KEY)); } catch(e) {}
 if (!db || !db.projects || !db.users) db = SPACE ? emptySpace() : seed();

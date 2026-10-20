@@ -36,6 +36,11 @@
     return null;
   })();
 
+  // Вкладка входа: «Руководитель» (своё пространство) или «Исполнитель» (видит проекты, куда его назначили).
+  // По ссылке-приглашению сразу открыта вкладка исполнителя. Выбор переживает уход на страницу Google.
+  var WHO_KEY = 'kz-who';
+  var WHO = (function () { try { var v = sessionStorage.getItem(WHO_KEY); sessionStorage.removeItem(WHO_KEY); return v === 'worker' || v === 'lead' ? v : null; } catch (e) { return null; } })();
+
   var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var POLL_MS = 20000;
 
@@ -88,9 +93,11 @@
     return '';
   }
 
-  function loginScreen(note) {
+  function loginScreen(note, opts) {
     return new Promise(function (resolve) {
       var mode = 'in';
+      var who = (opts && opts.who) || (INVITE ? 'worker' : 'lead');
+      var tabCss = 'flex:1;padding:8px 10px;font:inherit;font-size:14px;font-weight:600;border:0;border-radius:7px;cursor:pointer;';
       var el = document.createElement('div');
       el.setAttribute('role', 'dialog');
       el.setAttribute('aria-modal', 'true');
@@ -100,6 +107,9 @@
       el.innerHTML =
         '<div style="width:100%;max-width:380px;border:1px solid color-mix(in srgb,CanvasText 18%,transparent);border-radius:14px;padding:24px">' +
         '<h1 style="margin:0 0 4px;font-size:22px">KaizenHub</h1>' +
+        '<div role="tablist" aria-label="Кто входит" style="display:flex;gap:4px;padding:4px;margin:12px 0 10px;border-radius:10px;background:color-mix(in srgb,CanvasText 8%,transparent)">' +
+        '<button type="button" role="tab" id="kzLead" data-who="lead">Руководитель</button>' +
+        '<button type="button" role="tab" id="kzWorker" data-who="worker">Исполнитель</button></div>' +
         '<p id="kzNote" style="margin:0 0 16px;opacity:.75;font-size:14px"></p>' +
         '<button id="kzGoogle" type="button" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 12px;font:inherit;font-weight:600;border-radius:8px;border:1px solid color-mix(in srgb,CanvasText 30%,transparent);background:Canvas;color:CanvasText;cursor:pointer">' +
         '<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>' +
@@ -116,7 +126,19 @@
       document.body.appendChild(el);
       var $ = function (s) { return el.querySelector(s); };
       var msg = function (t, ok) { var m = $('#kzMsg'); m.textContent = t || ''; m.style.color = ok ? '#15803d' : '#dc2626'; };
-      $('#kzNote').textContent = note || (INVITE ? 'Вас пригласили в проект. Войдите или создайте аккаунт, чтобы открыть его.' : 'Войдите, чтобы открыть свои проекты.');
+      function paintWho() {
+        ['lead', 'worker'].forEach(function (k) {
+          var b = el.querySelector('[data-who="' + k + '"]'), on = who === k;
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+          b.style.cssText = tabCss + (on ? 'background:Canvas;color:CanvasText;box-shadow:0 1px 3px rgba(0,0,0,.15)' : 'background:transparent;color:inherit;opacity:.65');
+        });
+        $('#kzNote').textContent = note || (who === 'worker'
+          ? (INVITE ? 'Вас пригласили в команду или проект. Войдите или создайте аккаунт — откроются проекты, где вы назначены.'
+                    : 'Для исполнителей: войдите и откройте ссылку от руководителя — появятся проекты, где вы назначены.')
+          : 'Для руководителей: ваши проекты, команда, шаблоны и загрузка.');
+      }
+      el.querySelectorAll('[data-who]').forEach(function (b) { b.addEventListener('click', function () { who = b.getAttribute('data-who'); paintWho(); msg(''); }); });
+      paintWho();
       function paint() {
         $('#kzGo').textContent = mode === 'in' ? 'Войти' : 'Создать аккаунт';
         $('#kzSwitch').textContent = mode === 'in' ? 'Нет аккаунта? Создать' : 'Уже есть аккаунт? Войти';
@@ -129,6 +151,7 @@
         try {
           // Google вернёт человека на этот же адрес; код приглашения дублируем на случай, если он потеряется в пути
           if (INVITE) { try { sessionStorage.setItem(INVITE_KEY, INVITE); } catch (x) { /* ничего */ } }
+          try { sessionStorage.setItem(WHO_KEY, who); } catch (x) { /* ничего */ }
           var r = await sb.auth.signInWithOAuth({
             provider: 'google',
             options: { redirectTo: location.origin + location.pathname + location.search, queryParams: { prompt: 'select_account' } }
@@ -137,7 +160,7 @@
         } catch (err) { msg(authErrText(err)); btn.disabled = false; }
       });
       var sub = sb.auth.onAuthStateChange(function (ev, s) {
-        if (s) { try { sub.data.subscription.unsubscribe(); } catch (e) {} el.remove(); resolve(s); }
+        if (s) { WHO = who; try { sub.data.subscription.unsubscribe(); } catch (e) {} el.remove(); resolve(s); }
       });
       $('#kzForm').addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -151,7 +174,7 @@
             var u = await sb.auth.signUp({
               email: email, password: password,
               options: {
-                data: INVITE ? { role: 'guest' } : {},
+                data: who === 'worker' ? { role: 'guest' } : {},
                 emailRedirectTo: location.origin + location.pathname + location.search
               }
             });
@@ -172,9 +195,20 @@
       var note = urlAuthNote();
       sb.auth.onAuthStateChange(function (ev, s) {
         session = s;
-        if (ev === 'SIGNED_OUT') location.href = location.pathname;
+        if (ev === 'SIGNED_OUT' && !gating) location.href = location.pathname;
       });
-      if (!session) session = await loginScreen(note);
+      for (;;) {
+        if (!session) session = await loginScreen(note, gateWho ? { who: gateWho } : null);
+        // вкладка «Руководитель» открывается только аккаунтам с доступом руководителя
+        if (WHO === 'lead' && !(await isLead(session.user))) {
+          gating = true;
+          try { await sb.auth.signOut(); } catch (e) { /* всё равно не пускаем */ }
+          gating = false; session = null; WHO = null; gateWho = 'worker';
+          note = 'У этого аккаунта нет доступа руководителя. Войдите на вкладке «Исполнитель» — откроются проекты, где вы назначены. Доступ руководителя выдаёт администратор сервиса.';
+          continue;
+        }
+        break;
+      }
       await markInvitedGuest();
       startRealtime();
       return session;
@@ -182,12 +216,23 @@
     return readyP;
   }
 
+  // Доступ руководителя: у аккаунта уже есть своё пространство (руководители, работающие в сервисе) или роль lead в профиле.
+  // Новые аккаунты и исполнители (role guest) руководителями сами не становятся.
+  var gating = false, gateWho = null;
+  async function isLead(u) {
+    var role = (u && u.user_metadata || {}).role;
+    if (role === 'lead') return true;
+    if (role === 'guest' || !u) return false;
+    try { return !!(await fetchOne('data/users/' + u.id + '/meta', 'path')); } catch (e) { return true; }   // нет связи — не запираем своих
+  }
+
   // Вход через Google не передаёт роль при регистрации (как форма с почтой). Поэтому новичка, пришедшего
   // по ссылке-приглашению, отмечаем исполнителем здесь. Того, у кого уже есть свои данные, не трогаем.
   async function markInvitedGuest() {
     try {
       var u = session && session.user;
-      if (!INVITE || !u || (u.user_metadata || {}).role) return;
+      var asWorker = WHO ? WHO === 'worker' : !!INVITE;     // выбранная при входе вкладка важнее ссылки
+      if (!asWorker || !u || (u.user_metadata || {}).role) return;
       if (await fetchOne('data/users/' + u.id + '/meta', 'path')) return;
       var r = await sb.auth.updateUser({ data: { role: 'guest' } });
       if (!r.error && r.data && r.data.user) session = Object.assign({}, session, { user: r.data.user });

@@ -57,5 +57,43 @@ function boot(backend, userId, extra, url, session) {
   assert.ok(/Google/.test(w5.document.getElementById('kzNote').textContent)); ok('ошибка Google показана по-русски');
   assert.ok(w5.location.search.includes('invite=abcdefgh12') && !w5.location.hash.includes('error')); ok('после ошибки ссылка-приглашение на месте');
 
+  // 6) вкладки «Руководитель / Исполнитель» на экране входа
+  const be6 = makeBackend();
+  const w6 = boot(be6, N, { noSession: true }, 'https://kz.test/');
+  w6.claude.use('user'); await wait(50);
+  const d6 = w6.document, sel = k => d6.querySelector(`[data-who="${k}"]`).getAttribute('aria-selected');
+  assert.ok(d6.getElementById('kzLead') && d6.getElementById('kzWorker')); ok('вход: вкладки «Руководитель» и «Исполнитель»');
+  assert.equal(sel('lead'), 'true'); assert.ok(/руководител/i.test(d6.getElementById('kzNote').textContent)); ok('вход: без ссылки открыта вкладка руководителя');
+  d6.getElementById('kzWorker').click(); await wait(20);
+  assert.equal(sel('worker'), 'true'); assert.ok(/исполнител/i.test(d6.getElementById('kzNote').textContent)); ok('вход: переключение на «Исполнитель»');
+  d6.getElementById('kzGoogle').click(); await wait(50);
+  assert.equal(w6.sessionStorage.getItem('kz-who'), 'worker'); ok('вход: выбор вкладки сохраняется на время входа через Google');
+  const w6i = boot(makeBackend(), N, { noSession: true }, 'https://kz.test/?invite=abcdefgh12');
+  w6i.claude.use('user'); await wait(50);
+  assert.equal(w6i.document.querySelector('[data-who="worker"]').getAttribute('aria-selected'), 'true'); ok('вход: по ссылке сразу открыта вкладка исполнителя');
+  // вернулся с Google после вкладки «Исполнитель» без ссылки — новичок становится исполнителем
+  const be7 = makeBackend();
+  const w7 = boot(be7, N, {}, 'https://kz.test/', { 'kz-who': 'worker' });
+  assert.equal((await (await w7.claude.use('user')).me()).isOwner, false); ok('вход: исполнитель через Google получил версию исполнителя');
+  // вкладка «Руководитель» без доступа руководителя: не пускает, предлагает вкладку исполнителя
+  const be8 = makeBackend();
+  const w8 = boot(be8, N, {}, 'https://kz.test/', { 'kz-who': 'lead' });
+  let entered8 = false; w8.claude.use('user').then(() => { entered8 = true; }); await wait(100);
+  assert.ok(!entered8 && /нет доступа руководителя/.test(w8.document.getElementById('kzNote').textContent)); ok('вход: новый аккаунт на вкладке «Руководитель» не пускается');
+  assert.equal(w8.document.querySelector('[data-who="worker"]').getAttribute('aria-selected'), 'true'); ok('вход: после отказа открыта вкладка «Исполнитель»');
+  assert.equal((be8.updateCalls || []).length, 0); ok('вход: отказ ничего не меняет в профиле');
+  // действующий руководитель (есть своё пространство) входит как обычно
+  const be9 = makeBackend(); be9.put('data/users/' + A + '/meta', { json: '{}' });
+  const w9 = boot(be9, A, {}, 'https://kz.test/', { 'kz-who': 'lead' });
+  assert.equal((await (await w9.claude.use('user')).me()).isOwner, true); ok('вход: руководитель со своим пространством входит');
+  // исполнитель (role guest) на вкладке «Руководитель» тоже не проходит
+  const be10 = makeBackend();
+  const w10 = boot(be10, N, { meta: { role: 'guest' } }, 'https://kz.test/', { 'kz-who': 'lead' });
+  let entered10 = false; w10.claude.use('user').then(() => { entered10 = true; }); await wait(100);
+  assert.ok(!entered10 && /нет доступа руководителя/.test(w10.document.getElementById('kzNote').textContent)); ok('вход: исполнитель не может войти как руководитель');
+  // роль lead в профиле — доступ руководителя есть и без данных
+  const w11 = boot(makeBackend(), N, { meta: { role: 'lead' } }, 'https://kz.test/', { 'kz-who': 'lead' });
+  assert.equal((await (await w11.claude.use('user')).me()).isOwner, true); ok('вход: роль руководителя из профиля пускает');
+
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });
