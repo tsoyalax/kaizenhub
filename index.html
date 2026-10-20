@@ -1619,7 +1619,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
     const c = currentStage(x); const r = projectRisk(x); const xp = projectProgress(x);
     return `<button class="pm-chip${x.id === p.id ? ' on' : ''}" data-pfsel="${x.id}" aria-current="${x.id === p.id}">
       <span class="pm-cn"><i class="sw ${r}"></i>${esc(x.name)}</span>
-      <small>${c ? `${c.position + 1}/${x.stages.length} · ${esc(c.name)}` : 'Все этапы пройдены'}</small>${c && curSubTxt(x) ? `<small class="subnow">▸ ${esc(curSubTxt(x))}</small>` : ''}
+      <small>${c ? `${c.position + 1}/${x.stages.length} · ${esc(c.name)}` : 'Все этапы пройдены'}</small>
       <span class="pf-mini" aria-hidden="true"><i style="width:${xp.pct}%"></i></span></button>`;
   }).join('');
   const prevBoard = app.querySelector('.pm-board')?.scrollLeft || 0;
@@ -3504,7 +3504,7 @@ function renderProjectFocus(mine = false){
     const nShare = shareCount(x);
     return `<div class="pf-row">${!mine ? `<button class="pf-share${nShare ? ' on' : ''}" data-share="${x.id}" aria-label="Поделиться проектом ${esc(x.name)}" title="Поделиться">${SHARE_ICON}${nShare ? `<span>${nShare}</span>` : ''}</button>` : ''}<button class="pf-item${x.id === p.id ? ' on' : ''}" data-pfsel="${x.id}" aria-current="${x.id === p.id}">
       <span class="pf-name"><i class="sw ${h.key}"></i>${esc(x.name)}</span>
-      <small>${c ? `${c.position + 1}. ${esc(c.name)}` : 'Все этапы пройдены'}, ${xp.pct}%</small>${c && curSubTxt(x) ? `<small class="subnow">▸ ${esc(curSubTxt(x))}</small>` : ''}
+      <small>${c ? `${c.position + 1}. ${esc(c.name)}` : 'Все этапы пройдены'}, ${xp.pct}%</small>
       <span class="pf-mini" aria-hidden="true"><i style="width:${xp.pct}%"></i></span></button></div>`;
   }).join('');
 

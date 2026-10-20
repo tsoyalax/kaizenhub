@@ -131,7 +131,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const kt = o.w.document.getElementById('kbTpl'); kt.value = demoP.template_id; kt.dispatchEvent(new o.w.Event('change', { bubbles: true })); await wait(150);
   assert.ok(o.w.document.querySelector(`.card[data-card="${demoP.id}"] .subnow`)); ok('канбан: на карточке «Сейчас: подэтап»');
   o.w.document.querySelector('[data-view="production"]').click(); await wait(150);
-  assert.ok(o.w.document.querySelector(`.pf-item[data-pfsel="${demoP.id}"] .subnow`)); ok('производство: в списке проектов виден подэтап');
+  assert.ok(o.w.document.querySelector(`.pf-item[data-pfsel="${demoP.id}"]`) && !o.w.document.querySelector('.pf-item .subnow')); ok('производство: в списке проектов слева подэтапа нет');
+  assert.ok(o.w.document.querySelector('.pf-card.here')); ok('производство: на доске метка «Сейчас здесь» осталась');
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('ошибок на странице нет');
   o.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
