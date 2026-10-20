@@ -213,6 +213,20 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(tl() && $q('#cfmOk')); ok('подэтап: есть несохранённые правки — спрашивает «Закрыть без сохранения?»');
   $q('#cfmOk').click(); await wait(150);
   assert.ok(!tl()); assert.notEqual(LS().tasks.find(x => x.id === 'tk1').title, 'Изменённое название'); ok('подэтап: после подтверждения окно закрыто, правки не сохранены');
+  // 11) чек-лист в карточке: без стрелок, перетаскивание и клавиши
+  w.openTask('tk1'); await wait(100); $q('[data-tedit]').click(); await wait(100);
+  for (const v of ['Пункт Б', 'Пункт В']) { $q('#ckbNew').value = v; $q('[data-ckbadd]').click(); await wait(50); }
+  const items = () => [...Dc.querySelectorAll('.ckb [data-ckbtext]')].map(i => i.value);
+  assert.deepEqual(items(), ['x', 'Пункт Б', 'Пункт В']);
+  assert.ok(!Dc.querySelector('[data-ckbmove]') && Dc.querySelectorAll('.ckb [data-ckdrag]').length === 3); ok('чек-лист: стрелок нет, у каждого пункта ручка для перетаскивания');
+  const pe = (type, el, y) => el.dispatchEvent(new o.w.MouseEvent(type, { bubbles: true, cancelable: true, clientY: y, button: 0 }));
+  pe('pointerdown', $q('[data-ckdrag="2"]'), 0); pe('pointermove', $q('.ckb [data-ckb="0"]'), -1e6); pe('pointerup', $q('.ckb [data-ckb="0"]'), -1e6); await wait(50);
+  assert.deepEqual(items(), ['Пункт В', 'x', 'Пункт Б']); ok('чек-лист: пункт перетащен наверх');
+  $q('[data-ckdrag="0"]').dispatchEvent(new o.w.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })); await wait(50);
+  assert.deepEqual(items(), ['x', 'Пункт В', 'Пункт Б']); ok('чек-лист: клавиша ↓ на ручке переставляет');
+  $q('#tkForm').dispatchEvent(new o.w.Event('submit', { bubbles: true, cancelable: true })); await wait(150);
+  assert.deepEqual(LS().tasks.find(x => x.id === 'tk1').checklist.map(i => i.text), ['x', 'Пункт В', 'Пункт Б']); ok('чек-лист: новый порядок сохранён');
+  w.closeTask(); await wait(50);
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('ошибок на странице нет');
   o.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);

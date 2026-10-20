@@ -685,7 +685,11 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .ckb li button{width:30px;height:30px;flex:none;border:0;background:none;border-radius:7px;cursor:pointer;color:var(--muted)}
 .ckb li button:hover{background:var(--surface-2);color:var(--ink)}
 .ckb li button:disabled{visibility:hidden}
-.ckb-grip{cursor:grab;color:var(--n);padding:0 2px;user-select:none}
+.ckb .grip{flex:none}
+.ckb-x{opacity:0;transition:opacity .12s}
+.ckb li:hover .ckb-x,.ckb-x:focus-visible{opacity:1}
+.ckb-x:hover{color:var(--r)!important}
+@media (hover:none){.ckb-x{opacity:.6}}
 .ckb-done{color:var(--g);font-size:13px}
 .ckb-add input{flex:1;height:36px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px;font-size:14px}
 .tk-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:14px}
@@ -3560,12 +3564,10 @@ function renderTaskModal(focusSel){
         <label class="ghost file-btn">Проверить локальный файл<input type="file" id="tkVideoFile" accept="video/*"></label></div></div>
       ${d.video_url || ui.localVideo ? taskPlayer(ui.localVideo || d.video_url) : ''}
       <div class="field"><label>Конструктор чек-листа</label>
-        <ol class="ckb">${d.items.map((it, k) => `<li draggable="true" data-ckb="${k}">
-          <span class="ckb-grip" aria-hidden="true">⋮⋮</span>
+        <ol class="ckb">${d.items.map((it, k) => `<li data-ckb="${k}">
+          <span class="grip" data-ckdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить пункт ${k + 1}. Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
           <input data-ckbtext="${k}" value="${esc(it.text)}" aria-label="Пункт ${k + 1}">${it.done ? '<span class="ckb-done" title="Уже отмечен">✓</span>' : ''}
-          <button type="button" data-ckbmove="${k}|-1" ${k ? '' : 'disabled'} aria-label="Выше">↑</button>
-          <button type="button" data-ckbmove="${k}|1" ${k < d.items.length - 1 ? '' : 'disabled'} aria-label="Ниже">↓</button>
-          <button type="button" data-ckbdel="${k}" aria-label="Удалить пункт">×</button></li>`).join('')}</ol>
+          <button type="button" class="ckb-x" data-ckbdel="${k}" aria-label="Удалить пункт ${k + 1}" title="Удалить пункт">×</button></li>`).join('')}</ol>
         <div class="row ckb-add"><input id="ckbNew" placeholder="Новый пункт, Enter — добавить" aria-label="Новый пункт чек-листа"><button type="button" class="ghost" data-ckbadd>Добавить</button></div></div>
       ${sub && !p._ext ? `<label class="tpl-check"><input type="checkbox" id="tdTpl" ${d.asTpl ? 'checked' : ''}><span>Сохранить как шаблон карточки «${esc(sub.name)}»${tplById(p.template_id) ? ` для процесса «${esc(tplById(p.template_id).name)}»` : ''}<small>Новые карточки этого подэтапа в других проектах будут создаваться с этим описанием, ссылками и чек-листом.</small></span></label>` : ''}
       <div class="err" id="tdErr"></div>
@@ -3672,7 +3674,6 @@ document.addEventListener('click', e => {
     syncTaskToSub(t); addLog(p, `Карточка «${t.title}» заполнена из шаблона`); tSave(t, true); toast('Карточка заполнена из шаблона'); return; }
   if (tg.closest('[data-tedit]')){ ui.taskDraft = draftOf(t); renderTaskModal('#tdTitle'); return; }
   if (tg.closest('[data-tcancel]')){ ui.taskDraft = null; ui.localVideo && URL.revokeObjectURL(ui.localVideo); ui.localVideo = null; renderTaskModal(); return; }
-  const mv = tg.closest('[data-ckbmove]'); if (mv){ const [k, d] = mv.dataset.ckbmove.split('|').map(Number); moveDraftItem(k, k + d); return; }
   const dl = tg.closest('[data-ckbdel]'); if (dl){ ui.taskDraft.items.splice(+dl.dataset.ckbdel, 1); renderTaskModal('#ckbNew'); return; }
   if (tg.closest('[data-ckbadd]')){ const v = $('#ckbNew').value.trim(); if (v){ ui.taskDraft.items.push({ id:null, text:v, done:false }); renderTaskModal('#ckbNew'); } return; }
   if (tg.closest('[data-tdel]')){
@@ -3697,10 +3698,35 @@ document.addEventListener('input', e => {
   if (el.dataset.ckbtext !== undefined) ui.taskDraft.items[+el.dataset.ckbtext].text = el.value;
 });
 // перетаскивание пунктов в конструкторе
-let ckbDrag = null;
-document.addEventListener('dragstart', e => { const li = e.target.closest?.('[data-ckb]'); if (li){ ckbDrag = +li.dataset.ckb; e.dataTransfer.effectAllowed = 'move'; } });
-document.addEventListener('dragover', e => { if (ckbDrag !== null && e.target.closest?.('[data-ckb]')) e.preventDefault(); });
-document.addEventListener('drop', e => { const li = e.target.closest?.('[data-ckb]'); if (li && ckbDrag !== null){ e.preventDefault(); moveDraftItem(ckbDrag, +li.dataset.ckb); } ckbDrag = null; });
+// чек-лист в карточке: перетаскивание за ручку (мышь, палец) и клавиши ↑ ↓
+const ckDrag = { from:-1, li:null, to:null };
+document.addEventListener('pointerdown', e => {
+  const g = e.target.closest?.('[data-ckdrag]'); if (!g || !ui.taskDraft || (e.button != null && e.button > 0)) return;
+  e.preventDefault(); ckDrag.from = +g.dataset.ckdrag; ckDrag.to = null; ckDrag.li = g.closest('li'); ckDrag.li.classList.add('dragging'); document.body.classList.add('is-sorting');
+  try { g.setPointerCapture?.(e.pointerId); } catch(x) {}
+});
+document.addEventListener('pointermove', e => {
+  if (ckDrag.from < 0) return; e.preventDefault();
+  const under = (typeof document.elementFromPoint === 'function' && document.elementFromPoint(e.clientX, e.clientY)) || e.target;
+  const li = under?.closest?.('.ckb [data-ckb]'); document.querySelectorAll('.ckb .drop-before,.ckb .drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after'));
+  if (!li){ ckDrag.to = null; return; }
+  const r = li.getBoundingClientRect(); const after = e.clientY > r.top + r.height / 2; const k = +li.dataset.ckb;
+  ckDrag.to = after ? k + 1 : k; li.classList.add(after ? 'drop-after' : 'drop-before');
+});
+function endCkDrag(apply){
+  if (ckDrag.from < 0) return;
+  const { from, to } = ckDrag; ckDrag.from = -1; ckDrag.li?.classList.remove('dragging'); document.body.classList.remove('is-sorting');
+  document.querySelectorAll('.ckb .drop-before,.ckb .drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after'));
+  if (apply && to !== null && to !== from && to !== from + 1) moveDraftItem(from, to > from ? to - 1 : to);
+}
+document.addEventListener('pointerup', () => endCkDrag(true));
+document.addEventListener('pointercancel', () => endCkDrag(false));
+document.addEventListener('keydown', e => {
+  const g = e.target.closest?.('[data-ckdrag]'); if (!g || !ui.taskDraft || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+  e.preventDefault(); const k = +g.dataset.ckdrag, to = k + (e.key === 'ArrowUp' ? -1 : 1);
+  if (to < 0 || to >= ui.taskDraft.items.length) return; moveDraftItem(k, to);
+  document.querySelector(`[data-ckdrag="${to}"]`)?.focus();
+});
 document.addEventListener('change', e => {
   const el = e.target;
   if (['tfTpl','tfProject','tfStage','tfAssignee','tfHide'].includes(el.id)){
