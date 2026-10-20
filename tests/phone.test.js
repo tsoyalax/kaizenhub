@@ -47,8 +47,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(after < before && $('.mh-chips .chip[aria-pressed="true"]')); ok('телефон: чип фильтрует проекты');
   $('.mh-chips .chip[data-htile=""]').click(); await wait(150);
   assert.equal(D.querySelectorAll('.mc').length, before); ok('телефон: «Все» сбрасывает фильтр');
-  $('.mc [data-mxtoggle]').click(); await wait(150);
-  assert.ok($('.mc .pc-stages')); ok('телефон: этапы проекта раскрываются');
+  assert.ok(!$('.mc [data-mxtoggle]') && $('.mc .mc-dl svg') && !/·/.test($('.mc .mc-sub').textContent)); ok('телефон: карточка без лишних строк, дедлайн с флажком справа внизу, без точек');
   $('.mc .mc-main').click(); await wait(150);
   assert.ok($('.drawer')); ok('телефон: нажатие на карточку открывает проект');
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('телефон: ошибок нет');
