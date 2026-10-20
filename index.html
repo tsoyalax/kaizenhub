@@ -72,7 +72,20 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .badge{position:absolute;top:1px;right:1px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--r);color:#fff;font-size:10.5px;font-weight:600;display:grid;place-items:center}
 
 /* ---------- Фильтры ---------- */
-.filters{padding:20px 28px 0;display:grid;gap:12px}
+.filters{padding:18px 28px 0;display:grid;gap:10px}
+.filters #q{flex:0 1 320px}
+.filters label.inl select{height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 10px;font-size:13.5px;color:var(--ink)}
+.filters .row > label.inl:first-of-type{margin-left:auto}
+.f-toggle{display:inline-flex;align-items:center;gap:6px;height:36px;font-size:13.5px}
+.f-toggle i{display:none}
+.f-n{min-width:18px;height:18px;border-radius:9px;background:var(--ink);color:var(--surface);font-size:11px;display:none;place-items:center;padding:0 5px}
+.f-toggle.on .f-n{display:inline-grid}
+.filters:not(.open) #tags{display:none}
+#tags{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+#activeF:empty,.filters.open #activeF{display:none}
+.tag.on-x{background:var(--surface-2);border-color:var(--line-strong)}
+.tag.on-x span{opacity:.6;margin-left:2px}
+#chips .chip{padding:4px 11px 4px 9px;font-size:13px}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .row input[type=search],.row select{height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 11px;min-width:0;font-size:14px}
 .row input[type=search]:focus,.row select:focus{border-color:var(--line-strong);outline:0}
@@ -772,7 +785,7 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
    МОБИЛЬНАЯ ВЕРСИЯ (телефон до 640px)
    ===================================================================== */
 .dash>*{min-width:0}
-.mnav,.f-toggle,.more-sheet{display:none}
+.mnav,.more-sheet{display:none}
 @media (max-width:640px){
   body{font-size:15px}
   input,select,textarea{font-size:16px!important}                 /* iOS не приближает поле при фокусе */
@@ -810,8 +823,12 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
   .f-toggle i{width:7px;height:7px;border-radius:50%;background:var(--r);display:none}
   .f-toggle.on i{display:block}
   .filters:not(.open) label.inl,.filters:not(.open) #density,.filters:not(.open) #tags,.filters:not(.open) #reset{display:none!important}
+  .filters .row > label.inl:first-of-type{margin-left:0}
+  .filters #q{flex:1 1 0;min-width:0}
+  .filters.open .row > label.inl{flex:1 1 100%}
+  #tags{padding:0;border:0;background:none}
   .filters.open label.inl{flex:1 1 100%;display:flex;justify-content:space-between;align-items:center}
-  .filters.open label.inl select{flex:0 1 60%}
+  .filters.open label.inl select{flex:1 1 100%;width:100%}
   #tags{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -12px;padding:0 12px 2px}
   #tags>*{flex:none;white-space:nowrap}
   /* окна — снизу, как в приложениях */
@@ -1052,30 +1069,31 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
   <div class="row" id="chips" role="group" aria-label="Фильтр по риску"></div>
   <div class="row">
     <input type="search" id="q" placeholder="Поиск: проект, клиент, PM, ответственный" aria-label="Поиск">
-    <label class="inl" for="sort">Сортировка
-      <select id="sort">
-        <option value="risk">По риску</option>
-        <option value="finish">По финишу</option>
-        <option value="deadline">По общему дедлайну</option>
-        <option value="priority">По приоритету</option>
-        <option value="name">По названию</option>
+    <label class="inl" for="sort">
+      <select id="sort" aria-label="Сортировка" title="Сортировка">
+        <option value="risk">Сортировка: по риску</option>
+        <option value="finish">Сортировка: по финишу</option>
+        <option value="deadline">Сортировка: по дедлайну</option>
+        <option value="priority">Сортировка: по приоритету</option>
+        <option value="name">Сортировка: по названию</option>
       </select></label>
-    <label class="inl" for="group" id="groupWrap">Группировка
-      <select id="group">
-        <option value="category">По категории</option>
-        <option value="template">По процессу</option>
-        <option value="pm">По PM</option>
-        <option value="client">По клиенту</option>
-        <option value="priority">По приоритету</option>
-        <option value="none">Без группировки</option>
+    <label class="inl" for="group" id="groupWrap">
+      <select id="group" aria-label="Группировка" title="Группировка">
+        <option value="category">Группы: по категориям</option>
+        <option value="template">Группы: по процессу</option>
+        <option value="pm">Группы: по PM</option>
+        <option value="client">Группы: по клиенту</option>
+        <option value="priority">Группы: по приоритету</option>
+        <option value="none">Без групп</option>
       </select></label>
     <div class="seg-toggle" id="density" role="group" aria-label="Вид таблицы">
       <button data-density="compact">Компактный</button>
       <button data-density="detailed">Подробный</button>
     </div>
-    <button class="link" id="reset" hidden>Сбросить фильтры</button>
+    <button class="link" id="reset" hidden>Сбросить</button>
   </div>
   <div class="tags" id="tags"></div>
+  <div class="tags" id="activeF"></div>
 </section>
 <main id="app"></main>
 <nav class="mnav" id="mnav" aria-label="Разделы"></nav>
@@ -1301,12 +1319,22 @@ function setDue(p, s, value){
   commit();
   toast(`Дедлайн сдвинут на ${delta>0?'+':'−'}${days(Math.abs(delta))}` + (n ? `. Пересчитано этапов: ${n}` : ''));
 }
+// Этап завершён — все его подэтапы и пункты чек-листов в карточках отмечаются выполненными
+function completeStage(p, s){
+  const now = new Date().toISOString(); let n = 0;
+  (s.subs || []).forEach(x => { x.done = true; });
+  (p._ext ? ext.tasks : (db.tasks || [])).filter(t => t.project_id === p.id && t.stage_id === s.id).forEach(t => {
+    t.checklist.forEach(i => { if (!i.done){ i.done = true; i.completed_at = now; i.completed_by = meName(); n++; } });
+    if (t.checklist.length && !t.completed_at) t.completed_at = now;
+  });
+  return n;
+}
 // PATCH /api/stages/:id { status }
 function setStatus(p, s, status){
   if (status === s.status) return;
   const t = today();
   if (status === 'done'){
-    s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; (s.subs || []).forEach(x => x.done = true);
+    s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; completeStage(p, s);
     const late = diffDays(t, s.due_date); let n = 0;
     if (late > 0) n = shiftFrom(p, s.position, late);
     const next = p.stages.find(x => x.position > s.position && x.status !== 'done');
@@ -1337,7 +1365,7 @@ function assignNote(id, p){
 function moveTo(p, pos){
   const t = today();
   p.stages.forEach(s => {
-    if (s.position < pos){ if (s.status !== 'done'){ s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; (s.subs || []).forEach(x => x.done = true); } }
+    if (s.position < pos){ if (s.status !== 'done'){ s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; completeStage(p, s); } }
     else if (s.position === pos){ if (!['in_progress','client_review'].includes(s.status)) s.status='in_progress'; s.started_at = s.started_at || t; s.completed_at=null; }
     else { s.status='not_started'; s.started_at=null; s.completed_at=null; }
   });
@@ -1528,7 +1556,7 @@ function toggleSub(p, s, x, checked){
 }
 function moveToDone(p){
   const t = today();
-  p.stages.forEach(s => { if (s.status !== 'done'){ s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; (s.subs || []).forEach(x => x.done = true); } });
+  p.stages.forEach(s => { if (s.status !== 'done'){ s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; completeStage(p, s); } });
   syncState(p); addLog(p, 'Все этапы отмечены завершёнными'); commit();
 }
 // PATCH /api/projects/:id
@@ -1614,6 +1642,7 @@ function renderFilters(){
   $('#chips').innerHTML = `<button class="chip" data-risk="" aria-pressed="${!ui.risk}"><span class="sw all"></span>Все активные <b>${activeCount}</b></button>` +
     RISK.map(([k,label]) => {
       const n = pool.filter(p => projectRisk(p) === k).length;
+      if (!n && ui.risk !== k) return '';   // пустые статусы не показываем
       return `<button class="chip" data-risk="${k}" aria-pressed="${ui.risk===k}" title="Показать только: ${label.toLowerCase()}"><span class="sw ${k}"></span>${label} <b>${n}</b></button>`;
     }).join('');
 
@@ -1624,6 +1653,8 @@ function renderFilters(){
   $('#tags').innerHTML =
     (pmIds.length ? `<span class="tlabel">PM:</span>` + pmIds.map(id => `<button class="tag" data-tag-pm="${id}" aria-pressed="${ui.pms.includes(id)}">${esc(short(id))}<small>${live.filter(p=>p.pm_id===id).length}</small></button>`).join('') : '') +
     (clientsSorted.length ? `<span class="tlabel">Клиенты:</span>` + clientsSorted.map(c => `<button class="tag" data-tag-client="${esc(c)}" aria-pressed="${ui.clients.includes(c)}">${esc(c)}<small>${clientCounts[c]}</small></button>`).join('') : '');
+  $('#activeF').innerHTML = [...ui.pms.map(id => `<button class="tag on-x" data-tag-pm="${id}" title="Убрать фильтр">PM: ${esc(short(id))} <span aria-hidden="true">×</span></button>`),
+    ...ui.clients.map(c => `<button class="tag on-x" data-tag-client="${esc(c)}" title="Убрать фильтр">${esc(c)} <span aria-hidden="true">×</span></button>`)].join('');
 }
 
 function render(){
@@ -2747,7 +2778,7 @@ $('#density').onclick = e => {
   db.prefs = { ...(db.prefs || {}), density: b.dataset.density }; save(); render();
 };
 $('#chips').onclick = e => { const c = e.target.closest('[data-risk]'); if (!c) return; const k = c.dataset.risk; ui.risk = ui.risk === k ? '' : k; render(); };
-$('#tags').onclick = e => {
+$('#tags').onclick = $('#activeF').onclick = e => {
   const t = e.target.closest('.tag'); if (!t) return;
   if (t.dataset.tagPm) ui.pms = toggle(ui.pms, t.dataset.tagPm);
   if (t.dataset.tagClient !== undefined) ui.clients = toggle(ui.clients, t.dataset.tagClient);
@@ -3052,14 +3083,18 @@ function crmRows(rep){
     return { d: date != null ? parseDateAny(r[date]) : null, a, src: source != null ? r[source] : '', won: status != null ? won.has(st) : a > 0 };
   }).filter(r => (!rep.from || !r.d || r.d >= rep.from) && (!rep.to || !r.d || r.d <= rep.to));
 }
+// отчёт из старой версии или импорта может быть неполным — достраиваем пустые части
+function fixReport(r){ if (!r) return r; r.spend = Array.isArray(r.spend) ? r.spend : []; r.imports = Array.isArray(r.imports) ? r.imports : [];
+  if (r.crm && (!r.crm.map || !Array.isArray(r.crm.raw))) r.crm = null; return r; }
 function computeReport(rep){
+  fixReport(rep);
   const margin = (rep.margin ?? 100) / 100;
   const rows = crmRows(rep);
   const bySrc = rep.crm?.map?.source != null;
   const map = new Map();
   const ch = k => { if (!map.has(k)) map.set(k, { name:k, spend:0, impressions:0, clicks:0, adLeads:0, leads:0, sales:0, revenue:0 }); return map.get(k); };
   rows.forEach(r => { if (!bySrc) return; const c = ch(canonChannel(r.src)); c.leads++; if (r.won){ c.sales++; c.revenue += r.a; } });
-  rep.spend.forEach(e => {
+  (rep.spend || []).forEach(e => {
     const c = ch(canonChannel(e.source || e.campaign));
     c.spend += +e.spend || 0; c.impressions += +e.impressions || 0; c.clicks += +e.clicks || 0; c.adLeads += +e.leads || 0;
   });
@@ -3692,6 +3727,12 @@ function linksToBlocks(o, regKey, vidKey, bKey){
   if (vid && !vid.startsWith('blob:')) add.push({ id:uid(), type:'video', title:'Видео', value:vid });
   o[bKey] = [...add, ...(o[bKey] || [])]; o[regKey] = ''; o[vidKey] = '';
   return true;
+}
+// завершённые этапы с неотмеченными пунктами (данные до этой правки) приводим в порядок; повторный запуск ничего не меняет
+function syncDoneStages(){
+  let n = 0;
+  db.projects.forEach(p => p.stages.forEach(s => { if (s.status === 'done' && ((s.subs || []).some(x => !x.done) || (db.tasks || []).some(t => t.project_id === p.id && t.stage_id === s.id && t.checklist.some(i => !i.done)))) n += completeStage(p, s) || 1; }));
+  return n;
 }
 function migrateLinks(){
   let n = 0;
@@ -4353,7 +4394,8 @@ function cloudApply(r){
   Object.assign(db, { ver:r.meta.ver, onboarded:r.meta.onboarded, users:r.meta.users, templates:r.meta.templates, categories:'categories' in r.meta ? (r.meta.categories || []) : (db.categories || []), prefs:r.meta.prefs, cardTpls:r.meta.cardTpls || {}, cardTplsInit:!!r.meta.cardTplsInit, savedAt:r.meta.savedAt,
     projects:r.projects, tasks:r.tasks, reports:r.reports });
   migrate(); if (!db.cardTplsInit){ migrateCardTpls(); scheduleCloud(); }
-  if (migrateLinks() + replanAll()) scheduleCloud();
+  (db.reports || []).forEach(fixReport);
+  if (migrateLinks() + syncDoneStages() + replanAll()) scheduleCloud();
   if (ui.open && !projById(ui.open)) closeLayer();
   if (db.onboarded && layer.querySelector('#mForm')) layer.innerHTML = '';
   if (ui.taskId){ if (taskById(ui.taskId)) renderTaskModal(); else closeTask(); }
@@ -5067,7 +5109,7 @@ function renderMobileNav(){
   const inMore = !MNAV_MAIN.includes(ui.view);
   nav.innerHTML = MNAV_MAIN.map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')
     + `<button data-mmore aria-current="${inMore ? 'page' : 'false'}" aria-haspopup="dialog">${inMore ? MNAV[ui.view][1] : MORE_ICON}<span>${inMore ? MNAV[ui.view][0] : 'Ещё'}</span></button>`;
-  const f = $('#fToggle'); if (f) f.classList.toggle('on', !!(ui.pms.length || ui.clients.length));
+  const f = $('#fToggle'); if (f){ const k = ui.pms.length + ui.clients.length; f.classList.toggle('on', !!k); const nb = f.querySelector('.f-n'); if (nb) nb.textContent = k || ''; }
 }
 function openMore(){
   layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal more-sheet" role="dialog" aria-modal="true" aria-label="Другие разделы">
@@ -5080,7 +5122,7 @@ document.addEventListener('click', e => {
   if (e.target.closest('#fToggle')){ $('#filters').classList.toggle('open'); $('#fToggle').setAttribute('aria-expanded', $('#filters').classList.contains('open')); }
 });
 // кнопка «Фильтры» рядом с поиском (видна только на телефоне)
-$('#q').insertAdjacentHTML('afterend', '<button class="ghost f-toggle" id="fToggle" aria-expanded="false" aria-controls="filters">Фильтры<i aria-hidden="true"></i></button>');
+$('#q').insertAdjacentHTML('afterend', '<button class="ghost f-toggle" id="fToggle" aria-expanded="false" aria-controls="tags">Фильтры<i aria-hidden="true"></i><b class="f-n"></b></button>');
 
 try { db = JSON.parse(localStorage.getItem(KEY)); } catch(e) {}
 if (!db || !db.projects || !db.users) db = seed();
@@ -5090,6 +5132,8 @@ if (!db.tasks){ db.tasks = []; seedDemoTasks(); save(); }
 migrateCardTpls();
 db.tasks = db.tasks.filter(t => projById(t.project_id));   // задачи удалённых проектов
 migrateLinks();
+syncDoneStages();
+(db.reports || []).forEach(fixReport);
 replanAll();
 localSave();
 setInterval(() => { if (!GUEST && replanAll()) commit(); }, 3600e3);

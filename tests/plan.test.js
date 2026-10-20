@@ -244,6 +244,37 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   $q('[data-ckvdrag="0"]').dispatchEvent(new o.w.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })); await wait(80);
   assert.deepEqual(vitems(), ['x', 'Пункт Б', 'Пункт В']); ok('карточка: клавиши ↑ ↓ на ручке тоже работают');
   w.closeTask(); await wait(50);
+  // 13) этап «Завершён» отмечает выполненными все подэтапы и чек-листы его карточек
+  {
+    const Lx = LS(); const pr = Lx.projects.find(p => p.state === 'active' && p.stages.some(s => s.status !== 'done' && Lx.tasks.some(t => t.project_id === p.id && t.stage_id === s.id && t.checklist.some(i => !i.done))));
+    const st = pr.stages.find(s => s.status !== 'done' && Lx.tasks.some(t => t.project_id === pr.id && t.stage_id === s.id && t.checklist.some(i => !i.done)));
+    w.openProject(pr.id); await wait(100);
+    const ss = $q(`[data-sstatus="${st.id}"]`); ss.value = 'done'; fire(ss, 'change'); await wait(150);
+    const Ly = LS(); const py = Ly.projects.find(p => p.id === pr.id); const sy = py.stages.find(s => s.id === st.id);
+    const tks = Ly.tasks.filter(t => t.project_id === pr.id && t.stage_id === st.id);
+    assert.equal(sy.status, 'done'); assert.ok(sy.subs.every(x => x.done)); ok('этап завершён: все подэтапы отмечены');
+    assert.ok(tks.length && tks.every(t => t.checklist.every(i => i.done && i.completed_at) && t.completed_at)); ok('этап завершён: чек-листы всех его карточек отмечены выполненными');
+    w.closeLayer(); await wait(50);
+    // уже завершённый этап с неотмеченными пунктами (данные до правки) приводится в порядок
+    const tk = tks[0]; const bad = { ...Ly.tasks.find(t => t.id === tk.id), checklist: tk.checklist.map(i => ({ ...i, done: false, completed_at: null })), completed_at: null };
+    w.mergeSnapshot({ meta: {}, projects: [], tasks: [bad] }, { keepDemo: true }); w.commit(); await wait(50);
+    assert.ok(LS().tasks.find(t => t.id === tk.id).checklist.some(i => !i.done));
+    assert.ok(w.syncDoneStages() > 0); w.commit(); await wait(50);
+    assert.ok(LS().tasks.find(t => t.id === tk.id).checklist.every(i => i.done)); ok('старые данные: завершённые этапы с неотмеченными карточками исправляются');
+    assert.equal(w.syncDoneStages(), 0); ok('повторная проверка ничего не меняет');
+  }
+  // 14) фильтры: аккуратная панель
+  Dc.querySelector('[data-view="matrix"]').click(); await wait(100);
+  const ownText = el => [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim();
+  assert.ok([...Dc.querySelectorAll('#filters label.inl')].every(l => !ownText(l)) && /Сортировка:/.test($q('#sort').selectedOptions[0].textContent)); ok('фильтры: подписи внутри списков, без отдельных надписей');
+  assert.ok([...Dc.querySelectorAll('#chips .chip[data-risk]:not([data-risk=""])')].every(c => +c.querySelector('b').textContent > 0)); ok('фильтры: статусы с нулём не показываются');
+  assert.ok($q('#fToggle') && !$q('#filters').classList.contains('open')); ok('фильтры: PM и клиенты спрятаны под кнопку «Фильтры»');
+  $q('#fToggle').click(); await wait(50); $q('[data-tag-client]').click(); await wait(100);
+  assert.equal($q('#fToggle .f-n').textContent, '1'); ok('фильтры: на кнопке видно, сколько выбрано');
+  $q('#fToggle').click(); await wait(50);
+  const chip = $q('#activeF [data-tag-client]'); assert.ok(chip && /×/.test(chip.textContent)); ok('фильтры: выбранный клиент показан плашкой с крестиком');
+  chip.click(); await wait(100);
+  assert.ok(!$q('#activeF [data-tag-client]') && !$q('#fToggle .f-n').textContent); ok('фильтры: крестик снимает фильтр');
   // 12) видео в карточке: миниатюра, маленький плеер, карточка не закрывается
   const L12 = LS(); const t12 = L12.tasks.find(x => x.id === 'tk1'); t12.video_url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
   w.localStorage.setItem('agency-pipeline-demo-v2', JSON.stringify(L12));
