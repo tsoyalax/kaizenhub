@@ -8,14 +8,19 @@
 --  Владелец видит, кто принял приглашение, и сам открывает таким людям проекты,
 --  где они назначены (через уже существующий sp/<проект>.memberIds).
 --  Миграция только добавляет: старые данные и правила для проектов не меняются.
+--  Её можно безопасно запустить повторно.
 -- =====================================================================
 
 -- ---------- профили ----------
 alter table public.profiles add column if not exists avatar_url text not null default '';
 alter table public.profiles add column if not exists job_title   text not null default '';
 alter table public.profiles add column if not exists contact    text not null default '';
-alter table public.profiles add constraint profiles_lengths_chk
-  check (length(name) <= 120 and length(job_title) <= 120 and length(contact) <= 200 and length(avatar_url) <= 1000);
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'profiles_lengths_chk') then
+    alter table public.profiles add constraint profiles_lengths_chk
+      check (length(name) <= 120 and length(job_title) <= 120 and length(contact) <= 200 and length(avatar_url) <= 1000);
+  end if;
+end $$;
 
 grant update (name, job_title, contact) on public.profiles to authenticated;
 

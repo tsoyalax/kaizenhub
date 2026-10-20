@@ -13,4 +13,5 @@ trap '"$PGBIN/pg_ctl" -D "$DIR" stop -m immediate >/dev/null 2>&1; rm -rf "$DIR"
 PSQL="$PGBIN/psql -h $DIR -p $PORT -U postgres -d postgres -q -v ON_ERROR_STOP=1"
 $PSQL -f supabase-stub.sql
 for f in ../../supabase/migrations/*.sql; do echo "миграция: $(basename "$f")"; $PSQL -f "$f"; done
+last=$(ls ../../supabase/migrations/*.sql | tail -1); echo "повторный запуск: $(basename "$last")"; $PSQL -f "$last"
 $PSQL -t -A -f rights.test.sql
