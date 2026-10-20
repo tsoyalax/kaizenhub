@@ -398,6 +398,17 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .set-panel{max-width:760px}
 .set-days .row{gap:12px;align-items:center}.set-days input{width:90px;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px;font-size:15px}
 .set-rules{margin:12px 0;padding-left:20px;color:var(--muted);font-size:13.5px;display:grid;gap:4px}
+.cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
+.cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
+.cat-row:hover .tx{opacity:1}
+.cat-row input{height:34px;border:1px solid transparent;border-radius:8px;background:transparent;padding:0 8px;font-weight:600;font-size:14.5px;min-width:0}
+.cat-row input:hover{border-color:var(--line)}.cat-row input:focus{border-color:var(--line-strong);outline:0;background:var(--surface)}
+.cat-colors{display:flex;gap:4px}
+.cat-col{width:16px;height:16px;border-radius:50%;border:0;cursor:pointer;padding:0;opacity:.55}
+.cat-col:hover{opacity:1}.cat-col.on{opacity:1;box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--ink)}
+.cat-add{margin:8px 0 0}
+.cat-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:0}
+@media (max-width:640px){.cat-row{grid-template-columns:20px minmax(0,1fr) 28px}.cat-row .hint{display:none}}
 .tsubs{margin:2px 0 4px 48px}
 .tsub-tog{border:0;background:none;padding:4px 0;font:inherit;font-size:12.5px;color:var(--muted);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
 .tsub-tog:hover{color:var(--ink)}.tsub-tog .car{font-size:10px;width:10px}
@@ -1051,6 +1062,7 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
       </select></label>
     <label class="inl" for="group" id="groupWrap">Группировка
       <select id="group">
+        <option value="category">По категории</option>
         <option value="template">По процессу</option>
         <option value="pm">По PM</option>
         <option value="client">По клиенту</option>
@@ -1551,7 +1563,7 @@ function removeMember(u){
 // =====================================================================
 //  ФИЛЬТРЫ И СОРТИРОВКА
 // =====================================================================
-const ui = { view:'matrix', prodMode:'project', prodTpl:'t1', prodOpen:{}, q:'', pms:[], clients:[], risk:'', sort:'risk', group:'template', kbTpl:'t1', dept:'',
+const ui = { view:'matrix', prodMode:'project', prodTpl:'t1', prodOpen:{}, q:'', pms:[], clients:[], risk:'', sort:'risk', group:'auto', kbTpl:'t1', dept:'',
   open:null, focusStage:null, tplSel:null, draft:null };
 const $ = s => document.querySelector(s);
 const app = $('#app'), layer = $('#layer');
@@ -1593,7 +1605,7 @@ function renderFilters(){
   $('#groupWrap').hidden = ui.view !== 'matrix';
   $('#density').hidden = ui.view !== 'matrix';
   $('#density').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.density === density()));
-  $('#sort').value = ui.sort; $('#group').value = ui.group;
+  $('#sort').value = ui.sort; $('#group').value = groupMode();
   if ($('#q').value !== ui.q) $('#q').value = ui.q;
   $('#reset').hidden = !anyFilter();
 
@@ -1626,8 +1638,16 @@ function render(){
 }
 
 // ---------- Матрица ----------
+// по умолчанию главная группирует по категориям (если они заведены), иначе по процессу
+const groupMode = () => ui.group === 'auto' ? ((db.categories || []).length ? 'category' : 'template') : ui.group;
 function groupsFor(list){
-  if (ui.group === 'template') return db.templates.map(t => ({ title:t.name, tpl:t, items:list.filter(p => p.template_id === t.id) })).filter(g => g.items.length);
+  if (groupMode() === 'category'){
+    const cats = db.categories || [];
+    const gs = cats.map(c => ({ title:c.name, cat:c, items:list.filter(p => p.category_id === c.id) }));
+    gs.push({ title:'Без категории', cat:null, items:list.filter(p => !cats.some(c => c.id === p.category_id)) });
+    return gs.filter(g => g.items.length);
+  }
+  if (groupMode() === 'template') return db.templates.map(t => ({ title:t.name, tpl:t, items:list.filter(p => p.template_id === t.id) })).filter(g => g.items.length);
   if (ui.group === 'none') return [{ title:'Все проекты', items:list }];
   const keyOf = { pm:p => p.pm_id, client:p => p.client, priority:p => p.priority }[ui.group];
   const titleOf = { pm:k => 'PM: ' + nameOf(k), client:k => k, priority:k => PRI[k][0] + ' приоритет' }[ui.group];
@@ -1667,7 +1687,7 @@ function renderMatrix(){
           <label>Исп. <select data-pworker="${p.id}" aria-label="Исполнитель проекта ${esc(p.name)}">${peopleOpts(p.worker_id, 'не назначен')}</select></label>
         </div></th>${cells}</tr>`;
     }).join('');
-    return `<section class="grp"><h2>${esc(g.title)} <span>${g.items.length}</span></h2>
+    return `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2>
       <div class="scroll"><table class="mx"><thead><tr><th class="pcol">Проект</th>${head}</tr></thead><tbody>${body}</tbody></table></div></section>`;
   }).join('');
 }
@@ -1737,7 +1757,7 @@ function renderPhoneList(list){
       ${stages}
     </article>`;
   };
-  app.innerHTML = hero + (list.length ? '' : `<div class="empty">Под фильтры не попал ни один проект.<br><button class="primary" id="emptyReset">Сбросить фильтры</button></div>`) + groupsFor(list).map(g => `<section class="grp"><h2>${esc(g.title)} <span>${g.items.length}</span></h2><div class="pc-list">${g.items.map(card).join('')}</div></section>`).join('');
+  app.innerHTML = hero + (list.length ? '' : `<div class="empty">Под фильтры не попал ни один проект.<br><button class="primary" id="emptyReset">Сбросить фильтры</button></div>`) + groupsFor(list).map(g => `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2><div class="pc-list">${g.items.map(card).join('')}</div></section>`).join('');
 }
 document.addEventListener('click', e => { const t = e.target.closest('[data-htile]'); if (!t) return; const k = t.dataset.htile; ui.risk = ui.risk === k ? '' : k; render(); });
 document.addEventListener('click', e => {
@@ -1845,7 +1865,7 @@ function renderCompact(list){
         <td><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span></td>
         <td class="due">${due}</td></tr>`;
     }).join('');
-    return `<section class="grp"><h2>${esc(g.title)} <span>${g.items.length}</span></h2>
+    return `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2>
       <div class="scroll"><table class="cx"><colgroup><col class="c1"><col class="c6"><col class="c2"><col class="c5"><col class="c3"><col class="c4"></colgroup>
       <thead><tr><th>Проект</th><th>Старт</th><th>Этап</th><th>Прогресс</th><th>Статус</th><th>Срок</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
   }).join('');
@@ -2237,6 +2257,7 @@ function renderDrawer(){
     <div class="d-boxes">
       <section class="d-box"><h3>Проект</h3><div class="d-g">
         <div class="field"><label>Клиент</label><div class="val">${esc(p.client)}</div></div>
+        <div class="field"><label for="pCat">Категория</label><select id="pCat">${catOpts(p.category_id)}</select></div>
         <div class="field"><label for="pTpl">Шаблон процесса</label><select id="pTpl">${tplById(p.template_id) ? '' : '<option value="" selected>Шаблон удалён</option>'}${db.templates.map(t => `<option value="${t.id}" ${t.id===p.template_id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></div>
         <div class="field"><label for="pPri">Приоритет</label><select id="pPri">${Object.entries(PRI).map(([k,[v]]) => `<option value="${k}" ${p.priority===k?'selected':''}>${v}</option>`).join('')}</select></div>
       </div></section>
@@ -2286,6 +2307,7 @@ function openCreate(){
       <div class="field"><label for="cName">Название</label><input id="cName" autocomplete="off"></div>
       <div class="field"><label for="cClient">Клиент</label><input id="cClient" list="cClients" autocomplete="off">
         <datalist id="cClients">${[...new Set(db.projects.map(p => p.client))].map(c => `<option value="${esc(c)}">`).join('')}</datalist></div>
+      ${(db.categories || []).length ? `<div class="field"><label for="cCat">Категория</label><select id="cCat">${catOpts('')}</select></div>` : ''}
       <div class="field"><label for="cTpl">Шаблон процесса</label><select id="cTpl">${db.templates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div>
       <div class="two">
         <div class="field"><label for="cStart">Дата старта</label><input type="date" id="cStart" value="${today()}"></div>
@@ -2318,6 +2340,7 @@ function openCreate(){
     const fit = $('#cFit')?.checked;
     const p = createProject({ name, client, template_id:$('#cTpl').value, start_date:start, pm_id:$('#cPm').value, worker_id:$('#cWorker').value || null,
       priority:$('#cPri').value });
+    const cat = $('#cCat')?.value; if (cat){ p.category_id = cat; save(); }
     if (dl){ p.deadline = dl; if (fit) fitToDeadline(p); else commit(); }
     layer.innerHTML = ''; toast(`Проект «${p.name}» создан: ${p.stages.length} этапов, финиш ${fmt(plannedEnd(p))}`);
   };
@@ -2342,9 +2365,10 @@ function openBell(){
 
 // ---------- Шаблоны ----------
 const setNav = () => `<div class="set-nav seg-toggle" role="tablist" aria-label="Разделы настроек">
-  <button data-settab="deadlines" aria-pressed="${ui.setTab !== 'templates'}">Дедлайны</button><button data-settab="templates" aria-pressed="${ui.setTab === 'templates'}">Шаблоны</button></div>`;
+  <button data-settab="deadlines" aria-pressed="${!ui.setTab || ui.setTab === 'deadlines'}">Дедлайны</button><button data-settab="templates" aria-pressed="${ui.setTab === 'templates'}">Шаблоны</button><button data-settab="categories" aria-pressed="${ui.setTab === 'categories'}">Категории</button></div>`;
 function renderSettings(){
   if (ui.setTab === 'templates'){ renderTemplates(); return; }
+  if (ui.setTab === 'categories'){ renderCategories(); return; }
   const n = defDays(), useTpl = !!db.prefs?.useTplDays;
   const left = db.projects.filter(p => p.state === 'active').reduce((m, p) => m + p.stages.filter(s => s.status === 'not_started').length, 0);
   app.innerHTML = `${setNav()}<div class="panel set-panel">
@@ -2401,7 +2425,8 @@ function tplSubsHtml(st, i){
 }
 function openCardEditor(i, j){
   const x = ui.draft.stages[i].subs[j]; const c = x.card || { d:'', reg:'', vid:'', c:[], b:[] };
-  ui.ce = { i, j, d:c.d || '', reg:c.reg || '', vid:c.vid || '', c:(c.c || []).join('\n'), b:clone(c.b || []), err:'' };
+  const lc = clone(c); linksToBlocks(lc, 'reg', 'vid', 'b');   // старые поля «регламент» и «видео» показываем блоками
+  ui.ce = { i, j, d:lc.d || '', c:(lc.c || []).join('\n'), b:lc.b || [], err:'' };
   renderCardEditor('#ceD');
 }
 function renderCardEditor(focusSel){
@@ -2413,8 +2438,6 @@ function renderCardEditor(focusSel){
     <p class="lead">${esc(ui.draft.name || 'Шаблон')} · этап «${esc(st.name)}». Так будет выглядеть карточка в каждом проекте процесса.</p>
     <form class="form" id="ceForm">
       <div class="field"><label for="ceD">Описание и регламент</label><textarea id="ceD" class="tk-desc" rows="6" data-cef="d">${esc(ce.d)}</textarea></div>
-      <div class="field"><label for="ceReg">Ссылка на регламент, шаблон или РНП</label><input id="ceReg" data-cef="reg" value="${esc(ce.reg)}" placeholder="https://docs.google.com/…" inputmode="url"></div>
-      <div class="field"><label for="ceVid">Ссылка на видео</label><input id="ceVid" data-cef="vid" value="${esc(ce.vid)}" placeholder="YouTube, Vimeo, Google Drive, Loom или MP4" inputmode="url"></div>
       ${blocksEditor(ce.b, 'ce')}
       <div class="field"><label for="ceC">Чек-лист — по одному пункту в строке</label><textarea id="ceC" class="tk-desc" rows="7" data-cef="c" placeholder="Изучил бриф&#10;Сделал черновик&#10;Сдал результат">${esc(ce.c)}</textarea></div>
       <div class="err" id="ceErr">${esc(ce.err || '')}</div>
@@ -2426,15 +2449,13 @@ function renderCardEditor(focusSel){
 document.addEventListener('input', e => { const f = e.target.dataset?.cef; if (f && ui.ce) ui.ce[f] = e.target.value; });
 document.addEventListener('submit', e => {
   if (e.target.id !== 'ceForm' || !ui.ce) return; e.preventDefault();
-  const ce = ui.ce; ce.d = $('#ceD').value; ce.reg = $('#ceReg').value; ce.vid = $('#ceVid').value; ce.c = $('#ceC').value;
-  const reg = ce.reg.trim(), vid = ce.vid.trim();
+  const ce = ui.ce; ce.d = $('#ceD').value; ce.c = $('#ceC').value;
   const fail = m => { ce.err = m; const el = $('#ceErr'); if (el) el.textContent = m; };
-  if ((reg && !safeUrl(reg)) || (vid && !safeUrl(vid))) return fail('Ссылки должны начинаться с https://');
   if (ce.b.some(b => b.uploading)) return fail('Подождите: файл ещё загружается');
   const badBk = ce.b.find(b => (b.type === 'link' || b.type === 'video') && String(b.value || '').trim() && !safeUrl(b.value));
   if (badBk) return fail(`Блок «${badBk.title || BLOCK_T[badBk.type]}»: ссылка должна начинаться с https://`);
   const x = ui.draft.stages[ce.i].subs[ce.j];
-  x.card = { d:ce.d.trim(), reg, vid, c:ce.c.split('\n').map(v => v.trim()).filter(Boolean), b:cleanBlocks(ce.b) };
+  x.card = { d:ce.d.trim(), reg:'', vid:'', c:ce.c.split('\n').map(v => v.trim()).filter(Boolean), b:cleanBlocks(ce.b) };
   ui.ce = null; ui.draftDirty = true; layer.innerHTML = ''; renderTemplates();
   toast('Карточка готова. Нажмите «Сохранить шаблон», чтобы она попала в проекты');
 });
@@ -2578,6 +2599,74 @@ document.addEventListener('submit', e => {
 document.addEventListener('input', e => {
   const el = e.target; if (!el.dataset?.sf || !ui.draft) return;
   const row = el.closest('.tsub'); const x = ui.draft.stages[+row.dataset.i].subs[+row.dataset.j]; x.name = el.value; ui.draftDirty = true;
+});
+// ---------- Категории проектов ----------
+const catById = id => (db.categories || []).find(c => c.id === id) || null;
+const catDot = () => '';   // категории без цветовой маркировки
+const catOpts = val => `<option value="">Без категории</option>` + (db.categories || []).map(c => `<option value="${c.id}" ${c.id === val ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+function renderCategories(){
+  const cats = db.categories || [];
+  const cnt = id => db.projects.filter(p => p.category_id === id && p.state !== 'archived').length;
+  app.innerHTML = `${setNav()}<div class="panel set-panel">
+    <h2>Категории проектов</h2>
+    <p class="hint">Например «Инфобизнес», «Медицина», «Личные бренды». Категорию назначают проекту при создании или в карточке проекта. На главной проекты разделены по категориям в этом порядке; порядок меняется перетаскиванием за ⠿.</p>
+    <ol class="cat-list">${cats.map((c, k) => `<li class="cat-row" data-cat="${k}">
+      <span class="grip" data-catdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить категорию ${esc(c.name)}. Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
+      <input data-catname="${c.id}" value="${esc(c.name)}" aria-label="Название категории" maxlength="60">
+      <span class="hint">${cnt(c.id)} ${plural(cnt(c.id), 'проект', 'проекта', 'проектов')}</span>
+      <button type="button" class="tx" data-catdel="${c.id}" aria-label="Удалить категорию ${esc(c.name)}" title="Удалить категорию">×</button></li>`).join('') || '<li class="hint">Категорий пока нет</li>'}</ol>
+    <form class="tsub-add cat-add" id="catAdd"><input id="catNew" placeholder="+ Новая категория и нажать Enter" aria-label="Новая категория" maxlength="60"></form>
+  </div>`;
+}
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'catAdd') return; e.preventDefault();
+  const v = $('#catNew').value.trim(); if (!v) return;
+  db.categories = db.categories || [];
+  if (db.categories.some(c => norm(c.name) === norm(v))){ toast('Такая категория уже есть'); return; }
+  db.categories.push({ id:'c' + uid(), name:v });
+  commit(); $('#catNew')?.focus(); toast(`Категория «${v}» создана`);
+});
+document.addEventListener('change', e => {
+  const id = e.target.dataset?.catname; if (!id) return; const c = catById(id); const v = e.target.value.trim();
+  if (!c) return; if (!v){ e.target.value = c.name; return; }
+  if ((db.categories || []).some(x => x !== c && norm(x.name) === norm(v))){ toast('Такая категория уже есть'); e.target.value = c.name; return; }
+  c.name = v; commit();
+});
+document.addEventListener('click', e => {
+  const del = e.target.closest?.('[data-catdel]'); if (!del) return;
+  const c = catById(del.dataset.catdel); if (!c) return; const used = db.projects.filter(p => p.category_id === c.id);
+  const go = () => { db.categories = db.categories.filter(x => x !== c); used.forEach(p => { p.category_id = null; }); commit(); toast(`Категория «${c.name}» удалена`); };
+  if (!used.length) return go();
+  askConfirm({ title:`Удалить категорию «${c.name}»?`, text:`Проекты этой категории (${used.length}) останутся, но будут без категории.`, ok:'Удалить' }).then(y => { if (y) go(); });
+});
+// перестановка категорий (мышь, палец) и клавиши ↑ ↓
+const catDrag = { from:-1, li:null, to:null };
+document.addEventListener('pointerdown', e => {
+  const g = e.target.closest?.('[data-catdrag]'); if (!g || (e.button != null && e.button > 0)) return;
+  e.preventDefault(); catDrag.from = +g.dataset.catdrag; catDrag.to = null; catDrag.li = g.closest('li'); catDrag.li.classList.add('dragging'); document.body.classList.add('is-sorting');
+  try { g.setPointerCapture?.(e.pointerId); } catch(x) {}
+});
+document.addEventListener('pointermove', e => {
+  if (catDrag.from < 0) return; e.preventDefault();
+  const under = (typeof document.elementFromPoint === 'function' && document.elementFromPoint(e.clientX, e.clientY)) || e.target;
+  const li = under?.closest?.('.cat-list [data-cat]'); document.querySelectorAll('.cat-row.drop-before,.cat-row.drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after'));
+  if (!li){ catDrag.to = null; return; }
+  const r = li.getBoundingClientRect(); const after = e.clientY > r.top + r.height / 2; const k = +li.dataset.cat;
+  catDrag.to = after ? k + 1 : k; li.classList.add(after ? 'drop-after' : 'drop-before');
+});
+function endCatDrag(apply){
+  if (catDrag.from < 0) return; const { from, to } = catDrag; catDrag.from = -1;
+  catDrag.li?.classList.remove('dragging'); document.body.classList.remove('is-sorting');
+  document.querySelectorAll('.cat-row.drop-before,.cat-row.drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after'));
+  if (!apply || to === null || to === from || to === from + 1) return;
+  const a = db.categories; const [x] = a.splice(from, 1); a.splice(to > from ? to - 1 : to, 0, x); commit();
+}
+document.addEventListener('pointerup', () => endCatDrag(true));
+document.addEventListener('pointercancel', () => endCatDrag(false));
+document.addEventListener('keydown', e => {
+  const g = e.target.closest?.('[data-catdrag]'); if (!g || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+  e.preventDefault(); const a = db.categories; const k = +g.dataset.catdrag, to = k + (e.key === 'ArrowUp' ? -1 : 1);
+  if (to < 0 || to >= a.length) return; [a[k], a[to]] = [a[to], a[k]]; commit(); document.querySelector(`[data-catdrag="${to}"]`)?.focus();
 });
 function renderTemplates(){
   if (!ui.draft){
@@ -2801,6 +2890,7 @@ document.addEventListener('change', e => {
     }
     if (el.id === 'pPm'){ updateProject(p, 'pm_id', el.value, `PM: ${nameOf(el.value)}`); return assignNote(el.value, p); }
     if (el.id === 'pWorker'){ updateProject(p, 'worker_id', el.value || null, `Исполнитель: ${el.value ? nameOf(el.value) : 'не назначен'}`); return assignNote(el.value, p); }
+    if (el.id === 'pCat') return updateProject(p, 'category_id', el.value || null, `Категория: ${catById(el.value)?.name || 'без категории'}`);
     if (el.id === 'pPri') return updateProject(p, 'priority', el.value, `Приоритет: ${PRI[el.value][0].toLowerCase()}`);
     if (el.id === 'pStart') return setStart(p, el.value);
     if (el.id === 'pBudget'){ const v = el.value === '' ? null : Math.max(0, +el.value); return updateProject(p, 'budget', v, `Бюджет: ${money(v)}`); }
@@ -3592,6 +3682,23 @@ function askCloseTaskEdit(){
   askConfirm({ title:'Закрыть без сохранения?', text:'Изменения в подэтапе не сохранятся.', ok:'Закрыть', danger:true }).then(yes => { if (yes) closeTask(); });
 }
 function closeTask(){ ui.taskId = null; ui.taskDraft = null; ui.vplay = null; ui.localVideo && URL.revokeObjectURL(ui.localVideo); ui.localVideo = null; taskLayer().innerHTML = ''; }
+// Поля «Ссылка на регламент» и «Ссылка на видео» заменены блоками: старые значения становятся первыми блоками карточки
+function linksToBlocks(o, regKey, vidKey, bKey){
+  if (!o) return false;
+  const reg = String(o[regKey] || '').trim(), vid = String(o[vidKey] || '').trim();
+  if (!reg && !vid) return false;
+  const add = [];
+  if (reg) add.push({ id:uid(), type:'link', title:'Регламент', value:reg });
+  if (vid && !vid.startsWith('blob:')) add.push({ id:uid(), type:'video', title:'Видео', value:vid });
+  o[bKey] = [...add, ...(o[bKey] || [])]; o[regKey] = ''; o[vidKey] = '';
+  return true;
+}
+function migrateLinks(){
+  let n = 0;
+  (db.tasks || []).forEach(t => { if (linksToBlocks(t, 'regulation_link', 'video_url', 'blocks')) n++; });
+  Object.values(db.cardTpls || {}).forEach(c => { if (linksToBlocks(c, 'reg', 'vid', 'b')) n++; });
+  return n;
+}
 // =====================================================================
 //  БЛОКИ КАРТОЧКИ: текст, ссылка, видео, файл. Добавляет руководство в режиме редактирования (и в шаблоне),
 //  исполнители видят. Блоки — часть шаблона карточки и расходятся по проектам вместе с ней.
@@ -3730,8 +3837,9 @@ document.addEventListener('click', e => {
   if (e.target.closest?.('[data-vstop]')){ e.preventDefault(); e.stopPropagation(); ui.vplay = null; renderTaskModal(); }
 }, true);
 function draftOf(t){
+  const lt = { regulation_link:t.regulation_link || '', video_url:t.video_url || '', blocks:clone(t.blocks || []) }; linksToBlocks(lt, 'regulation_link', 'video_url', 'blocks');
   return { title:t.title, substage_id:t.substage_id || '', assignee_id:t.assignee_id || '', description:t.description || '',
-    regulation_link:t.regulation_link || '', video_url:t.video_url || '', items:t.checklist.map(i => ({ id:i.id, text:i.text, done:i.done })), blocks:clone(t.blocks || []), asTpl:true };
+    regulation_link:'', video_url:'', items:t.checklist.map(i => ({ id:i.id, text:i.text, done:i.done })), blocks:lt.blocks, asTpl:true };
 }
 function renderTaskModal(focusSel){
   const t = taskById(ui.taskId); if (!t){ closeTask(); return; }
@@ -3773,10 +3881,6 @@ function renderTaskModal(focusSel){
         ${p._ext ? '<div></div>' : `<div class="field"><label for="tdAs">Ответственный</label><select id="tdAs" data-td="assignee_id"><option value="">${s?.assignee_id ? `Как у этапа: ${esc(short(s.assignee_id))}` : execLabel(p)}</option>${db.users.map(u => `<option value="${u.id}" ${u.id === d.assignee_id ? 'selected' : ''}>${esc(u.name || 'Вы')}</option>`).join('')}</select></div>`}
       </div>
       <div class="field"><label for="tdDesc">Описание и регламент</label><textarea id="tdDesc" data-td="description" rows="6" placeholder="Что сделать, требования, критерии приёмки">${esc(d.description)}</textarea></div>
-      <div class="field"><label for="tdReg">Ссылка на регламент, шаблон или РНП</label><input id="tdReg" data-td="regulation_link" value="${esc(d.regulation_link)}" inputmode="url" placeholder="https://docs.google.com/…"></div>
-      <div class="field"><label for="tdVid">Ссылка на видео</label><div class="row"><input id="tdVid" data-td="video_url" value="${esc(d.video_url)}" inputmode="url" placeholder="YouTube, Vimeo, Google Drive, Loom или MP4">
-        <label class="ghost file-btn">Проверить локальный файл<input type="file" id="tkVideoFile" accept="video/*"></label></div></div>
-      ${d.video_url || ui.localVideo ? taskPlayer(ui.localVideo || d.video_url) : ''}
       ${blocksEditor(d.blocks, 'td')}
       <div class="field"><label>Конструктор чек-листа</label>
         <ol class="ckb">${d.items.map((it, k) => `<li data-ckb="${k}">
@@ -4216,7 +4320,7 @@ function cloudDocs(){
     const n = Math.ceil(json.length / CHUNK), v = hashStr(json);
     for (let i = 0; i < n; i++){ const k = i ? `${key}~${i}` : key; out.set(k, { k, kind, base:key, part:i, of:n, v, json:json.slice(i * CHUNK, (i + 1) * CHUNK) }); }
   };
-  put('meta', 'meta', { ver:db.ver, onboarded:db.onboarded, users:db.users, templates:db.templates, prefs:db.prefs || {}, cardTpls:db.cardTpls || {}, cardTplsInit:!!db.cardTplsInit, savedAt:db.savedAt || Date.now(),
+  put('meta', 'meta', { ...(db.metaRest || {}), ver:db.ver, onboarded:db.onboarded, users:db.users, templates:db.templates, categories:db.categories || [], prefs:db.prefs || {}, cardTpls:db.cardTpls || {}, cardTplsInit:!!db.cardTplsInit, savedAt:db.savedAt || Date.now(),
     order:{ projects:db.projects.map(p => p.id), reports:(db.reports || []).map(r => r.id) } });
   db.projects.forEach(p => put('p_' + p.id, 'project', p));
   (db.tasks || []).forEach(t => put('t_' + t.id, 'task', t));
@@ -4243,10 +4347,13 @@ function cloudAssemble(docs){
   return out;
 }
 function cloudApply(r){
-  Object.assign(db, { ver:r.meta.ver, onboarded:r.meta.onboarded, users:r.meta.users, templates:r.meta.templates, prefs:r.meta.prefs, cardTpls:r.meta.cardTpls || {}, cardTplsInit:!!r.meta.cardTplsInit, savedAt:r.meta.savedAt,
+  // поля, которых эта версия не знает, бережём и записываем обратно; данные от старой версии без категорий их не стирают
+  const KNOWN = ['ver','onboarded','users','templates','categories','prefs','cardTpls','cardTplsInit','savedAt','order'];
+  db.metaRest = Object.fromEntries(Object.entries(r.meta).filter(([k]) => !KNOWN.includes(k)));
+  Object.assign(db, { ver:r.meta.ver, onboarded:r.meta.onboarded, users:r.meta.users, templates:r.meta.templates, categories:'categories' in r.meta ? (r.meta.categories || []) : (db.categories || []), prefs:r.meta.prefs, cardTpls:r.meta.cardTpls || {}, cardTplsInit:!!r.meta.cardTplsInit, savedAt:r.meta.savedAt,
     projects:r.projects, tasks:r.tasks, reports:r.reports });
   migrate(); if (!db.cardTplsInit){ migrateCardTpls(); scheduleCloud(); }
-  if (replanAll()) scheduleCloud();
+  if (migrateLinks() + replanAll()) scheduleCloud();
   if (ui.open && !projById(ui.open)) closeLayer();
   if (db.onboarded && layer.querySelector('#mForm')) layer.innerHTML = '';
   if (ui.taskId){ if (taskById(ui.taskId)) renderTaskModal(); else closeTask(); }
@@ -4381,7 +4488,7 @@ function mergeSnapshot(snap, opts = {}){
   db.reports = db.reports || []; (snap.reports || []).forEach(r => put(db.reports, clone(r)));
   db.cardTpls = db.cardTpls || {};
   Object.entries(meta.cardTpls || {}).forEach(([k, v]) => { const i = k.indexOf('|'); const nk = i < 0 ? k : tid(k.slice(0, i)) + k.slice(i); if (!db.cardTpls[nk]) db.cardTpls[nk] = clone(v); });
-  db.onboarded = true; ui.clients = []; ui.pms = [];
+  db.onboarded = true; ui.clients = []; ui.pms = []; migrateLinks();
   return { projects:(snap.projects || []).length, tasks:(snap.tasks || []).length, demo:demoIds.size };
 }
 document.addEventListener('change', async e => {
@@ -4982,6 +5089,7 @@ if (!db.reports) db.reports = [];
 if (!db.tasks){ db.tasks = []; seedDemoTasks(); save(); }
 migrateCardTpls();
 db.tasks = db.tasks.filter(t => projById(t.project_id));   // задачи удалённых проектов
+migrateLinks();
 replanAll();
 localSave();
 setInterval(() => { if (!GUEST && replanAll()) commit(); }, 3600e3);
