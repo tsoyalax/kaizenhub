@@ -116,8 +116,10 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const setDensity = v => { const b = [...o.w.document.querySelectorAll('button')].find(x => x.textContent.trim() === v); if (b) b.click(); };
   o.w.document.querySelector('[data-view="matrix"]').click(); setDensity('Компактный'); await wait(150);
   const row = o.w.document.querySelector(`.cx tr[data-open="${imp}"]`);
-  assert.ok(row && row.children[1].classList.contains('start') && /-й день/.test(row.children[1].textContent)); ok('компактная матрица: отдельный столбец «Старт» сразу после проекта');
-  assert.equal(o.w.document.querySelector('.cx thead tr').children[1].textContent, 'Старт'); ok('компактная матрица: заголовок «Старт»');
+  assert.ok(row && row.children[3].classList.contains('start') && /-й день/.test(row.children[3].textContent)); ok('компактная матрица: отдельный столбец «Старт»');
+  assert.deepEqual([...o.w.document.querySelector('.cx thead tr').children].map(x => x.textContent), ['Проект', 'Статус', 'Этап', 'Старт', 'Срок']); ok('компактная матрица: порядок — проект, статус, этап со шкалой, даты');
+  { const tp = row.querySelector('.tprog'); const P = JSON.parse(o.w.localStorage.getItem('agency-pipeline-demo-v2')).projects.find(x => x.id === imp);
+    assert.equal(tp.querySelectorAll('.ticks i').length, P.stages.length); const cur = P.stages.find(s => s.status !== 'done'); assert.ok(!/%/.test(tp.textContent) && (!cur || tp.textContent.includes(cur.name)) && /\d+\/\d+/.test(tp.textContent) && tp.querySelectorAll('.ticks i.cur').length === (cur ? 1 : 0)); ok('компактная матрица: шкала по этапам, текущий этап отмечен и подписан'); }
   setDensity('Подробный'); await wait(150);
   const demoP = JSON.parse(o.w.localStorage.getItem('agency-pipeline-demo-v2')).projects.find(p => p.stages.some(s => s.status === 'in_progress' && s.subs?.length));
   assert.ok(demoP, 'нет проекта с подэтапами');

@@ -11,10 +11,11 @@
 <style>
 :root{
   color-scheme: light;
-  --bg:#F7F7F8; --surface:#FFFFFF; --surface-2:#F3F3F5; --ink:#17171C; --muted:#71717A; --line:#E8E8EB; --line-strong:#D4D4D8;
-  --accent:#17171C; --accent-ink:#FFFFFF; --link:#3B5BDB; --focus:#3B5BDB; --soft:#EEF1FB;
+  --bg:#F7F7F8; --surface:#FFFFFF; --surface-2:#F3F3F5; --row:#FFFFFF; --ink:#17171C; --muted:#71717A; --line:#E8E8EB; --line-strong:#D4D4D8;
+  --accent:#17171C; --accent-ink:#FFFFFF; --brand:#6A5AE0; --link:#3B5BDB; --focus:#3B5BDB; --soft:#EEF1FB;
+  --card-hi:transparent; --shadow:none;
   --g:#15803D; --g-bg:#EFF8F2; --y:#B45309; --y-bg:#FEF6E7; --r:#DC2626; --r-bg:#FDF0F0;
-  --b:#2563EB; --b-bg:#EEF3FE; --n:#A1A1AA; --n-bg:#F4F4F5; --d:#71717A; --d-bg:#F7F7F8;
+  --b:#2563EB; --b-bg:#EEF3FE; --w:#15803D; --n:#A1A1AA; --n-bg:#F4F4F5; --d:#71717A; --d-bg:#F7F7F8;
   --radius:12px; --cell-w:140px;
   font-family:"Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   box-sizing:border-box;
@@ -23,17 +24,19 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme: dark;
-    --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-strong:#3A3A42;
-    --accent:#EDEDEF; --accent-ink:#0F0F12; --link:#8DA2F7; --focus:#8DA2F7; --soft:#1C2033;
-    --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A;
+    --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --row:#16161A; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-strong:#3A3A42;
+    --accent:#EDEDEF; --accent-ink:#0F0F12; --brand:#7C6CF6; --link:#8DA2F7; --focus:#8DA2F7; --soft:#1C2033;
+    --card-hi:transparent; --shadow:none;
+    --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80;
     --n:#71717A; --n-bg:#1F1F24; --d:#8A8A93; --d-bg:#18181C;
   }
 }
 :root[data-theme="dark"]{
   color-scheme: dark;
-  --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-strong:#3A3A42;
-  --accent:#EDEDEF; --accent-ink:#0F0F12; --link:#8DA2F7; --focus:#8DA2F7; --soft:#1C2033;
-  --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A;
+  --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --row:#16161A; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-strong:#3A3A42;
+  --accent:#EDEDEF; --accent-ink:#0F0F12; --brand:#7C6CF6; --link:#8DA2F7; --focus:#8DA2F7; --soft:#1C2033;
+  --card-hi:transparent; --shadow:none;
+  --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80;
   --n:#71717A; --n-bg:#1F1F24; --d:#8A8A93; --d-bg:#18181C;
 }
 *,*::before,*::after{box-sizing:inherit}
@@ -173,7 +176,7 @@ td:has(.cell-as:focus-visible) .cell{outline:2px solid var(--focus);outline-offs
 
 /* ---------- Компактный режим ---------- */
 table.cx{width:100%;border-collapse:collapse;min-width:800px;table-layout:fixed}
-.cx col.c1{width:26%}.cx col.c6{width:12%}.cx col.c2{width:17%}.cx col.c5{width:18%}.cx col.c3{width:13%}.cx col.c4{width:14%}
+.cx col.c7{width:35%}.cx col.c1{width:26%}.cx col.c6{width:12%}.cx col.c2{width:17%}.cx col.c5{width:18%}.cx col.c3{width:13%}.cx col.c4{width:14%}
 .cx th{font-size:12.5px;font-weight:500;color:var(--muted);text-align:left;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--line)}
 .cx td{padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle;overflow:hidden;text-overflow:ellipsis}
 .cx tbody tr:last-child td{border-bottom:0}
@@ -1032,7 +1035,7 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
 .tile:active{transform:scale(.96)}
 .tile b{display:block;font-size:22px;font-weight:700;line-height:1.1}
 .tile span{font-size:11px;font-weight:600;line-height:1.2;display:block}
-.tile.t-red b{color:#DC2626}.tile.t-yellow b{color:#D97706}.tile.t-blue b{color:#2563EB}.tile.t-green b{color:#15803D}
+.tile.t-red b{color:var(--r)}.tile.t-yellow b{color:var(--y)}.tile.t-blue b{color:var(--b)}.tile.t-green b{color:var(--g)}
 .tile[aria-pressed="true"]{box-shadow:0 0 0 3px #fff,0 0 0 5px rgba(255,255,255,.4);transform:translateY(-1px)}
 .tiles:has([aria-pressed="true"]) .tile[aria-pressed="false"]{opacity:.6}
 .hero-reset{margin-top:10px;width:100%;border:0;border-radius:12px;background:rgba(255,255,255,.18);color:#fff;font:inherit;font-weight:600;font-size:13.5px;padding:9px;cursor:pointer}
@@ -1063,6 +1066,99 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
   .pc-list{grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
 }
 @media (max-width:360px){ .tiles{grid-template-columns:repeat(2,1fr)} .hero h2{font-size:19px} }
+/* =====================================================================
+   РЕДИЗАЙН: боковое меню, строка раздела, сводка, мягкие карточки
+   ===================================================================== */
+body{letter-spacing:-.005em}
+.logo{width:28px;height:28px;border-radius:9px;display:grid;grid-template-columns:repeat(3,4px);gap:3px;place-content:center;
+  background:linear-gradient(145deg,var(--brand),color-mix(in srgb,var(--brand) 55%,#000));box-shadow:0 4px 14px color-mix(in srgb,var(--brand) 30%,transparent)}
+.logo i{width:4px;height:4px;border-radius:50%;background:#fff;opacity:.95}
+.logo i:nth-child(2){opacity:.7}.logo i:nth-child(3){opacity:.45}
+.brand-t{font-weight:650;letter-spacing:-.02em}
+.primary{background:var(--accent);color:var(--accent-ink);border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.primary:hover{opacity:.9}
+.ghost{background:var(--surface);border-color:var(--line);box-shadow:0 1px 0 var(--card-hi) inset}
+.ghost:hover{background:var(--surface-2)}
+.panel,.grp .scroll,.modal,.pop,#tags,.members,.kcol,.pc{box-shadow:var(--shadow)}
+.grp h2{letter-spacing:-.01em}
+.row input[type=search]{background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238F8F98' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 11px 50%;padding-left:34px}
+.side-user,.pagebar{display:none}
+.tabs button svg{display:none}
+
+/* сводка */
+.kh-dash{padding:22px 28px 0}
+.kd-hello h2{margin:0;font-size:24px;font-weight:650;letter-spacing:-.025em}
+.kd-hello p{margin:4px 0 0;color:var(--muted);font-size:14.5px}
+.kd-hello p b{color:var(--ink);font-weight:600}
+.kd-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:18px}
+.kd-card{position:relative;text-align:left;border:1px solid var(--line);border-radius:16px;padding:16px 18px;min-height:108px;cursor:pointer;
+  background:linear-gradient(180deg,var(--card-hi),transparent 60%),var(--surface);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:2px;overflow:hidden;transition:border-color .15s,transform .15s}
+.kd-card:hover{border-color:var(--line-strong);transform:translateY(-1px)}
+.kd-card.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink),var(--shadow)}
+.kd-l{color:var(--muted);font-size:13.5px}
+.kd-n{font-size:34px;line-height:1.15;font-weight:600;letter-spacing:-.03em}
+.kd-sub{color:var(--muted);font-size:12.5px}
+.kd-sub em{font-style:normal;color:var(--ink);font-weight:600}
+.kd-ico{position:absolute;right:16px;top:50%;transform:translateY(-50%);width:52px;height:52px;border-radius:14px;display:grid;place-items:center;color:var(--muted);
+  background:linear-gradient(160deg,var(--surface-2),color-mix(in srgb,var(--surface-2) 40%,var(--bg)));border:1px solid var(--line);
+  box-shadow:var(--shadow)}
+.kd-ico svg{width:22px;height:22px}
+.kd-card[data-kdrisk="red"] .kd-ico{color:var(--r)}.kd-card[data-kdrisk="blue"] .kd-ico{color:var(--b)}.kd-card[data-kdrisk="done"] .kd-ico{color:var(--g)}
+.kd-card:not([data-kdrisk]) .kd-ico,.kd-card[data-kdrisk=""] .kd-ico{color:var(--brand)}
+@media (max-width:1100px){.kd-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* верхнее меню: вкладки-плашки с иконками */
+@media (min-width:641px){
+  .top{background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px)}
+  .tabs{gap:4px;align-items:center;padding:8px 0}
+  .tabs button{display:flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:9px;border:1px solid transparent;font-size:14px}
+  .tabs button:hover{background:var(--surface-2)}
+  .tabs button[aria-current="page"]{background:var(--surface);border-color:var(--line);box-shadow:var(--shadow)}
+  .tabs button[aria-current="page"]::after{display:none}
+}
+@media (min-width:1100px){.top{flex-wrap:nowrap;gap:0 18px}.tabs{flex:0 1 auto;min-width:0;scrollbar-width:none}.top-actions{flex:none}}
+@media (min-width:1480px){.tabs button svg{display:block;width:16px;height:16px;flex:none;stroke-width:1.9}}
+
+.mc .tprog{margin:4px 0 2px}.mc .ticks{height:16px}
+.mc{background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;box-shadow:none}
+.pc-list .mc:last-child{border-bottom:0}
+@media (max-width:640px){.pc-list:has(.mc){gap:0}.mc .mc-main,.mc .mc-more{padding-left:2px;padding-right:2px}}
+.pc.mc::before{display:none}
+/* ---------- Список проектов (компактный вид) ---------- */
+table.cx{border-collapse:collapse}
+.grp .scroll:has(table.cx){background:transparent;border:0;border-radius:0;box-shadow:none;padding:0}
+.cx th{background:transparent;border-bottom:0;padding:12px 14px 4px;font-size:12.5px;font-weight:500;color:var(--muted)}
+/* строки без подложек: только тонкая линия между проектами */
+.cx td{background:transparent;border:0;border-bottom:1px solid var(--line);padding:13px 14px}
+.cx thead th{border-bottom:1px solid var(--line)}
+.cx tbody tr:last-child td{border-bottom:0}
+.cx tbody tr:hover td,.cx tbody tr:focus-visible td{background:var(--surface-2)}
+.cx-name{display:flex;align-items:center;gap:12px;min-width:0}
+.cx-nt{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.fold{flex:none;width:26px;height:22px;display:grid;place-items:center}
+.fold svg{width:26px;height:22px;fill:var(--fc);filter:drop-shadow(0 2px 4px color-mix(in srgb,var(--fc) 35%,transparent))}
+.t-prog{--fc:var(--w)}.t-done{--fc:var(--g)}.t-red{--fc:var(--r)}.t-yellow{--fc:var(--y)}.t-blue{--fc:var(--b)}.t-gray{--fc:var(--n)}
+/* прогресс штрихами */
+.tprog{display:flex;align-items:center;gap:10px}
+.ticks{display:inline-flex;gap:2px;height:16px;align-items:stretch}
+.ticks i{width:4px;border-radius:1.5px;background:color-mix(in srgb,var(--ink) 16%,transparent);align-self:center;height:12px}
+.ticks{gap:3px;align-items:center;flex:none;height:18px}
+.ticks i.cur{background:var(--fc);height:18px;box-shadow:0 0 8px color-mix(in srgb,var(--fc) 45%,transparent)}
+.tprog{min-width:0}
+.tp-n{font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tp-n b{color:var(--muted);font-weight:500;margin-right:4px}
+.mc-stage{display:grid;gap:2px}.mc-subnow{color:var(--muted);font-size:12.5px}
+.ticks i.on{background:var(--ink)}
+.tprog b{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.cx .tprog + small{margin-top:2px}
+/* статус в цветной рамке */
+.pill.st-pill{gap:6px;padding:3px 9px 3px 7px;border-radius:8px;font-size:12.5px;border:1px solid color-mix(in srgb,currentColor 38%,transparent);
+  background:color-mix(in srgb,currentColor 12%,transparent)}
+.pill.st-pill .pi{width:13px;height:13px;flex:none}
+.pill.st-pill.s-green{color:var(--w)}
+.pill.st-pill.s-gray{color:var(--muted)}
+.pill.st-pill.s-done{color:var(--g)}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -1070,7 +1166,7 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
 </head>
 <body>
 <header class="top">
-  <div class="brand"><span class="brand-mark" aria-hidden="true"><i style="background:var(--g)"></i><i style="background:var(--y)"></i><i style="background:var(--r)"></i></span>Конвейер<button class="space-name" id="spaceName" hidden title="Пространство — сменить в настройках"></button></div>
+  <div class="brand"><span class="logo" aria-hidden="true"><i></i><i></i><i></i></span><span class="brand-t">KaizenHub</span><button class="space-name" id="spaceName" hidden title="Пространство — сменить в настройках"></button></div>
   <nav class="tabs" aria-label="Разделы">
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
@@ -1092,6 +1188,7 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
     <button class="primary" id="newBtn">Новый проект</button>
   </div>
 </header>
+<section class="kh-dash" id="khDash" hidden aria-label="Сводка"></section>
 
 <section class="filters" id="filters" aria-label="Фильтры проектов">
   <div class="row" id="chips" role="group" aria-label="Фильтр по риску"></div>
@@ -1732,6 +1829,7 @@ function render(){
   renderFilters();
   ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:() => renderProjectFocus(true), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.open) renderDrawer();
+  try { paintPage(); } catch(e) {}
   paintSelect();
   renderMobileNav(); paintMeBtn();
 }
@@ -1925,10 +2023,9 @@ function renderPhoneList(list){
     const dlTxt = p.state === 'completed' ? 'Проект завершён' : target ? `${p.deadline ? 'Дедлайн' : 'Финиш'} ${fmt(target)}${late ? ` · <span class="ut-over">план позже на ${days(diffDays(end, p.deadline))}</span>` : ''}` : '';
     return `<article class="pc mc">
       <button class="mc-main" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''}>
-        <span class="mc-r1"><b>${esc(p.name)}</b><span class="pill s-${risk}"><i class="sw ${risk}"></i>${RISK_RU[risk]}</span></span>
+        <span class="mc-r1"><b>${esc(p.name)}</b>${stPill(risk, risk === 'green' ? 'В работе' : RISK_RU[risk])}</span>
         <small class="mc-sub">${esc(p.client)} · PM ${esc(short(p.pm_id))}${p.priority === 'high' ? ' · <span class="hp">Высокий</span>' : ''}</small>
-        <span class="mc-stage">${c ? `<span class="mc-n">${c.position + 1}/${n}</span> ${esc(c.name)}${sub ? `<small> · ${esc(sub)}</small>` : ''}` : 'Все этапы пройдены'}</span>
-        <span class="pbar" role="img" aria-label="Пройдено ${doneN} из ${n} этапов">${segs}</span>
+        <span class="mc-stage">${ticksHtml(p, risk)}${sub ? `<small class="mc-subnow">${esc(sub)}</small>` : ''}</span>
         <span class="mc-foot"><span>${c ? `${stageDue}${whoId(p, c) ? ` · ${esc(short(whoId(p, c)))}` : ''}` : ''}</span><span>${dlTxt}</span></span>
       </button>
       <button class="mc-more" data-mxtoggle="${p.id}" aria-expanded="${open}">${open ? 'Скрыть этапы' : `Этапы · ${doneN} из ${n}`}</button>
@@ -2021,6 +2118,25 @@ document.addEventListener('click', e => {
 
 // Компактный вид: одна строка на проект — название, текущий этап, статус, срок
 const density = () => db.prefs?.density || 'detailed';
+// значки статусов в плашках списка
+const sico = path => `<svg class="pi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+const STATUS_ICO = {
+  green:sico('<path d="M12 3a9 9 0 1 1-9 9" stroke-dasharray="3 3.2"/><path d="M12 3a9 9 0 0 0-9 9"/>'),
+  yellow:sico('<path d="M12 3c3 3.5 5 6 5 9a5 5 0 0 1-10 0c0-1.6.6-3 1.6-4.2.4 1.4 1.3 2.2 2.4 2.2 0-2.6.3-4.6 1-7Z"/>'),
+  red:sico('<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5M12 16.2v.3"/>'),
+  blue:sico('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/>'),
+  gray:sico('<circle cx="12" cy="12" r="9" stroke-dasharray="2.6 3"/>'),
+  done:sico('<circle cx="12" cy="12" r="9"/><path d="m8 12.2 2.8 2.8L16 9.6"/>'),
+};
+// прогресс штрихами: цвет по статусу («в работе» — синий, «у клиента» — фиолетовый)
+// прогресс по этапам: один штрих на этап, сданные закрашены цветом статуса
+function ticksHtml(p, key){
+  const tk = key === 'green' ? 'prog' : key; const n = p.stages.length; const c = currentStage(p); const at = c ? p.stages.indexOf(c) : n;
+  const bars = p.stages.map((s, i) => `<i class="${s.status === 'done' ? 'on' : i === at ? 'cur' : ''}" title="${i + 1}. ${esc(s.name)}"></i>`).join('');
+  const txt = c ? `<span class="tp-n"><b>${at + 1}/${n}</b> ${esc(c.name)}</span>` : `<span class="tp-n"><b>${n}/${n}</b> Все этапы пройдены</span>`;
+  return `<div class="tprog t-${tk}" role="img" aria-label="Этап ${c ? at + 1 : n} из ${n}${c ? ': ' + esc(c.name) : ''}"><span class="ticks">${bars}</span>${txt}</div>`;
+}
+const stPill = (key, label) => `<span class="pill st-pill s-${key}">${STATUS_ICO[key] || STATUS_ICO.gray}${label}</span>`;
 function renderCompact(list){
   app.innerHTML = groupsFor(list).map(g => {
     const rows = g.items.map(p => {
@@ -2032,20 +2148,19 @@ function renderCompact(list){
       const doneN = p.stages.filter(s => s.status === 'done').length;
       const pct = Math.round(doneN / n * 100);
       const segs = p.stages.map(s => `<i class="pseg p-${s.status === 'done' ? 'done' : (c && s.id === c.id ? h.key : 'todo')}" title="${esc(s.name)}"></i>`).join('');
-      const progress = `<div class="pbar" role="img" aria-label="Пройдено ${doneN} из ${n} этапов, ${pct}%">${segs}</div><small>${pct}%, ${doneN} из ${n} этапов</small>`;
+      const progress = ticksHtml(p, !c ? 'done' : h.key);
       const last = p.stages.at(-1);
       const due = c ? `${fmt(c.due_date)}<small>${h.note}</small>` : `${fmt(last.completed_at || last.due_date)}<small>Сдан</small>`;
       return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
-        <td title="${esc(p.name)}">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></td>
-        <td class="start">${fmt(p.start_date)}<small>${startDay(p)}</small></td>
-        <td>${stage}</td>
+        <td title="${esc(p.name)}"><span class="cx-name"><span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
+        <td>${stPill(h.key, h.label)}</td>
         <td>${progress}</td>
-        <td><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span></td>
+        <td class="start">${fmt(p.start_date)}<small>${startDay(p)}</small></td>
         <td class="due">${due}</td></tr>`;
     }).join('');
     return `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2>
-      <div class="scroll"><table class="cx"><colgroup><col class="c1"><col class="c6"><col class="c2"><col class="c5"><col class="c3"><col class="c4"></colgroup>
-      <thead><tr><th>Проект</th><th>Старт</th><th>Этап</th><th>Прогресс</th><th>Статус</th><th>Срок</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+      <div class="scroll"><table class="cx"><colgroup><col class="c1"><col class="c3"><col class="c7"><col class="c6"><col class="c4"></colgroup>
+      <thead><tr><th>Проект</th><th>Статус</th><th>Этап</th><th>Старт</th><th>Срок</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
   }).join('');
 }
 
@@ -5437,10 +5552,12 @@ async function signOutNow(){
 function paintMeBtn(){
   const b = $('#meBtn'); if (!b) return;
   const u = GUEST ? ui.meAcc : userById(ME);
+  const su = null;
+  if (su) su.innerHTML = `${u && (avatarOk(u) || u.name) ? avHtml(u, 'av av-sm') : '<span class="av av-sm">?</span>'}<span class="su-t"><b>${esc(u?.name || 'Мой профиль')}</b><small>${esc(u?.title || u?.email || (GUEST ? 'Исполнитель' : 'Руководитель'))}</small></span>`;
   b.innerHTML = u && (avatarOk(u) || u.name) ? avHtml(u, 'av av-sm') : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
 }
 document.addEventListener('click', e => {
-  if (e.target.closest('#meBtn')){ openProfile(false); return; }
+  if (e.target.closest('#meBtn') || e.target.closest('#sideUser')){ openProfile(false); return; }
   const tl = e.target.closest('[data-tlink]'); if (tl){ const u = userById(tl.dataset.tlink); if (u) teamLinkFor(u, false); return; }
   const tn = e.target.closest('[data-tlinknew]'); if (tn){ const u = userById(tn.dataset.tlinknew); if (u) teamLinkFor(u, true); }
 });
@@ -5460,6 +5577,41 @@ const MNAV = {
   templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
 };
 const MNAV_MAIN = ['matrix', 'kanban', 'production', 'load'];
+// иконки в боковом меню (те же, что в нижнем меню телефона)
+const NAV_FULL = { production:'Производство' };
+document.querySelectorAll('.tabs [data-view]').forEach(b => { const m = MNAV[b.dataset.view]; if (m && !b.querySelector('svg')) b.insertAdjacentHTML('afterbegin', m[1]); });
+
+// ---------- Строка раздела и сводка на главной ----------
+function paintPage(){
+  const d = $('#khDash'); if (!d) return; const show = false;   // сводку и приветствие убрали: сразу фильтры и список
+  d.hidden = !show; d.innerHTML = show ? dashHtml() : '';
+}
+function dashHtml(){
+  const act = db.projects.filter(p => p.state === 'active');
+  const risk = k => act.filter(p => projectRisk(p) === k).length;
+  const red = risk('red'), hot = risk('yellow'), client = risk('blue');
+  const since = addDays(today(), -30);
+  const fresh = act.filter(p => p.start_date && p.start_date >= since).length;
+  const done30 = db.projects.filter(p => p.state === 'completed' && (p.stages.at(-1)?.completed_at || '') >= since).length;
+  const week = act.filter(p => { const u = urg(p.deadline || plannedEnd(p)); return u.d !== null && u.d >= 0 && u.d <= 7; }).length;
+  const h = new Date().getHours(); const hi = h < 5 ? 'Доброй ночи' : h < 12 ? 'Доброе утро' : h < 18 ? 'Добрый день' : 'Добрый вечер';
+  const nm = (userById(ME)?.name || '').split(' ')[0];
+  const ico = path => `<span class="kd-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${path}</svg></span>`;
+  const card = (risk, label, n, sub, icon) => `<button class="kd-card${ui.risk === risk && risk ? ' on' : ''}" ${risk !== null ? `data-kdrisk="${risk}"` : ''} type="button">
+      <span class="kd-l">${label}</span><b class="kd-n">${n}</b><span class="kd-sub">${sub}</span>${ico(icon)}</button>`;
+  return `<div class="kd-hello"><h2>${hi}${nm ? `, ${esc(nm)}` : ''}!</h2>
+      <p><b>${red}</b> ${plural(red, 'проект просрочен', 'проекта просрочено', 'проектов просрочено')}, <b>${hot}</b> горят, <b>${week}</b> ${plural(week, 'финиш', 'финиша', 'финишей')} на этой неделе</p></div>
+    <div class="kd-cards">
+      ${card('', 'Активные проекты', act.length, `<em>+${fresh}</em> за 30 дней`, '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')}
+      ${card('red', 'Просрочено', red, `<em>${hot}</em> горят`, '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>')}
+      ${card('blue', 'У клиента', client, 'на согласовании', '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/>')}
+      ${card('done', 'Завершено', done30, 'за 30 дней', '<path d="M20 6 9 17l-5-5"/>')}
+    </div>`;
+}
+document.addEventListener('click', e => {
+  const c = e.target.closest?.('[data-kdrisk]'); if (!c) return;
+  const k = c.dataset.kdrisk; ui.risk = ui.risk === k ? '' : k; render();
+});
 const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>');
 const moreViews = () => ['mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
 function renderMobileNav(){
