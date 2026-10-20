@@ -102,6 +102,20 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(!sp2 || !(sp2.data.memberIds || []).includes(T)); ok('сняли с назначения — доступ к проекту закрыт');
 
   // 6) выбор ответственного есть везде, где он показан
+  $(own, '[data-view="matrix"]').click(); await wait(150);
+  const md = own.w.document;
+  assert.equal(md.querySelectorAll('.mx select.cell-as[data-qassign]').length, md.querySelectorAll('.mx button.cell').length); ok('«Матрица»: в каждой ячейке этапа можно выбрать ответственного');
+  assert.equal(md.querySelectorAll('.mx select[data-ppm]').length, md.querySelectorAll('.mx .prow').length); ok('«Матрица»: у каждого проекта можно выбрать PM');
+  assert.equal(md.querySelectorAll('.mx select[data-pworker]').length, md.querySelectorAll('.mx .prow').length); ok('«Матрица»: у каждого проекта можно выбрать исполнителя');
+  const pw = md.querySelector('.mx select[data-pworker]'); const mpid = pw.dataset.pworker;
+  change(own, pw, [...pw.options].find(o => o.textContent.startsWith('Тимур')).value); await wait(1500);
+  assert.ok(be.rows.get('sp/' + mpid).data.memberIds.includes(T)); ok('исполнитель проекта, выбранный в матрице, получает доступ');
+  const ca = md.querySelector(`.mx select.cell-as[data-qassign^="${mpid}|"]`); const cq = ca.dataset.qassign;
+  const cellOf = () => md.querySelector(`.mx select.cell-as[data-qassign="${cq}"]`).closest('td');
+  if (!cellOf().querySelector('.who:not(.inherit):not(.none)')) { assert.ok(cellOf().querySelector('.who.inherit')); ok('этап без своего ответственного подписан «исп.» серым'); }
+  change(own, ca, [...ca.options].find(o => o.textContent.startsWith('Гоша') || o.textContent.startsWith('Owner')).value); await wait(300);
+  assert.ok(cellOf().querySelector('.who:not(.inherit):not(.none)')); ok('после назначения этапа подпись становится своей');
+  change(own, md.querySelector(`.mx select[data-pworker="${mpid}"]`), ''); await wait(1500);
   $(own, '[data-view="kanban"]').click(); await wait(150);
   assert.ok(own.w.document.querySelectorAll('.card select[data-qassign]').length > 0); ok('«Канбан»: на карточке можно выбрать ответственного');
   $(own, '[data-view="production"]').click(); await wait(150);
