@@ -133,17 +133,27 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   o.w.document.querySelector('[data-view="production"]').click(); await wait(150);
   assert.ok(o.w.document.querySelector(`.pf-item[data-pfsel="${demoP.id}"]`) && !o.w.document.querySelector('.pf-item .subnow')); ok('производство: в списке проектов слева подэтапа нет');
   assert.ok(o.w.document.querySelector('.pf-card.here')); ok('производство: на доске метка «Сейчас здесь» осталась');
-  // 8) загрузка: этап без своего ответственного засчитывается исполнителю проекта
-  w.mergeSnapshot({ meta: {}, projects: [{ id: 'imp2', name: 'Без ответственных', client: 'К2', template_id: 't1', pm_id: 'me', worker_id: 'uvlad', start_date: d(-2), deadline: d(10), state: 'active',
-    stages: [st('z1', 0, 'in_progress', d(-2), d(3)), st('z2', 1, 'not_started', d(3), d(6))], log: [] }], tasks: [] }); w.commit(); await wait(200);
-  const vladId = JSON.parse(w.localStorage.getItem('agency-pipeline-demo-v2')).users.find(u => u.email === 'vlad@x.y').id;
+  // 8) загрузка: считаются проекты, где человек назначен в любой роли
+  w.mergeSnapshot({ meta: {}, projects: [
+    { id: 'imp2', name: 'Без ответственных', client: 'К2', template_id: 't1', pm_id: 'me', worker_id: 'uvlad', start_date: d(-2), deadline: d(10), state: 'active',
+      stages: [st('z1', 0, 'in_progress', d(-2), d(3)), st('z2', 1, 'not_started', d(3), d(6))], log: [] },
+    { id: 'imp3', name: 'Будущий', client: 'К3', template_id: 't1', pm_id: 'me', worker_id: 'uvlad', start_date: d(5), deadline: d(20), state: 'active',
+      stages: [st('y1', 0, 'not_started', d(5), d(8))], log: [] },
+    { id: 'imp4', name: 'Только этап', client: 'К4', template_id: 't1', pm_id: 'me', worker_id: null, start_date: d(-1), deadline: d(20), state: 'active',
+      stages: [st('q1', 0, 'not_started', d(4), d(8), { assignee_id: 'uvlad' })], log: [] }], tasks: [] }); w.commit(); await wait(200);
+  const L = JSON.parse(w.localStorage.getItem('agency-pipeline-demo-v2'));
+  const vladId = L.users.find(u => u.email === 'vlad@x.y').id;
   const W = w.workload(); const vr = W.rows.find(r => r.u.id === vladId), mr = W.rows.find(r => r.u.id === 'me');
-  assert.equal(vr.cur, 2); ok('загрузка: Влад ведёт 2 этапа — свой и этап без ответственного в проекте, где он исполнитель');
-  assert.ok(!W.unassigned.some(x => x.p.id === 'imp2')); ok('загрузка: такие этапы не считаются «без ответственного»');
-  assert.equal(vr.inProj, 2); ok('загрузка: Влад участвует в 2 проектах');
-  assert.ok(mr.inProj >= 2 && mr.pmOf >= 2); ok('загрузка: PM видит число своих проектов');
+  assert.equal(vr.cur, 4); ok('загрузка: у Влада 4 проекта — исполнитель в трёх и ответственный за этап в одном');
+  assert.equal(vr.soon, 1); ok('загрузка: проект, который ещё не стартовал, отмечен отдельно');
+  const myN = L.projects.filter(p => p.state === 'active' && (p.pm_id === 'me' || p.worker_id === 'me' || p.stages.some(s => s.assignee_id === 'me'))).length;
+  assert.equal(mr.cur, myN); ok(`загрузка: у PM на шкале все его проекты (${myN})`);
+  assert.ok(!W.unassigned.some(x => x.p.id === 'imp2')); ok('загрузка: этапы в проекте с исполнителем не считаются «без ответственного»');
   o.w.document.querySelector('[data-view="load"]').click(); await wait(150);
-  assert.ok(/в 2 проектах/.test(o.w.document.getElementById('app').textContent) && /2 этапа из 3/.test(o.w.document.getElementById('app').textContent)); ok('загрузка: подписи «в 2 проектах» и «2 этапа из 3»');
+  const lt = o.w.document.getElementById('app').textContent;
+  assert.ok(/4 проекта из 3/.test(lt) && /Перегружен/.test(lt)); ok('загрузка: «4 проекта из 3» и «Перегружен»');
+  o.w.document.querySelector('[data-view="team"]').click(); await wait(150);
+  assert.ok(/Норма проектов/.test(o.w.document.getElementById('app').textContent) && /в 4 проектах из 3/.test(o.w.document.getElementById('app').textContent)); ok('команда: норма и загрузка в проектах');
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('ошибок на странице нет');
   o.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);

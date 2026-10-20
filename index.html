@@ -1867,20 +1867,16 @@ function workload(){
   const active = db.projects.filter(p => p.state === 'active');
   const start = mondayOf(t);
   const weeks = Array.from({length:6}, (_,i) => ({ from:addDays(start, i*7), to:addDays(start, i*7+6) }));
+  // загрузка = активные проекты, где человек назначен: PM, исполнитель проекта, ответственный за этап или подэтап
+  const involved = (p, u) => p.pm_id === u.id || p.worker_id === u.id || p.stages.some(s => s.assignee_id === u.id)
+    || (db.tasks || []).some(x => x.project_id === p.id && x.assignee_id === u.id);
   const rows = db.users.map(u => {
-    const mine = [];
-    active.forEach(p => p.stages.forEach(s => { if (stageWho(p, s) === u.id && s.status !== 'done') mine.push({ p, s, h:health(s) }); }));
-    const cur = mine.filter(x => x.s.status === 'in_progress' || x.s.status === 'client_review');
-    const by = { red:0, yellow:0, blue:0, green:0 }; cur.forEach(x => by[x.h.key]++);
-    const upcoming = mine.filter(x => x.s.status === 'not_started' && diffDays(x.s.planned_start, t) <= 14).length;
-    const heat = weeks.map(w => mine.filter(x => {
-      const end = x.s.status !== 'not_started' && x.s.due_date < t ? t : x.s.due_date; // просроченное всё ещё в работе
-      return x.s.planned_start <= w.to && end >= w.from;
-    }).length);
-    // во скольких активных проектах человек участвует: PM, исполнитель проекта, ответственный за этап или подэтап
-    const inProj = active.filter(p => p.pm_id === u.id || p.worker_id === u.id || p.stages.some(s => s.assignee_id === u.id)
-      || (db.tasks || []).some(x => x.project_id === p.id && x.assignee_id === u.id)).length;
-    return { u, cur:cur.length, by, upcoming, heat, inProj, pmOf:active.filter(p => p.pm_id === u.id).length };
+    const projs = active.filter(p => involved(p, u));
+    const by = { red:0, yellow:0, blue:0, green:0 }; let soon = 0;
+    projs.forEach(p => { if (p.start_date > t) soon++; else { const k = projectRisk(p); by[by[k] != null ? k : 'green']++; } });
+    // по неделям: проект занимает человека от старта до расчётного финиша (просроченный — до сегодня)
+    const heat = weeks.map(w => projs.filter(p => { const e = plannedEnd(p); const end = e < t ? t : e; return p.start_date <= w.to && end >= w.from; }).length);
+    return { u, cur:projs.length, by, soon, heat, inProj:projs.length, pmOf:active.filter(p => p.pm_id === u.id).length };
   });
   const unassigned = [];
   active.forEach(p => p.stages.forEach(s => {
@@ -1904,17 +1900,17 @@ function renderLoad(){
   const overdue = inWork.filter(s => health(s).key === 'red').length;
   const overloaded = W.rows.filter(r => r.cur > (r.u.capacity || 1)).length;
   const budget = W.active.reduce((m,p) => m + (+p.budget || 0), 0);
-  const scale = Math.max(1, ...rows.map(r => Math.max(r.cur + r.upcoming, r.u.capacity || 1)));
+  const scale = Math.max(1, ...rows.map(r => Math.max(r.cur, r.u.capacity || 1)));
   const depts = [...new Set(db.users.map(u => u.dept))];
 
   const loadRows = rows.map(r => {
     const [cls, txt] = loadState(r); const cap = r.u.capacity || 1;
     const segs = ['red','yellow','blue','green'].map(k => r.by[k] ? `<div class="seg ${k}" style="width:${r.by[k]/scale*100}%" title="${r.by[k]}"></div>` : '').join('')
-      + (r.upcoming ? `<div class="seg up" style="width:${r.upcoming/scale*100}%" title="Скоро: ${r.upcoming}"></div>` : '');
+      + (r.soon ? `<div class="seg up" style="width:${r.soon/scale*100}%" title="Ещё не стартовали: ${r.soon}"></div>` : '');
     return `<div class="lrow">
-      <div class="who-cell">${avHtml(r.u)}<div><b>${esc(r.u.name || 'Вы')}</b><small>${esc(r.u.dept)}</small><small>${r.inProj ? `в ${r.inProj} ${plural(r.inProj,'проекте','проектах','проектах')}${r.pmOf ? `, PM в ${r.pmOf}` : ''}` : 'нет проектов'}</small></div></div>
+      <div class="who-cell">${avHtml(r.u)}<div><b>${esc(r.u.name || 'Вы')}</b><small>${esc(r.u.dept)}</small><small>${r.pmOf ? `PM в ${r.pmOf} ${plural(r.pmOf,'проекте','проектах','проектах')}` : r.inProj ? '' : 'нет проектов'}</small></div></div>
       <div class="trackwrap"><div class="track">${segs}</div><span class="cap" style="left:calc(${cap/scale*100}% - 1px)" title="Норма: ${cap}"></span></div>
-      <div class="lstat"><b>${r.cur} ${plural(r.cur,'этап','этапа','этапов')} из ${cap}</b><span class="${cls}">${txt}</span>${r.upcoming ? `<br><span class="hint">ещё ${r.upcoming} в ближайшие 2 недели</span>` : ''}</div>
+      <div class="lstat"><b>${r.cur} ${plural(r.cur,'проект','проекта','проектов')} из ${cap}</b><span class="${cls}">${txt}</span>${r.soon ? `<br><span class="hint">из них ${r.soon} ещё не ${r.soon === 1 ? 'стартовал' : 'стартовали'}</span>` : ''}</div>
     </div>`;
   }).join('');
 
@@ -1935,17 +1931,17 @@ function renderLoad(){
     ${onlyMe ? `<div class="note-box"><p>В команде пока только вы. Пригласите сотрудников и назначьте их на этапы, чтобы увидеть, кто перегружен, а у кого есть свободное время.</p><button class="primary" data-invite>Пригласить в команду</button></div>` : ''}
     <section class="panel">
       <h2>Загрузка сейчас</h2>
-      <p class="hint">Шкала — этапы, которые идут у человека сейчас, против его нормы (сколько этапов он ведёт одновременно). Считаются этапы, где он ответственный, и этапы без своего ответственного в проектах, где он исполнитель. Роль PM на шкалу не влияет — она показана под именем. Норма меняется во вкладке «Команда».</p>
+      <p class="hint">Шкала — активные проекты, где человек назначен (PM, исполнитель проекта или ответственный за этап), против его нормы. Цвет — состояние проекта, штриховка — проект ещё не стартовал. Норма меняется во вкладке «Команда».</p>
       <div class="row" style="margin-bottom:10px">
         <button class="tag" data-dept="" aria-pressed="${!ui.dept}">Все отделы</button>
         ${depts.map(d => `<button class="tag" data-dept="${esc(d)}" aria-pressed="${ui.dept===d}">${esc(d)}</button>`).join('')}
       </div>
-      <div class="legend"><span><i class="sw red"></i>Просрочено</span><span><i class="sw yellow"></i>Горит</span><span><i class="sw blue"></i>У клиента</span><span><i class="sw green"></i>В графике</span><span><i class="sw" style="background:repeating-linear-gradient(45deg,var(--n-bg) 0 4px,var(--line) 4px 6px)"></i>Стартует в ближайшие 2 недели</span><span><i class="sw" style="background:var(--ink);width:3px"></i>Норма</span></div>
+      <div class="legend"><span><i class="sw red"></i>Просрочено</span><span><i class="sw yellow"></i>Горит</span><span><i class="sw blue"></i>У клиента</span><span><i class="sw green"></i>В графике</span><span><i class="sw" style="background:repeating-linear-gradient(45deg,var(--n-bg) 0 4px,var(--line) 4px 6px)"></i>Ещё не стартовал</span><span><i class="sw" style="background:var(--ink);width:3px"></i>Норма</span></div>
       ${loadRows || '<p class="hint">В этом отделе никого нет</p>'}
     </section>
     <section class="panel">
       <h2>Ближайшие 6 недель</h2>
-      <p class="hint">Число этапов, которые идут у человека в эту неделю. Жёлтый — на пределе нормы, красный — больше нормы.</p>
+      <p class="hint">Число проектов, которые идут у человека в эту неделю. Жёлтый — на пределе нормы, красный — больше нормы.</p>
       <div class="scroll" style="border:0"><table class="heat"><thead><tr><th></th>${W.weeks.map(w => `<th>${fmt(w.from)}</th>`).join('')}</tr></thead><tbody>${heatRows}</tbody></table></div>
     </section>
     <section class="panel">
@@ -1969,8 +1965,8 @@ function renderTeam(){
         <b>${esc(u.name || 'Вы')}${isMe ? ' <span class="you">(вы)</span>' : ''}</b><small>${esc([u.title, u.email || 'email не указан'].filter(Boolean).join(' · '))}</small>${u.contact ? `<span class="contact">${esc(u.contact)}</span>` : ''}</div></div>
       <div><span class="mlabel">Роль</span><select data-uf="role" data-uid="${u.id}" ${isMe?'disabled':''} aria-label="Роль">${Object.entries(ROLES).map(([k,v]) => `<option value="${k}" ${u.role===k?'selected':''}>${v}</option>`).join('')}</select></div>
       <div><span class="mlabel">Отдел</span><select data-uf="dept" data-uid="${u.id}" aria-label="Отдел">${DEPTS.map(d => `<option ${u.dept===d?'selected':''}>${d}</option>`).join('')}</select></div>
-      <div><span class="mlabel">Норма этапов</span><input type="number" min="1" max="20" data-uf="capacity" data-uid="${u.id}" value="${u.capacity}" aria-label="Норма параллельных этапов"></div>
-      <div><span class="mlabel">Статус</span>${memberStatus(u, isMe)}<br><span class="hint">в работе ${r.cur} из ${u.capacity}</span></div>
+      <div><span class="mlabel">Норма проектов</span><input type="number" min="1" max="20" data-uf="capacity" data-uid="${u.id}" value="${u.capacity}" aria-label="Норма проектов одновременно"></div>
+      <div><span class="mlabel">Статус</span>${memberStatus(u, isMe)}<br><span class="hint">в ${r.cur} ${plural(r.cur,'проекте','проектах','проектах')} из ${u.capacity}</span></div>
       <div class="acts">
         ${isMe ? `<button class="ghost" data-editme>Изменить профиль</button>` : ''}
         ${!isMe && !u.account_id && online ? `<button class="ghost" data-tlink="${u.id}">${u.invite?.code ? 'Ссылка-приглашение' : 'Пригласить по ссылке'}</button>` : ''}
@@ -1980,7 +1976,7 @@ function renderTeam(){
   }).join('');
   app.innerHTML = `<div class="team-head"><h2>Команда <span>${db.users.length}</span></h2><button class="primary" data-invite>Пригласить</button></div>
     <div class="members"><div class="mrow headr"><span>Сотрудник</span><span>Роль</span><span>Отдел</span><span>Норма</span><span>Статус</span><span></span></div>${rows}</div>
-    <p class="hint">Норма — сколько этапов человек ведёт одновременно без перегрузки. По ней считается вкладка «Загрузка».</p>
+    <p class="hint">Норма — в скольких проектах человек может быть назначен одновременно без перегрузки. По ней считается вкладка «Загрузка».</p>
     ${demoCount ? `<div class="note-box"><p>В системе ${demoCount} демо-${plural(demoCount,'проект','проекта','проектов')} с выдуманными клиентами. Удалите их, когда будете готовы завести реальные.</p><button class="ghost danger" id="clearDemo">Удалить демо-проекты</button></div>` : ''}`;
 }
 
@@ -2000,7 +1996,7 @@ function openInvite(){
         <div class="field"><label for="iRole">Роль</label><select id="iRole">${Object.entries(ROLES).map(([k,v]) => `<option value="${k}" ${k==='specialist'?'selected':''}>${v}</option>`).join('')}</select></div>
         <div class="field"><label for="iDept">Отдел</label><select id="iDept">${DEPTS.map(d => `<option ${d==='Креатив'?'selected':''}>${d}</option>`).join('')}</select></div>
       </div>
-      <div class="field"><label for="iCap">Норма: этапов одновременно</label><input id="iCap" type="number" min="1" max="20" value="3"></div>
+      <div class="field"><label for="iCap">Норма: проектов одновременно</label><input id="iCap" type="number" min="1" max="20" value="3"></div>
       <p class="hint" style="margin:0">${cloud.store ? 'После добавления появится ссылка-приглашение: отправьте её человеку. Войдя по ней, он увидит проекты, где вы его назначите.' : 'Письма приложение не отправляет. Чтобы человек увидел свои проекты, откройте нужный проект, нажмите «Поделиться» → «Создать ссылку» и пришлите ему эту ссылку.'}</p>
       <div class="err" id="iErr"></div>
       <div class="actions"><button type="button" class="ghost" data-close>Отмена</button><button class="primary">Добавить в команду</button></div>
@@ -2013,7 +2009,7 @@ function openInvite(){
     if (!name) return $('#iErr').textContent = 'Укажите имя';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return $('#iErr').textContent = 'Укажите email в формате name@company.ru';
     if (db.users.some(u => (u.email||'').toLowerCase() === email)) return $('#iErr').textContent = 'Человек с таким email уже в команде';
-    if (!(cap >= 1)) return $('#iErr').textContent = 'Норма — от 1 этапа';
+    if (!(cap >= 1)) return $('#iErr').textContent = 'Норма — от 1 проекта';
     const u = inviteMember({ name, email, role:$('#iRole').value, dept:$('#iDept').value, capacity:cap });
     layer.innerHTML = '';
     if (cloud.store && cloud.uid) teamLinkFor(u, true);
@@ -2385,7 +2381,7 @@ document.addEventListener('change', e => {
   if (el.dataset.kmove){ const q = projById(el.dataset.kmove); if (el.value === 'done') moveToDone(q); else if (el.value !== '') moveToColumn(q, tplById(ui.kbTpl), +el.value); return; }
   if (el.dataset.uf){
     const u = userById(el.dataset.uid); const f = el.dataset.uf;
-    if (f === 'capacity'){ const v = Math.round(+el.value); if (!(v >= 1)){ el.value = u.capacity; toast('Норма — от 1 этапа'); return; } return updateMember(u, f, v); }
+    if (f === 'capacity'){ const v = Math.round(+el.value); if (!(v >= 1)){ el.value = u.capacity; toast('Норма — от 1 проекта'); return; } return updateMember(u, f, v); }
     return updateMember(u, f, el.value);
   }
   if (p){
