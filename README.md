@@ -1,17 +1,12 @@
-# KaizenHub — Конвейер проектов
+# KaizenHub
 
-Исходник артефакта: https://claude.ai/artifact/LiTnhzyaw2CXfPaYzZ96L5
+Конвейер проектов для агентства. Один файл `index.html` + Supabase (вход и база) + Vercel (хостинг и `/api/sample`).
 
-- `index.html` — всё приложение в одном файле.
-- Развёрнуто через GitHub Pages (Settings → Pages → Branch: `main`, папка `/`).
+**Быстрый старт**
+1. Supabase: выполнить `supabase/migrations/20261020000000_init.sql` в SQL Editor.
+2. Vercel: импортировать этот репозиторий, добавить переменные `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`.
+3. Supabase → Authentication → URL Configuration: указать адрес сайта с Vercel (Site URL и Redirect URLs `https://адрес/**`).
 
-## Важно про данные
-- В Claude (артефакт) данные хранятся в облаке аккаунта Claude.
-- На GitHub Pages `window.claude` недоступен — приложение работает в локальном
-  режиме и хранит данные в `localStorage` браузера (у каждого пользователя свои).
+**Проверка:** `cd tests && npm install && npm test`
 
-## Бэкап
-Каждый коммит — снимок версии. Чтобы сохранить новую версию артефакта:
-попросите Claude «обнови бэкап KaizenHub», затем:
-
-    git add -A && git commit -m "Бэкап $(date +%F)" && git push
+Подробные правила работы — в `CLAUDE.md`.
