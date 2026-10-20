@@ -154,6 +154,51 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(/4 проекта из 3/.test(lt) && /Перегружен/.test(lt)); ok('загрузка: «4 проекта из 3» и «Перегружен»');
   o.w.document.querySelector('[data-view="team"]').click(); await wait(150);
   assert.ok(/Норма проектов/.test(o.w.document.getElementById('app').textContent) && /в 4 проектах из 3/.test(o.w.document.getElementById('app').textContent)); ok('команда: норма и загрузка в проектах');
+  // 9) настройки: дни на этап, финальный дедлайн, старт, ввод дат
+  const Dc = o.w.document, $q = x => Dc.querySelector(x), LS = () => JSON.parse(w.localStorage.getItem('agency-pipeline-demo-v2'));
+  const fire = (el, type) => el.dispatchEvent(new o.w.Event(type, { bubbles: true }));
+  const tab = Dc.querySelector('.tabs [data-view="templates"]');
+  assert.equal(tab.textContent.trim(), 'Настройки'); ok('настройки: вкладка «Настройки» вместо «Шаблонов»');
+  tab.click(); await wait(100);
+  assert.ok($q('[data-settab="deadlines"]') && $q('[data-settab="templates"]') && $q('#sDays')); ok('настройки: разделы «Дедлайны» и «Шаблоны»');
+  $q('#sDays').value = '3'; fire($q('#sDays'), 'change'); await wait(100);
+  assert.equal(LS().prefs.stageDays, 3); ok('настройки: 3 дня на этап сохранено');
+  $q('[data-settab="templates"]').click(); await wait(100);
+  assert.ok($q('.tpl-wrap') && $q('.set-nav')); ok('настройки: редактор шаблонов открывается внутри настроек');
+  $q('#newBtn').click(); await wait(100);
+  const startD = d(1), dlD = d(8);
+  $q('#cName').value = 'Сроки-тест'; $q('#cClient').value = 'К'; $q('#cStart').value = startD; fire($q('#cStart'), 'input');
+  $q('#cDl').value = dlD; fire($q('#cDl'), 'input'); await wait(50);
+  assert.ok(/по 3 дня/.test($q('#cPrev').textContent)); ok('создание: предпросмотр строит этапы по 3 дня');
+  const tplN = LS().templates.find(t => t.id === $q('#cTpl').value).stages.length;
+  if (tplN * 3 > 7) { assert.ok(/позже дедлайна/.test($q('#cPrev').textContent) && $q('#cFit').checked); ok('создание: видно, что план позже дедлайна, галочка «Уместить» включена'); }
+  $q('#cForm').dispatchEvent(new o.w.Event('submit', { bubbles: true, cancelable: true })); await wait(300);
+  let sp = LS().projects.find(x => x.name === 'Сроки-тест');
+  assert.equal(sp.deadline, dlD); ok('создание: финальный дедлайн сохранён таким, как вы его задали');
+  const endOf = x => x.stages.reduce((m, st) => st.due_date > m ? st.due_date : m, '');
+  assert.ok(endOf(sp) <= dlD); ok('создание: этапы уместились в дедлайн');
+  assert.ok(sp.stages.every(st => w.diffDays ? true : true) && sp.stages.every(st => st.due_date > st.planned_start)); ok('создание: у каждого этапа минимум 1 день');
+  // карточка проекта: старт и ввод даты с клавиатуры
+  w.openProject(sp.id); await wait(100);
+  assert.ok($q('.d-box') && /Сроки/.test($q('.drawer').textContent) && $q('#pStart')); ok('карточка: блоки «Проект», «Команда», «Сроки», дату старта можно менять');
+  const ps = $q('#pStart'); ps.focus(); ps.value = '0002-10-25'; fire(ps, 'change'); await wait(100);
+  assert.equal(LS().projects.find(x => x.id === sp.id).start_date, startD); ok('карточка: пока набираете дату, ничего не сохраняется и поле не сбрасывается');
+  assert.equal(Dc.activeElement && Dc.activeElement.id, 'pStart'); ok('карточка: курсор остаётся в поле даты');
+  const newStart = d(3); ps.value = newStart; fire(ps, 'change'); ps.blur(); await wait(150);
+  const sp2 = LS().projects.find(x => x.id === sp.id);
+  assert.equal(sp2.start_date, newStart); assert.equal(sp2.stages[0].planned_start, newStart); ok('карточка: после выхода из поля старт сохранён, этапы сдвинулись');
+  const nSt = sp2.stages.length, total = endOf(sp2) > newStart ? Math.round((new Date(endOf(sp2)) - new Date(newStart)) / 864e5) : 0;
+  assert.ok(total > nSt, 'план слишком короткий для проверки'); const fitDl = d(3 + nSt);   // по дню на этап — влезает, но короче текущего плана
+  const dlIn = $q('#pDl'); dlIn.focus(); dlIn.value = fitDl; fire(dlIn, 'change');
+  dlIn.dispatchEvent(new o.w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await wait(150);
+  assert.equal(LS().projects.find(x => x.id === sp.id).deadline, fitDl); ok('карточка: Enter сохраняет дату дедлайна');
+  assert.ok($q('#fitDl')); ok('карточка: план не влезает — есть кнопка «Уместить в дедлайн»');
+  $q('#fitDl').click(); await wait(150);
+  const sp3 = LS().projects.find(x => x.id === sp.id);
+  assert.equal(endOf(sp3), fitDl); assert.ok(sp3.stages.every(st => st.due_date > st.planned_start)); ok('карточка: «Уместить в дедлайн» — финиш ровно в дедлайн, у каждого этапа минимум день');
+  assert.ok(!$q('#fitDl') && /в срок/.test($q('.drawer').textContent)); ok('карточка: после этого — «в срок»');
+  assert.ok(!/Ответственный \(Исп\)/.test($q('.drawer').innerHTML)); ok('карточка: понятные подписи «Как у проекта» вместо «Ответственный (Исп)»');
+  w.closeLayer && w.closeLayer();
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('ошибок на странице нет');
   o.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);

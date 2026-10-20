@@ -332,6 +332,12 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .field label,.stg label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
 .field .val{height:34px;display:flex;align-items:center;font-weight:500}
 .warn{background:var(--r-bg);color:var(--r);border-radius:10px;padding:8px 12px;font-size:13.5px;margin:8px 0}
+.d-boxes{display:grid;gap:10px;margin:14px 0 4px}
+.d-box{border:1px solid var(--line);border-radius:12px;padding:12px 14px 6px}
+.d-box h3{margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.d-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 12px;margin-bottom:8px}
+.d-g .val{gap:8px;flex-wrap:wrap;height:auto;min-height:34px}
+.d-late{margin:2px 0 10px}
 .d-sec{font-size:14px;font-weight:600;margin:24px 0 10px}
 .d-sec-row{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 14px;margin:24px 0 10px}
 .d-sec-row .d-sec{margin:0}
@@ -388,6 +394,10 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;z-index:50;font-size:14px;max-width:calc(100% - 32px)}
 
 /* ---------- Шаблоны ---------- */
+.set-nav{margin:6px 0 14px}
+.set-panel{max-width:760px}
+.set-days .row{gap:12px;align-items:center}.set-days input{width:90px;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px;font-size:15px}
+.set-rules{margin:12px 0;padding-left:20px;color:var(--muted);font-size:13.5px;display:grid;gap:4px}
 .tpl-wrap{display:grid;grid-template-columns:260px 1fr;gap:16px;margin-top:6px}
 @media (max-width:760px){.tpl-wrap{grid-template-columns:1fr}}
 .tpl-list{display:flex;flex-direction:column;gap:6px}
@@ -925,7 +935,7 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
     <button data-view="reports">AI-отчёты</button>
     <button data-view="load">Загрузка</button>
     <button data-view="team">Команда</button>
-    <button data-view="templates">Шаблоны</button>
+    <button data-view="templates">Настройки</button>
   </nav>
   <div class="top-actions">
     <button class="icon-btn" id="cloudBtn" aria-label="Сохранение данных"></button>
@@ -1019,7 +1029,7 @@ const projectRisk = p => p.state === 'completed' ? 'done'
   : p.stages.reduce((w,s) => { const k = health(s).key; return WEIGHT[k] > WEIGHT[w] ? k : w; }, 'done');
 // Ответственный по умолчанию: задача → этап → исполнитель проекта → PM проекта
 const projWho = p => p?.worker_id || null;   // задачи проекта по умолчанию — на исполнителя, PM не подставляется
-const execLabel = p => `Ответственный (Исп): ${p?.worker_id ? esc(short(p.worker_id)) : 'не назначен'}`;
+const execLabel = p => p?.worker_id ? `Как у проекта: ${esc(short(p.worker_id))}` : 'Не назначен';
 const whoId = (p, s, t) => t?.assignee_id || s?.assignee_id || projWho(p);
 const execTxt = (p, sep = ', ') => p?.worker_id ? `${sep}исп. ${esc(short(p.worker_id))}` : '';
 const currentStage = p => p.stages.find(s => s.status==='in_progress'||s.status==='client_review') || p.stages.find(s => s.status!=='done') || null;
@@ -1081,11 +1091,15 @@ function migrate(){
   db.ver = 3; save();
 }
 
+// Сколько дней на этап: из «Настройки → Дедлайны» (по умолчанию 2), либо из шаблона, если так выбрано в настройках
+const defDays = () => Math.max(1, Math.round(+db.prefs?.stageDays || 2));
+const stageDaysFor = ts => db.prefs?.useTplDays && +ts?.days >= 1 ? Math.round(+ts.days) : defDays();
 function makeProject({ name, client, template_id, start_date, pm_id, worker_id=null, priority='medium', budget=null }){
   const tpl = tplById(template_id); let cur = start_date;
   const stages = tpl.stages.map((ts,i) => {
-    const s = { id:uid(), position:i, name:ts.name, days:ts.days, approval:!!ts.approval, assignee_id:null, subs:mergeSubs([], ts.subs || []),
-      status:'not_started', planned_start:cur, due_date:addDays(cur, ts.days), started_at:null, completed_at:null };
+    const n = stageDaysFor(ts);
+    const s = { id:uid(), position:i, name:ts.name, days:n, approval:!!ts.approval, assignee_id:null, subs:mergeSubs([], ts.subs || []),
+      status:'not_started', planned_start:cur, due_date:addDays(cur, n), started_at:null, completed_at:null };
     cur = s.due_date; return s;
   });
   return { id:uid(), name, client, template_id, pm_id, start_date, deadline:stages.at(-1).due_date,
@@ -1263,8 +1277,9 @@ function changeTemplate(p, tplId){
     const o = old.find(x => !used.has(x.id) && norm(x.name) === norm(t.name));
     if (o){ used.add(o.id); o.approval = !!t.approval; o.subs = mergeSubs(o.subs, t.subs || [], o.status === 'done'); next.push(o); cursor = o.due_date; kept++; }
     else {
-      const s = { id:uid(), position:0, name:t.name, days:t.days, approval:!!t.approval, assignee_id:null, status:'not_started', subs:mergeSubs([], t.subs || []),
-        planned_start:cursor, due_date:addDays(cursor, t.days), started_at:null, completed_at:null };
+      const n = stageDaysFor(t);
+      const s = { id:uid(), position:0, name:t.name, days:n, approval:!!t.approval, assignee_id:null, status:'not_started', subs:mergeSubs([], t.subs || []),
+        planned_start:cursor, due_date:addDays(cursor, n), started_at:null, completed_at:null };
       next.push(s); cursor = s.due_date; added++;
     }
   });
@@ -1274,6 +1289,40 @@ function changeTemplate(p, tplId){
   addLog(p, `Шаблон изменён на «${tpl.name}»: сохранено этапов ${kept + keepDone.length}, добавлено ${added}, удалено ${removed}`);
   commit();
   toast(`Проект переведён на «${tpl.name}», финиш ${fmt(plannedEnd(p))}`);
+}
+// Поля дат в карточке проекта сохраняются, когда вы вышли из поля или нажали Enter, а не на каждую цифру
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.type === 'date' && el.closest('.drawer') && document.activeElement === el && !el.dataset.commit) e.stopImmediatePropagation();
+}, true);
+const commitDate = el => { if (el.value && el.value !== el.defaultValue && /^\d{4}-/.test(el.value) && +el.value.slice(0, 4) >= 2000){ el.dataset.commit = '1'; el.dispatchEvent(new Event('change', { bubbles:true })); delete el.dataset.commit; } };
+document.addEventListener('focusout', e => { const el = e.target; if (el.type === 'date' && el.closest('.drawer')) commitDate(el); }, true);
+document.addEventListener('keydown', e => { const el = e.target; if (e.key === 'Enter' && el.type === 'date' && el.closest('.drawer')){ e.preventDefault(); commitDate(el); } });
+// Новая дата старта: незакрытые этапы сдвигаются вместе с ней, длительности сохраняются
+function setStart(p, value){
+  if (!value || value === p.start_date) return;
+  const delta = diffDays(value, p.start_date); const old = p.start_date;
+  p.start_date = value;
+  p.stages.forEach(s => { if (s.status !== 'done'){ s.planned_start = addDays(s.planned_start, delta); s.due_date = addDays(s.due_date, delta); } });
+  addLog(p, `Старт проекта: ${fmt(old)} → ${fmt(value)}`); commit();
+  toast(`Старт перенесён на ${fmt(value)}, финиш ${fmt(plannedEnd(p))}`);
+}
+// Уместить план в финальный дедлайн: оставшиеся этапы сжимаются пропорционально (минимум 1 день на этап)
+function fitToDeadline(p){
+  if (!p.deadline) return;
+  const left = p.stages.filter(s => s.status !== 'done').sort((a, b) => a.position - b.position);
+  if (!left.length) return;
+  const anchor = left[0].status === 'not_started' ? [left[0].planned_start, today()].reduce((m, d) => d > m ? d : m) : left[0].planned_start;
+  const avail = diffDays(p.deadline, anchor), durs = left.map(stageDur), total = durs.reduce((a, b) => a + b, 0);
+  if (avail < left.length){ toast(`До дедлайна ${days(Math.max(0, avail))}, а этапов ${left.length}: даже по дню на этап не уложиться. Перенесите дедлайн.`); return; }
+  if (avail >= total){ toast('План уже укладывается в дедлайн'); return; }
+  const next = durs.map(d => Math.max(1, Math.floor(d * avail / total)));
+  for (let i = next.length - 1, extra = avail - next.reduce((a, b) => a + b, 0); extra > 0; i = (i - 1 + next.length) % next.length){ next[i]++; extra--; }
+  for (let i = next.length - 1, over = next.reduce((a, b) => a + b, 0) - avail; over > 0; i = (i - 1 + next.length) % next.length){ if (next[i] > 1){ next[i]--; over--; } }
+  let cur = anchor;
+  left.forEach((s, i) => { if (s.status === 'not_started') s.planned_start = cur; s.due_date = addDays(s.status === 'not_started' ? cur : s.planned_start, next[i]); s.days = next[i]; cur = s.due_date; });
+  addLog(p, `План уложен в дедлайн ${fmt(p.deadline)}`); commit();
+  toast(`Этапы сжаты: финиш ${fmt(plannedEnd(p))}`);
 }
 // PATCH /api/stages/:id { name }
 function renameStage(p, s, name){
@@ -1291,8 +1340,9 @@ function setDuration(p, s, n){
 // POST /api/projects/:id/stages
 function addStage(p){
   const last = p.stages.at(-1); const start = last ? last.due_date : p.start_date;
-  const s = { id:uid(), position:p.stages.length, name:'Новый этап', days:3, approval:false, assignee_id:null, status:'not_started', subs:[],
-    planned_start:start, due_date:addDays(start, 3), started_at:null, completed_at:null };
+  const n = defDays();
+  const s = { id:uid(), position:p.stages.length, name:'Новый этап', days:n, approval:false, assignee_id:null, status:'not_started', subs:[],
+    planned_start:start, due_date:addDays(start, n), started_at:null, completed_at:null };
   p.stages.push(s); ensureActive(p); syncState(p); addLog(p, 'Добавлен этап «Новый этап»'); commit();
   return s;
 }
@@ -1482,7 +1532,7 @@ function render(){
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
   renderFilters();
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:() => renderProjectFocus(true), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderTemplates })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:() => renderProjectFocus(true), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.open) renderDrawer();
   renderMobileNav(); paintMeBtn();
 }
@@ -2099,17 +2149,25 @@ function renderDrawer(){
   const html = `<div class="backdrop" data-close></div>
   <aside class="drawer" role="dialog" aria-modal="true" aria-label="Карточка проекта">
     <div class="d-head"><input id="pName" value="${esc(p.name)}" aria-label="Название проекта"><button class="close" data-close aria-label="Закрыть">×</button></div>
-    <div class="fields">
-      <div class="field"><label>Клиент</label><div class="val">${esc(p.client)}</div></div>
-      <div class="field"><label for="pPm">Ответственный (PM)</label><select id="pPm">${opt(pms(), p.pm_id)}</select></div>
-      <div class="field"><label for="pWorker">Ответственный (Исп)</label><select id="pWorker">${opt(db.users, p.worker_id, 'Не назначен')}</select></div>
-      <div class="field"><label for="pPri">Приоритет</label><select id="pPri">${Object.entries(PRI).map(([k,[v]]) => `<option value="${k}" ${p.priority===k?'selected':''}>${v}</option>`).join('')}</select></div>
-      <div class="field"><label>Старт</label><div class="val">${fmt(p.start_date)}</div></div>
-      <div class="field"><label for="pDl">Общий дедлайн</label><input type="date" id="pDl" value="${p.deadline || ''}"></div>
-      <div class="field"><label>Расчётный финиш</label><div class="val">${fmt(end)}</div></div>
-      <div class="field"><label for="pTpl">Шаблон процесса</label><select id="pTpl">${tplById(p.template_id) ? '' : '<option value="" selected>Шаблон удалён</option>'}${db.templates.map(t => `<option value="${t.id}" ${t.id===p.template_id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></div>
+    <div class="d-boxes">
+      <section class="d-box"><h3>Проект</h3><div class="d-g">
+        <div class="field"><label>Клиент</label><div class="val">${esc(p.client)}</div></div>
+        <div class="field"><label for="pTpl">Шаблон процесса</label><select id="pTpl">${tplById(p.template_id) ? '' : '<option value="" selected>Шаблон удалён</option>'}${db.templates.map(t => `<option value="${t.id}" ${t.id===p.template_id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></div>
+        <div class="field"><label for="pPri">Приоритет</label><select id="pPri">${Object.entries(PRI).map(([k,[v]]) => `<option value="${k}" ${p.priority===k?'selected':''}>${v}</option>`).join('')}</select></div>
+      </div></section>
+      <section class="d-box"><h3>Команда</h3><div class="d-g">
+        <div class="field"><label for="pPm">PM</label><select id="pPm">${opt(pms(), p.pm_id)}</select></div>
+        <div class="field"><label for="pWorker">Исполнитель проекта</label><select id="pWorker">${opt(db.users, p.worker_id, 'Не назначен')}</select></div>
+      </div></section>
+      <section class="d-box"><h3>Сроки</h3><div class="d-g">
+        <div class="field"><label for="pStart">Старт</label><input type="date" id="pStart" value="${p.start_date}"></div>
+        <div class="field"><label for="pDl">Финальный дедлайн</label><input type="date" id="pDl" value="${p.deadline || ''}"></div>
+        <div class="field"><label>Расчётный финиш</label><div class="val">${fmt(end)} ${p.deadline ? (late ? `<span class="pill s-red">позже на ${days(diffDays(end, p.deadline))}</span>` : `<span class="pill s-green">в срок${diffDays(p.deadline, end) ? `, запас ${days(diffDays(p.deadline, end))}` : ''}</span>`) : ''}</div></div>
+      </div>
+      ${late ? `<div class="warn d-late">План не укладывается в дедлайн. <button class="link" id="fitDl">Уместить в дедлайн</button> — оставшиеся этапы сожмутся пропорционально.</div>` : ''}
+      </section>
     </div>
-    ${late ? `<div class="warn">По текущему плану проект закончится на ${days(diffDays(end, p.deadline))} позже общего дедлайна</div>` : ''}
+
     <div class="d-sec-row"><div class="d-sec">Этапы</div>
       <div class="acts">${tplById(p.template_id) ? '<button class="link" id="openTpl">Редактировать шаблон</button>' : ''}<button class="link" id="chainToggle">${ui.editChain ? 'Готово' : 'Изменить этапы проекта'}</button></div></div>
     <ol class="timeline">${stages}</ol>
@@ -2135,7 +2193,7 @@ function closeLayer(){ if (!db.onboarded && !GUEST) return; ui.open = null; ui.f
 // ---------- Быстрое создание ----------
 function openCreate(){
   ui.open = null;
-  if (!db.templates.length){ toast('Сначала создайте шаблон процесса'); ui.view = 'templates'; render(); return; }
+  if (!db.templates.length){ toast('Сначала создайте шаблон процесса'); ui.view = 'templates'; ui.setTab = 'templates'; render(); return; }
   layer.innerHTML = `<div class="backdrop" data-close></div>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cTitle">
     <h2 id="cTitle">Новый проект</h2>
@@ -2146,6 +2204,7 @@ function openCreate(){
       <div class="field"><label for="cTpl">Шаблон процесса</label><select id="cTpl">${db.templates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div>
       <div class="two">
         <div class="field"><label for="cStart">Дата старта</label><input type="date" id="cStart" value="${today()}"></div>
+        <div class="field"><label for="cDl">Финальный дедлайн</label><input type="date" id="cDl"></div>
         <div class="field"><label for="cPm">Ответственный (PM)</label><select id="cPm">${pms().map(u => `<option value="${u.id}">${esc(u.name || 'Вы')}</option>`).join('')}</select></div>
       </div>
       <div class="two">
@@ -2158,17 +2217,23 @@ function openCreate(){
     </form></div>`;
   const prev = () => {
     const t = tplById($('#cTpl').value); let cur = $('#cStart').value || today();
-    const rows = t.stages.map(s => { const due = addDays(cur, s.days); cur = due; return `<li>${esc(s.name)} <span>${fmt(due)}</span></li>`; }).join('');
-    $('#cPrev').innerHTML = `Цепочка из ${t.stages.length} этапов, финиш ${fmt(cur)}<ol>${rows}</ol>`;
+    const rows = t.stages.map(s => { const due = addDays(cur, stageDaysFor(s)); cur = due; return `<li>${esc(s.name)} <span>${fmt(due)}</span></li>`; }).join('');
+    const dl = $('#cDl').value; const over = dl && cur > dl;
+    $('#cPrev').innerHTML = `Цепочка из ${t.stages.length} этапов${db.prefs?.useTplDays ? '' : ` по ${days(defDays())}`}, финиш ${fmt(cur)}${dl ? (over ? ` — <b class="neg">позже дедлайна на ${days(diffDays(cur, dl))}</b>` : ' — укладывается в дедлайн') : ''}<ol>${rows}</ol>
+      ${over ? `<label class="check" style="margin-top:6px"><input type="checkbox" id="cFit" checked> Уместить этапы в дедлайн</label>` : ''}`;
   };
-  $('#cTpl').onchange = prev; $('#cStart').oninput = prev; prev();
+  $('#cTpl').onchange = prev; $('#cStart').oninput = prev; $('#cDl').oninput = prev; prev();
   $('#cName').focus();
   $('#cForm').onsubmit = e => {
     e.preventDefault();
     const name = $('#cName').value.trim(), client = $('#cClient').value.trim(), start = $('#cStart').value;
     if (!name || !client || !start){ $('#cErr').textContent = 'Заполните название, клиента и дату старта'; return; }
+    const dl = $('#cDl').value;
+    if (dl && dl < start){ $('#cErr').textContent = 'Дедлайн не может быть раньше старта'; return; }
+    const fit = $('#cFit')?.checked;
     const p = createProject({ name, client, template_id:$('#cTpl').value, start_date:start, pm_id:$('#cPm').value, worker_id:$('#cWorker').value || null,
       priority:$('#cPri').value });
+    if (dl){ p.deadline = dl; if (fit) fitToDeadline(p); else commit(); }
     layer.innerHTML = ''; toast(`Проект «${p.name}» создан: ${p.stages.length} этапов, финиш ${fmt(plannedEnd(p))}`);
   };
 }
@@ -2191,6 +2256,42 @@ function openBell(){
 }
 
 // ---------- Шаблоны ----------
+const setNav = () => `<div class="set-nav seg-toggle" role="tablist" aria-label="Разделы настроек">
+  <button data-settab="deadlines" aria-pressed="${ui.setTab !== 'templates'}">Дедлайны</button><button data-settab="templates" aria-pressed="${ui.setTab === 'templates'}">Шаблоны</button></div>`;
+function renderSettings(){
+  if (ui.setTab === 'templates'){ renderTemplates(); app.insertAdjacentHTML('afterbegin', setNav()); return; }
+  const n = defDays(), useTpl = !!db.prefs?.useTplDays;
+  const left = db.projects.filter(p => p.state === 'active').reduce((m, p) => m + p.stages.filter(s => s.status === 'not_started').length, 0);
+  app.innerHTML = `${setNav()}<div class="panel set-panel">
+    <h2>Дедлайны</h2>
+    <p class="hint">Как приложение строит сроки этапов. Финальный дедлайн проекта вы задаёте сами при создании или в карточке проекта.</p>
+    <div class="field set-days"><label for="sDays">Дней на этап по умолчанию</label>
+      <div class="row"><input type="number" id="sDays" min="1" max="60" value="${n}"><span class="hint">Новый проект: каждый этап получает ${days(n)} от даты старта. Срок любого этапа можно поправить вручную в карточке проекта.</span></div></div>
+    <label class="check"><input type="checkbox" id="sTpl" ${useTpl ? 'checked' : ''}> Брать сроки из шаблона, если в нём указаны дни этапа</label>
+    <ul class="set-rules">
+      <li>Если план не укладывается в финальный дедлайн, в карточке проекта появится предупреждение и кнопка «Уместить в дедлайн».</li>
+      <li>Просроченный этап сдвигает следующие этапы вперёд, сданный раньше срока — подтягивает их. Дедлайн проекта при этом не меняется.</li>
+      <li>Новые этапы, добавленные в проект вручную, тоже получают ${days(n)}.</li>
+    </ul>
+    <div class="note-box"><p>Применить ${days(n)} к этапам, которые ещё не начались, во всех активных проектах (${left}). Начатые и сданные этапы не изменятся.</p>
+      <button class="ghost" id="sApply" ${left ? '' : 'disabled'}>Пересчитать неначатые этапы</button></div>
+  </div>`;
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-settab]'); if (t){ ui.setTab = t.dataset.settab; ui.draft = null; render(); return; }
+  if (e.target.id === 'sApply'){
+    const n = defDays();
+    askConfirm({ title:`Пересчитать неначатые этапы по ${days(n)}?`, text:'Сроки неначатых этапов во всех активных проектах станут одинаковыми. Начатые и сданные этапы не изменятся.', ok:'Пересчитать', danger:false })
+      .then(yes => { if (!yes) return; let k = 0;
+        db.projects.filter(p => p.state === 'active').forEach(p => p.stages.forEach(s => { if (s.status === 'not_started'){ s.due_date = addDays(s.planned_start, n); s.days = n; k++; } }));
+        commit(); toast(`Пересчитано этапов: ${k}`); });
+  }
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'sDays'){ const v = Math.round(+e.target.value); if (!(v >= 1 && v <= 60)){ e.target.value = defDays(); toast('От 1 до 60 дней'); return; }
+    db.prefs = { ...(db.prefs || {}), stageDays:v }; commit(); toast(`Новые этапы: ${days(v)}`); }
+  if (e.target.id === 'sTpl'){ db.prefs = { ...(db.prefs || {}), useTplDays:e.target.checked }; commit(); }
+});
 function renderTemplates(){
   if (!ui.draft){
     const t = tplById(ui.tplSel) || db.templates[0];
@@ -2324,7 +2425,8 @@ document.addEventListener('click', e => {
   const ft = e.target.closest('[data-fn-toggle]');
   if (ft){ const id = ft.dataset.fnToggle; ui.prodOpen[id] = !ui.prodOpen[id]; render(); return; }
   if (e.target.id === 'chainToggle'){ ui.editChain = !ui.editChain; ui.focusStage = null; renderDrawer(); return; }
-  if (e.target.id === 'openTpl'){ const p = projById(ui.open); const tid = p.template_id; closeLayer(); ui.view = 'templates'; ui.tplSel = tid; ui.draft = null; render(); return; }
+  if (e.target.id === 'fitDl'){ const p = projById(ui.open); if (p) fitToDeadline(p); return; }
+  if (e.target.id === 'openTpl'){ ui.setTab = 'templates'; const p = projById(ui.open); const tid = p.template_id; closeLayer(); ui.view = 'templates'; ui.tplSel = tid; ui.draft = null; render(); return; }
   if (e.target.id === 'cAdd'){ const p = projById(ui.open); const s = addStage(p); const inp = layer.querySelector(`[data-cname="${s.id}"]`); inp?.focus(); inp?.select(); return; }
   const cm = e.target.closest('[data-cmove]');
   if (cm){ const p = projById(ui.open); moveStage(p, p.stages.find(s => s.id === cm.dataset.sid), +cm.dataset.cmove); return; }
@@ -2402,6 +2504,7 @@ document.addEventListener('change', e => {
     if (el.id === 'pPm'){ updateProject(p, 'pm_id', el.value, `PM: ${nameOf(el.value)}`); return assignNote(el.value, p); }
     if (el.id === 'pWorker'){ updateProject(p, 'worker_id', el.value || null, `Исполнитель: ${el.value ? nameOf(el.value) : 'не назначен'}`); return assignNote(el.value, p); }
     if (el.id === 'pPri') return updateProject(p, 'priority', el.value, `Приоритет: ${PRI[el.value][0].toLowerCase()}`);
+    if (el.id === 'pStart') return setStart(p, el.value);
     if (el.id === 'pBudget'){ const v = el.value === '' ? null : Math.max(0, +el.value); return updateProject(p, 'budget', v, `Бюджет: ${money(v)}`); }
     if (el.id === 'pDl') return updateProject(p, 'deadline', el.value, `Общий дедлайн: ${fmt(el.value)}`);
     if (el.id === 'pName' && el.value.trim()) return updateProject(p, 'name', el.value.trim(), `Переименован в «${el.value.trim()}»`);
@@ -4335,7 +4438,7 @@ const MNAV = {
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
   reports:['AI-отчёты', MI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')],
   team:['Команда', MI('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>')],
-  templates:['Шаблоны', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
+  templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
 };
 const MNAV_MAIN = ['matrix', 'kanban', 'production', 'load'];
 const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>');
