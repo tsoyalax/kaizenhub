@@ -249,7 +249,14 @@ table.cx{width:100%;border-collapse:collapse;min-width:700px;table-layout:fixed}
 .who-cell div{min-width:0}
 .who-cell b{display:block;font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .who-cell small{display:block;color:var(--muted);font-size:12.5px}
-.av{width:30px;height:30px;flex:none;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-weight:600;font-size:12px;color:var(--muted)}
+.av{width:30px;height:30px;flex:none;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-weight:600;font-size:12px;color:var(--muted);overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover;display:block}
+.av-sm{width:26px;height:26px;font-size:11px}
+.av-lg{width:56px;height:56px;font-size:18px}
+.prof-head{display:flex;gap:14px;align-items:center;margin:4px 0 14px}
+.prof-head small{display:block;color:var(--muted);font-size:13px}
+.who-cell .contact{display:block;color:var(--muted);font-size:12.5px}
+.sh-tag.auto{background:var(--b-bg);color:var(--b)}
 .trackwrap{position:relative;padding:4px 0}
 .track{height:8px;background:var(--surface-2);border-radius:4px;display:flex;overflow:hidden}
 .seg{height:100%}
@@ -905,6 +912,7 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
   <div class="top-actions">
     <button class="icon-btn" id="cloudBtn" aria-label="Сохранение данных"></button>
     <button class="icon-btn" id="themeBtn" aria-label="Переключить тему"></button>
+    <button class="icon-btn" id="meBtn" aria-label="Мой профиль"></button>
     <button class="icon-btn" id="bell" aria-label="Горящие и просроченные этапы">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
       <span id="bellCount"></span>
@@ -1003,7 +1011,7 @@ const plannedEnd = p => p.stages.reduce((m,s) => s.due_date > m ? s.due_date : m
 let db = null;
 function localSave(){ try { localStorage.setItem(KEY, JSON.stringify(db)); } catch(e) {} }
 // Любое изменение: кэш в браузере + отложенное сохранение в аккаунт Claude
-function save(){ db.savedAt = Date.now(); localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
+function save(){ db.savedAt = Date.now(); try { syncAutoShares(); } catch(e) {} localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
 
 const userById = id => db.users.find(u => u.id === id);
 const tplById = id => db.templates.find(t => t.id === id);
@@ -1349,6 +1357,10 @@ function updateMember(u, field, value){ u[field] = value; commit(); }
 function removeMember(u){
   db.projects.forEach(p => { p.stages.forEach(s => { if (s.assignee_id === u.id) s.assignee_id = null; }); if (p.pm_id === u.id) p.pm_id = ME; if (p.worker_id === u.id) p.worker_id = null; });
   db.users = db.users.filter(x => x.id !== u.id);
+  if (cloud.store){
+    if (u.invite?.code) cloud.store.doc(`inv/${u.invite.code}`).delete().catch(() => {});
+    if (u.account_id) cloud.store.doc(`team/${cloud.uid}/members/${u.account_id}`).delete().catch(() => {});
+  }
   ui.pms = ui.pms.filter(id => id !== u.id); commit();
 }
 
@@ -1426,7 +1438,7 @@ function render(){
   renderFilters();
   ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:() => renderProjectFocus(true), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderTemplates })[ui.view]();
   if (ui.open) renderDrawer();
-  renderMobileNav();
+  renderMobileNav(); paintMeBtn();
 }
 
 // ---------- Матрица ----------
@@ -1889,19 +1901,21 @@ function renderLoad(){
 // ---------- Команда ----------
 function renderTeam(){
   const W = workload(); const byId = Object.fromEntries(W.rows.map(r => [r.u.id, r]));
+  const online = !!(cloud.store && cloud.uid); refreshProfiles();
   const demoCount = db.projects.filter(p => p.demo).length;
   const rows = db.users.map(u => {
     const r = byId[u.id]; const isMe = u.id === ME;
     return `<div class="mrow">
-      <div class="who-cell"><span class="av">${esc(initials(u))}</span><div>
-        <b>${esc(u.name || 'Вы')}${isMe ? ' <span class="you">(вы)</span>' : ''}</b><small>${esc(u.email || 'email не указан')}</small></div></div>
+      <div class="who-cell">${avHtml(u)}<div>
+        <b>${esc(u.name || 'Вы')}${isMe ? ' <span class="you">(вы)</span>' : ''}</b><small>${esc([u.title, u.email || 'email не указан'].filter(Boolean).join(' · '))}</small>${u.contact ? `<span class="contact">${esc(u.contact)}</span>` : ''}</div></div>
       <div><span class="mlabel">Роль</span><select data-uf="role" data-uid="${u.id}" ${isMe?'disabled':''} aria-label="Роль">${Object.entries(ROLES).map(([k,v]) => `<option value="${k}" ${u.role===k?'selected':''}>${v}</option>`).join('')}</select></div>
       <div><span class="mlabel">Отдел</span><select data-uf="dept" data-uid="${u.id}" aria-label="Отдел">${DEPTS.map(d => `<option ${u.dept===d?'selected':''}>${d}</option>`).join('')}</select></div>
       <div><span class="mlabel">Норма этапов</span><input type="number" min="1" max="20" data-uf="capacity" data-uid="${u.id}" value="${u.capacity}" aria-label="Норма параллельных этапов"></div>
-      <div><span class="mlabel">Статус</span>${u.status === 'invited' ? '<span class="st-inv">Приглашён</span>' : '<span class="st-act">В команде</span>'}<br><span class="hint">в работе ${r.cur} из ${u.capacity}</span></div>
+      <div><span class="mlabel">Статус</span>${memberStatus(u, isMe)}<br><span class="hint">в работе ${r.cur} из ${u.capacity}</span></div>
       <div class="acts">
         ${isMe ? `<button class="ghost" data-editme>Изменить профиль</button>` : ''}
-        ${u.status === 'invited' ? `<button class="ghost" data-accept="${u.id}">Отметить принявшим</button>` : ''}
+        ${!isMe && !u.account_id && online ? `<button class="ghost" data-tlink="${u.id}">${u.invite?.code ? 'Ссылка-приглашение' : 'Пригласить по ссылке'}</button>` : ''}
+        ${u.status === 'invited' && !online ? `<button class="ghost" data-accept="${u.id}">Отметить принявшим</button>` : ''}
         ${!isMe ? `<button class="ghost danger" data-remove="${u.id}">${u.status === 'invited' ? 'Отозвать' : 'Удалить'}</button>` : ''}
       </div></div>`;
   }).join('');
@@ -1911,6 +1925,9 @@ function renderTeam(){
     ${demoCount ? `<div class="note-box"><p>В системе ${demoCount} демо-${plural(demoCount,'проект','проекта','проектов')} с выдуманными клиентами. Удалите их, когда будете готовы завести реальные.</p><button class="ghost danger" id="clearDemo">Удалить демо-проекты</button></div>` : ''}`;
 }
 
+// статус сотрудника: вошёл в приложение / ждём входа по ссылке / только в списке
+const memberStatus = (u, isMe) => isMe || u.account_id ? '<span class="st-act">В команде</span>' + (u.account_id ? '<br><span class="hint">вошёл в приложение</span>' : '')
+  : u.invite?.code ? '<span class="st-inv">Ждём входа по ссылке</span>' : u.status === 'invited' ? '<span class="st-inv">Приглашён</span>' : '<span class="st-act">В команде</span><br><span class="hint">без входа в приложение</span>';
 function openInvite(){
   ui.open = null;
   layer.innerHTML = `<div class="backdrop" data-close></div>
@@ -1925,7 +1942,7 @@ function openInvite(){
         <div class="field"><label for="iDept">Отдел</label><select id="iDept">${DEPTS.map(d => `<option ${d==='Креатив'?'selected':''}>${d}</option>`).join('')}</select></div>
       </div>
       <div class="field"><label for="iCap">Норма: этапов одновременно</label><input id="iCap" type="number" min="1" max="20" value="3"></div>
-      <p class="hint" style="margin:0">Письма приложение не отправляет. Чтобы человек увидел свои проекты, откройте нужный проект, нажмите «Поделиться» → «Создать ссылку» и пришлите ему эту ссылку.</p>
+      <p class="hint" style="margin:0">${cloud.store ? 'После добавления появится ссылка-приглашение: отправьте её человеку. Войдя по ней, он увидит проекты, где вы его назначите.' : 'Письма приложение не отправляет. Чтобы человек увидел свои проекты, откройте нужный проект, нажмите «Поделиться» → «Создать ссылку» и пришлите ему эту ссылку.'}</p>
       <div class="err" id="iErr"></div>
       <div class="actions"><button type="button" class="ghost" data-close>Отмена</button><button class="primary">Добавить в команду</button></div>
     </form></div>`;
@@ -1938,32 +1955,54 @@ function openInvite(){
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return $('#iErr').textContent = 'Укажите email в формате name@company.ru';
     if (db.users.some(u => (u.email||'').toLowerCase() === email)) return $('#iErr').textContent = 'Человек с таким email уже в команде';
     if (!(cap >= 1)) return $('#iErr').textContent = 'Норма — от 1 этапа';
-    inviteMember({ name, email, role:$('#iRole').value, dept:$('#iDept').value, capacity:cap });
-    layer.innerHTML = ''; toast(`${name} в команде. Доступ к проекту откройте ссылкой через «Поделиться»`);
+    const u = inviteMember({ name, email, role:$('#iRole').value, dept:$('#iDept').value, capacity:cap });
+    layer.innerHTML = '';
+    if (cloud.store && cloud.uid) teamLinkFor(u, true);
+    else toast(`${name} в команде. Доступ к проекту откройте ссылкой через «Поделиться»`);
   };
 }
 
-function openProfile(first){
-  const me = userById(ME);
+async function openProfile(first){
+  // профиль хранится в аккаунте (его видят коллеги) и дублируется в вашей команде
+  const me = userById(ME) || { id:ME };
+  const acc = cloud.user ? await cloud.user.me().catch(() => null) : null;
+  if (acc && GUEST) ui.meAcc = acc;
+  const v = { name:(GUEST ? acc?.name : me.name) || acc?.name || '', email:acc?.email || me.email || '',
+    title:(GUEST ? acc?.title : me.title) || acc?.title || '', contact:(GUEST ? acc?.contact : me.contact) || acc?.contact || '', avatar:acc?.avatar || me.avatar || '' };
   layer.innerHTML = `<div class="backdrop" ${first ? '' : 'data-close'}></div>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
     <h2 id="mTitle">${first ? 'Добро пожаловать в Конвейер' : 'Ваш профиль'}</h2>
     ${first ? '<p class="lead">Сначала представьтесь. Коллег пригласите позже во вкладке «Команда».</p>' : ''}
+    <div class="prof-head">${avHtml({ name:v.name || v.email, avatar:v.avatar }, 'av av-lg')}<div><b>${esc(v.name || 'Без имени')}</b>
+      <small>${acc ? (v.avatar ? 'Фото из аккаунта Google' : 'Фото появится, если входить через Google') : 'Войдите в аккаунт, чтобы коллеги видели ваш профиль'}</small></div></div>
     <form class="form" id="mForm" novalidate>
-      <div class="field"><label for="mName">Имя и фамилия</label><input id="mName" value="${esc(me.name)}" autocomplete="name"></div>
-      <div class="field"><label for="mEmail">Рабочий email</label><input id="mEmail" type="email" value="${esc(me.email)}" autocomplete="email"></div>
+      <div class="field"><label for="mName">Имя и фамилия</label><input id="mName" value="${esc(v.name)}" autocomplete="name" maxlength="120"></div>
+      <div class="field"><label for="mEmail">${acc ? 'Почта аккаунта' : 'Рабочий email'}</label><input id="mEmail" type="email" value="${esc(v.email)}" autocomplete="email" ${acc ? 'readonly' : ''}></div>
+      <div class="two">
+        <div class="field"><label for="mTitle2">Должность</label><input id="mTitle2" value="${esc(v.title)}" placeholder="Например, дизайнер" maxlength="120"></div>
+        <div class="field"><label for="mContact">Telegram или телефон</label><input id="mContact" value="${esc(v.contact)}" placeholder="@username" maxlength="200"></div>
+      </div>
+      <p class="hint" style="margin:0">Имя, фото, должность и контакт видят коллеги по проектам и команде.</p>
       ${first ? `<label class="check"><input type="checkbox" id="mDemo" checked> Показать демо-проекты, чтобы посмотреть, как всё работает. Их можно удалить в любой момент.</label>` : ''}
       <div class="err" id="mErr"></div>
-      <div class="actions">${first ? '' : '<button type="button" class="ghost" data-close>Отмена</button>'}<button class="primary">${first ? 'Начать работу' : 'Сохранить'}</button></div>
+      <div class="actions">${first ? '' : '<button type="button" class="ghost" data-close>Отмена</button>'}<button class="primary" id="mSave">${first ? 'Начать работу' : 'Сохранить'}</button></div>
     </form></div>`;
   $('#mName').focus();
-  $('#mForm').onsubmit = e => {
+  $('#mForm').onsubmit = async e => {
     e.preventDefault();
-    const name = $('#mName').value.trim();
-    if (!name) return $('#mErr').textContent = 'Укажите имя';
-    me.name = name; me.email = $('#mEmail').value.trim();
-    if (first){ if (!$('#mDemo').checked) db.projects = db.projects.filter(p => !p.demo); db.onboarded = true; }
-    layer.innerHTML = ''; commit();
+    const f = { name:$('#mName').value.trim(), title:$('#mTitle2').value.trim(), contact:$('#mContact').value.trim() };
+    if (!f.name) return $('#mErr').textContent = 'Укажите имя';
+    $('#mSave').disabled = true;
+    if (acc){
+      try { await cloud.user.updateProfile(f); if (GUEST) ui.meAcc = { ...acc, ...f }; }
+      catch(err) { $('#mSave').disabled = false; return $('#mErr').textContent = 'Не удалось сохранить профиль. Проверьте связь и попробуйте ещё раз.'; }
+    }
+    if (!GUEST){
+      Object.assign(me, { name:f.name, title:f.title, contact:f.contact, email:acc ? acc.email : $('#mEmail').value.trim() });
+      if (acc?.avatar) me.avatar = acc.avatar;
+      if (first){ if (!$('#mDemo').checked) db.projects = db.projects.filter(p => !p.demo); db.onboarded = true; }
+    }
+    layer.innerHTML = ''; commit(); if (!first) toast('Профиль сохранён');
   };
 }
 
@@ -3497,6 +3536,7 @@ function cloudApply(r){
   if (ui.taskId){ if (taskById(ui.taskId)) renderTaskModal(); else closeTask(); }
   if (typeof syncSharedSubs === 'function') syncSharedSubs();
   render();
+  if (typeof processTeamJoins === 'function') processTeamJoins();
 }
 function scheduleCloud(){
   if (!cloud.col || !cloud.ready) return;
@@ -3798,6 +3838,7 @@ async function acceptInvite(code){
   try {
     const inv = await cloud.store.doc(`inv/${code}`).get();
     if (!inv.exists) return err('Ссылка недействительна: владелец отключил её или она скопирована не полностью.');
+    if (inv.data().kind === 'team') return await acceptTeam(code, inv.data());
     const { pid, ownerId, role } = inv.data();
     if (ownerId === cloud.uid){ toast('Это ссылка на ваш собственный проект. Отправьте её коллеге.'); return; }
     const jr = cloud.store.doc(`sp/${pid}/joins/${cloud.uid}`);
@@ -3897,8 +3938,9 @@ function setMode(m){
 }
 function initShared(){
   if (!cloud.store || !cloud.uid) return;
-  watchMine(); syncSharedSubs();
+  watchMine(); syncSharedSubs(); watchTeam();
   if (ownShared().length) scheduleShared();
+  if (GUEST) cloud.user.me().then(m => { ui.meAcc = m; paintMeBtn(); }, () => {}); else refreshProfiles(true);
 }
 
 // ---------- окно «Поделиться» ----------
@@ -3937,6 +3979,8 @@ async function renderShareMembers(){
   all.forEach((m, i) => { const li = box.children[i]; const pr = prof[m.id] || {};
     li.querySelector('b').textContent = pr.name || 'Участник';
     if (m.kind === 'g'){ const t = document.createElement('span'); t.className = 'sh-tag'; t.textContent = 'по ссылке'; li.querySelector('b').append(t); }
+    if (m.auto){ const t = document.createElement('span'); t.className = 'sh-tag auto'; t.textContent = 'назначен в проекте'; li.querySelector('b').append(t);
+      li.querySelector('[data-shdel]')?.remove(); li.querySelector('select')?.setAttribute('disabled', ''); }
     li.querySelector('small').textContent = pr.email || ''; });
 }
 async function shareSearch(q){
@@ -3962,6 +4006,131 @@ document.addEventListener('click', e => {
     shareChanged(p, 'Проектом поделились с участником'); $('#shQ').value = ''; shareSearch(''); toast('Доступ открыт'); return; }
   const del = e.target.closest('[data-shdel]');
   if (del){ const p = projById(ui.shareId); p.share.members = (p.share.members || []).filter(m => m.id !== del.dataset.shdel); shareChanged(p, 'Участник убран из проекта'); shareSearch($('#shQ')?.value.trim() || ''); }
+});
+
+// =====================================================================
+//  КОМАНДА ПО ССЫЛКЕ И ПРОФИЛИ
+//    inv/<code>  (kind:'team')        — ссылка в команду: чья команда и какой это сотрудник
+//    team/<владелец>/members/<id>     — кто вошёл по ссылке (пишет сам человек, база проверяет код)
+//    data/users/<id>/links/teams/<владелец> — личный список команд человека
+//  Сотрудник из команды, вошедший в приложение, автоматически получает доступ к проектам,
+//  где он PM, исполнитель или ответственный за этап/подэтап (sp/<проект>.memberIds, роль «Исполнитель»).
+// =====================================================================
+const team = { snap:null };
+const avatarOk = u => /^https:\/\//.test(u?.avatar || '');
+const avHtml = (u, cls = 'av') => avatarOk(u) ? `<span class="${cls}"><img src="${esc(u.avatar)}" alt="" referrerpolicy="no-referrer" loading="lazy"></span>` : `<span class="${cls}">${esc(initials(u || {}))}</span>`;
+
+async function createTeamLink(u){
+  if (!cloud.store || !cloud.uid || GUEST) return null;
+  const code = newCode(), at = new Date().toISOString();
+  await cloud.store.doc(`inv/${code}`).set({ kind:'team', ownerId:cloud.uid, memberId:u.id, name:u.name || '', at });
+  if (u.invite?.code) cloud.store.doc(`inv/${u.invite.code}`).delete().catch(() => {});
+  u.invite = { code, at }; commit(); return code;
+}
+function openTeamLink(u){
+  const url = inviteUrl(u.invite.code);
+  layer.innerHTML = `<div class="backdrop" data-close></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tlT">
+    <h2 id="tlT">Ссылка для ${esc(u.name)}</h2>
+    <p class="lead">Отправьте её в мессенджере или почтой. Человек войдёт через Google или по почте и станет участником команды. Проекты, где он назначен, откроются ему сами.</p>
+    <div class="row"><input readonly id="tlIn" value="${esc(url)}" aria-label="Ссылка-приглашение" style="flex:1;min-width:0;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px"><button class="primary" id="tlCopy">Копировать</button></div>
+    <p class="hint">Ссылка одноразовая: после входа она перестаёт работать. Новую можно сделать в «Команде».</p>
+    <div class="actions"><button class="ghost" data-close>Готово</button></div></div>`;
+  $('#tlCopy').onclick = () => {
+    const fallback = () => { $('#tlIn').select(); toast('Ссылка выделена: нажмите ⌘C (Ctrl+C)'); };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).then(() => toast('Ссылка скопирована'), fallback); else fallback();
+  };
+}
+async function teamLinkFor(u, fresh){
+  try {
+    if (fresh || !u.invite?.code){ if (!(await createTeamLink(u))) { toast('Ссылки работают, когда вы вошли в аккаунт'); return; } }
+    openTeamLink(u);
+  } catch(e) { toast('Не удалось создать ссылку. Проверьте связь и попробуйте ещё раз.'); }
+}
+
+// человек открыл ссылку в команду
+async function acceptTeam(code, inv){
+  if (inv.ownerId === cloud.uid){ toast('Это ссылка в вашу собственную команду. Отправьте её сотруднику.'); return; }
+  const jr = cloud.store.doc(`team/${inv.ownerId}/members/${cloud.uid}`);
+  const was = await jr.get();
+  if (!was.exists) await jr.set({ code, memberId:inv.memberId || '', at:new Date().toISOString() });
+  await cloud.store.doc(`data/users/${cloud.uid}/links/teams/${inv.ownerId}`).set({ at:new Date().toISOString() });
+  ui.view = 'mine'; if (layer.querySelector('#joinForm')) layer.innerHTML = '';
+  try { history.replaceState(null, '', location.pathname); } catch(e) {}
+  toast(was.exists ? 'Вы уже в этой команде' : 'Готово: вы в команде. Проекты, где вы назначены, появятся во «Моих проектах»');
+  render();
+}
+
+// у владельца: кто вошёл в команду по ссылке
+function watchTeam(){
+  if (GUEST || !cloud.store || shared.subs.has('__team')) return;
+  shared.subs.set('__team', [cloud.store.collection(`team/${cloud.uid}/members`).onSnapshot(s => { team.snap = s; processTeamJoins(); }, () => {})]);
+}
+function processTeamJoins(){
+  if (!team.snap || !cloud.ready || GUEST) return;
+  let changed = false;
+  for (const d of team.snap.docs){
+    const acc = d.id, b = d.data() || {};
+    if (db.users.some(u => u.account_id === acc)) continue;
+    const u = db.users.find(x => x.id !== ME && x.invite?.code && x.invite.code === b.code);
+    if (!u) continue;
+    u.account_id = acc; u.status = 'active'; u.joined_at = new Date().toISOString();
+    cloud.store.doc(`inv/${u.invite.code}`).delete().catch(() => {});   // ссылка одноразовая
+    u.invite = null; changed = true;
+    toast(`${u.name} принял(а) приглашение и вошёл(ла) в приложение`);
+  }
+  if (changed){ commit(); refreshProfiles(true); }
+}
+
+// проекты, где сотрудник из команды назначен, открываются ему автоматически
+function syncAutoShares(){
+  if (typeof cloud === 'undefined' || !cloud.uid || GUEST) return false;
+  const acc = new Map(db.users.filter(u => u.account_id && u.id !== ME).map(u => [u.id, u.account_id]));
+  let changed = false;
+  db.projects.forEach(p => {
+    const want = new Set();
+    if (p.state !== 'archived' && acc.size){
+      const ids = [p.pm_id, p.worker_id, ...p.stages.map(s => s.assignee_id), ...(db.tasks || []).filter(t => t.project_id === p.id).map(t => t.assignee_id)];
+      ids.forEach(id => { const a = acc.get(id); if (a) want.add(a); });
+    }
+    const cur = p.share?.members || [];
+    if (!want.size && !cur.some(m => m.auto)) return;
+    const manual = cur.filter(m => !m.auto);
+    const auto = cur.filter(m => m.auto && want.has(m.id) && !manual.some(x => x.id === m.id));
+    want.forEach(a => { if (!manual.some(x => x.id === a) && !auto.some(x => x.id === a)) auto.push({ id:a, role:'worker', auto:true, at:new Date().toISOString() }); });
+    const next = [...manual, ...auto];
+    if (JSON.stringify(next) !== JSON.stringify(cur)){ p.share = { ...(p.share || {}), members:next }; changed = true; }
+  });
+  return changed;
+}
+
+// профили коллег: фото, должность и контакт, которые человек заполнил сам
+let profAt = 0;
+async function refreshProfiles(force){
+  if (!cloud.user || GUEST || (!force && Date.now() - profAt < 30000)) return;
+  profAt = Date.now();
+  const linked = db.users.filter(u => u.account_id);
+  try {
+    const [me, prof] = await Promise.all([cloud.user.me(), linked.length ? cloud.user.profiles(linked.map(u => u.account_id)) : {}]);
+    let changed = false;
+    const put = (u, pr) => { if (!u || !pr) return;
+      for (const [k, v] of [['avatar', pr.avatar], ['title', pr.title], ['contact', pr.contact], ['name', pr.name]]){
+        if (v && u[k] !== v){ u[k] = v; changed = true; } }
+      if (!u.email && pr.email){ u.email = pr.email; changed = true; } };
+    const meU = userById(ME); put(meU, { ...me, name:meU?.name ? '' : me.name });   // своё имя в команде вы задаёте сами
+    linked.forEach(u => put(u, prof[u.account_id]));
+    if (changed) commit();
+  } catch(e) { /* профили — не критично */ }
+}
+function paintMeBtn(){
+  const b = $('#meBtn'); if (!b) return;
+  const u = GUEST ? ui.meAcc : userById(ME);
+  b.innerHTML = u && (avatarOk(u) || u.name) ? avHtml(u, 'av av-sm') : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('#meBtn')){ openProfile(false); return; }
+  const tl = e.target.closest('[data-tlink]'); if (tl){ const u = userById(tl.dataset.tlink); if (u) teamLinkFor(u, false); return; }
+  const tn = e.target.closest('[data-tlinknew]'); if (tn){ const u = userById(tn.dataset.tlinknew); if (u) teamLinkFor(u, true); }
 });
 
 // =====================================================================
