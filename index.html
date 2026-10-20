@@ -135,6 +135,16 @@ table.mx{border-collapse:separate;border-spacing:0;min-width:100%}
 .cell .who.inherit{opacity:.75;font-style:italic}
 .cell .age{font-size:11.5px;color:var(--muted)}
 .cx .age{display:block;font-size:12.5px;color:var(--muted)}
+.chat-link{display:inline-grid;place-items:center;width:24px;height:24px;margin-left:6px;border-radius:7px;color:var(--link);vertical-align:-6px;flex:none}
+.chat-link:hover{background:var(--soft)}
+.chat-link svg{width:15px;height:15px}
+.chat-link.big{width:32px;height:32px;vertical-align:-7px}.chat-link.big svg{width:18px;height:18px}
+.prow-people .chat-link{margin:0 2px 0 -4px}
+.t-row{display:flex;align-items:flex-start;gap:4px;justify-content:space-between}
+.pf-row{position:relative}.pf-chat{position:absolute;right:38px;top:8px;z-index:2}
+.pf-row:has(.pf-chat) .pf-item .pf-name{padding-right:58px}
+.pc2{position:relative}.pc-chat{position:absolute;right:62px;top:12px}
+.d-head .chat-link{margin:2px 0 0}
 .subnow{display:block;font-size:12px;color:var(--b);font-weight:500;line-height:1.3}
 .cell .subnow{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .cx td small.subnow,.pf-item small.subnow,.pm-chip small.subnow,.card .meta.subnow,.pc-stagebox .subnow{color:var(--b)}
@@ -159,8 +169,8 @@ td:has(.cell-as:focus-visible) .cell{outline:2px solid var(--focus);outline-offs
 .cell.blank{background:none;box-shadow:none;cursor:default}.cell.blank::before{display:none}
 
 /* ---------- Компактный режим ---------- */
-table.cx{width:100%;border-collapse:collapse;min-width:700px;table-layout:fixed}
-.cx col.c1{width:31%}.cx col.c2{width:19%}.cx col.c5{width:19%}.cx col.c3{width:15%}.cx col.c4{width:16%}
+table.cx{width:100%;border-collapse:collapse;min-width:800px;table-layout:fixed}
+.cx col.c1{width:26%}.cx col.c6{width:12%}.cx col.c2{width:17%}.cx col.c5{width:18%}.cx col.c3{width:13%}.cx col.c4{width:14%}
 .cx th{font-size:12.5px;font-weight:500;color:var(--muted);text-align:left;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--line)}
 .cx td{padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle;overflow:hidden;text-overflow:ellipsis}
 .cx tbody tr:last-child td{border-bottom:0}
@@ -1524,7 +1534,7 @@ function renderMatrix(){
         <small>${esc(p.client)}</small>
         <small>${startTxt(p)}</small>
         <small class="${late ? 'late' : p.state === 'completed' ? '' : 'ut-' + urg(p.deadline || end).k}">Финиш ${fmt(end)}${late ? `, позже дедлайна ${fmt(p.deadline)}` : p.state === 'completed' ? '' : `, ${urg(p.deadline || end).txt}`}</small></button>
-        <div class="prow-people">
+        <div class="prow-people">${chatLink(p)}
           <label>PM <select data-ppm="${p.id}" aria-label="PM проекта ${esc(p.name)}">${pmOpts(p)}</select></label>
           <label>Исп. <select data-pworker="${p.id}" aria-label="Исполнитель проекта ${esc(p.name)}">${peopleOpts(p.worker_id, 'не назначен')}</select></label>
         </div></th>${cells}</tr>`;
@@ -1598,7 +1608,7 @@ function renderPhoneList(list){
         ${worst ? `<span class="pc-warn">Этап ${worst.position + 1} «${esc(worst.name)}»: ${health(worst).note.toLowerCase()}</span>` : ''}
         <span class="pc-foot2">${due}${late ? `<small class="late">по плану финиш ${fmt(end)}, на ${days(diffDays(end, p.deadline))} позже</small>` : ''}</span>
       </button>
-      <button class="pc-more" data-mxtoggle="${p.id}" aria-expanded="${open}">${open ? 'Скрыть этапы' : `Все этапы · ${doneN} из ${n} сдано`}</button>
+      ${chatLink(p, 'pc-chat')}<button class="pc-more" data-mxtoggle="${p.id}" aria-expanded="${open}">${open ? 'Скрыть этапы' : `Все этапы · ${doneN} из ${n} сдано`}</button>
       ${stages}
     </article>`;
   };
@@ -1652,7 +1662,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
     <div class="pm-head">
       <div class="pm-nav">
         <button class="icon-btn" ${prev ? `data-pfsel="${prev.id}"` : 'disabled'} aria-label="Предыдущий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
-        <div class="pm-title"><h2>${mine ? esc(p.name) : `<button class="link-plain" data-open="${p.id}">${esc(p.name)}</button>`}</h2>
+        <div class="pm-title"><h2>${mine ? esc(p.name) : `<button class="link-plain" data-open="${p.id}">${esc(p.name)}</button>`}${chatLink(p, 'big')}</h2>
           <small>${idx + 1} из ${list.length} · ${mine ? `ваша роль: ${ROLE_RU[role].toLowerCase()}` : `${esc(p.client)} · PM ${esc(short(p.pm_id))}${execTxt(p, ' · ')} · финиш ${fmt(plannedEnd(p))}`}</small></div>
         <button class="icon-btn" ${next ? `data-pfsel="${next.id}"` : 'disabled'} aria-label="Следующий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
       </div>
@@ -1703,15 +1713,16 @@ function renderCompact(list){
       const last = p.stages.at(-1);
       const due = c ? `${fmt(c.due_date)}<small>${h.note}</small>` : `${fmt(last.completed_at || last.due_date)}<small>Сдан</small>`;
       return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
-        <td title="${esc(p.name)}">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small><small>${startTxt(p)}</small></td>
-        <td>${stage}${c && curSubTxt(p) ? `<small class="subnow">${esc(curSubTxt(p))}</small>` : ''}${c ? stageAge(c) : ''}</td>
+        <td title="${esc(p.name)}">${esc(p.name)}${chatLink(p)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></td>
+        <td class="start">${fmt(p.start_date)}<small>${startDay(p)}</small></td>
+        <td>${stage}</td>
         <td>${progress}</td>
         <td><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span></td>
         <td class="due">${due}</td></tr>`;
     }).join('');
     return `<section class="grp"><h2>${esc(g.title)} <span>${g.items.length}</span></h2>
-      <div class="scroll"><table class="cx"><colgroup><col class="c1"><col class="c2"><col class="c5"><col class="c3"><col class="c4"></colgroup>
-      <thead><tr><th>Проект</th><th>Этап</th><th>Прогресс</th><th>Статус</th><th>Срок</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+      <div class="scroll"><table class="cx"><colgroup><col class="c1"><col class="c6"><col class="c2"><col class="c5"><col class="c3"><col class="c4"></colgroup>
+      <thead><tr><th>Проект</th><th>Старт</th><th>Этап</th><th>Прогресс</th><th>Статус</th><th>Срок</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
   }).join('');
 }
 
@@ -1733,7 +1744,7 @@ function renderKanban(){
     const moveSel = `<select data-kmove="${p.id}" aria-label="Перенести на этап"><option value="">Перенести…</option>${t.stages.map((s,i) => `<option value="${i}">${i+1}. ${esc(s.name)}</option>`).join('')}<option value="done">Завершить проект</option></select>`;
     const subsDone = c?.subs?.filter(x => x.done).length ?? 0;
     return `<article class="card" draggable="true" data-card="${p.id}">
-      <button class="t" data-open="${p.id}">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</button>
+      <div class="t-row"><button class="t" data-open="${p.id}">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</button>${chatLink(p)}</div>
       <div class="meta">${esc(p.client)}, PM ${esc(short(p.pm_id))}${execTxt(p)}</div>
       <div class="stline"><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span><span>${h.note}</span></div>
       ${c ? `<div class="meta">${esc(c.name)}${c.subs?.length ? `, подэтапы ${subsDone} из ${c.subs.length}` : ''}. ${esc(short(whoId(p, c)))}</div>` : ''}
@@ -2096,7 +2107,7 @@ function renderDrawer(){
   const log = p.log.slice(0, 60).map(l => `<li><time>${new Date(l.at).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time><span>${esc(l.text)} <span class="hint">${esc(short(l.user))}</span></span></li>`).join('');
   const html = `<div class="backdrop" data-close></div>
   <aside class="drawer" role="dialog" aria-modal="true" aria-label="Карточка проекта">
-    <div class="d-head"><input id="pName" value="${esc(p.name)}" aria-label="Название проекта"><button class="close" data-close aria-label="Закрыть">×</button></div>
+    <div class="d-head"><input id="pName" value="${esc(p.name)}" aria-label="Название проекта">${chatLink(p, 'big')}<button class="close" data-close aria-label="Закрыть">×</button></div>
     <div class="fields">
       <div class="field"><label>Клиент</label><div class="val">${esc(p.client)}</div></div>
       <div class="field"><label for="pPm">Ответственный (PM)</label><select id="pPm">${opt(pms(), p.pm_id)}</select></div>
@@ -2105,6 +2116,7 @@ function renderDrawer(){
       <div class="field"><label>Старт</label><div class="val">${fmt(p.start_date)}</div></div>
       <div class="field"><label for="pDl">Общий дедлайн</label><input type="date" id="pDl" value="${p.deadline || ''}"></div>
       <div class="field"><label>Расчётный финиш</label><div class="val">${fmt(end)}</div></div>
+      <div class="field"><label for="pChat">Чат проекта</label><input id="pChat" type="url" inputmode="url" value="${esc(p.chat_url || '')}" placeholder="https://t.me/…"></div>
       <div class="field"><label for="pTpl">Шаблон процесса</label><select id="pTpl">${tplById(p.template_id) ? '' : '<option value="" selected>Шаблон удалён</option>'}${db.templates.map(t => `<option value="${t.id}" ${t.id===p.template_id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></div>
     </div>
     ${late ? `<div class="warn">По текущему плану проект закончится на ${days(diffDays(end, p.deadline))} позже общего дедлайна</div>` : ''}
@@ -2150,6 +2162,7 @@ function openCreate(){
         <div class="field"><label for="cWorker">Ответственный (Исп)</label><select id="cWorker"><option value="">Не назначен</option>${db.users.map(u => `<option value="${u.id}">${esc(u.name || 'Вы')}</option>`).join('')}</select></div>
         <div class="field"><label for="cPri">Приоритет</label><select id="cPri"><option value="high">Высокий</option><option value="medium" selected>Средний</option><option value="low">Низкий</option></select></div>
       </div>
+      <div class="field"><label for="cChat">Ссылка на чат проекта <span class="hint">(необязательно)</span></label><input id="cChat" type="url" inputmode="url" autocomplete="off" placeholder="https://t.me/… или https://chat.whatsapp.com/…"></div>
       <div class="preview" id="cPrev"></div>
       <div class="err" id="cErr"></div>
       <div class="actions"><button type="button" class="ghost" data-close>Отмена</button><button class="primary">Создать проект</button></div>
@@ -2165,8 +2178,11 @@ function openCreate(){
     e.preventDefault();
     const name = $('#cName').value.trim(), client = $('#cClient').value.trim(), start = $('#cStart').value;
     if (!name || !client || !start){ $('#cErr').textContent = 'Заполните название, клиента и дату старта'; return; }
+    const chatRaw = $('#cChat').value.trim(), chat = chatUrl(chatRaw);
+    if (chatRaw && !chat){ $('#cErr').textContent = 'Ссылка на чат должна начинаться с https:// (например, https://t.me/…)'; return; }
     const p = createProject({ name, client, template_id:$('#cTpl').value, start_date:start, pm_id:$('#cPm').value, worker_id:$('#cWorker').value || null,
       priority:$('#cPri').value });
+    if (chat){ p.chat_url = chat; commit(); }
     layer.innerHTML = ''; toast(`Проект «${p.name}» создан: ${p.stages.length} этапов, финиш ${fmt(plannedEnd(p))}`);
   };
 }
@@ -2278,6 +2294,7 @@ document.addEventListener('keydown', e => {
 });
 
 document.addEventListener('click', e => {
+  if (e.target.closest('a[data-chat]')) return;   // иконка чата: просто открываем ссылку
   const o = e.target.closest('[data-open]');
   if (o){ openProject(o.dataset.open, o.dataset.stage); return; }
   if (e.target.closest('[data-close]')){ closeLayer(); return; }
@@ -2400,6 +2417,8 @@ document.addEventListener('change', e => {
     if (el.id === 'pPm'){ updateProject(p, 'pm_id', el.value, `PM: ${nameOf(el.value)}`); return assignNote(el.value, p); }
     if (el.id === 'pWorker'){ updateProject(p, 'worker_id', el.value || null, `Исполнитель: ${el.value ? nameOf(el.value) : 'не назначен'}`); return assignNote(el.value, p); }
     if (el.id === 'pPri') return updateProject(p, 'priority', el.value, `Приоритет: ${PRI[el.value][0].toLowerCase()}`);
+    if (el.id === 'pChat'){ const v = chatUrl(el.value); if (el.value.trim() && !v){ toast('Ссылка на чат должна начинаться с https://'); el.value = p.chat_url || ''; return; }
+      return updateProject(p, 'chat_url', v || null, v ? 'Ссылка на чат проекта обновлена' : 'Ссылка на чат проекта удалена'); }
     if (el.id === 'pBudget'){ const v = el.value === '' ? null : Math.max(0, +el.value); return updateProject(p, 'budget', v, `Бюджет: ${money(v)}`); }
     if (el.id === 'pDl') return updateProject(p, 'deadline', el.value, `Общий дедлайн: ${fmt(el.value)}`);
     if (el.id === 'pName' && el.value.trim()) return updateProject(p, 'name', el.value.trim(), `Переименован в «${el.value.trim()}»`);
@@ -3119,6 +3138,14 @@ function seedDemoTasks(){
 }
 
 // ---------- видео ----------
+// ссылка на чат проекта: принимаем t.me/…, wa.me/… и chat.whatsapp.com/… и без https://
+const chatUrl = v => { let x = String(v || '').trim(); if (!x) return '';
+  if (/^(t\.me|telegram\.me|wa\.me|chat\.whatsapp\.com|api\.whatsapp\.com|teams\.microsoft\.com|discord\.gg|vk\.me|vk\.com|slack\.com|[\w-]+\.slack\.com)\//i.test(x)) x = 'https://' + x;
+  return /^https:\/\/[^\s"'<>]+$/i.test(x) ? x : ''; };
+const chatKind = u => /t\.me|telegram/i.test(u) ? 'Telegram' : /whatsapp|wa\.me/i.test(u) ? 'WhatsApp' : /slack/i.test(u) ? 'Slack' : /teams\.microsoft/i.test(u) ? 'Teams' : /discord/i.test(u) ? 'Discord' : /vk\./i.test(u) ? 'VK' : 'чат';
+const CHAT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12Z"/></svg>';
+const chatLink = (p, cls = '') => { const u = chatUrl(p?.chat_url); if (!u) return '';
+  const k = chatKind(u); return `<a class="chat-link ${cls}" data-chat href="${esc(u)}" target="_blank" rel="noopener noreferrer" title="Чат проекта (${k})" aria-label="Открыть чат проекта «${esc(p.name)}» (${k})">${CHAT_ICON}</a>`; };
 const safeUrl = u => /^https?:\/\//i.test(String(u || '').trim()) ? String(u).trim() : '';
 function videoEmbed(url){
   const u = String(url || '').trim(); let m;
@@ -3430,6 +3457,7 @@ function curSub(p){
 }
 const curSubTxt = p => { const r = curSub(p); return r ? (r.all ? r.name : `${r.name} (${r.n}/${r.total})`) : ''; };
 // дата старта проекта и какой идёт день
+const startDay = p => p.start_date > today() ? `через ${days(diffDays(p.start_date, today()))}` : p.state === 'completed' ? 'завершён' : `${diffDays(today(), p.start_date) + 1}-й день`;
 const startTxt = p => p.start_date > today() ? `Старт ${fmt(p.start_date)}, через ${days(diffDays(p.start_date, today()))}`
   : `Старт ${fmt(p.start_date)}${p.state !== 'completed' ? `, ${diffDays(today(), p.start_date) + 1}-й день` : ''}`;
 // сколько дней идёт этап (или сколько занял, если закрыт)
@@ -3500,7 +3528,7 @@ function renderProjectFocus(mine = false){
   const listHtml = list.map(x => {
     const c = currentStage(x); const h = c ? health(c) : { key:'done', label:'Завершён' }; const xp = projectProgress(x);
     const nShare = shareCount(x);
-    return `<div class="pf-row">${!mine ? `<button class="pf-share${nShare ? ' on' : ''}" data-share="${x.id}" aria-label="Поделиться проектом ${esc(x.name)}" title="Поделиться">${SHARE_ICON}${nShare ? `<span>${nShare}</span>` : ''}</button>` : ''}<button class="pf-item${x.id === p.id ? ' on' : ''}" data-pfsel="${x.id}" aria-current="${x.id === p.id}">
+    return `<div class="pf-row">${!mine ? `<button class="pf-share${nShare ? ' on' : ''}" data-share="${x.id}" aria-label="Поделиться проектом ${esc(x.name)}" title="Поделиться">${SHARE_ICON}${nShare ? `<span>${nShare}</span>` : ''}</button>` : ''}${chatLink(x, 'pf-chat')}<button class="pf-item${x.id === p.id ? ' on' : ''}" data-pfsel="${x.id}" aria-current="${x.id === p.id}">
       <span class="pf-name"><i class="sw ${h.key}"></i>${esc(x.name)}</span>
       <small>${c ? `${c.position + 1}. ${esc(c.name)}` : 'Все этапы пройдены'}, ${xp.pct}%</small>${c && curSubTxt(x) ? `<small class="subnow">▸ ${esc(curSubTxt(x))}</small>` : ''}
       <span class="pf-mini" aria-hidden="true"><i style="width:${xp.pct}%"></i></span></button></div>`;
@@ -3537,7 +3565,7 @@ function renderProjectFocus(mine = false){
       <aside class="pf-list"><input type="search" id="pfQ" placeholder="Найти проект" value="${esc(ui.pfQ || '')}" aria-label="Поиск проекта"><div class="pf-items">${listHtml || '<p class="hint">Ничего не найдено</p>'}</div></aside>
       <div class="pf-main">
         <div class="pf-head">
-          <div><h2>${mine ? esc(p.name) : `<button class="link-plain" data-open="${p.id}">${esc(p.name)}</button>`}</h2>
+          <div><h2>${mine ? esc(p.name) : `<button class="link-plain" data-open="${p.id}">${esc(p.name)}</button>`}${chatLink(p, 'big')}</h2>
             <small>${mine ? `${esc(p.client)}, ваша роль: ${ROLE_RU[role].toLowerCase()}, владелец: <span class="owner-name">…</span>` : `${esc(p.client)}, PM ${esc(short(p.pm_id))}${execTxt(p)}, финиш ${fmt(plannedEnd(p))}`}</small>
             ${!mine ? `<p><button class="ghost pf-sharebtn" data-share="${p.id}">${SHARE_ICON} Поделиться${shareCount(p) ? ` · ${shareCount(p)}` : ''}</button></p>` : ''}</div>
         </div>
