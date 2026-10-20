@@ -1120,14 +1120,18 @@ body{letter-spacing:-.005em}
 @media (min-width:1480px){.tabs button svg{display:block;width:16px;height:16px;flex:none;stroke-width:1.9}}
 
 .mc .tprog{margin:4px 0 2px}.mc .ticks{height:16px}
+.mc{background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;box-shadow:none}
+.pc-list .mc:last-child{border-bottom:0}
+@media (max-width:640px){.pc-list:has(.mc){gap:0}.mc .mc-main,.mc .mc-more{padding-left:2px;padding-right:2px}}
+.pc.mc::before{display:none}
 /* ---------- Список проектов (компактный вид) ---------- */
-table.cx{border-collapse:separate;border-spacing:0 6px;margin-top:-6px}
+table.cx{border-collapse:collapse}
 .grp .scroll:has(table.cx){background:transparent;border:0;border-radius:0;box-shadow:none;padding:0}
 .cx th{background:transparent;border-bottom:0;padding:12px 14px 4px;font-size:12.5px;font-weight:500;color:var(--muted)}
-.cx td{background:var(--row);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 14px}
-.cx td:first-child{border-radius:12px 0 0 12px;border-left:1px solid var(--line)}
-.cx td:last-child{border-radius:0 12px 12px 0;border-right:1px solid var(--line)}
-.cx tbody tr:last-child td{border-bottom:1px solid var(--line)}
+/* строки без подложек: только тонкая линия между проектами */
+.cx td{background:transparent;border:0;border-bottom:1px solid var(--line);padding:13px 14px}
+.cx thead th{border-bottom:1px solid var(--line)}
+.cx tbody tr:last-child td{border-bottom:0}
 .cx tbody tr:hover td,.cx tbody tr:focus-visible td{background:var(--surface-2)}
 .cx-name{display:flex;align-items:center;gap:12px;min-width:0}
 .cx-nt{min-width:0;overflow:hidden;text-overflow:ellipsis}
