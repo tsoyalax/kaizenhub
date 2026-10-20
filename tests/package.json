@@ -2,7 +2,7 @@
   "name": "kaizenhub-tests",
   "private": true,
   "scripts": {
-    "test": "node api.test.js && node shim.test.js && node app.test.js"
+    "test": "node api.test.js && node shim.test.js && node google.test.js && node app.test.js"
   },
   "devDependencies": {
     "jsdom": "^24.1.3"
