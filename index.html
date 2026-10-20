@@ -1207,7 +1207,7 @@ const mergeSubs = (old = [], tpl = [], allDone = false) => tpl.map(t => {
 // Подэтап с задачей показывается кнопкой с прогрессом чек-листа: его состояние ведёт задача
 const subChk = (p, s, x) => {
   const t = taskFor(p.id, s.id, x.id);
-  if (t){ const pr = taskProgress(t); return `<button class="sub-task${pr.done ? ' done' : ''}" data-task="${t.id}" title="Открыть задачу">${esc(x.name)}<small>${pr.total ? `${pr.n}/${pr.total}` : 'задача'}</small></button>`; }
+  if (t){ const pr = taskProgress(t); return `<button class="sub-task${subDone(p, s, x) ? ' done' : ''}" data-task="${t.id}" title="Открыть задачу">${esc(x.name)}<small>${pr.total ? `${pr.n}/${pr.total}` : 'задача'}</small></button>`; }
   return `<label class="sub-chk"><input type="checkbox" data-sub="${p.id}|${s.id}|${x.id}" ${x.done ? 'checked' : ''}>${esc(x.name)}</label>`;
 };
 // Данные из прошлых версий: добавляем подэтапы, ничего не теряя

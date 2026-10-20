@@ -274,7 +274,20 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     assert.equal(py.stages[at].status, 'in_progress'); assert.equal(py.stages.filter(s => s.status === 'in_progress').length, 1); ok('этап в работу: в работе остаётся один этап');
     const LT = LS().tasks.filter(t => t.project_id === pr.id && py.stages.slice(0, at).some(s => s.id === t.stage_id));
     assert.ok(LT.every(t => t.checklist.every(i => i.done))); ok('этап в работу: чек-листы предыдущих этапов отмечены');
+    assert.ok(py.stages.slice(0, at).every(s => !Dc.querySelector(`[data-sstatus="${s.id}"]`)?.closest('li, .stage, section')?.querySelector('.sub-task:not(.done)'))
+      && !Dc.querySelector('.sub-chk input:not(:checked)[data-sub^="' + pr.id + '|' + pr.stages[0].id + '"]')); ok('этап в работу: подэтапы завершённых этапов показаны отмеченными');
     assert.ok(py.log?.some?.(l => /Завершены предыдущие этапы/.test(l.text || l.msg || JSON.stringify(l))) ?? true); ok('этап в работу: запись в истории');
+    w.closeLayer(); await wait(50);
+  }
+  {
+    const Lx = LS(); const pr = Lx.projects.find(p => p.state === 'active'); const st = pr.stages[0]; const x = st.subs[0];
+    const old = Lx.tasks.find(t => t.project_id === pr.id && t.stage_id === st.id && t.substage_id === x.id);
+    const t0 = { ...(old || {}), id: old?.id || 'tkEmpty', project_id: pr.id, stage_id: st.id, substage_id: x.id, title: x.name, checklist: [], blocks: [], description: '', completed_at: null };
+    w.mergeSnapshot({ meta: {}, projects: [], tasks: [t0] }, { keepDemo: true }); w.commit(); await wait(50);
+    w.openProject(pr.id); await wait(100);
+    const ss = $q(`[data-sstatus="${st.id}"]`); if (ss.value !== 'done'){ ss.value = 'done'; fire(ss, 'change'); await wait(150); }
+    const b = $q(`.sub-task[data-task="${t0.id}"]`);
+    assert.ok(b && b.classList.contains('done')); ok('карточка без чек-листа в завершённом этапе показана выполненной');
     w.closeLayer(); await wait(50);
   }
   // 14) фильтры: аккуратная панель
