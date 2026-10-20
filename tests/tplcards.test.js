@@ -50,7 +50,26 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   $('#ceD').value = 'Как делать: по регламенту'; $('#ceReg').value = 'ftp://bad'; fire($('#ceForm'), 'submit'); await wait(50);
   assert.ok(/https/.test($('#ceErr').textContent)); ok('карточка: ссылка без https:// не принимается');
   $('#ceReg').value = 'https://docs.example/reg'; $('#ceVid').value = 'https://youtu.be/x'; $('#ceC').value = 'Пункт А\n\nПункт Б\nПункт В'; fire($('#ceForm'), 'submit'); await wait(100);
-  assert.ok(/Карточка ✓ · 3 п\./.test([...D.querySelectorAll('.tcard-btn')].map(b => b.textContent).join('|'))); ok('карточка: оформлена, 3 пункта чек-листа');
+  assert.ok([...D.querySelectorAll('.tcard.on')].some(b => /Карточка · 3 пункта/.test(b.textContent))); ok('карточка: оформлена, 3 пункта чек-листа');
+  assert.ok([...D.querySelectorAll('.tcard:not(.on)')].every(b => b.textContent.trim() === '+ Карточка')); ok('карточка: пустые подписаны «+ Карточка»');
+  assert.ok(!D.querySelector('[data-move],[data-smove]')); ok('шаблон: стрелок нет, порядок меняется перетаскиванием');
+  // перетаскивание подэтапа: «Тестовый подэтап» (последний) — на первое место
+  const subsNow = () => [...D.querySelectorAll('.tsub[data-i="0"] input')].map(i => i.value);
+  const lastJ = subsNow().length - 1; const g = D.querySelector(`[data-drag="sub"][data-i="0"][data-j="${lastJ}"]`);
+  const first = D.querySelector('.tsub[data-i="0"][data-j="0"]');
+  const ev = (type, target, y) => target.dispatchEvent(new w.MouseEvent(type, { bubbles: true, cancelable: true, clientY: y, button: 0 }));
+  ev('pointerdown', g, 0); ev('pointermove', first, -1e6); ev('pointerup', first, -1e6); await wait(50);
+  assert.equal(subsNow()[0], 'Тестовый подэтап'); ok('перетаскивание: подэтап переставлен наверх');
+  // клавиатура: стрелка вниз на ручке возвращает его на место
+  D.querySelector('[data-drag="sub"][data-i="0"][data-j="0"]').dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })); await wait(50);
+  assert.equal(subsNow()[1], 'Тестовый подэтап'); ok('клавиши ↑ ↓ на ручке тоже переставляют');
+  // перетаскивание этапа: второй этап — на первое место
+  const names = () => [...D.querySelectorAll('.trow input[data-f="name"]')].map(i => i.value);
+  const n0 = names(); const gs = D.querySelector('[data-drag="stage"][data-i="1"]');
+  ev('pointerdown', gs, 0); ev('pointermove', D.querySelector('.tstage[data-i="0"] .trow'), -1e6); ev('pointerup', D.querySelector('.tstage[data-i="0"] .trow'), -1e6); await wait(50);
+  assert.deepEqual(names().slice(0, 2), [n0[1], n0[0]]); ok('перетаскивание: этапы меняются местами');
+  ev('pointerdown', D.querySelector('[data-drag="stage"][data-i="1"]'), 0); ev('pointermove', D.querySelector('.tstage[data-i="0"] .trow'), -1e6); ev('pointerup', D.querySelector('.tstage[data-i="0"] .trow'), -1e6); await wait(50);
+  assert.deepEqual(names().slice(0, 2), n0.slice(0, 2)); ok('перетаскивание: вернули как было');
   assert.ok($('#tSave').classList.contains('t-dirty')); ok('шаблон: кнопка «Сохранить» подсвечена, пока не сохранили');
   $('#tSave').click(); await wait(150);
   let L = LS(); const key = tpl.id + '|тестовый подэтап';

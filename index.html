@@ -398,18 +398,19 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .set-panel{max-width:760px}
 .set-days .row{gap:12px;align-items:center}.set-days input{width:90px;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px;font-size:15px}
 .set-rules{margin:12px 0;padding-left:20px;color:var(--muted);font-size:13.5px;display:grid;gap:4px}
-.tsubs{margin:0 0 6px 36px;padding:6px 0 8px;border-bottom:1px solid var(--line)}
-.tsubs.closed{padding:2px 0 6px}
-.tsub-tog{font-size:13px}
-.tsub{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;margin-top:6px}
-.tsub input{height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 8px;min-width:0}
-.tsub .tools{display:flex;gap:2px}.tsub .tools button{width:28px;height:28px;border:1px solid var(--line);border-radius:7px;background:none;cursor:pointer}
-.tsub .tools button:disabled{opacity:.3;cursor:default}
-.tcard-btn{height:34px;padding:0 10px;font-size:13px;white-space:nowrap}
-.tcard-btn.on{border-color:var(--g);color:var(--g)}
-.tsub-add{display:flex;gap:8px;margin-top:8px}.tsub-add input{flex:1;min-width:0;height:34px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;padding:0 8px}
+.tsubs{margin:2px 0 4px 48px}
+.tsub-tog{border:0;background:none;padding:4px 0;font:inherit;font-size:12.5px;color:var(--muted);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.tsub-tog:hover{color:var(--ink)}.tsub-tog .car{font-size:10px;width:10px}
+.tsub{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:6px;align-items:center;margin-top:2px}
+.tsub input{height:32px;border:1px solid transparent;border-radius:8px;background:transparent;padding:0 8px;min-width:0;font-size:13.5px}
+.tcard{height:30px;padding:0 10px;border-radius:8px;font:inherit;font-size:12.5px;white-space:nowrap;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--line-strong);background:none;color:var(--muted)}
+.tcard:hover{color:var(--ink);border-color:var(--ink)}
+.tcard.on{border-style:solid;border-color:var(--line);color:var(--ink);background:var(--surface-2)}
+.okdot{width:7px;height:7px;border-radius:50%;background:var(--g);flex:none}
+.tsub-add{margin:4px 0 2px 26px}.tsub-add input{width:100%;height:32px;border:0;border-radius:8px;background:transparent;padding:0 8px;font-size:13px;color:var(--muted)}
+.tsub-add input:focus{outline:0;background:var(--surface-2);color:var(--ink)}
 .t-dirty{box-shadow:0 0 0 3px var(--soft)}
-@media (max-width:520px){.tsubs{margin-left:0}.tsub{grid-template-columns:1fr auto}.tsub .tools{grid-column:1/-1}}
+@media (max-width:520px){.tsubs{margin-left:20px}.trow,.trow.wd{grid-template-columns:20px minmax(0,1fr) 28px}.trow .n,.tappr,.tdays{display:none}.tsub{grid-template-columns:20px minmax(0,1fr) 28px}.tsub .tcard{grid-column:2;justify-self:start}}
 .tpl-wrap{display:grid;grid-template-columns:260px 1fr;gap:16px;margin-top:6px}
 @media (max-width:760px){.tpl-wrap{grid-template-columns:1fr}}
 .tpl-list{display:flex;flex-direction:column;gap:6px}
@@ -419,12 +420,30 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .tpl-item small{display:block;color:var(--muted)}
 .tpl-ed{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
 .tpl-ed .name{font-size:17px;font-weight:600;height:40px;width:100%;border:1px solid var(--line);border-radius:9px;padding:0 10px;background:var(--surface)}
-.trow{display:grid;grid-template-columns:28px 1fr 84px auto auto;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
-.trow .n{color:var(--muted);font-weight:500;text-align:center}
-.trow input[type=text],.trow input[type=number]{height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 8px;width:100%;min-width:0}
-.trow .tools{display:flex;gap:2px}
-.trow .tools button{width:30px;height:30px;border:1px solid var(--line);border-radius:8px;background:none;cursor:pointer}
-.trow label{font-size:12.5px;display:flex;gap:5px;align-items:center;white-space:nowrap}
+.tstage{border-bottom:1px solid var(--line);padding:6px 0}
+.tstage:last-child{border-bottom:0}
+.trow{display:grid;grid-template-columns:20px 22px minmax(0,1fr) auto 28px;gap:6px;align-items:center}
+.trow.wd{grid-template-columns:20px 22px minmax(0,1fr) auto auto 28px}
+.trow .n{color:var(--muted);font-weight:500;font-size:13px;text-align:center}
+.trow input[type=text]{height:36px;border:1px solid transparent;border-radius:8px;background:transparent;padding:0 8px;width:100%;min-width:0;font-weight:600;font-size:14.5px}
+.trow input[type=text]:hover,.tsub input:hover{border-color:var(--line)}
+.trow input[type=text]:focus,.tsub input:focus{border-color:var(--line-strong);background:var(--surface);outline:0}
+.tdays{display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--muted)}
+.tdays input{width:52px;height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 6px}
+.tappr{font-size:12.5px;color:var(--muted);display:flex;gap:5px;align-items:center;white-space:nowrap;cursor:pointer}
+.tappr input{accent-color:var(--ink)}
+.grip{display:grid;place-items:center;width:20px;height:28px;border-radius:6px;color:var(--muted);cursor:grab;opacity:.45}
+.grip{touch-action:none;user-select:none}
+body.is-sorting,body.is-sorting *{cursor:grabbing!important;user-select:none}
+.grip svg{width:14px;height:14px;fill:currentColor}
+.grip:hover,.grip:focus-visible{opacity:1;background:var(--surface-2)}
+.tstage:hover > .trow .grip,.tsub:hover .grip{opacity:.8}
+.tx{width:28px;height:28px;border:0;background:none;border-radius:7px;color:var(--muted);cursor:pointer;font-size:17px;opacity:0;transition:opacity .12s}
+.trow:hover .tx,.tsub:hover .tx,.tx:focus-visible{opacity:1}
+.tx:hover{background:var(--surface-2);color:var(--r)}
+@media (hover:none){.tx{opacity:.6}.grip{opacity:.7}}
+.dragging{opacity:.4}
+.drop-before{box-shadow:inset 0 2px 0 var(--ink)}.drop-after{box-shadow:inset 0 -2px 0 var(--ink)}
 @media (max-width:520px){.trow{grid-template-columns:24px 1fr 64px;}.trow label,.trow .tools{grid-column:2/4}}
 
 @media (max-width:640px){
@@ -2332,16 +2351,17 @@ function attachCards(d){
     return { ...x, card: x.card || (c ? { d:c.d || '', reg:c.reg || '', vid:c.vid || '', c:[...(c.c || [])] } : null) }; }); });
 }
 function tplSubsHtml(st, i){
-  const subs = st.subs || []; const open = ui.tplOpen?.[st.id];
-  const head = `<button class="link tsub-tog" data-tsubtog="${st.id}" aria-expanded="${!!open}">${open ? '▾' : '▸'} Подэтапы · ${subs.length}${subs.length ? `, карточек ${subs.filter(x => cardHas(x.card)).length}` : ''}</button>`;
+  const subs = st.subs || []; const open = ui.tplOpen?.[st.id]; const nc = subs.filter(x => cardHas(x.card)).length;
+  const head = `<button class="tsub-tog" data-tsubtog="${st.id}" aria-expanded="${!!open}"><span class="car">${open ? '▾' : '▸'}</span>${subs.length ? `${subs.length} ${plural(subs.length, 'подэтап', 'подэтапа', 'подэтапов')}` : 'Подэтапов нет'}${subs.length ? ` · ${nc ? `${nc} ${plural(nc, 'карточка', 'карточки', 'карточек')}` : 'без карточек'}` : ''}</button>`;
   if (!open) return `<div class="tsubs closed">${head}</div>`;
-  return `<div class="tsubs" data-i="${i}">${head}
-    ${subs.map((x, j) => `<div class="tsub" data-i="${i}" data-j="${j}">
-      <input type="text" data-sf="name" value="${esc(x.name)}" aria-label="Подэтап ${j + 1} этапа ${esc(st.name)}">
-      <button class="ghost tcard-btn${cardHas(x.card) ? ' on' : ''}" data-tcard="${i}|${j}">${cardHas(x.card) ? `Карточка ✓${x.card.c?.length ? ` · ${x.card.c.length} п.` : ''}` : 'Оформить карточку'}</button>
-      <span class="tools"><button data-smove="-1" aria-label="Выше" ${j ? '' : 'disabled'}>↑</button><button data-smove="1" aria-label="Ниже" ${j < subs.length - 1 ? '' : 'disabled'}>↓</button><button data-sdel aria-label="Удалить подэтап">×</button></span>
-    </div>`).join('') || '<p class="hint">Подэтапов пока нет</p>'}
-    <form class="tsub-add" data-tsubadd="${i}"><input placeholder="Новый подэтап" aria-label="Новый подэтап этапа ${esc(st.name)}"><button class="ghost">Добавить</button></form>
+  return `<div class="tsubs">${head}
+    ${subs.map((x, j) => `<div class="tsub" data-dz="sub" data-i="${i}" data-j="${j}">
+      <span class="grip" data-drag="sub" data-i="${i}" data-j="${j}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить подэтап ${esc(x.name)}" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
+      <input type="text" data-sf="name" value="${esc(x.name)}" aria-label="Подэтап ${j + 1} этапа ${esc(st.name)}" placeholder="Название подэтапа">
+      <button class="tcard${cardHas(x.card) ? ' on' : ''}" data-tcard="${i}|${j}" title="${cardHas(x.card) ? 'Карточка заполнена — нажмите, чтобы изменить' : 'Описание, регламент, видео и чек-лист для этого подэтапа'}">${cardHas(x.card) ? `<i class="okdot" aria-hidden="true"></i>Карточка${x.card.c?.length ? ` · ${x.card.c.length} ${plural(x.card.c.length, 'пункт', 'пункта', 'пунктов')}` : ''}` : '+ Карточка'}</button>
+      <button class="tx" data-sdel aria-label="Удалить подэтап ${esc(x.name)}" title="Удалить подэтап">×</button>
+    </div>`).join('')}
+    <form class="tsub-add" data-tsubadd="${i}"><input placeholder="+ Добавить подэтап и нажать Enter" aria-label="Новый подэтап этапа ${esc(st.name)}"></form>
   </div>`;
 }
 function openCardEditor(i, j){
@@ -2423,6 +2443,47 @@ document.addEventListener('click', e => {
         toast(r.projs ? `Обновлено проектов: ${r.projs}. Подэтапов добавлено: ${r.subs}, карточек: ${r.cards}` : 'Все проекты уже соответствуют шаблону'); });
   }
 });
+// ---------- перетаскивание этапов и подэтапов в шаблоне (мышь, палец, перо) ----------
+const tdrag = { kind:null, i:-1, j:-1, row:null, spot:null };
+function dropSpot(e){
+  const under = (typeof document.elementFromPoint === 'function' && document.elementFromPoint(e.clientX, e.clientY)) || e.target;
+  const z = under?.closest?.(`[data-dz="${tdrag.kind}"]`); if (!z) return null;
+  if (tdrag.kind === 'sub' && +z.dataset.i !== tdrag.i) return null;   // подэтапы переставляем внутри своего этапа
+  const box = tdrag.kind === 'stage' ? z.querySelector('.trow') : z; const r = box.getBoundingClientRect();
+  const after = e.clientY > r.top + r.height / 2; const idx = +(tdrag.kind === 'stage' ? z.dataset.i : z.dataset.j);
+  return { box, to: after ? idx + 1 : idx, after };
+}
+const clearDrop = () => document.querySelectorAll('.drop-before,.drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after'));
+document.addEventListener('pointerdown', e => {
+  const g = e.target.closest?.('[data-drag]'); if (!g || !ui.draft || (e.button != null && e.button > 0)) return;
+  e.preventDefault();
+  tdrag.kind = g.dataset.drag; tdrag.i = +g.dataset.i; tdrag.j = +(g.dataset.j ?? -1); tdrag.spot = null;
+  tdrag.row = g.closest(tdrag.kind === 'stage' ? '.tstage' : '.tsub'); tdrag.row.classList.add('dragging'); document.body.classList.add('is-sorting');
+  try { g.setPointerCapture?.(e.pointerId); } catch(x) {}
+});
+document.addEventListener('pointermove', e => {
+  if (!tdrag.kind) return; e.preventDefault();
+  const sp = dropSpot(e); clearDrop(); tdrag.spot = sp; if (sp) sp.box.classList.add(sp.after ? 'drop-after' : 'drop-before');
+});
+function endSort(apply){
+  if (!tdrag.kind) return;
+  const sp = tdrag.spot; clearDrop(); tdrag.row?.classList.remove('dragging'); document.body.classList.remove('is-sorting');
+  const kind = tdrag.kind; tdrag.kind = null;
+  if (!apply || !sp) return;
+  const arr = kind === 'stage' ? ui.draft.stages : ui.draft.stages[tdrag.i].subs; const from = kind === 'stage' ? tdrag.i : tdrag.j;
+  if (sp.to === from || sp.to === from + 1) return;
+  const [x] = arr.splice(from, 1); arr.splice(sp.to > from ? sp.to - 1 : sp.to, 0, x);
+  ui.draftDirty = true; renderTemplates();
+}
+document.addEventListener('pointerup', () => endSort(true));
+document.addEventListener('pointercancel', () => endSort(false));
+document.addEventListener('keydown', e => {
+  const g = e.target.closest?.('[data-drag]'); if (!g || !ui.draft || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+  e.preventDefault(); const d = e.key === 'ArrowUp' ? -1 : 1; const i = +g.dataset.i, j = +(g.dataset.j ?? -1);
+  const arr = g.dataset.drag === 'stage' ? ui.draft.stages : ui.draft.stages[i].subs; const from = g.dataset.drag === 'stage' ? i : j; const to = from + d;
+  if (to < 0 || to >= arr.length) return; [arr[from], arr[to]] = [arr[to], arr[from]]; ui.draftDirty = true; renderTemplates();
+  app.querySelector(g.dataset.drag === 'stage' ? `[data-drag="stage"][data-i="${to}"]` : `[data-drag="sub"][data-i="${i}"][data-j="${to}"]`)?.focus();
+});
 document.addEventListener('submit', e => {
   const f = e.target.closest?.('[data-tsubadd]'); if (!f || !ui.draft) return;
   e.preventDefault(); const st = ui.draft.stages[+f.dataset.tsubadd]; const v = f.querySelector('input').value.trim(); if (!v) return;
@@ -2441,24 +2502,25 @@ function renderTemplates(){
     ui.draft = t ? JSON.parse(JSON.stringify(t)) : { id:null, name:'', stages:[{ id:uid(), name:'Бриф', days:2, approval:false }] };
     attachCards(ui.draft);
   }
-  const d = ui.draft; const total = d.stages.reduce((n,s) => n + (+s.days||0), 0);
+  const d = ui.draft; const useTplD = !!db.prefs?.useTplDays; const total = useTplD ? d.stages.reduce((n,s) => n + (+s.days||0), 0) : d.stages.length * defDays();
   const used = d.id ? db.projects.filter(p => p.template_id === d.id && p.state !== 'archived').length : 0;
   app.innerHTML = `${setNav()}<div class="tpl-wrap">
     <div class="tpl-list">
       ${db.templates.map(t => `<button class="tpl-item" data-tpl="${t.id}" aria-current="${t.id===ui.tplSel}"><b>${esc(t.name)}</b>
-        <small>${t.stages.length} этапов, ${days(t.stages.reduce((n,s)=>n+s.days,0))}</small></button>`).join('')}
+        <small>${t.stages.length} ${plural(t.stages.length,'этап','этапа','этапов')}, ${t.stages.reduce((n,s)=>n+(s.subs||[]).length,0)} подэт.</small></button>`).join('')}
       <button class="ghost" data-tpl="new">Новый шаблон</button>
     </div>
     <div class="tpl-ed">
       <input class="name" id="tName" value="${esc(d.name)}" placeholder="Название шаблона" aria-label="Название шаблона">
-      <p class="hint">Длительность цепочки: ${days(total)}. У каждого этапа — подэтапы, у подэтапа — карточка (описание, регламент, видео, чек-лист). Новые проекты по шаблону получают всё это автоматически.${used ? ` Используется в активных проектах: ${used}.` : ''}</p>
-      <div id="tRows">${d.stages.map((s,i) => `<div class="trow" data-i="${i}">
+      <p class="hint">${d.stages.length} ${plural(d.stages.length, 'этап', 'этапа', 'этапов')}, ${days(total)}${useTplD ? '' : ` (по ${days(defDays())} — меняется в «Дедлайнах»)`}. Порядок меняется перетаскиванием за ⠿. Новые проекты получают подэтапы и карточки автоматически.${used ? ` Активных проектов по шаблону: ${used}.` : ''}</p>
+      <div id="tRows">${d.stages.map((s,i) => `<div class="tstage" data-dz="stage" data-i="${i}"><div class="trow${useTplD ? ' wd' : ''}" data-i="${i}">
+        <span class="grip" data-drag="stage" data-i="${i}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить этап ${i+1}. Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
         <span class="n">${i+1}</span>
-        <input type="text" data-f="name" value="${esc(s.name)}" aria-label="Название этапа ${i+1}">
-        <input type="number" min="1" data-f="days" value="${s.days}" aria-label="Дней на этап ${i+1}">
-        <label><input type="checkbox" data-f="approval" ${s.approval?'checked':''}> согласование</label>
-        <span class="tools"><button data-move="-1" aria-label="Выше">↑</button><button data-move="1" aria-label="Ниже">↓</button><button data-del aria-label="Удалить этап">×</button></span>
-      </div>${tplSubsHtml(s, i)}`).join('')}</div>
+        <input type="text" data-f="name" value="${esc(s.name)}" aria-label="Название этапа ${i+1}" placeholder="Название этапа">
+        ${useTplD ? `<label class="tdays"><input type="number" min="1" data-f="days" value="${s.days}" aria-label="Дней на этап ${i+1}">дн.</label>` : ''}
+        <label class="tappr" title="Этап требует согласования клиента"><input type="checkbox" data-f="approval" ${s.approval?'checked':''}> согласование</label>
+        <button class="tx" data-del aria-label="Удалить этап ${esc(s.name)}" title="Удалить этап">×</button>
+      </div>${tplSubsHtml(s, i)}</div>`).join('')}</div>
       <p><button class="ghost" id="tAdd">Добавить этап</button></p>
       <div class="err" id="tErr"></div>
       <div class="actions">${d.id && !used ? '<button class="ghost danger" id="tDel">Удалить шаблон</button>' : ''}${d.id && used ? `<button class="ghost" id="tApply">Обновить активные проекты (${used})</button>` : ''}<button class="primary${ui.draftDirty ? ' t-dirty' : ''}" id="tSave">Сохранить шаблон</button></div>
@@ -2597,10 +2659,10 @@ document.addEventListener('click', e => {
   // шаблоны
   const ti = e.target.closest('[data-tpl]');
   if (ti){ ui.tplSel = ti.dataset.tpl; ui.draftDirty = false; ui.draft = ti.dataset.tpl === 'new' ? { id:null, name:'', stages:[{ id:uid(), name:'Бриф', days:2, approval:false, subs:[] }] } : null; renderTemplates(); return; }
-  if (e.target.id === 'tAdd'){ ui.draft.stages.push({ id:uid(), name:'', days:3, approval:false, subs:[] }); renderTemplates(); app.querySelector('.trow:last-child input')?.focus(); return; }
+  if (e.target.id === 'tAdd'){ ui.draft.stages.push({ id:uid(), name:'', days:defDays(), approval:false, subs:[] }); ui.draftDirty = true; renderTemplates(); [...app.querySelectorAll('.trow input[data-f="name"]')].pop()?.focus(); return; }
   const mv = e.target.closest('[data-move]');
   if (mv){ const i = +mv.closest('.trow').dataset.i, j = i + +mv.dataset.move, a = ui.draft.stages; if (j>=0 && j<a.length){ [a[i],a[j]] = [a[j],a[i]]; renderTemplates(); } return; }
-  if (e.target.closest('[data-del]')){ const i = +e.target.closest('.trow').dataset.i; if (ui.draft.stages.length > 1){ ui.draft.stages.splice(i,1); renderTemplates(); } return; }
+  if (e.target.closest('[data-del]')){ const i = +e.target.closest('.trow').dataset.i; if (ui.draft.stages.length > 1){ ui.draft.stages.splice(i,1); ui.draftDirty = true; renderTemplates(); } else toast('В шаблоне должен остаться хотя бы один этап'); return; }
   if (e.target.id === 'tSave'){
     const d = ui.draft;
     if (!d.name.trim()) return $('#tErr').textContent = 'Укажите название шаблона';
