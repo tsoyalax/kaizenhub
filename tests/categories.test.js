@@ -49,8 +49,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   let L = LS();
   assert.deepEqual(L.categories.map(c => c.name), ['Инфобизнес', 'Медицина', 'Личные бренды']); ok('категории созданы, дубль не добавился');
   const ren = $(`[data-catname="${L.categories[2].id}"]`); ren.value = 'Эксперты'; fire(ren, 'change'); await wait(50);
-  $(`[data-catcolor="${L.categories[0].id}|#EF4444"]`).click(); await wait(50);
-  L = LS(); assert.equal(L.categories[2].name, 'Эксперты'); assert.equal(L.categories[0].color, '#EF4444'); ok('категорию можно переименовать и выбрать цвет');
+  L = LS(); assert.equal(L.categories[2].name, 'Эксперты'); assert.ok(!D.querySelector('.cat-col,[data-catcolor]')); ok('категорию можно переименовать; выбора цвета нет');
   const pe = (type, el, y) => el.dispatchEvent(new w.MouseEvent(type, { bubbles: true, cancelable: true, clientY: y, button: 0 }));
   pe('pointerdown', $('[data-catdrag="2"]'), 0); pe('pointermove', $('.cat-list [data-cat="0"]'), -1e6); pe('pointerup', $('.cat-list [data-cat="0"]'), -1e6); await wait(50);
   L = LS(); assert.deepEqual(L.categories.map(c => c.name), ['Эксперты', 'Инфобизнес', 'Медицина']); ok('порядок категорий меняется перетаскиванием');
@@ -71,7 +70,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.equal($('#group').value, 'category'); ok('главная: по умолчанию группировка по категориям');
   const hs = [...D.querySelectorAll('#app .grp > h2')].map(h => h.textContent);
   assert.ok(/^Инфобизнес/.test(hs[0]) && /^Медицина/.test(hs[1]) && /^Без категории/.test(hs[2]) && hs.length === 3); ok('главная: «Инфобизнес», «Медицина», затем «Без категории»; пустая «Эксперты» не показана');
-  assert.ok(D.querySelector('#app .grp > h2 .cat-dot')); ok('главная: у группы цвет категории');
+  assert.ok(!D.querySelector('#app .grp > h2 .cat-dot')); ok('главная: группы без цветовой маркировки');
   const btns = [...D.querySelectorAll('#density button')]; const comp = btns.find(b => /Компакт/.test(b.textContent)); comp?.click(); await wait(100);
   assert.ok(/^Инфобизнес/.test(D.querySelector('#app .grp > h2').textContent)); ok('главная (компактный вид): тоже по категориям');
   $('#group').value = 'template'; fire($('#group'), 'change'); await wait(100);
@@ -82,6 +81,14 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   $(`[data-catdel="${cM.id}"]`).click(); await wait(50); $('#cfmOk').click(); await wait(100);
   L = LS(); assert.ok(!L.categories.some(c => c.id === cM.id) && !L.projects.find(p => p.id === px.id).category_id); ok('удалили категорию — её проекты остались, но без категории');
   await wait(2500); assert.ok(JSON.parse(be.rows.get('data/users/aaaaaaaa-0000-0000-0000-000000000001/meta').data.json).categories.length === 2); ok('категории сохраняются в аккаунте');
+  // открытая вкладка со старой версией перезаписала данные без категорий — категории не теряются
+  const mk = 'data/users/aaaaaaaa-0000-0000-0000-000000000001/meta';
+  const meta = JSON.parse(be.rows.get(mk).data.json); delete meta.categories; meta.futureField = 'из будущей версии'; meta.savedAt = Date.now() + 1000;
+  be.put(mk, { ...be.rows.get(mk).data, json: JSON.stringify(meta) }); be.emit(be.rows.get(mk)); await wait(1500);
+  assert.equal(LS().categories.length, 2); ok('данные от старой версии без категорий не стирают категории');
+  w.commit(); await wait(2500);
+  const m2 = JSON.parse(be.rows.get(mk).data.json);
+  assert.equal(m2.categories.length, 2); assert.equal(m2.futureField, 'из будущей версии'); ok('при следующем сохранении категории записаны обратно, незнакомые поля сохранены');
   // второе устройство: категории и назначения подтягиваются из аккаунта
   const o2 = openApp(be, 'aaaaaaaa-0000-0000-0000-000000000001'); await wait(3500);
   const L2 = JSON.parse(o2.w.localStorage.getItem('agency-pipeline-demo-v2'));

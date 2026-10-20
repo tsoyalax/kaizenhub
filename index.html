@@ -399,7 +399,7 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .set-days .row{gap:12px;align-items:center}.set-days input{width:90px;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px;font-size:15px}
 .set-rules{margin:12px 0;padding-left:20px;color:var(--muted);font-size:13.5px;display:grid;gap:4px}
 .cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
-.cat-row{display:grid;grid-template-columns:20px auto minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
+.cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
 .cat-row:hover .tx{opacity:1}
 .cat-row input{height:34px;border:1px solid transparent;border-radius:8px;background:transparent;padding:0 8px;font-weight:600;font-size:14.5px;min-width:0}
 .cat-row input:hover{border-color:var(--line)}.cat-row input:focus{border-color:var(--line-strong);outline:0;background:var(--surface)}
@@ -408,7 +408,7 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .cat-col:hover{opacity:1}.cat-col.on{opacity:1;box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--ink)}
 .cat-add{margin:8px 0 0}
 .cat-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:0}
-@media (max-width:640px){.cat-row{grid-template-columns:20px minmax(0,1fr) 28px}.cat-row .hint{display:none}.cat-colors{grid-column:2;grid-row:2}}
+@media (max-width:640px){.cat-row{grid-template-columns:20px minmax(0,1fr) 28px}.cat-row .hint{display:none}}
 .tsubs{margin:2px 0 4px 48px}
 .tsub-tog{border:0;background:none;padding:4px 0;font:inherit;font-size:12.5px;color:var(--muted);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
 .tsub-tog:hover{color:var(--ink)}.tsub-tog .car{font-size:10px;width:10px}
@@ -2601,9 +2601,8 @@ document.addEventListener('input', e => {
   const row = el.closest('.tsub'); const x = ui.draft.stages[+row.dataset.i].subs[+row.dataset.j]; x.name = el.value; ui.draftDirty = true;
 });
 // ---------- Категории проектов ----------
-const CAT_COLORS = ['#3B82F6','#22C55E','#F59E0B','#EF4444','#A855F7','#14B8A6','#EC4899','#71717A'];
 const catById = id => (db.categories || []).find(c => c.id === id) || null;
-const catDot = c => c ? `<span class="cat-dot" style="background:${esc(c.color || CAT_COLORS[7])}" aria-hidden="true"></span>` : '';
+const catDot = () => '';   // категории без цветовой маркировки
 const catOpts = val => `<option value="">Без категории</option>` + (db.categories || []).map(c => `<option value="${c.id}" ${c.id === val ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 function renderCategories(){
   const cats = db.categories || [];
@@ -2613,7 +2612,6 @@ function renderCategories(){
     <p class="hint">Например «Инфобизнес», «Медицина», «Личные бренды». Категорию назначают проекту при создании или в карточке проекта. На главной проекты разделены по категориям в этом порядке; порядок меняется перетаскиванием за ⠿.</p>
     <ol class="cat-list">${cats.map((c, k) => `<li class="cat-row" data-cat="${k}">
       <span class="grip" data-catdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить категорию ${esc(c.name)}. Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
-      <span class="cat-colors" role="radiogroup" aria-label="Цвет категории ${esc(c.name)}">${CAT_COLORS.map(col => `<button type="button" class="cat-col${(c.color || CAT_COLORS[7]) === col ? ' on' : ''}" data-catcolor="${c.id}|${col}" style="background:${col}" aria-label="Цвет ${col}" aria-pressed="${(c.color || CAT_COLORS[7]) === col}"></button>`).join('')}</span>
       <input data-catname="${c.id}" value="${esc(c.name)}" aria-label="Название категории" maxlength="60">
       <span class="hint">${cnt(c.id)} ${plural(cnt(c.id), 'проект', 'проекта', 'проектов')}</span>
       <button type="button" class="tx" data-catdel="${c.id}" aria-label="Удалить категорию ${esc(c.name)}" title="Удалить категорию">×</button></li>`).join('') || '<li class="hint">Категорий пока нет</li>'}</ol>
@@ -2625,7 +2623,7 @@ document.addEventListener('submit', e => {
   const v = $('#catNew').value.trim(); if (!v) return;
   db.categories = db.categories || [];
   if (db.categories.some(c => norm(c.name) === norm(v))){ toast('Такая категория уже есть'); return; }
-  db.categories.push({ id:'c' + uid(), name:v, color:CAT_COLORS[db.categories.length % (CAT_COLORS.length - 1)] });
+  db.categories.push({ id:'c' + uid(), name:v });
   commit(); $('#catNew')?.focus(); toast(`Категория «${v}» создана`);
 });
 document.addEventListener('change', e => {
@@ -2635,7 +2633,6 @@ document.addEventListener('change', e => {
   c.name = v; commit();
 });
 document.addEventListener('click', e => {
-  const col = e.target.closest?.('[data-catcolor]'); if (col){ const [id, v] = col.dataset.catcolor.split('|'); const c = catById(id); if (c){ c.color = v; commit(); } return; }
   const del = e.target.closest?.('[data-catdel]'); if (!del) return;
   const c = catById(del.dataset.catdel); if (!c) return; const used = db.projects.filter(p => p.category_id === c.id);
   const go = () => { db.categories = db.categories.filter(x => x !== c); used.forEach(p => { p.category_id = null; }); commit(); toast(`Категория «${c.name}» удалена`); };
@@ -4323,7 +4320,7 @@ function cloudDocs(){
     const n = Math.ceil(json.length / CHUNK), v = hashStr(json);
     for (let i = 0; i < n; i++){ const k = i ? `${key}~${i}` : key; out.set(k, { k, kind, base:key, part:i, of:n, v, json:json.slice(i * CHUNK, (i + 1) * CHUNK) }); }
   };
-  put('meta', 'meta', { ver:db.ver, onboarded:db.onboarded, users:db.users, templates:db.templates, categories:db.categories || [], prefs:db.prefs || {}, cardTpls:db.cardTpls || {}, cardTplsInit:!!db.cardTplsInit, savedAt:db.savedAt || Date.now(),
+  put('meta', 'meta', { ...(db.metaRest || {}), ver:db.ver, onboarded:db.onboarded, users:db.users, templates:db.templates, categories:db.categories || [], prefs:db.prefs || {}, cardTpls:db.cardTpls || {}, cardTplsInit:!!db.cardTplsInit, savedAt:db.savedAt || Date.now(),
     order:{ projects:db.projects.map(p => p.id), reports:(db.reports || []).map(r => r.id) } });
   db.projects.forEach(p => put('p_' + p.id, 'project', p));
   (db.tasks || []).forEach(t => put('t_' + t.id, 'task', t));
@@ -4350,7 +4347,10 @@ function cloudAssemble(docs){
   return out;
 }
 function cloudApply(r){
-  Object.assign(db, { ver:r.meta.ver, onboarded:r.meta.onboarded, users:r.meta.users, templates:r.meta.templates, categories:r.meta.categories || [], prefs:r.meta.prefs, cardTpls:r.meta.cardTpls || {}, cardTplsInit:!!r.meta.cardTplsInit, savedAt:r.meta.savedAt,
+  // поля, которых эта версия не знает, бережём и записываем обратно; данные от старой версии без категорий их не стирают
+  const KNOWN = ['ver','onboarded','users','templates','categories','prefs','cardTpls','cardTplsInit','savedAt','order'];
+  db.metaRest = Object.fromEntries(Object.entries(r.meta).filter(([k]) => !KNOWN.includes(k)));
+  Object.assign(db, { ver:r.meta.ver, onboarded:r.meta.onboarded, users:r.meta.users, templates:r.meta.templates, categories:'categories' in r.meta ? (r.meta.categories || []) : (db.categories || []), prefs:r.meta.prefs, cardTpls:r.meta.cardTpls || {}, cardTplsInit:!!r.meta.cardTplsInit, savedAt:r.meta.savedAt,
     projects:r.projects, tasks:r.tasks, reports:r.reports });
   migrate(); if (!db.cardTplsInit){ migrateCardTpls(); scheduleCloud(); }
   if (migrateLinks() + replanAll()) scheduleCloud();
