@@ -601,6 +601,11 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .ck{list-style:none;margin:0;padding:0}
 .ck li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
 .ck li small{grid-column:1;color:var(--muted);font-size:12px;padding-left:28px}
+.ck.sortable li{grid-template-columns:20px minmax(0,1fr);column-gap:6px}
+.ck.sortable li .grip{grid-row:1}
+.ck.sortable li small{grid-column:2}
+.ckb-chk{width:18px;height:18px;flex:none;margin:0 2px;accent-color:var(--g);cursor:pointer}
+.ckb li input.is-done{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line-strong)}
 .ck-box{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:14px}
 .ck-box input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--g);flex:none;cursor:pointer}
 .ck li.on .ck-txt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line-strong)}
@@ -3602,7 +3607,8 @@ function renderTaskModal(focusSel){
         ${reg ? `<p><a class="ghost tk-reg" href="${esc(reg)}" target="_blank" rel="noopener noreferrer">Открыть регламент ↗</a></p>` : ''}</section>
       ${t.video_url || ui.localVideo ? `<section class="tk-sec"><h3>Видео</h3>${taskPlayer(ui.localVideo || t.video_url)}</section>` : ''}
       <section class="tk-sec"><h3>Чек-лист</h3>
-        ${t.checklist.length ? `<ul class="ck">${t.checklist.map(i => `<li class="${i.done ? 'on' : ''}">
+        ${t.checklist.length ? `<ul class="ck${t.checklist.length > 1 ? ' sortable' : ''}">${t.checklist.map((i, k) => `<li class="${i.done ? 'on' : ''}" data-ckv="${k}">
+          ${t.checklist.length > 1 ? `<span class="grip" data-ckvdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить пункт «${esc(i.text)}». Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>` : ''}
           <label class="ck-box"><input type="checkbox" data-ck="${i.id}" id="ck-${i.id}" ${i.done ? 'checked' : ''}><span class="ck-txt">${esc(i.text)}</span></label>
           ${i.done && i.completed_at ? `<small>${esc(i.completed_by || '')}, ${new Date(i.completed_at).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small>` : ''}</li>`).join('')}</ul>`
           : `<p class="hint">Пунктов пока нет.</p>${editable && sub && cardTplFor(p, sub.name)?.c?.length ? `<button class="ghost" data-tfill>Заполнить из шаблона «${esc(sub.name)}»</button>` : ''}`}</section>
@@ -3625,7 +3631,8 @@ function renderTaskModal(focusSel){
       <div class="field"><label>Конструктор чек-листа</label>
         <ol class="ckb">${d.items.map((it, k) => `<li data-ckb="${k}">
           <span class="grip" data-ckdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить пункт ${k + 1}. Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
-          <input data-ckbtext="${k}" value="${esc(it.text)}" aria-label="Пункт ${k + 1}">${it.done ? '<span class="ckb-done" title="Уже отмечен">✓</span>' : ''}
+          <input type="checkbox" class="ckb-chk" data-ckbdone="${k}" ${it.done ? 'checked' : ''} aria-label="Пункт ${k + 1} выполнен">
+          <input data-ckbtext="${k}" value="${esc(it.text)}" aria-label="Пункт ${k + 1}" class="${it.done ? 'is-done' : ''}">
           <button type="button" class="ckb-x" data-ckbdel="${k}" aria-label="Удалить пункт ${k + 1}" title="Удалить пункт">×</button></li>`).join('')}</ol>
         <div class="row ckb-add"><input id="ckbNew" placeholder="Новый пункт, Enter — добавить" aria-label="Новый пункт чек-листа"><button type="button" class="ghost" data-ckbadd>Добавить</button></div></div>
       ${sub && !p._ext ? `<label class="tpl-check"><input type="checkbox" id="tdTpl" ${d.asTpl ? 'checked' : ''}><span>Сохранить как шаблон карточки «${esc(sub.name)}»${tplById(p.template_id) ? ` для процесса «${esc(tplById(p.template_id).name)}»` : ''}<small>Описание, ссылки, видео и чек-лист обновятся в этом подэтапе во всех проектах процесса «${esc(tplById(p.template_id)?.name || '')}»${(() => { const k = db.projects.filter(x => x.template_id === p.template_id && x.state !== 'archived' && x.id !== p.id).length; return k ? ` (ещё ${k})` : ''; })()} и в новых. Проекты других процессов не изменятся. Отметки выполнения сохранятся.</small></span></label>` : ''}
@@ -3650,7 +3657,8 @@ function saveTaskDraft(){
     description:d.description.trim(), regulation_link:d.regulation_link.trim(), video_url:d.video_url.trim() });
   t.checklist = d.items.filter(i => i.text.trim()).map((i, k) => {
     const o = i.id && old.get(i.id);
-    return o ? { ...o, text:i.text.trim(), position:k } : { id:uid(), text:i.text.trim(), done:false, position:k, completed_at:null, completed_by:null };
+    const at = i.done ? (o?.done ? o.completed_at : new Date().toISOString()) : null, by = i.done ? (o?.done ? o.completed_by : meName()) : null;
+    return o ? { ...o, text:i.text.trim(), position:k, done:!!i.done, completed_at:at, completed_by:by } : { id:uid(), text:i.text.trim(), done:!!i.done, position:k, completed_at:at, completed_by:by };
   });
   syncTaskToSub(t);
   const subX = p.stages.find(x => x.id === t.stage_id)?.subs?.find(x => x.id === t.substage_id);
@@ -3748,6 +3756,10 @@ document.addEventListener('click', e => {
   }
 });
 document.addEventListener('change', e => { if (e.target.id === 'tdTpl' && ui.taskDraft) ui.taskDraft.asTpl = e.target.checked; });
+document.addEventListener('change', e => {
+  const k = e.target.dataset?.ckbdone; if (k == null || !ui.taskDraft) return;
+  ui.taskDraft.items[+k].done = e.target.checked; e.target.nextElementSibling?.classList.toggle('is-done', e.target.checked);
+});
 document.addEventListener('submit', e => {
   if (e.target.id !== 'tkForm') return;
   e.preventDefault(); saveTaskDraft();
@@ -3762,6 +3774,39 @@ document.addEventListener('input', e => {
   if (el.dataset.ckbtext !== undefined) ui.taskDraft.items[+el.dataset.ckbtext].text = el.value;
 });
 // перетаскивание пунктов в конструкторе
+// окно карточки (просмотр): порядок пунктов меняется перетаскиванием сразу, без режима редактирования
+const ckvDrag = { from:-1, li:null, to:null };
+function moveTaskItem(from, to){
+  const t = taskById(ui.taskId); if (!t || to < 0 || to >= t.checklist.length || from === to) return;
+  const [x] = t.checklist.splice(from, 1); t.checklist.splice(to, 0, x); t.checklist.forEach((it, k) => { it.position = k; });
+  tSave(t, true);
+}
+document.addEventListener('pointerdown', e => {
+  const g = e.target.closest?.('[data-ckvdrag]'); if (!g || ui.taskDraft || (e.button != null && e.button > 0)) return;
+  e.preventDefault(); ckvDrag.from = +g.dataset.ckvdrag; ckvDrag.to = null; ckvDrag.li = g.closest('li'); ckvDrag.li.classList.add('dragging'); document.body.classList.add('is-sorting');
+  try { g.setPointerCapture?.(e.pointerId); } catch(x) {}
+});
+document.addEventListener('pointermove', e => {
+  if (ckvDrag.from < 0) return; e.preventDefault();
+  const under = (typeof document.elementFromPoint === 'function' && document.elementFromPoint(e.clientX, e.clientY)) || e.target;
+  const li = under?.closest?.('.ck [data-ckv]'); document.querySelectorAll('.ck .drop-before,.ck .drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after'));
+  if (!li){ ckvDrag.to = null; return; }
+  const r = li.getBoundingClientRect(); const after = e.clientY > r.top + r.height / 2; const k = +li.dataset.ckv;
+  ckvDrag.to = after ? k + 1 : k; li.classList.add(after ? 'drop-after' : 'drop-before');
+});
+function endCkvDrag(apply){
+  if (ckvDrag.from < 0) return;
+  const { from, to } = ckvDrag; ckvDrag.from = -1; ckvDrag.li?.classList.remove('dragging'); document.body.classList.remove('is-sorting');
+  document.querySelectorAll('.ck .drop-before,.ck .drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after'));
+  if (apply && to !== null && to !== from && to !== from + 1) moveTaskItem(from, to > from ? to - 1 : to);
+}
+document.addEventListener('pointerup', () => endCkvDrag(true));
+document.addEventListener('pointercancel', () => endCkvDrag(false));
+document.addEventListener('keydown', e => {
+  const g = e.target.closest?.('[data-ckvdrag]'); if (!g || ui.taskDraft || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+  e.preventDefault(); const k = +g.dataset.ckvdrag, to = k + (e.key === 'ArrowUp' ? -1 : 1);
+  moveTaskItem(k, to); document.querySelector(`[data-ckvdrag="${to}"]`)?.focus();
+});
 // чек-лист в карточке: перетаскивание за ручку (мышь, палец) и клавиши ↑ ↓
 const ckDrag = { from:-1, li:null, to:null };
 document.addEventListener('pointerdown', e => {
