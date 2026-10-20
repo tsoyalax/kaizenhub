@@ -1119,7 +1119,7 @@ body{letter-spacing:-.005em}
 @media (min-width:1100px){.top{flex-wrap:nowrap;gap:0 18px}.tabs{flex:0 1 auto;min-width:0;scrollbar-width:none}.top-actions{flex:none}}
 @media (min-width:1480px){.tabs button svg{display:block;width:16px;height:16px;flex:none;stroke-width:1.9}}
 
-.mc .tprog{margin:4px 0 2px}.mc .ticks{flex:1;justify-content:space-between;height:18px}.mc .ticks i{width:2.5px}
+.mc .tprog{margin:4px 0 2px}.mc .ticks{height:16px}
 /* ---------- Список проектов (компактный вид) ---------- */
 table.cx{border-collapse:separate;border-spacing:0 6px;margin-top:-6px}
 .grp .scroll:has(table.cx){background:transparent;border:0;border-radius:0;box-shadow:none;padding:0}
@@ -1137,7 +1137,9 @@ table.cx{border-collapse:separate;border-spacing:0 6px;margin-top:-6px}
 /* прогресс штрихами */
 .tprog{display:flex;align-items:center;gap:10px}
 .ticks{display:inline-flex;gap:2px;height:16px;align-items:stretch}
-.ticks i{width:2.5px;border-radius:1px;background:color-mix(in srgb,var(--ink) 16%,transparent)}
+.ticks i{width:4px;border-radius:1.5px;background:color-mix(in srgb,var(--ink) 16%,transparent)}
+.ticks{gap:3px}
+.tp-n{font-size:12.5px;color:var(--muted);white-space:nowrap}
 .ticks i.on{background:var(--fc)}
 .tprog b{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums}
 .cx .tprog + small{margin-top:2px}
@@ -2016,7 +2018,7 @@ function renderPhoneList(list){
         <span class="mc-r1"><b>${esc(p.name)}</b>${stPill(risk, risk === 'green' ? 'В работе' : RISK_RU[risk])}</span>
         <small class="mc-sub">${esc(p.client)} · PM ${esc(short(p.pm_id))}${p.priority === 'high' ? ' · <span class="hp">Высокий</span>' : ''}</small>
         <span class="mc-stage">${c ? `<span class="mc-n">${c.position + 1}/${n}</span> ${esc(c.name)}${sub ? `<small> · ${esc(sub)}</small>` : ''}` : 'Все этапы пройдены'}</span>
-        ${ticksHtml(Math.round(doneN / n * 100), risk, `Пройдено ${doneN} из ${n} этапов`, 36)}
+        ${ticksHtml(doneN, n, risk)}
         <span class="mc-foot"><span>${c ? `${stageDue}${whoId(p, c) ? ` · ${esc(short(whoId(p, c)))}` : ''}` : ''}</span><span>${dlTxt}</span></span>
       </button>
       <button class="mc-more" data-mxtoggle="${p.id}" aria-expanded="${open}">${open ? 'Скрыть этапы' : `Этапы · ${doneN} из ${n}`}</button>
@@ -2120,9 +2122,10 @@ const STATUS_ICO = {
   done:sico('<circle cx="12" cy="12" r="9"/><path d="m8 12.2 2.8 2.8L16 9.6"/>'),
 };
 // прогресс штрихами: цвет по статусу («в работе» — синий, «у клиента» — фиолетовый)
-function ticksHtml(pct, key, label, n = 14){
-  const on = Math.round(pct / 100 * n); const tk = key === 'green' ? 'prog' : key;
-  return `<div class="tprog t-${tk}" role="img" aria-label="${esc(label)}"><span class="ticks">${Array.from({ length:n }, (_, i) => `<i${i < on ? ' class="on"' : ''}></i>`).join('')}</span><b>${pct}%</b></div>`;
+// прогресс по этапам: один штрих на этап, сданные закрашены цветом статуса
+function ticksHtml(done, total, key){
+  const tk = key === 'green' ? 'prog' : key;
+  return `<div class="tprog t-${tk}" role="img" aria-label="Пройдено ${done} из ${total} этапов"><span class="ticks">${Array.from({ length:total }, (_, i) => `<i${i < done ? ' class="on"' : ''}></i>`).join('')}</span><span class="tp-n">${done} из ${total} ${plural(total, 'этапа', 'этапов', 'этапов')}</span></div>`;
 }
 const stPill = (key, label) => `<span class="pill st-pill s-${key}">${STATUS_ICO[key] || STATUS_ICO.gray}${label}</span>`;
 function renderCompact(list){
@@ -2136,20 +2139,20 @@ function renderCompact(list){
       const doneN = p.stages.filter(s => s.status === 'done').length;
       const pct = Math.round(doneN / n * 100);
       const segs = p.stages.map(s => `<i class="pseg p-${s.status === 'done' ? 'done' : (c && s.id === c.id ? h.key : 'todo')}" title="${esc(s.name)}"></i>`).join('');
-      const progress = ticksHtml(pct, !c ? 'done' : h.key, `Пройдено ${doneN} из ${n} этапов, ${pct}%`) + `<small>${doneN} из ${n} этапов</small>`;
+      const progress = ticksHtml(doneN, n, !c ? 'done' : h.key);
       const last = p.stages.at(-1);
       const due = c ? `${fmt(c.due_date)}<small>${h.note}</small>` : `${fmt(last.completed_at || last.due_date)}<small>Сдан</small>`;
       return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
         <td title="${esc(p.name)}"><span class="cx-name"><span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
         <td>${stPill(h.key, h.label)}</td>
-        <td>${stage}</td>
         <td>${progress}</td>
+        <td>${stage}</td>
         <td class="start">${fmt(p.start_date)}<small>${startDay(p)}</small></td>
         <td class="due">${due}</td></tr>`;
     }).join('');
     return `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2>
-      <div class="scroll"><table class="cx"><colgroup><col class="c1"><col class="c3"><col class="c2"><col class="c5"><col class="c6"><col class="c4"></colgroup>
-      <thead><tr><th>Проект</th><th>Статус</th><th>Этап</th><th>Прогресс</th><th>Старт</th><th>Срок</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+      <div class="scroll"><table class="cx"><colgroup><col class="c1"><col class="c3"><col class="c5"><col class="c2"><col class="c6"><col class="c4"></colgroup>
+      <thead><tr><th>Проект</th><th>Статус</th><th>Прогресс</th><th>Этап</th><th>Старт</th><th>Срок</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
   }).join('');
 }
 

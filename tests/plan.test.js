@@ -117,7 +117,9 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   o.w.document.querySelector('[data-view="matrix"]').click(); setDensity('Компактный'); await wait(150);
   const row = o.w.document.querySelector(`.cx tr[data-open="${imp}"]`);
   assert.ok(row && row.children[4].classList.contains('start') && /-й день/.test(row.children[4].textContent)); ok('компактная матрица: отдельный столбец «Старт»');
-  assert.deepEqual([...o.w.document.querySelector('.cx thead tr').children].map(x => x.textContent), ['Проект', 'Статус', 'Этап', 'Прогресс', 'Старт', 'Срок']); ok('компактная матрица: порядок — проект, статус, этап, прогресс, даты');
+  assert.deepEqual([...o.w.document.querySelector('.cx thead tr').children].map(x => x.textContent), ['Проект', 'Статус', 'Прогресс', 'Этап', 'Старт', 'Срок']); ok('компактная матрица: порядок — проект, статус, прогресс, этап, даты');
+  { const tp = row.querySelector('.tprog'); const P = JSON.parse(o.w.localStorage.getItem('agency-pipeline-demo-v2')).projects.find(x => x.id === imp);
+    assert.equal(tp.querySelectorAll('.ticks i').length, P.stages.length); assert.ok(!/%/.test(tp.textContent) && /из \d+ этап/.test(tp.textContent)); ok('компактная матрица: прогресс — штрих на этап, без процентов'); }
   setDensity('Подробный'); await wait(150);
   const demoP = JSON.parse(o.w.localStorage.getItem('agency-pipeline-demo-v2')).projects.find(p => p.stages.some(s => s.status === 'in_progress' && s.subs?.length));
   assert.ok(demoP, 'нет проекта с подэтапами');
