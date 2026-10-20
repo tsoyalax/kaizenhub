@@ -192,6 +192,7 @@ table.cx{width:100%;border-collapse:collapse;min-width:700px;table-layout:fixed}
 .pill.s-green{color:var(--g)}.pill.s-yellow{color:var(--y)}.pill.s-red{color:var(--r)}.pill.s-blue{color:var(--b)}
 .pill::before{display:none}
 .card .ctrl{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}
+.card .ctrl .wide{grid-column:1/-1}
 .card select,.stg select,.stg input,.field input,.field select,.field textarea{height:34px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 9px;font-size:13.5px;width:100%;min-width:0}
 .card select:focus,.stg select:focus,.stg input:focus,.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--line-strong);outline:0}
 .field textarea{height:auto;min-height:170px;padding:9px;line-height:1.5;resize:vertical}
@@ -517,6 +518,7 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .tk-modal{width:min(720px,calc(100% - 24px))}
 .tk-modal.is-done{box-shadow:0 0 0 2px var(--g),0 24px 60px rgba(10,10,14,.18)}
 .tk-meta{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;font-size:13.5px;color:var(--muted);margin:8px 0 14px}
+.tk-as{height:36px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px;font-size:14px;max-width:100%;min-width:240px}
 .tk-meta select{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 8px;font-size:13px;max-width:100%}
 .tk-progress{display:flex;align-items:center;gap:12px;font-size:13.5px;margin-bottom:6px}
 .is-done .tk-progress span{color:var(--g);font-weight:600}
@@ -1171,7 +1173,16 @@ function setStatus(p, s, status){
 // PATCH /api/stages/:id { assignee_id }
 function setAssignee(p, s, id){
   s.assignee_id = id || null;
-  addLog(p, `На этап «${s.name}» назначен(а) ${id ? nameOf(id) : 'никто'}`); commit();
+  addLog(p, `На этап «${s.name}» назначен(а) ${id ? nameOf(id) : 'никто'}`); commit(); assignNote(id, p);
+}
+// список людей для выбора ответственного; «не вошёл» — пока проект ему не откроется
+const peopleOpts = (val, empty) => (empty != null ? `<option value="">${esc(empty)}</option>` : '') + db.users.map(u =>
+  `<option value="${u.id}" ${u.id === val ? 'selected' : ''}>${esc(u.name || 'Вы')}${u.id !== ME && !u.account_id && cloud.store ? ' (не вошёл)' : u.status === 'invited' && !cloud.store ? ' (приглашён)' : ''}</option>`).join('');
+// после назначения подсказываем, увидит ли человек проект
+function assignNote(id, p){
+  const u = userById(id); if (!u || u.id === ME || !cloud.store || GUEST || p?._ext) return;
+  if (u.account_id) toast(`${u.name} видит «${p.name}» в своих проектах`);
+  else toast(`${u.name} ещё не вошёл(ла) в приложение. ${u.invite?.code ? 'Проект откроется после входа по ссылке.' : 'Пригласите его по ссылке в «Команде» — проект откроется сам.'}`);
 }
 // POST /api/projects/:id/move { position }
 function moveTo(p, pos){
@@ -1586,7 +1597,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
     }).join('');
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" data-pmcol="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
-        <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : ''}</header>
+        <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}</header>
       <div class="pf-cards">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
       ${canEdit ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
     </section>`;
@@ -1685,7 +1696,7 @@ function renderKanban(){
       <div class="meta">${esc(p.client)}, PM ${esc(short(p.pm_id))}${execTxt(p)}</div>
       <div class="stline"><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span><span>${h.note}</span></div>
       ${c ? `<div class="meta">${esc(c.name)}${c.subs?.length ? `, подэтапы ${subsDone} из ${c.subs.length}` : ''}. ${esc(short(whoId(p, c)))}</div>` : ''}
-      <div class="ctrl">${statusSel}${moveSel}</div></article>`;
+      <div class="ctrl">${statusSel}${moveSel}${c ? `<select class="wide" data-qassign="${p.id}|${c.id}" aria-label="Ответственный за этап ${esc(c.name)}">${peopleOpts(c.assignee_id, 'Ответственный не назначен')}</select>` : ''}</div></article>`;
   };
   const colHtml = c => {
     const own = typeof c.pos === 'number';
@@ -1926,7 +1937,7 @@ function renderTeam(){
 }
 
 // статус сотрудника: вошёл в приложение / ждём входа по ссылке / только в списке
-const memberStatus = (u, isMe) => isMe || u.account_id ? '<span class="st-act">В команде</span>' + (u.account_id ? '<br><span class="hint">вошёл в приложение</span>' : '')
+const memberStatus = (u, isMe) => isMe || u.account_id ? '<span class="st-act">В команде</span>' + (u.account_id ? `<br><span class="hint">${u.viaLink ? 'вошёл по ссылке на доску' : 'вошёл в приложение'}</span>` : '')
   : u.invite?.code ? '<span class="st-inv">Ждём входа по ссылке</span>' : u.status === 'invited' ? '<span class="st-inv">Приглашён</span>' : '<span class="st-act">В команде</span><br><span class="hint">без входа в приложение</span>';
 function openInvite(){
   ui.open = null;
@@ -2344,8 +2355,8 @@ document.addEventListener('change', e => {
         .then(yes => { if (yes) changeTemplate(p, t.id); else renderDrawer(); });
       return;
     }
-    if (el.id === 'pPm') return updateProject(p, 'pm_id', el.value, `PM: ${nameOf(el.value)}`);
-    if (el.id === 'pWorker') return updateProject(p, 'worker_id', el.value || null, `Исполнитель: ${el.value ? nameOf(el.value) : 'не назначен'}`);
+    if (el.id === 'pPm'){ updateProject(p, 'pm_id', el.value, `PM: ${nameOf(el.value)}`); return assignNote(el.value, p); }
+    if (el.id === 'pWorker'){ updateProject(p, 'worker_id', el.value || null, `Исполнитель: ${el.value ? nameOf(el.value) : 'не назначен'}`); return assignNote(el.value, p); }
     if (el.id === 'pPri') return updateProject(p, 'priority', el.value, `Приоритет: ${PRI[el.value][0].toLowerCase()}`);
     if (el.id === 'pBudget'){ const v = el.value === '' ? null : Math.max(0, +el.value); return updateProject(p, 'budget', v, `Бюджет: ${money(v)}`); }
     if (el.id === 'pDl') return updateProject(p, 'deadline', el.value, `Общий дедлайн: ${fmt(el.value)}`);
@@ -3169,6 +3180,7 @@ function renderTaskModal(focusSel){
           : `<p class="hint">Пунктов пока нет.</p>${editable && sub && cardTplFor(p, sub.name)?.c?.length ? `<button class="ghost" data-tfill>Заполнить из шаблона «${esc(sub.name)}»</button>` : ''}`}</section>
       <section class="tk-sec"><h3>Результат</h3>
         <div class="row"><input data-tres value="${esc(t.result_link)}" placeholder="Ссылка на сданную работу" inputmode="url" aria-label="Ссылка на результат">${res ? `<a class="ghost" href="${esc(res)}" target="_blank" rel="noopener noreferrer">Открыть</a>` : ''}</div></section>
+      ${editable && !p?._ext ? `<section class="tk-sec"><h3>Ответственный</h3><select class="tk-as" data-tqassign="${t.id}" aria-label="Ответственный за подэтап">${peopleOpts(t.assignee_id, s?.assignee_id ? `Как у этапа: ${short(s.assignee_id)}` : 'Как у этапа: не назначен')}</select></section>` : ''}
       <p class="hint tk-role">Ваша роль в проекте: ${ROLE_RU[role]}${p?._ext ? '. Изменения сразу видны владельцу проекта.' : ''}</p>`;
   } else {
     body = `<form class="form tk-form" id="tkForm" novalidate>
@@ -3367,6 +3379,15 @@ function productionCursor(p){
 }
 // Подэтап закрыт: если у него есть задача — по её чек-листу, иначе по отметке в воронке
 function subDone(p, s, x){ const t = taskFor(p.id, s.id, x.id); return t && t.checklist.length ? taskProgress(t).done : !!x.done; }
+const stageAssignSelect = (p, s) => p._ext ? '' : `<select class="pf-status" data-qassign="${p.id}|${s.id}" aria-label="Ответственный за этап ${esc(s.name)}">${peopleOpts(s.assignee_id, 'Ответственный не назначен')}</select>`;
+document.addEventListener('change', e => {
+  const q = e.target.dataset?.qassign;
+  if (q){ const [pid, sid] = q.split('|'); const p = projById(pid); const s = p?.stages.find(y => y.id === sid); if (s && canEditProject(p)) setAssignee(p, s, e.target.value); return; }
+  const tq = e.target.dataset?.tqassign;
+  if (tq){ const t = taskById(tq); const p = t && projById(t.project_id); if (!t || !canEditProject(p)) return;
+    t.assignee_id = e.target.value || null; addLog(p, `Подэтап «${t.title}»: ответственный ${t.assignee_id ? nameOf(t.assignee_id) : 'как у этапа'}`);
+    commit(); renderTaskModal(); assignNote(t.assignee_id, p); }
+});
 // «Мои проекты»: исполнитель сам меняет статус этапа и отмечает подэтапы без чек-листа — владелец видит это сразу
 const stageStatusSelect = (p, s) => `<select class="pf-status" data-mstatus="${p.id}|${s.id}" aria-label="Статус этапа ${esc(s.name)}">${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('')}</select>`;
 const tickCard = (p, s, x, here) => `<label class="pf-card pf-tick${x.done ? ' done' : ''}${here ? ' here' : ''}">
@@ -3428,7 +3449,7 @@ function renderProjectFocus(mine = false){
     }).join('');
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
-        <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : ''}</header>
+        <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}</header>
       <div class="pf-cards">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
       ${canEdit ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
     </section>`;
@@ -3874,6 +3895,7 @@ function onJoins(pid, snap){
   p.share = p.share || { members:[] }; p.share.guests = list;
   if (fresh.length && !snap.metadata?.fromCache){ addLog(p, `По ссылке вошли участники: ${fresh.length}`); toast(`В проект «${p.name}» вошли по ссылке: ${fresh.length}`); }
   save(); render(); if (ui.shareId === pid) renderShareMembers();
+  addLinkedPeople();
 }
 async function createLink(pid, role){
   const p = projById(pid); if (!p || p._ext) return;
@@ -4003,7 +4025,7 @@ document.addEventListener('click', e => {
   const add = e.target.closest('[data-shadd]');
   if (add){ const p = projById(ui.shareId); p.share = p.share || { members:[] }; p.share.members = p.share.members || [];
     if (!p.share.members.some(m => m.id === add.dataset.shadd)) p.share.members.push({ id:add.dataset.shadd, role:ui.shareRole || 'worker', at:new Date().toISOString() });
-    shareChanged(p, 'Проектом поделились с участником'); $('#shQ').value = ''; shareSearch(''); toast('Доступ открыт'); return; }
+    shareChanged(p, 'Проектом поделились с участником'); $('#shQ').value = ''; shareSearch(''); toast('Доступ открыт'); addLinkedPeople(); return; }
   const del = e.target.closest('[data-shdel]');
   if (del){ const p = projById(ui.shareId); p.share.members = (p.share.members || []).filter(m => m.id !== del.dataset.shdel); shareChanged(p, 'Участник убран из проекта'); shareSearch($('#shQ')?.value.trim() || ''); }
 });
@@ -4067,19 +4089,51 @@ function watchTeam(){
   shared.subs.set('__team', [cloud.store.collection(`team/${cloud.uid}/members`).onSnapshot(s => { team.snap = s; processTeamJoins(); }, () => {})]);
 }
 function processTeamJoins(){
-  if (!team.snap || !cloud.ready || GUEST) return;
+  if (!cloud.ready || GUEST) return;
   let changed = false;
-  for (const d of team.snap.docs){
+  for (const d of team.snap?.docs || []){
     const acc = d.id, b = d.data() || {};
-    if (db.users.some(u => u.account_id === acc)) continue;
     const u = db.users.find(x => x.id !== ME && x.invite?.code && x.invite.code === b.code);
-    if (!u) continue;
+    const had = db.users.find(x => x.account_id === acc);
+    if (!u || had === u) continue;
+    if (had){ if (!had.viaLink) continue; mergeMember(had, u); }   // человек уже был в команде через ссылку на доску
     u.account_id = acc; u.status = 'active'; u.joined_at = new Date().toISOString();
     cloud.store.doc(`inv/${u.invite.code}`).delete().catch(() => {});   // ссылка одноразовая
     u.invite = null; changed = true;
     toast(`${u.name} принял(а) приглашение и вошёл(ла) в приложение`);
   }
   if (changed){ commit(); refreshProfiles(true); }
+  addLinkedPeople();
+}
+// переносим назначения с одной записи сотрудника на другую (один человек — одна запись)
+function mergeMember(from, to){
+  db.projects.forEach(p => { p.stages.forEach(s => { if (s.assignee_id === from.id) s.assignee_id = to.id; });
+    if (p.pm_id === from.id) p.pm_id = to.id; if (p.worker_id === from.id) p.worker_id = to.id; });
+  (db.tasks || []).forEach(t => { if (t.assignee_id === from.id) t.assignee_id = to.id; });
+  db.users = db.users.filter(x => x !== from);
+}
+// люди, вошедшие по ссылке на доску или добавленные в «Поделиться», появляются в «Команде»,
+// чтобы их можно было назначать ответственными в любых проектах
+let linkBusy = false;
+async function addLinkedPeople(){
+  if (GUEST || !cloud.ready || !cloud.user || linkBusy) return;
+  const ids = new Set();
+  db.projects.forEach(p => [...(p.share?.guests || []), ...(p.share?.members || []).filter(m => !m.auto)].forEach(m => ids.add(m.id)));
+  const missing = [...ids].filter(a => a !== cloud.uid && !db.users.some(u => u.account_id === a));
+  if (!missing.length) return;
+  linkBusy = true;
+  try {
+    const prof = await cloud.user.profiles(missing).catch(() => ({}));
+    let added = 0;
+    missing.forEach(a => {
+      if (db.users.some(u => u.account_id === a)) return;
+      const pr = prof[a] || {};
+      db.users.push({ id:'u' + uid(), name:pr.name || pr.email || 'Участник', email:pr.email || '', role:'specialist', dept:'Другое', capacity:3,
+        status:'active', account_id:a, avatar:pr.avatar || '', title:pr.title || '', contact:pr.contact || '', joined_at:new Date().toISOString(), viaLink:true });
+      added++;
+    });
+    if (added){ commit(); toast(added === 1 ? 'В «Команду» добавлен человек, вошедший по ссылке' : `В «Команду» добавлено вошедших по ссылке: ${added}`); }
+  } finally { linkBusy = false; }
 }
 
 // проекты, где сотрудник из команды назначен, открываются ему автоматически

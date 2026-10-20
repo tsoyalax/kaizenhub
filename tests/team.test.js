@@ -101,7 +101,39 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const sp2 = be.rows.get('sp/' + pid);
   assert.ok(!sp2 || !(sp2.data.memberIds || []).includes(T)); ok('сняли с назначения — доступ к проекту закрыт');
 
-  assert.equal(own.errors.length, 0, own.errors.join('\n')); assert.equal(wk.errors.length, 0, wk.errors.join('\n')); ok('ошибок на страницах нет');
-  own.w.close(); wk.w.close();
+  // 6) выбор ответственного есть везде, где он показан
+  $(own, '[data-view="kanban"]').click(); await wait(150);
+  assert.ok(own.w.document.querySelectorAll('.card select[data-qassign]').length > 0); ok('«Канбан»: на карточке можно выбрать ответственного');
+  $(own, '[data-view="production"]').click(); await wait(150);
+  assert.ok(own.w.document.querySelectorAll('.pf-col select[data-qassign]').length > 0); ok('«Производство»: у каждого этапа можно выбрать ответственного');
+  const card = $(own, '.pf-card[data-pfsub]'); card.click(); await wait(200);
+  assert.ok($(own, '[data-tqassign]')); ok('окно подэтапа: ответственного можно выбрать без режима редактирования');
+  const tq = $(own, '[data-tqassign]'); change(own, tq, [...tq.options].find(o => o.textContent.startsWith('Тимур')).value); await wait(1500);
+  const tpid = [...be.rows.keys()].filter(k => /^sp\/[^/]+$/.test(k) && be.rows.get(k).data.memberIds.includes(T));
+  assert.ok(tpid.length >= 1); ok('назначение на подэтап тоже открывает проект');
+  change(own, $(own, '[data-tqassign]'), ''); await wait(300); $(own, '[data-tclose]').click(); await wait(1500);
+
+  // 7) человек вошёл по ссылке на доску — он появляется в «Команде», и его можно назначить на другой проект
+  const G = 'dddddddd-0000-0000-0000-000000000004';
+  be.profiles.set(G, { id: G, name: 'Гоша Ссылкин', email: 'g@x.y', avatar_url: '', job_title: 'Монтажёр', contact: '' });
+  const projs = [...own.w.document.querySelectorAll('.pf-item[data-pfsel]')].map(b => b.dataset.pfsel);
+  const p1 = projs[0], p2 = projs[1];
+  await own.w.createLink(p1, 'worker'); await wait(500);
+  const bcode = [...be.rows.values()].find(r => r.path.startsWith('inv/') && r.data.pid === p1).path.slice(4);
+  const gw = openApp(be, G, 'https://kz.test/?invite=' + bcode, { meta: { role: 'guest' } });
+  await wait(4000);
+  $(own, '[data-view="team"]').click(); await wait(1500);
+  const tt = own.w.document.getElementById('app').textContent;
+  assert.ok(tt.includes('Гоша Ссылкин') && tt.includes('вошёл по ссылке на доску'), tt.slice(0, 300)); ok('вошедший по ссылке на доску появился в «Команде»');
+  $(own, '[data-view="production"]').click(); await wait(150);
+  $(own, `.pf-item[data-pfsel="${p2}"]`).click(); await wait(150);
+  const qs = $(own, '.pf-col select[data-qassign]');
+  change(own, qs, [...qs.options].find(o => o.textContent.startsWith('Гоша')).value); await wait(4000);
+  assert.ok(be.rows.get('sp/' + p2).data.memberIds.includes(G)); ok('его можно назначить на другой проект прямо с доски');
+  const gtxt = gw.w.document.getElementById('app').textContent;
+  assert.equal(gw.w.document.querySelectorAll('.pf-item[data-pfsel]').length, 2, gtxt.slice(0, 200)); ok('он видит оба проекта: по ссылке и по назначению');
+
+  assert.equal(own.errors.length, 0, own.errors.join('\n')); assert.equal(wk.errors.length, 0, wk.errors.join('\n')); assert.equal(gw.errors.length, 0, gw.errors.join('\n')); ok('ошибок на страницах нет');
+  own.w.close(); wk.w.close(); gw.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });
