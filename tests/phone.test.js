@@ -39,7 +39,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(D.querySelectorAll('.mc').length > 3); ok('телефон: карточки проектов в новом виде');
   assert.ok(!$('.hero') && !$('.ring') && !$('.dchip') && !$('.pc-stagebox')); ok('телефон: нет цветной шапки, колец, цветных плашек и серых блоков');
   const c = $('.mc');
-  assert.ok(c.querySelector('.st-pill .pi') && c.querySelector('.tprog .ticks i') && /из \d+ этап/.test(c.querySelector('.tprog').textContent) && c.querySelector('.mc-stage')); ok('телефон: статус в рамке со значком, прогресс штрихами по этапам и текущий этап — как на компьютере');
+  assert.ok(c.querySelector('.st-pill .pi') && c.querySelector('.tprog .ticks i') && /\d+\/\d+/.test(c.querySelector('.tprog').textContent) && c.querySelector('.mc-stage')); ok('телефон: статус в рамке со значком, прогресс штрихами по этапам и текущий этап — как на компьютере');
   const chips = D.querySelectorAll('.mh-chips .chip[data-htile]');
   assert.equal(chips.length, 4); ok('телефон: фильтры по статусу чипами');
   const before = D.querySelectorAll('.mc').length; chips[0].click(); await wait(150);

@@ -24,20 +24,20 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme: dark;
-    --bg:#000000; --surface:#111113; --surface-2:#1A1A1D; --row:#111113; --ink:#F2F2F3; --muted:#8E8E96; --line:#232326; --line-strong:#36363B;
-    --accent:#F2F2F3; --accent-ink:#000000; --brand:#7C6CF6; --link:#7DB3FF; --focus:#7DB3FF; --soft:#262338;
+    --bg:#0C0C0E; --surface:#161618; --surface-2:#1F1F22; --row:#161618; --ink:#F2F2F3; --muted:#90909A; --line:#26262A; --line-strong:#38383E;
+    --accent:#F2F2F3; --accent-ink:#0C0C0E; --brand:#7C6CF6; --link:#7DB3FF; --focus:#7DB3FF; --soft:#262338;
     --card-hi:rgba(255,255,255,.025); --shadow:none;
     --g:#4ADE80; --g-bg:#0E2216; --y:#FBBF24; --y-bg:#261E08; --r:#F87171; --r-bg:#2A1213; --b:#B39DFF; --b-bg:#1D1832; --w:#60A5FA;
-    --n:#6E6E77; --n-bg:#161618; --d:#8E8E96; --d-bg:#0D0D0F;
+    --n:#6E6E77; --n-bg:#1A1A1D; --d:#90909A; --d-bg:#111113;
   }
 }
 :root[data-theme="dark"]{
   color-scheme: dark;
-  --bg:#000000; --surface:#111113; --surface-2:#1A1A1D; --row:#111113; --ink:#F2F2F3; --muted:#8E8E96; --line:#232326; --line-strong:#36363B;
-  --accent:#F2F2F3; --accent-ink:#000000; --brand:#7C6CF6; --link:#7DB3FF; --focus:#7DB3FF; --soft:#262338;
+  --bg:#0C0C0E; --surface:#161618; --surface-2:#1F1F22; --row:#161618; --ink:#F2F2F3; --muted:#90909A; --line:#26262A; --line-strong:#38383E;
+  --accent:#F2F2F3; --accent-ink:#0C0C0E; --brand:#7C6CF6; --link:#7DB3FF; --focus:#7DB3FF; --soft:#262338;
   --card-hi:rgba(255,255,255,.025); --shadow:none;
   --g:#4ADE80; --g-bg:#0E2216; --y:#FBBF24; --y-bg:#261E08; --r:#F87171; --r-bg:#2A1213; --b:#B39DFF; --b-bg:#1D1832; --w:#60A5FA;
-  --n:#6E6E77; --n-bg:#161618; --d:#8E8E96; --d-bg:#0D0D0F;
+  --n:#6E6E77; --n-bg:#1A1A1D; --d:#90909A; --d-bg:#111113;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -176,7 +176,7 @@ td:has(.cell-as:focus-visible) .cell{outline:2px solid var(--focus);outline-offs
 
 /* ---------- Компактный режим ---------- */
 table.cx{width:100%;border-collapse:collapse;min-width:800px;table-layout:fixed}
-.cx col.c1{width:26%}.cx col.c6{width:12%}.cx col.c2{width:17%}.cx col.c5{width:18%}.cx col.c3{width:13%}.cx col.c4{width:14%}
+.cx col.c7{width:35%}.cx col.c1{width:26%}.cx col.c6{width:12%}.cx col.c2{width:17%}.cx col.c5{width:18%}.cx col.c3{width:13%}.cx col.c4{width:14%}
 .cx th{font-size:12.5px;font-weight:500;color:var(--muted);text-align:left;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--line)}
 .cx td{padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle;overflow:hidden;text-overflow:ellipsis}
 .cx tbody tr:last-child td{border-bottom:0}
@@ -1141,9 +1141,14 @@ table.cx{border-collapse:collapse}
 /* прогресс штрихами */
 .tprog{display:flex;align-items:center;gap:10px}
 .ticks{display:inline-flex;gap:2px;height:16px;align-items:stretch}
-.ticks i{width:4px;border-radius:1.5px;background:color-mix(in srgb,var(--ink) 16%,transparent)}
-.ticks{gap:3px}
-.tp-n{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.ticks i{width:4px;border-radius:1.5px;background:color-mix(in srgb,var(--ink) 16%,transparent);align-self:center;height:12px}
+.ticks{gap:3px;align-items:center;flex:none;height:18px}
+.ticks i.on{background:color-mix(in srgb,var(--fc) 60%,transparent)}
+.ticks i.cur{background:var(--fc);height:18px;box-shadow:0 0 8px color-mix(in srgb,var(--fc) 45%,transparent)}
+.tprog{min-width:0}
+.tp-n{font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tp-n b{color:var(--muted);font-weight:500;margin-right:4px}
+.mc-stage{display:grid;gap:2px}.mc-subnow{color:var(--muted);font-size:12.5px}
 .ticks i.on{background:var(--fc)}
 .tprog b{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums}
 .cx .tprog + small{margin-top:2px}
@@ -2021,8 +2026,7 @@ function renderPhoneList(list){
       <button class="mc-main" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''}>
         <span class="mc-r1"><b>${esc(p.name)}</b>${stPill(risk, risk === 'green' ? 'В работе' : RISK_RU[risk])}</span>
         <small class="mc-sub">${esc(p.client)} · PM ${esc(short(p.pm_id))}${p.priority === 'high' ? ' · <span class="hp">Высокий</span>' : ''}</small>
-        <span class="mc-stage">${c ? `<span class="mc-n">${c.position + 1}/${n}</span> ${esc(c.name)}${sub ? `<small> · ${esc(sub)}</small>` : ''}` : 'Все этапы пройдены'}</span>
-        ${ticksHtml(doneN, n, risk)}
+        <span class="mc-stage">${ticksHtml(p, risk)}${sub ? `<small class="mc-subnow">${esc(sub)}</small>` : ''}</span>
         <span class="mc-foot"><span>${c ? `${stageDue}${whoId(p, c) ? ` · ${esc(short(whoId(p, c)))}` : ''}` : ''}</span><span>${dlTxt}</span></span>
       </button>
       <button class="mc-more" data-mxtoggle="${p.id}" aria-expanded="${open}">${open ? 'Скрыть этапы' : `Этапы · ${doneN} из ${n}`}</button>
@@ -2127,9 +2131,11 @@ const STATUS_ICO = {
 };
 // прогресс штрихами: цвет по статусу («в работе» — синий, «у клиента» — фиолетовый)
 // прогресс по этапам: один штрих на этап, сданные закрашены цветом статуса
-function ticksHtml(done, total, key){
-  const tk = key === 'green' ? 'prog' : key;
-  return `<div class="tprog t-${tk}" role="img" aria-label="Пройдено ${done} из ${total} этапов"><span class="ticks">${Array.from({ length:total }, (_, i) => `<i${i < done ? ' class="on"' : ''}></i>`).join('')}</span><span class="tp-n">${done} из ${total} ${plural(total, 'этапа', 'этапов', 'этапов')}</span></div>`;
+function ticksHtml(p, key){
+  const tk = key === 'green' ? 'prog' : key; const n = p.stages.length; const c = currentStage(p); const at = c ? p.stages.indexOf(c) : n;
+  const bars = p.stages.map((s, i) => `<i class="${s.status === 'done' ? 'on' : i === at ? 'cur' : ''}" title="${i + 1}. ${esc(s.name)}"></i>`).join('');
+  const txt = c ? `<span class="tp-n"><b>${at + 1}/${n}</b> ${esc(c.name)}</span>` : `<span class="tp-n"><b>${n}/${n}</b> Все этапы пройдены</span>`;
+  return `<div class="tprog t-${tk}" role="img" aria-label="Этап ${c ? at + 1 : n} из ${n}${c ? ': ' + esc(c.name) : ''}"><span class="ticks">${bars}</span>${txt}</div>`;
 }
 const stPill = (key, label) => `<span class="pill st-pill s-${key}">${STATUS_ICO[key] || STATUS_ICO.gray}${label}</span>`;
 function renderCompact(list){
@@ -2143,20 +2149,19 @@ function renderCompact(list){
       const doneN = p.stages.filter(s => s.status === 'done').length;
       const pct = Math.round(doneN / n * 100);
       const segs = p.stages.map(s => `<i class="pseg p-${s.status === 'done' ? 'done' : (c && s.id === c.id ? h.key : 'todo')}" title="${esc(s.name)}"></i>`).join('');
-      const progress = ticksHtml(doneN, n, !c ? 'done' : h.key);
+      const progress = ticksHtml(p, !c ? 'done' : h.key);
       const last = p.stages.at(-1);
       const due = c ? `${fmt(c.due_date)}<small>${h.note}</small>` : `${fmt(last.completed_at || last.due_date)}<small>Сдан</small>`;
       return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
         <td title="${esc(p.name)}"><span class="cx-name"><span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
         <td>${stPill(h.key, h.label)}</td>
         <td>${progress}</td>
-        <td>${stage}</td>
         <td class="start">${fmt(p.start_date)}<small>${startDay(p)}</small></td>
         <td class="due">${due}</td></tr>`;
     }).join('');
     return `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2>
-      <div class="scroll"><table class="cx"><colgroup><col class="c1"><col class="c3"><col class="c5"><col class="c2"><col class="c6"><col class="c4"></colgroup>
-      <thead><tr><th>Проект</th><th>Статус</th><th>Прогресс</th><th>Этап</th><th>Старт</th><th>Срок</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+      <div class="scroll"><table class="cx"><colgroup><col class="c1"><col class="c3"><col class="c7"><col class="c6"><col class="c4"></colgroup>
+      <thead><tr><th>Проект</th><th>Статус</th><th>Этап</th><th>Старт</th><th>Срок</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
   }).join('');
 }
 
@@ -5579,7 +5584,7 @@ document.querySelectorAll('.tabs [data-view]').forEach(b => { const m = MNAV[b.d
 
 // ---------- Строка раздела и сводка на главной ----------
 function paintPage(){
-  const d = $('#khDash'); if (!d) return; const show = ui.view === 'matrix' && !GUEST && !IS_PHONE.matches && db.projects.some(p => p.state !== 'archived');
+  const d = $('#khDash'); if (!d) return; const show = false;   // сводку и приветствие убрали: сразу фильтры и список
   d.hidden = !show; d.innerHTML = show ? dashHtml() : '';
 }
 function dashHtml(){
