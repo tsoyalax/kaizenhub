@@ -11,11 +11,11 @@
 <style>
 :root{
   color-scheme: light;
-  --bg:#F4F4F6; --surface:#FFFFFF; --surface-2:#F2F2F5; --row:#F4F4F7; --ink:#111114; --muted:#6B6B75; --line:#E5E5EA; --line-strong:#D2D2D9;
-  --accent:#111114; --accent-ink:#FFFFFF; --brand:#6A5AE0; --link:#4F5BD5; --focus:#4F5BD5; --soft:#EEF0FD;
-  --card-hi:rgba(255,255,255,.9); --shadow:0 1px 2px rgba(16,16,24,.04),0 6px 20px rgba(16,16,24,.05);
-  --g:#16A34A; --g-bg:#ECF8F0; --y:#C2410C; --y-bg:#FFF4E8; --r:#DC2626; --r-bg:#FDF0F0;
-  --b:#4F5BD5; --b-bg:#EEF0FD; --n:#9A9AA3; --n-bg:#F2F2F4; --d:#6B6B75; --d-bg:#F6F6F8;
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F6F6F8; --row:#FFFFFF; --ink:#111114; --muted:#6B6B75; --line:#E8E8EC; --line-strong:#D6D6DC;
+  --accent:#111114; --accent-ink:#FFFFFF; --brand:#6A5AE0; --link:#2563EB; --focus:#2563EB; --soft:#F4F1FF;
+  --card-hi:transparent; --shadow:none;
+  --g:#16A34A; --g-bg:#EEF9F2; --y:#C2410C; --y-bg:#FFF5EB; --r:#DC2626; --r-bg:#FEF1F1;
+  --b:#7C3AED; --b-bg:#F4EFFF; --w:#2563EB; --n:#9A9AA3; --n-bg:#F4F4F6; --d:#6B6B75; --d-bg:#F8F8FA;
   --radius:12px; --cell-w:140px;
   font-family:"Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   box-sizing:border-box;
@@ -24,20 +24,20 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme: dark;
-    --bg:#0D0D0F; --surface:#161618; --surface-2:#1E1E21; --row:#1C1C1F; --ink:#F4F4F5; --muted:#8D8D96; --line:#242428; --line-strong:#35353B;
-    --accent:#F4F4F5; --accent-ink:#0D0D0F; --brand:#7C6CF6; --link:#8C9DFF; --focus:#8C9DFF; --soft:#171B33;
-    --card-hi:rgba(255,255,255,.035); --shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 30px rgba(0,0,0,.35);
-    --g:#4ADE80; --g-bg:#0F2418; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#7B8CFF; --b-bg:#161C3A;
-    --n:#6B6B74; --n-bg:#1D1D21; --d:#8D8D96; --d-bg:#18181B;
+    --bg:#1A1A1D; --surface:#222226; --surface-2:#2A2A2F; --row:#222226; --ink:#F2F2F3; --muted:#9A9AA3; --line:#2F2F35; --line-strong:#404047;
+    --accent:#F2F2F3; --accent-ink:#1A1A1D; --brand:#7C6CF6; --link:#7DB3FF; --focus:#7DB3FF; --soft:#262338;
+    --card-hi:rgba(255,255,255,.025); --shadow:none;
+    --g:#4ADE80; --g-bg:#183224; --y:#FBBF24; --y-bg:#352B12; --r:#F87171; --r-bg:#3B1F21; --b:#B39DFF; --b-bg:#2C2645; --w:#60A5FA;
+    --n:#7A7A83; --n-bg:#28282D; --d:#9A9AA3; --d-bg:#212125;
   }
 }
 :root[data-theme="dark"]{
   color-scheme: dark;
-  --bg:#0D0D0F; --surface:#161618; --surface-2:#1E1E21; --row:#1C1C1F; --ink:#F4F4F5; --muted:#8D8D96; --line:#242428; --line-strong:#35353B;
-  --accent:#F4F4F5; --accent-ink:#0D0D0F; --brand:#7C6CF6; --link:#8C9DFF; --focus:#8C9DFF; --soft:#171B33;
-  --card-hi:rgba(255,255,255,.035); --shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 30px rgba(0,0,0,.35);
-  --g:#4ADE80; --g-bg:#0F2418; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#7B8CFF; --b-bg:#161C3A;
-  --n:#6B6B74; --n-bg:#1D1D21; --d:#8D8D96; --d-bg:#18181B;
+  --bg:#1A1A1D; --surface:#222226; --surface-2:#2A2A2F; --row:#222226; --ink:#F2F2F3; --muted:#9A9AA3; --line:#2F2F35; --line-strong:#404047;
+  --accent:#F2F2F3; --accent-ink:#1A1A1D; --brand:#7C6CF6; --link:#7DB3FF; --focus:#7DB3FF; --soft:#262338;
+  --card-hi:rgba(255,255,255,.025); --shadow:none;
+  --g:#4ADE80; --g-bg:#183224; --y:#FBBF24; --y-bg:#352B12; --r:#F87171; --r-bg:#3B1F21; --b:#B39DFF; --b-bg:#2C2645; --w:#60A5FA;
+  --n:#7A7A83; --n-bg:#28282D; --d:#9A9AA3; --d-bg:#212125;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -1035,7 +1035,7 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
 .tile:active{transform:scale(.96)}
 .tile b{display:block;font-size:22px;font-weight:700;line-height:1.1}
 .tile span{font-size:11px;font-weight:600;line-height:1.2;display:block}
-.tile.t-red b{color:#DC2626}.tile.t-yellow b{color:#D97706}.tile.t-blue b{color:#2563EB}.tile.t-green b{color:#15803D}
+.tile.t-red b{color:var(--r)}.tile.t-yellow b{color:var(--y)}.tile.t-blue b{color:var(--b)}.tile.t-green b{color:var(--g)}
 .tile[aria-pressed="true"]{box-shadow:0 0 0 3px #fff,0 0 0 5px rgba(255,255,255,.4);transform:translateY(-1px)}
 .tiles:has([aria-pressed="true"]) .tile[aria-pressed="false"]{opacity:.6}
 .hero-reset{margin-top:10px;width:100%;border:0;border-radius:12px;background:rgba(255,255,255,.18);color:#fff;font:inherit;font-weight:600;font-size:13.5px;padding:9px;cursor:pointer}
@@ -1101,7 +1101,7 @@ body{letter-spacing:-.005em}
 .kd-sub em{font-style:normal;color:var(--ink);font-weight:600}
 .kd-ico{position:absolute;right:16px;top:50%;transform:translateY(-50%);width:52px;height:52px;border-radius:14px;display:grid;place-items:center;color:var(--muted);
   background:linear-gradient(160deg,var(--surface-2),color-mix(in srgb,var(--surface-2) 40%,var(--bg)));border:1px solid var(--line);
-  box-shadow:0 1px 0 var(--card-hi) inset,0 8px 18px rgba(0,0,0,.12)}
+  box-shadow:var(--shadow)}
 .kd-ico svg{width:22px;height:22px}
 .kd-card[data-kdrisk="red"] .kd-ico{color:var(--r)}.kd-card[data-kdrisk="blue"] .kd-ico{color:var(--b)}.kd-card[data-kdrisk="done"] .kd-ico{color:var(--g)}
 .kd-card:not([data-kdrisk]) .kd-ico,.kd-card[data-kdrisk=""] .kd-ico{color:var(--brand)}
@@ -1119,19 +1119,21 @@ body{letter-spacing:-.005em}
 @media (min-width:1100px){.top{flex-wrap:nowrap;gap:0 18px}.tabs{flex:0 1 auto;min-width:0;scrollbar-width:none}.top-actions{flex:none}}
 @media (min-width:1480px){.tabs button svg{display:block;width:16px;height:16px;flex:none;stroke-width:1.9}}
 
+.mc .tprog{margin:4px 0 2px}.mc .ticks{flex:1;justify-content:space-between;height:18px}.mc .ticks i{width:2.5px}
 /* ---------- Список проектов (компактный вид) ---------- */
 table.cx{border-collapse:separate;border-spacing:0 6px;margin-top:-6px}
-.grp .scroll:has(table.cx){background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px 14px 8px}
+.grp .scroll:has(table.cx){background:transparent;border:0;border-radius:0;box-shadow:none;padding:0}
 .cx th{background:transparent;border-bottom:0;padding:12px 14px 4px;font-size:12.5px;font-weight:500;color:var(--muted)}
-.cx td{background:var(--row);border-bottom:0;padding:11px 14px;transition:background .12s}
-.cx td:first-child{border-radius:11px 0 0 11px}
-.cx td:last-child{border-radius:0 11px 11px 0}
-.cx tbody tr:hover td,.cx tbody tr:focus-visible td{background:color-mix(in srgb,var(--row) 70%,var(--line-strong))}
+.cx td{background:var(--row);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 14px}
+.cx td:first-child{border-radius:12px 0 0 12px;border-left:1px solid var(--line)}
+.cx td:last-child{border-radius:0 12px 12px 0;border-right:1px solid var(--line)}
+.cx tbody tr:last-child td{border-bottom:1px solid var(--line)}
+.cx tbody tr:hover td,.cx tbody tr:focus-visible td{background:var(--surface-2)}
 .cx-name{display:flex;align-items:center;gap:12px;min-width:0}
 .cx-nt{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .fold{flex:none;width:26px;height:22px;display:grid;place-items:center}
 .fold svg{width:26px;height:22px;fill:var(--fc);filter:drop-shadow(0 2px 4px color-mix(in srgb,var(--fc) 35%,transparent))}
-.t-prog{--fc:var(--b)}.t-done{--fc:var(--g)}.t-red{--fc:var(--r)}.t-yellow{--fc:var(--y)}.t-blue{--fc:#8B5CF6}.t-gray{--fc:var(--n)}
+.t-prog{--fc:var(--w)}.t-done{--fc:var(--g)}.t-red{--fc:var(--r)}.t-yellow{--fc:var(--y)}.t-blue{--fc:var(--b)}.t-gray{--fc:var(--n)}
 /* прогресс штрихами */
 .tprog{display:flex;align-items:center;gap:10px}
 .ticks{display:inline-flex;gap:2px;height:16px;align-items:stretch}
@@ -1143,7 +1145,7 @@ table.cx{border-collapse:separate;border-spacing:0 6px;margin-top:-6px}
 .pill.st-pill{gap:6px;padding:3px 9px 3px 7px;border-radius:8px;font-size:12.5px;border:1px solid color-mix(in srgb,currentColor 38%,transparent);
   background:color-mix(in srgb,currentColor 12%,transparent)}
 .pill.st-pill .pi{width:13px;height:13px;flex:none}
-.pill.st-pill.s-green{color:var(--b)}
+.pill.st-pill.s-green{color:var(--w)}
 .pill.st-pill.s-gray{color:var(--muted)}
 .pill.st-pill.s-done{color:var(--g)}
 
@@ -2011,10 +2013,10 @@ function renderPhoneList(list){
     const dlTxt = p.state === 'completed' ? 'Проект завершён' : target ? `${p.deadline ? 'Дедлайн' : 'Финиш'} ${fmt(target)}${late ? ` · <span class="ut-over">план позже на ${days(diffDays(end, p.deadline))}</span>` : ''}` : '';
     return `<article class="pc mc">
       <button class="mc-main" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''}>
-        <span class="mc-r1"><b>${esc(p.name)}</b><span class="pill s-${risk}"><i class="sw ${risk}"></i>${RISK_RU[risk]}</span></span>
+        <span class="mc-r1"><b>${esc(p.name)}</b>${stPill(risk, risk === 'green' ? 'В работе' : RISK_RU[risk])}</span>
         <small class="mc-sub">${esc(p.client)} · PM ${esc(short(p.pm_id))}${p.priority === 'high' ? ' · <span class="hp">Высокий</span>' : ''}</small>
         <span class="mc-stage">${c ? `<span class="mc-n">${c.position + 1}/${n}</span> ${esc(c.name)}${sub ? `<small> · ${esc(sub)}</small>` : ''}` : 'Все этапы пройдены'}</span>
-        <span class="pbar" role="img" aria-label="Пройдено ${doneN} из ${n} этапов">${segs}</span>
+        ${ticksHtml(Math.round(doneN / n * 100), risk, `Пройдено ${doneN} из ${n} этапов`, 36)}
         <span class="mc-foot"><span>${c ? `${stageDue}${whoId(p, c) ? ` · ${esc(short(whoId(p, c)))}` : ''}` : ''}</span><span>${dlTxt}</span></span>
       </button>
       <button class="mc-more" data-mxtoggle="${p.id}" aria-expanded="${open}">${open ? 'Скрыть этапы' : `Этапы · ${doneN} из ${n}`}</button>
@@ -2117,6 +2119,12 @@ const STATUS_ICO = {
   gray:sico('<circle cx="12" cy="12" r="9" stroke-dasharray="2.6 3"/>'),
   done:sico('<circle cx="12" cy="12" r="9"/><path d="m8 12.2 2.8 2.8L16 9.6"/>'),
 };
+// прогресс штрихами: цвет по статусу («в работе» — синий, «у клиента» — фиолетовый)
+function ticksHtml(pct, key, label, n = 14){
+  const on = Math.round(pct / 100 * n); const tk = key === 'green' ? 'prog' : key;
+  return `<div class="tprog t-${tk}" role="img" aria-label="${esc(label)}"><span class="ticks">${Array.from({ length:n }, (_, i) => `<i${i < on ? ' class="on"' : ''}></i>`).join('')}</span><b>${pct}%</b></div>`;
+}
+const stPill = (key, label) => `<span class="pill st-pill s-${key}">${STATUS_ICO[key] || STATUS_ICO.gray}${label}</span>`;
 function renderCompact(list){
   app.innerHTML = groupsFor(list).map(g => {
     const rows = g.items.map(p => {
@@ -2128,17 +2136,15 @@ function renderCompact(list){
       const doneN = p.stages.filter(s => s.status === 'done').length;
       const pct = Math.round(doneN / n * 100);
       const segs = p.stages.map(s => `<i class="pseg p-${s.status === 'done' ? 'done' : (c && s.id === c.id ? h.key : 'todo')}" title="${esc(s.name)}"></i>`).join('');
-      const tk = !c ? 'done' : h.key === 'green' ? 'prog' : h.key;
-      const TICKS = 14, on = Math.round(pct / 100 * TICKS);
-      const progress = `<div class="tprog t-${tk}" role="img" aria-label="Пройдено ${doneN} из ${n} этапов, ${pct}%"><span class="ticks">${Array.from({ length:TICKS }, (_, i) => `<i${i < on ? ' class="on"' : ''}></i>`).join('')}</span><b>${pct}%</b></div><small>${doneN} из ${n} этапов</small>`;
+      const progress = ticksHtml(pct, !c ? 'done' : h.key, `Пройдено ${doneN} из ${n} этапов, ${pct}%`) + `<small>${doneN} из ${n} этапов</small>`;
       const last = p.stages.at(-1);
       const due = c ? `${fmt(c.due_date)}<small>${h.note}</small>` : `${fmt(last.completed_at || last.due_date)}<small>Сдан</small>`;
       return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
-        <td title="${esc(p.name)}"><span class="cx-name"><span class="fold t-${!c ? 'done' : h.key === 'green' ? 'prog' : h.key}" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.6l2 2h7.4A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5Z"/></svg></span><span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
+        <td title="${esc(p.name)}"><span class="cx-name"><span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
         <td class="start">${fmt(p.start_date)}<small>${startDay(p)}</small></td>
         <td>${stage}</td>
         <td>${progress}</td>
-        <td><span class="pill st-pill s-${h.key}">${STATUS_ICO[h.key] || STATUS_ICO.gray}${h.label}</span></td>
+        <td>${stPill(h.key, h.label)}</td>
         <td class="due">${due}</td></tr>`;
     }).join('');
     return `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2>
