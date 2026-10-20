@@ -134,6 +134,10 @@ table.mx{border-collapse:separate;border-spacing:0;min-width:100%}
 .cell .who.none{opacity:.7}
 .cell .who.inherit{opacity:.75;font-style:italic}
 .cell .age{font-size:11.5px;color:var(--muted)}
+.cx .age{display:block;font-size:12.5px;color:var(--muted)}
+.subnow{display:block;font-size:12px;color:var(--b);font-weight:500;line-height:1.3}
+.cell .subnow{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.cx td small.subnow,.pf-item small.subnow,.pm-chip small.subnow,.card .meta.subnow,.pc-stagebox .subnow{color:var(--b)}
 .cell-wrap .who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cell .who i{font-style:normal;font-size:10px;opacity:.6}
 .cell-wrap{position:relative;width:var(--cell-w)}
@@ -1512,13 +1516,13 @@ function renderMatrix(){
         const dim = dimOn && h.key !== ui.risk ? ' dim' : '';
         return `<td><div class="cell-wrap"><button class="cell s-${h.key}${cur && cur.id===s.id ? ' cur':''}${dim}" data-open="${p.id}" data-stage="${s.id}" title="${esc(s.name)}: ${esc(STATUS[s.status])}">
           ${g.tpl ? '' : `<span class="sn">${esc(s.name)}</span>`}
-          <span class="st">${h.label}</span><span class="dl">${h.note}</span>${stageAge(s)}
+          <span class="st">${h.label}</span><span class="dl">${h.note}</span>${stageAge(s)}${cur && cur.id === s.id && curSubTxt(p) ? `<span class="subnow">▸ ${esc(curSubTxt(p))}</span>` : ''}
           ${cellWho(p, s)}</button>
           <select class="cell-as" data-qassign="${p.id}|${s.id}" aria-label="Ответственный за этап «${esc(s.name)}», проект ${esc(p.name)}" title="Сменить ответственного">${peopleOpts(s.assignee_id, p.worker_id ? `Как у проекта: ${short(p.worker_id)}` : 'Не назначен')}</select></div></td>`;
       }).join('');
       return `<tr><th class="pcol"><button class="prow" data-open="${p.id}"><b>${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</b>
         <small>${esc(p.client)}</small>
-        <small>Старт ${fmt(p.start_date)}${p.state !== 'completed' && p.start_date <= today() ? `, ${diffDays(today(), p.start_date) + 1}-й день` : ''}</small>
+        <small>${startTxt(p)}</small>
         <small class="${late ? 'late' : p.state === 'completed' ? '' : 'ut-' + urg(p.deadline || end).k}">Финиш ${fmt(end)}${late ? `, позже дедлайна ${fmt(p.deadline)}` : p.state === 'completed' ? '' : `, ${urg(p.deadline || end).txt}`}</small></button>
         <div class="prow-people">
           <label>PM <select data-ppm="${p.id}" aria-label="PM проекта ${esc(p.name)}">${pmOpts(p)}</select></label>
@@ -1584,10 +1588,10 @@ function renderPhoneList(list){
     return `<article class="pc pc2 r-${risk}">
       <button class="pc-main" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''}>
         <span class="pc-tags"><span class="pc-badge b-${risk}">${RISK_RU[risk]}</span>${p.priority === 'high' ? '<span class="hp">Высокий приоритет</span>' : ''}</span>
-        <span class="pc-head"><span class="pc-ttl"><b>${esc(p.name)}</b><small class="pc-sub">${esc(p.client)} · PM ${esc(short(p.pm_id))}${execTxt(p, ' · ')}</small></span>${ring(pct, risk)}</span>
+        <span class="pc-head"><span class="pc-ttl"><b>${esc(p.name)}</b><small class="pc-sub">${esc(p.client)} · PM ${esc(short(p.pm_id))}${execTxt(p, ' · ')}</small><small class="pc-sub">${startTxt(p)}</small></span>${ring(pct, risk)}</span>
         <span class="pc-stagebox">
           <span class="pc-lbl">${c ? `Этап ${c.position + 1} из ${n}` : 'Этапы'}</span>
-          <b class="pc-sname">${c ? esc(c.name) : 'Все этапы пройдены'}</b>
+          <b class="pc-sname">${c ? esc(c.name) : 'Все этапы пройдены'}</b>${c && curSubTxt(p) ? `<small class="subnow">Подэтап: ${esc(curSubTxt(p))}</small>` : ''}
           ${c ? `<span class="pc-row">${stageChip}<span class="pc-who">${whoId(p, c) ? esc(short(whoId(p, c))) : '<span class="pc-none">без ответственного</span>'}</span></span>` : ''}
           <span class="pbar" role="img" aria-label="Пройдено ${doneN} из ${n} этапов">${segs}</span>
         </span>
@@ -1615,7 +1619,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
     const c = currentStage(x); const r = projectRisk(x); const xp = projectProgress(x);
     return `<button class="pm-chip${x.id === p.id ? ' on' : ''}" data-pfsel="${x.id}" aria-current="${x.id === p.id}">
       <span class="pm-cn"><i class="sw ${r}"></i>${esc(x.name)}</span>
-      <small>${c ? `${c.position + 1}/${x.stages.length} · ${esc(c.name)}` : 'Все этапы пройдены'}</small>
+      <small>${c ? `${c.position + 1}/${x.stages.length} · ${esc(c.name)}` : 'Все этапы пройдены'}</small>${c && curSubTxt(x) ? `<small class="subnow">▸ ${esc(curSubTxt(x))}</small>` : ''}
       <span class="pf-mini" aria-hidden="true"><i style="width:${xp.pct}%"></i></span></button>`;
   }).join('');
   const prevBoard = app.querySelector('.pm-board')?.scrollLeft || 0;
@@ -1699,8 +1703,8 @@ function renderCompact(list){
       const last = p.stages.at(-1);
       const due = c ? `${fmt(c.due_date)}<small>${h.note}</small>` : `${fmt(last.completed_at || last.due_date)}<small>Сдан</small>`;
       return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
-        <td title="${esc(p.name)}">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></td>
-        <td>${stage}</td>
+        <td title="${esc(p.name)}">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small><small>${startTxt(p)}</small></td>
+        <td>${stage}${c && curSubTxt(p) ? `<small class="subnow">${esc(curSubTxt(p))}</small>` : ''}${c ? stageAge(c) : ''}</td>
         <td>${progress}</td>
         <td><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span></td>
         <td class="due">${due}</td></tr>`;
@@ -1733,6 +1737,7 @@ function renderKanban(){
       <div class="meta">${esc(p.client)}, PM ${esc(short(p.pm_id))}${execTxt(p)}</div>
       <div class="stline"><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span><span>${h.note}</span></div>
       ${c ? `<div class="meta">${esc(c.name)}${c.subs?.length ? `, подэтапы ${subsDone} из ${c.subs.length}` : ''}. ${esc(short(whoId(p, c)))}</div>` : ''}
+      ${c && curSubTxt(p) ? `<div class="meta subnow">Сейчас: ${esc(curSubTxt(p))}</div>` : ''}<div class="meta">${startTxt(p)}</div>
       <div class="ctrl">${statusSel}${moveSel}${c ? `<select class="wide" data-qassign="${p.id}|${c.id}" aria-label="Ответственный за этап ${esc(c.name)}">${peopleOpts(c.assignee_id, 'Ответственный не назначен')}</select>` : ''}</div></article>`;
   };
   const colHtml = c => {
@@ -3416,6 +3421,17 @@ function productionCursor(p){
 }
 // Подэтап закрыт: если у него есть задача — по её чек-листу, иначе по отметке в воронке
 function subDone(p, s, x){ const t = taskFor(p.id, s.id, x.id); return t && t.checklist.length ? taskProgress(t).done : !!x.done; }
+// на каком подэтапе сейчас проект: первый невыполненный подэтап текущего этапа
+function curSub(p){
+  const c = currentStage(p); const subs = c?.subs || [];
+  if (!subs.length) return null;
+  const i = subs.findIndex(x => !subDone(p, c, x));
+  return i < 0 ? { name:'все подэтапы сделаны', all:true, n:subs.length, total:subs.length } : { name:subs[i].name, n:i + 1, total:subs.length };
+}
+const curSubTxt = p => { const r = curSub(p); return r ? (r.all ? r.name : `${r.name} (${r.n}/${r.total})`) : ''; };
+// дата старта проекта и какой идёт день
+const startTxt = p => p.start_date > today() ? `Старт ${fmt(p.start_date)}, через ${days(diffDays(p.start_date, today()))}`
+  : `Старт ${fmt(p.start_date)}${p.state !== 'completed' ? `, ${diffDays(today(), p.start_date) + 1}-й день` : ''}`;
 // сколько дней идёт этап (или сколько занял, если закрыт)
 function stageAge(s){
   const from = s.started_at || (s.status !== 'not_started' ? s.planned_start : null);
@@ -3486,7 +3502,7 @@ function renderProjectFocus(mine = false){
     const nShare = shareCount(x);
     return `<div class="pf-row">${!mine ? `<button class="pf-share${nShare ? ' on' : ''}" data-share="${x.id}" aria-label="Поделиться проектом ${esc(x.name)}" title="Поделиться">${SHARE_ICON}${nShare ? `<span>${nShare}</span>` : ''}</button>` : ''}<button class="pf-item${x.id === p.id ? ' on' : ''}" data-pfsel="${x.id}" aria-current="${x.id === p.id}">
       <span class="pf-name"><i class="sw ${h.key}"></i>${esc(x.name)}</span>
-      <small>${c ? `${c.position + 1}. ${esc(c.name)}` : 'Все этапы пройдены'}, ${xp.pct}%</small>
+      <small>${c ? `${c.position + 1}. ${esc(c.name)}` : 'Все этапы пройдены'}, ${xp.pct}%</small>${c && curSubTxt(x) ? `<small class="subnow">▸ ${esc(curSubTxt(x))}</small>` : ''}
       <span class="pf-mini" aria-hidden="true"><i style="width:${xp.pct}%"></i></span></button></div>`;
   }).join('');
 

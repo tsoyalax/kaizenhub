@@ -78,7 +78,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
             templates: [{ id: 't3', name: 'Инфобизнес', stages: [{ id: 's1', name: 'Бриф', days: 1, subs: [] }] }],
             cardTpls: { 't3|старт проекта': { sub: 'Старт проекта', c: ['Пункт'] } } },
     projects: [{ id: 'imp1', name: 'Rustem', client: 'Аханби', template_id: 't3', pm_id: 'me', worker_id: 'uvlad', start_date: d(-1), deadline: d(10), state: 'active', share: { members: [{ id: 'old' }] },
-                 stages: [st('s1', 0, 'in_progress', d(-1), d(2), { assignee_id: 'uvlad' })], log: [] }],
+                 stages: [st('s1', 0, 'in_progress', d(-1), d(2), { assignee_id: 'uvlad', subs: [{ id: 'x1', name: 'Настройка кабинета', done: true }, { id: 'x2', name: 'Запуск кампании', done: false }] })], log: [] }],
     tasks: [{ id: 'tk1', project_id: 'imp1', stage_id: 's1', substage_id: null, title: 'Задача', assignee_id: 'uvlad', checklist: [{ id: 'c1', text: 'x', done: true }] }],
     reports: [{ id: 'r1', project_id: 'imp1', title: 'Отчёт' }] };
   const demoBefore = JSON.parse(w.localStorage.getItem('agency-pipeline-demo-v2')).projects.filter(p => p.demo).length;
@@ -111,6 +111,25 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     assert.ok(/Старт \d+ \S+, 2-й день/.test(o.w.document.getElementById('app').textContent)); ok('матрица: у проекта видна дата старта и какой идёт день');
     assert.ok(o.w.document.querySelector('.cell .age') && /идёт \d+/.test(o.w.document.querySelector('.cell .age').textContent)); ok('матрица: у идущего этапа видно, сколько дней он идёт');
   } else console.log('  (матрица в компактном виде — проверка подписей пропущена)');
+  // 6) текущий подэтап и старт проекта видны в компактной матрице, канбане и производстве
+  const imp = 'imp1';
+  const setDensity = v => { const b = [...o.w.document.querySelectorAll('button')].find(x => x.textContent.trim() === v); if (b) b.click(); };
+  o.w.document.querySelector('[data-view="matrix"]').click(); setDensity('Компактный'); await wait(150);
+  const row = o.w.document.querySelector(`.cx tr[data-open="${imp}"]`);
+  assert.ok(row && /Старт .+-й день/.test(row.textContent)); ok('компактная матрица: дата старта и день проекта');
+  setDensity('Подробный'); await wait(150);
+  const demoP = JSON.parse(o.w.localStorage.getItem('agency-pipeline-demo-v2')).projects.find(p => p.stages.some(s => s.status === 'in_progress' && s.subs?.length));
+  assert.ok(demoP, 'нет проекта с подэтапами');
+  setDensity('Компактный'); await wait(150);
+  const r2 = o.w.document.querySelector(`.cx tr[data-open="${demoP.id}"] .subnow`);
+  assert.ok(r2 && r2.textContent.includes('Запуск кампании (2/2)'), r2 && r2.textContent); ok('компактная матрица: виден текущий подэтап «Запуск кампании (2/2)»');
+  setDensity('Подробный'); await wait(150);
+  assert.ok(o.w.document.querySelector(`.mx button.cell.cur[data-open="${demoP.id}"] .subnow`)); ok('подробная матрица: подэтап в ячейке текущего этапа');
+  o.w.document.querySelector('[data-view="kanban"]').click(); await wait(150);
+  const kt = o.w.document.getElementById('kbTpl'); kt.value = demoP.template_id; kt.dispatchEvent(new o.w.Event('change', { bubbles: true })); await wait(150);
+  assert.ok(o.w.document.querySelector(`.card[data-card="${demoP.id}"] .subnow`)); ok('канбан: на карточке «Сейчас: подэтап»');
+  o.w.document.querySelector('[data-view="production"]').click(); await wait(150);
+  assert.ok(o.w.document.querySelector(`.pf-item[data-pfsel="${demoP.id}"] .subnow`)); ok('производство: в списке проектов виден подэтап');
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('ошибок на странице нет');
   o.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
