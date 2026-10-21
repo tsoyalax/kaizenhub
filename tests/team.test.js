@@ -51,6 +51,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(link && /\?invite=[a-z0-9]{8,32}$/.test(link), 'нет ссылки: ' + link); ok('после добавления сотрудника показана ссылка-приглашение');
   const code = link.split('invite=')[1];
   assert.equal(be.rows.get('inv/' + code).data.kind, 'team'); ok('ссылка в команду записана в базу');
+  { const m = $(own, '[data-sendmail]'); assert.ok(m && m.getAttribute('href').startsWith('mailto:t%40x.y?') && m.getAttribute('href').includes(encodeURIComponent(link))); ok('приглашение: кнопка «Почта» открывает письмо на адрес сотрудника со ссылкой');
+    assert.ok($(own, '.send-row a[href^="https://t.me/share/url"]') && $(own, '.send-row a[href^="https://wa.me/"]')); ok('приглашение: можно отправить в Telegram и WhatsApp'); }
   $(own, '[data-close]').click(); await wait(100);
   assert.ok(own.w.document.getElementById('app').textContent.includes('Ждём входа по ссылке')); ok('в «Команде» статус «Ждём входа по ссылке»');
 
@@ -110,6 +112,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const pw = md.querySelector('.mx select[data-pworker]'); const mpid = pw.dataset.pworker;
   change(own, pw, [...pw.options].find(o => o.textContent.startsWith('Тимур')).value); await wait(1500);
   assert.ok(be.rows.get('sp/' + mpid).data.memberIds.includes(T)); ok('исполнитель проекта, выбранный в матрице, получает доступ');
+  { const nm = JSON.parse(be.rows.get('sp/' + mpid).data.json).name; await wait(1000);
+    assert.ok(wk.w.document.getElementById('app').textContent.includes(nm)); ok('назначенный проект сразу появился у исполнителя на экране, без перезагрузки'); }
   const ca = md.querySelector(`.mx select.cell-as[data-qassign^="${mpid}|"]`); const cq = ca.dataset.qassign;
   const cellOf = () => md.querySelector(`.mx select.cell-as[data-qassign="${cq}"]`).closest('td');
   if (!cellOf().querySelector('.who:not(.inherit):not(.none)')) { assert.ok(cellOf().querySelector('.who.inherit')); ok('этап без своего ответственного подписан «исп.» серым'); }
