@@ -219,9 +219,17 @@
   // Доступ руководителя: у аккаунта уже есть своё пространство (руководители, работающие в сервисе) или роль lead в профиле.
   // Новые аккаунты и исполнители (role guest) руководителями сами не становятся.
   var gating = false, gateWho = null;
+  // ссылка-приглашение руководителя (kind team, role lead) — проверяем один раз
+  var leadInviteP = null;
+  function isLeadInvite() {
+    if (!INVITE) return Promise.resolve(false);
+    if (!leadInviteP) leadInviteP = rpc('invite_get', { p_code: INVITE }).then(function (d) { return !!(d && d.kind === 'team' && d.role === 'lead'); }, function () { return false; });
+    return leadInviteP;
+  }
   async function isLead(u) {
     var role = (u && u.user_metadata || {}).role;
     if (role === 'lead') return true;
+    if (await isLeadInvite()) return true;              // пришёл по ссылке руководителя
     if (role === 'guest' || !u) return false;
     try { return !!(await fetchOne('data/users/' + u.id + '/meta', 'path')); } catch (e) { return true; }   // нет связи — не запираем своих
   }
@@ -231,6 +239,14 @@
   async function markInvitedGuest() {
     try {
       var u = session && session.user;
+      // ссылка руководителя: роль руководителя (даже если раньше человек был исполнителем)
+      if (u && (await isLeadInvite())) {
+        if ((u.user_metadata || {}).role !== 'lead') {
+          var rl = await sb.auth.updateUser({ data: { role: 'lead' } });
+          if (!rl.error && rl.data && rl.data.user) session = Object.assign({}, session, { user: rl.data.user });
+        }
+        return;
+      }
       var asWorker = WHO ? WHO === 'worker' : !!INVITE;     // выбранная при входе вкладка важнее ссылки
       if (!asWorker || !u || (u.user_metadata || {}).role) return;
       if (await fetchOne('data/users/' + u.id + '/meta', 'path')) return;
@@ -243,7 +259,7 @@
   window.kzSignOut = async function () {
     try { await sb.auth.signOut(); } catch (e) { /* всё равно выходим */ }
     try {
-      Object.keys(localStorage).forEach(function (k) { if (k.indexOf('agency-pipeline-demo-v2') === 0 || k === 'agency-mode' || k === 'kz-space') localStorage.removeItem(k); });
+      Object.keys(localStorage).forEach(function (k) { if (k.indexOf('agency-pipeline-demo-v2') === 0 || k === 'agency-mode' || k === 'kz-space' || k === 'kz-org' || k === 'kz-org-own') localStorage.removeItem(k); });
     } catch (e) { /* ничего */ }
     location.href = location.pathname;
   };
