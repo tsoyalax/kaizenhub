@@ -137,6 +137,14 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.equal(copied[0], `Здравствуйте, ${pB.client}! По проекту «${pB.name}» всё готово.`); ok('сообщение: нажатие копирует готовый текст');
   assert.ok(/Скопировано/.test($('.tk-modal .msg-box').textContent)); ok('сообщение: видно, что скопировано');
   w.closeTask(); await wait(50);
+  // иконка на доске «По проекту»: копирует, не открывая подэтап
+  D.querySelector('.tabs [data-view="production"]').click(); await wait(100); $('[data-pmode="project"]').click(); await wait(100);
+  w.eval(`ui.prodProject = '${pB.id}'; render();`); await wait(150);
+  const ico = $(`.pf-card[data-pfsub$="|${tB.substage_id}"] .msg-ico`);
+  assert.ok(ico); ok('сообщение: иконка рядом с подэтапом на доске');
+  copied.length = 0; ico.click(); await wait(100);
+  assert.equal(copied[0], `Здравствуйте, ${pB.client}! По проекту «${pB.name}» всё готово.`); ok('иконка: нажатие копирует сообщение');
+  assert.ok(!$('.tk-modal')); ok('иконка: окно подэтапа при этом не открывается');
   const noMsg = LS().tasks.find(x => x.project_id === pB.id && x.id !== tB.id && !(x.blocks || []).some(b => b.type === 'msg'));
   if (noMsg){ w.openTask(noMsg.id); await wait(100); assert.ok(!$('.tk-modal .msg-box')); ok('сообщение необязательно: в подэтапе без него блока нет'); w.closeTask(); await wait(50); }
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('ошибок нет');
