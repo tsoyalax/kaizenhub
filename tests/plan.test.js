@@ -113,7 +113,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   } else console.log('  (матрица в компактном виде — проверка подписей пропущена)');
   // 6) текущий подэтап и старт проекта видны в компактной матрице, канбане и производстве
   const imp = 'imp1';
-  const setDensity = v => { const b = [...o.w.document.querySelectorAll('button')].find(x => x.textContent.trim() === v); if (b) b.click(); };
+  const setDensity = v => { const b = o.w.document.querySelector(`[data-density="${v === 'Компактный' ? 'compact' : 'detailed'}"]`); if (b) b.click(); };
   o.w.document.querySelector('[data-view="matrix"]').click(); setDensity('Компактный'); await wait(150);
   const row = o.w.document.querySelector(`.cx tr[data-open="${imp}"]`);
   assert.ok(row && row.children[3].classList.contains('start') && /-й день/.test(row.children[3].textContent)); ok('компактная матрица: отдельный столбец «Старт»');
@@ -339,7 +339,10 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   // 14) фильтры: аккуратная панель
   Dc.querySelector('[data-view="matrix"]').click(); await wait(100);
   const ownText = el => [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim();
-  assert.ok([...Dc.querySelectorAll('#filters label.inl')].every(l => !ownText(l)) && /Сортировка:/.test($q('#sort').selectedOptions[0].textContent)); ok('фильтры: подписи внутри списков, без отдельных надписей');
+  assert.ok([...Dc.querySelectorAll('#filters label.inl')].every(l => !ownText(l) && l.querySelector('svg'))); ok('фильтры: сортировка и группировка — с иконками, без лишних надписей');
+  assert.deepEqual([...$q('#sort').options].map(o => o.value), ['risk', 'deadline', 'name']); ok('фильтры: сортировка — по срочности, дедлайну, названию');
+  assert.deepEqual([...$q('#group').options].map(o => o.value), ['category', 'template', 'pm', 'none']); ok('фильтры: группировка без лишних вариантов');
+  assert.ok($q('#fToggle svg') && $q('#selToggle svg') && $q('#density [data-density="compact"] svg')); ok('фильтры: у «Фильтры», «Выбрать» и вида — иконки');
   assert.ok([...Dc.querySelectorAll('#chips .chip[data-risk]:not([data-risk=""])')].every(c => +c.querySelector('b').textContent > 0)); ok('фильтры: статусы с нулём не показываются');
   assert.ok($q('#fToggle') && !$q('#filters').classList.contains('open')); ok('фильтры: PM и клиенты спрятаны под кнопку «Фильтры»');
   $q('#fToggle').click(); await wait(50); $q('[data-tag-client]').click(); await wait(100);
