@@ -84,6 +84,12 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const cBtn = $2(`[data-spcolor="${sid}|#EF4444"]`); assert.ok(cBtn); cBtn.click(); await wait(300);
   assert.equal(be.rows.get(`data/users/${A}/spaces/list/${sid}`).data.color, '#EF4444'); ok('цвет пространства сохраняется в аккаунте');
   assert.equal(w2.getComputedStyle(D2.documentElement).getPropertyValue('--space').trim(), '#EF4444'); ok('цвет текущего пространства окрашивает интерфейс');
+  // иконка пространства
+  const iBtn = $2(`[data-spicon="${sid}|rocket"]`); assert.ok(iBtn); iBtn.click(); await wait(300);
+  assert.equal(be.rows.get(`data/users/${A}/spaces/list/${sid}`).data.icon, 'rocket'); ok('иконка пространства выбирается и сохраняется');
+  $2('#sideBtn').click(); await wait(50);
+  assert.ok($2('.side-dot.cur svg') && !$2('.side-spnames button') && $2('.side-dot.cur').getAttribute('title') === 'Личные проекты'); ok('панель: пространства — кружки с иконками, без списка названий (название — в подсказке)');
+  $2('[data-sideclose]').click(); await wait(50);
   // переключение пространства кружком
   let re1 = 0; w2.kzReloadHook = () => { re1++; };
   $2('#sideBtn').click(); await wait(50); $2('.side-dots [data-sidesp=""]').click(); await wait(400);
