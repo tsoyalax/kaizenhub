@@ -459,6 +459,25 @@ body.selecting #app{padding-bottom:90px}
 .dt.done{opacity:.55}.dt.done .dt-main b{text-decoration:line-through}
 .dt-badges{display:flex;flex-wrap:wrap;gap:6px}
 .dt-badges span{font-size:12px;font-weight:500;border-radius:6px;padding:1px 8px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.dt-h{font-size:13px;font-weight:600;color:var(--muted);margin:22px 0 8px}
+.dt-proj-sec{border-top:1px solid var(--line);padding:10px 0 12px}
+.dt-ph{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-bottom:10px}
+.dt-fold{display:flex;align-items:baseline;gap:8px;border:0;background:none;padding:0;cursor:pointer;color:var(--ink);font:inherit;text-align:left;min-width:0}
+.dt-fold b{font-size:15px;font-weight:600}.dt-fold small{color:var(--muted);font-size:12.5px}
+.dt-fold i{width:7px;height:7px;border-right:1.6px solid var(--muted);border-bottom:1.6px solid var(--muted);transform:rotate(45deg) translate(-2px,-2px);flex:none;transition:transform .15s}
+.folded .dt-fold i{transform:rotate(-45deg)}
+.folded .dt-ph{margin-bottom:0}
+.dt-ph .dt-stage{font-size:12px;font-weight:500;border-radius:6px;padding:1px 8px;background:var(--surface-2);color:var(--muted)}
+.dt-cnt{font-size:12.5px;color:var(--muted)}
+.dt-ph .link{margin-left:auto;font-size:12.5px}
+.dt-date{position:relative;display:inline-flex;align-items:center;gap:4px;color:var(--muted);cursor:pointer;border-radius:6px;padding:1px 4px;margin:-1px -4px}
+.dt-date:hover{background:var(--surface-2);color:var(--ink)}
+.dt-date.own{color:var(--ink)}
+.dt-date svg{width:13px;height:13px}
+.dt-date input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.ntf-n{font-weight:500;color:var(--muted);margin-left:4px}
+.ntf-all{display:block;padding:6px 8px}
+.ntf-perm{margin:6px 8px;width:calc(100% - 16px)}
 .dt-proj{background:var(--b-bg);color:var(--b)}
 .dt-stage{background:var(--surface-2);color:var(--muted)}
 .dt-int{background:var(--g-bg);color:var(--g)}
@@ -834,7 +853,7 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .sh-mem select{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 6px;font-size:13px}
 .sh-h{font-size:14px;font-weight:600;margin:14px 0 2px}
 .mine-h{margin:0;font-size:18px;font-weight:600}
-body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #newBtn,body.guest #bell,body.guest #cloudBtn{display:none!important}
+body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #newBtn,body.guest #cloudBtn{display:none!important}
 .sh-link{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .sh-link input{flex:1;min-width:180px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);padding:0 8px;font-size:13px}
 .sh-link small{color:var(--muted);font-size:12.5px;flex-basis:100%}
@@ -1821,7 +1840,7 @@ function renderFilters(){
   const show = ui.view === 'matrix' || ui.view === 'kanban';
   $('#filters').hidden = !show;
   const hot = hotStages();
-  $('#bellCount').innerHTML = hot.length ? `<span class="badge">${hot.length}</span>` : '';
+  try { paintBell(); pushNotify(); } catch(e) { $('#bellCount').innerHTML = hot.length ? `<span class="badge">${hot.length}</span>` : ''; }
   if (!show) return;
   $('#groupWrap').hidden = ui.view !== 'matrix';
   $('#density').hidden = ui.view !== 'matrix';
@@ -2692,13 +2711,30 @@ function hotStages(){
   return out.sort((a,b) => a.h.hours - b.h.hours);
 }
 function openBell(){
-  const list = hotStages();
+  const list = GUEST ? [] : hotStages(); const a = myAlerts();
+  const sec = (title, items) => items.length ? `<h3>${title} <span class="ntf-n">${items.length}</span></h3>${items.slice(0, 8).map(ntfItem).join('')}` : '';
+  const perm = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
   layer.innerHTML = `<div class="backdrop" data-close style="background:transparent"></div>
-  <div class="pop" role="dialog" aria-label="Уведомления"><h3>Горящие и просроченные этапы</h3>
+  <div class="pop" role="dialog" aria-label="Уведомления">
+  ${(() => { const nw = new Set(a.fresh.map(i => i.id)); return sec('Новые задачи', a.fresh) + sec('Просрочено', a.over.filter(i => !nw.has(i.id))) + sec('На сегодня', a.today.filter(i => !nw.has(i.id))); })()}
+  ${!a.fresh.length && !a.over.length && !a.today.length ? '<h3>Мои задачи</h3><p class="hint" style="padding:0 8px">Срочного нет. Все задачи — во вкладке «Задачи».</p>' : ''}
+  <button class="link ntf-all" data-ntfday="1">Все мои задачи</button>
+  ${perm === 'default' ? '<button class="ghost ntf-perm" id="ntfPerm">Включить уведомления на этом устройстве</button>' : perm === 'denied' ? '<p class="hint" style="padding:4px 8px">Уведомления браузера выключены в настройках сайта.</p>' : ''}
+  ${GUEST ? '' : `<h3>Горящие и просроченные этапы</h3>
   ${list.length ? list.map(({p,s,h}) => `<button class="ntf" data-open="${p.id}" data-stage="${s.id}"><span class="sw ${h.key==='blue'?'yellow':h.key}"></span>
     <span><b>${esc(p.name)}</b><small>${esc(s.name)}: ${h.note}. ${esc(short(whoId(p, s)))}</small></span></button>`).join('')
-  : '<p class="hint" style="padding:0 8px">Все этапы идут по графику</p>'}</div>`;
+  : '<p class="hint" style="padding:0 8px">Все этапы идут по графику</p>'}`}</div>`;
+  // открыли колокольчик — новые задачи просмотрены
+  const seen = readSet(NSEEN_KEY()); myTodo().forEach(i => seen.add(i.id)); writeSet(NSEEN_KEY(), seen); paintBell();
 }
+function paintBell(){
+  const n = (GUEST ? 0 : hotStages().length) + alertCount();
+  const b = $('#bellCount'); if (b) b.innerHTML = n ? `<span class="badge">${n}</span>` : '';
+}
+document.addEventListener('click', e => {
+  if (e.target.closest?.('[data-ntfday]')){ layer.innerHTML = ''; if (GUEST || ui.view === 'mine'){ ui.view = 'mine'; ui.mineMode = 'tasks'; } else { ui.view = 'production'; ui.prodMode = 'tasks'; } ui.dayWho = GUEST ? '' : ME; render(); return; }
+  if (e.target.id === 'ntfPerm'){ Notification.requestPermission().then(p => { if (p === 'granted'){ toast('Уведомления включены'); pushNotify(); } openBell(); }); }
+});
 
 // ---------- Шаблоны ----------
 const setNav = () => `<div class="set-nav seg-toggle" role="tablist" aria-label="Разделы настроек">
@@ -4167,7 +4203,7 @@ function dayProjectItems(who){
       else if (who && w !== who) return;
       const pr = t ? taskProgress(t) : null;
       const done = t ? (pr.total ? pr.done : !!x?.done) : !!x?.done;
-      out.push({ kind:'p', id:t ? t.id : `${p.id}|${c.id}|${x.id}`, p, s:c, x, t, who:w, done, due:c.due_date, title:t ? t.title : x.name });
+      out.push({ kind:'p', id:t ? t.id : `${p.id}|${c.id}|${x.id}`, p, s:c, x, t, who:w, done, own:(t?.due_date || x?.due_date || ''), due:(t?.due_date || x?.due_date || c.due_date), title:t ? t.title : x.name });
     });
   });
   return out;
@@ -4176,47 +4212,102 @@ function dayInternalItems(who){
   return itAll().filter(t => GUEST ? true : (!who || t.assignee_id === who)).map(t => ({ kind:'i', id:t.id, it:t, who:t.assignee_id, done:t.status === 'done', due:t.due_date || '', title:t.title }));
 }
 const PRI_W = { urgent:0, high:1, medium:2, low:3 };
+const byDue = (a, b) => (a.done - b.done) || (a.due || '9999').localeCompare(b.due || '9999') || (PRI_W[a.it?.priority] ?? 2) - (PRI_W[b.it?.priority] ?? 2);
 function renderMyDay(){
   const tab = ui.dayTab || 'all'; const who = GUEST ? '' : (ui.dayWho ?? '');
-  const showDone = !!ui.dayDone;
-  let items = [...(tab !== 'i' ? dayProjectItems(who) : []), ...(tab !== 'p' ? dayInternalItems(who) : [])];
-  const doneN = items.filter(i => i.done).length;
-  if (!showDone) items = items.filter(i => !i.done);
-  const t0 = today(), wk = addDays(t0, 7);
-  const bucket = i => i.done ? 'done' : !i.due ? 'none' : i.due < t0 ? 'over' : i.due === t0 ? 'today' : i.due <= wk ? 'week' : 'later';
-  const BUCKETS = [['over','Просрочено'], ['today','Сегодня'], ['week','На этой неделе'], ['later','Позже'], ['none','Без срока'], ['done','Выполнено']];
-  items.sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999') || (PRI_W[a.it?.priority] ?? 2) - (PRI_W[b.it?.priority] ?? 2));
+  const showDone = !!ui.dayDone; ui.dayFold = ui.dayFold || {};
+  const pAll = tab !== 'i' ? dayProjectItems(who) : [], iAll = tab !== 'p' ? dayInternalItems(who) : [];
+  const doneN = [...pAll, ...iAll].filter(i => i.done).length;
+  const vis = list => (showDone ? list : list.filter(i => !i.done)).sort(byDue);
+  const pItems = vis(pAll), iItems = vis(iAll);
   const head = `<div class="fn-head-row">${GUEST || ui.view === 'mine' ? mineSwitch() : prodSwitch()}
       <div class="seg-toggle" role="group" aria-label="Какие задачи">
-        <button data-daytab="all" aria-pressed="${tab === 'all'}">Все (Мой день)</button><button data-daytab="p" aria-pressed="${tab === 'p'}">💼 Проектные</button><button data-daytab="i" aria-pressed="${tab === 'i'}">🏢 Внутренние</button></div>
+        <button data-daytab="all" aria-pressed="${tab === 'all'}">Все (Мой день)</button><button data-daytab="p" aria-pressed="${tab === 'p'}">Проектные</button><button data-daytab="i" aria-pressed="${tab === 'i'}">Внутренние</button></div>
       ${GUEST ? '' : `<select id="dayWho" aria-label="Исполнитель"><option value="">Исполнитель: все</option>${db.users.map(u => `<option value="${u.id}" ${u.id === who ? 'selected' : ''}>${esc(u.id === ME ? `${u.name || 'Вы'} (вы)` : u.name || 'Без имени')}</option>`).join('')}</select>`}
       <label class="inl hint"><input type="checkbox" id="dayDone" ${showDone ? 'checked' : ''}> Выполненные${doneN ? ` (${doneN})` : ''}</label>
       ${GUEST ? '' : '<button class="primary" data-itnew>+ Внутренняя задача</button>'}</div>`;
-  const body = items.length ? BUCKETS.map(([k, label]) => { const g = items.filter(i => bucket(i) === k); return g.length ? `<section class="dt-group"><h3>${label} <span>${g.length}</span></h3><div class="dt-list">${g.map(dayCard).join('')}</div></section>` : ''; }).join('')
-    : `<div class="empty">${tab === 'i' ? 'Внутренних задач нет.' : tab === 'p' ? 'По текущим этапам проектов задач нет.' : 'На сегодня задач нет.'}${GUEST ? '' : '<br><button class="primary" data-itnew>+ Внутренняя задача</button>'}</div>`;
-  app.innerHTML = head + `<p class="fn-sum">Проектные — подзадачи только текущего этапа каждого проекта. Внутренние — поручения, HR и офисные дела вне проектов.</p>` + body;
+  // проекты: блок на проект, сначала те, где срок ближе
+  const groups = [];
+  pItems.forEach(i => { let g = groups.find(x => x.p.id === i.p.id); if (!g){ g = { p:i.p, s:i.s, items:[] }; groups.push(g); } g.items.push(i); });
+  groups.sort((a, b) => (a.items[0].due || '9999').localeCompare(b.items[0].due || '9999'));
+  const projHtml = groups.map(({ p, s, items }) => {
+    const open = ui.dayFold[p.id] !== false; const left = items.filter(i => !i.done).length;
+    const n = p.stages.length, at = p.stages.indexOf(s) + 1;
+    return `<section class="dt-proj-sec${open ? '' : ' folded'}" data-dtproj="${p.id}">
+      <header class="dt-ph"><button class="dt-fold" data-dtfold="${p.id}" aria-expanded="${open}"><i aria-hidden="true"></i><b>${esc(p.name)}</b><small>${esc(p.client || '')}</small></button>
+        <span class="dt-stage">${at}/${n} ${esc(s.name)}</span>${dueTxt(s.due_date)}<span class="dt-cnt">${left ? `${left} ${plural(left, 'задача', 'задачи', 'задач')}` : 'всё готово'}</span>
+        <button class="link" data-dtopen="${p.id}|${s.id}">Открыть проект</button></header>
+      ${open ? `<div class="dt-list">${items.map(dayCard).join('')}</div>` : ''}</section>`;
+  }).join('');
+  const intHtml = iItems.length ? `<section class="dt-group"><h3>Внутренние задачи <span>${iItems.filter(i => !i.done).length}</span></h3><div class="dt-list">${iItems.map(dayCard).join('')}</div></section>` : '';
+  const empty = !pItems.length && !iItems.length;
+  app.innerHTML = head + `<p class="fn-sum">Проектные — подзадачи только текущего этапа, по проектам. Внутренние — поручения, HR и офисные дела вне проектов.${GUEST ? '' : ' Срок подзадачи можно поставить прямо в карточке.'}</p>`
+    + (empty ? `<div class="empty">${tab === 'i' ? 'Внутренних задач нет.' : tab === 'p' ? 'По текущим этапам проектов задач нет.' : 'На сегодня задач нет.'}${GUEST ? '' : '<br><button class="primary" data-itnew>+ Внутренняя задача</button>'}</div>`
+      : intHtml + (groups.length ? `<h3 class="dt-h">Задачи по проектам</h3>${projHtml}` : ''));
 }
 const dueTxt = d => { if (!d) return ''; const u = urg(d); return `<span class="dt-due ut-${u.k}">${FLAG}${fmt(d)}${u.k === 'over' || u.k === 'hot' ? ` · ${u.txt}` : ''}</span>`; };
 function dayCard(i){
   const showWho = !GUEST && !(ui.dayWho);
   if (i.kind === 'p'){
-    const { p, s, x, t } = i; const pr = t ? taskProgress(t) : null; const n = p.stages.length; const at = p.stages.indexOf(s) + 1;
+    const { p, s, x, t } = i; const pr = t ? taskProgress(t) : null;
     const nameOf_ = id => p._ext ? ((p._team || []).find(m => m.id === id)?.name || '') : short(id);
+    const canDue = !GUEST && !p._ext;
+    const dueKey = t ? `t|${t.id}` : `x|${p.id}|${s.id}|${x?.id || ''}`;
     return `<article class="dt dt-p${i.done ? ' done' : ''}" ${t ? `data-task="${t.id}"` : `data-dtopen="${p.id}|${s.id}"`} tabindex="0">
-      <div class="dt-badges"><span class="dt-proj">💼 ${esc(p.name)}</span><span class="dt-stage">${at}/${n} ${esc(s.name)}</span></div>
       <div class="dt-main">${!t || !pr.total ? `<input type="checkbox" class="dt-chk" data-sub="${p.id}|${s.id}|${x?.id || ''}" ${i.done ? 'checked' : ''} aria-label="Выполнено: ${esc(i.title)}" ${x ? '' : 'disabled'}>` : ''}<b>${esc(i.title)}</b></div>
-      <div class="dt-meta">${t && pr.total ? `<span class="dt-ck">${pr.n} из ${pr.total}</span>` : ''}${showWho && i.who ? `<span>${esc(nameOf_(i.who))}</span>` : ''}${dueTxt(i.due)}<span class="dt-st">${i.done ? 'Готово' : esc(health(s).label)}</span></div>
+      <div class="dt-meta">${t && pr.total ? `<span class="dt-ck">${pr.n} из ${pr.total}</span>` : ''}${showWho && i.who ? `<span>${esc(nameOf_(i.who))}</span>` : ''}
+        ${canDue ? `<label class="dt-date${i.own ? ' own' : ''}" title="${i.own ? 'Срок подзадачи' : 'Срок этапа — нажмите, чтобы поставить свой срок подзадаче'}">${FLAG}<input type="date" data-dtdue="${dueKey}" value="${esc(i.own || '')}" aria-label="Срок подзадачи «${esc(i.title)}»"><span>${i.own ? fmt(i.own) : `${fmt(s.due_date)} (этап)`}</span></label>${i.own && !i.done ? dueWarn(i.own) : ''}` : dueTxt(i.due)}
+        <span class="dt-st">${i.done ? 'Готово' : esc(health(s).label)}</span></div>
     </article>`;
   }
   const t = i.it;
   return `<article class="dt dt-i${i.done ? ' done' : ''}" data-itopen="${t.id}" tabindex="0">
-    <div class="dt-badges"><span class="dt-int">🏢 Внутренняя · ${esc(IT_CAT[t.category] || 'Другое')}</span>${t.priority === 'urgent' || t.priority === 'high' ? `<span class="dt-pri pri-${t.priority}">${FLAG}${IT_PRI[t.priority]}</span>` : ''}</div>
+    <div class="dt-badges"><span class="dt-int">Внутренняя · ${esc(IT_CAT[t.category] || 'Другое')}</span>${t.priority === 'urgent' || t.priority === 'high' ? `<span class="dt-pri pri-${t.priority}">${FLAG}${IT_PRI[t.priority]}</span>` : ''}</div>
     <div class="dt-main"><b>${esc(t.title)}</b></div>
     ${t.description ? `<p class="dt-desc">${esc(t.description.slice(0, 140))}${t.description.length > 140 ? '…' : ''}</p>` : ''}
     <div class="dt-meta">${t.creator_name ? `<span>от ${esc(t.creator_name)}</span>` : ''}${showWho ? `<span>→ ${esc(short(t.assignee_id))}</span>` : ''}${dueTxt(t.due_date)}
       <select class="dt-status st-${t.status}" data-itstatus="${t.id}" aria-label="Статус задачи «${esc(t.title)}»">${Object.entries(IT_STATUS).map(([k, v]) => `<option value="${k}" ${k === t.status ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
   </article>`;
 }
+const dueWarn = d => { const u = urg(d); return u.k === 'over' || u.k === 'hot' ? `<span class="dt-due ut-${u.k}">${u.txt}</span>` : ''; };
+// срок подзадачи ставит руководитель: у карточки — t.due_date, у подэтапа без карточки — x.due_date
+document.addEventListener('change', e => {
+  const k = e.target.dataset?.dtdue; if (!k) return;
+  const v = e.target.value || null; const [kind, ...ids] = k.split('|');
+  if (kind === 't'){ const t = taskById(ids[0]); if (!t) return; t.due_date = v; const p = projById(t.project_id); if (p) addLog(p, `Срок подзадачи «${t.title}»: ${v ? fmt(v) : 'как у этапа'}`); }
+  else { const p = projById(ids[0]); const st = p?.stages.find(y => y.id === ids[1]); const x = st?.subs?.find(y => y.id === ids[2]); if (!x) return; x.due_date = v; addLog(p, `Срок подэтапа «${x.name}»: ${v ? fmt(v) : 'как у этапа'}`); }
+  commit(); toast(v ? `Срок: ${fmt(v)}` : 'Срок как у этапа');
+});
+
+// ---------- Уведомления: что мне сделать ----------
+// мои невыполненные задачи (проектные текущего этапа + внутренние); «новые» — которых я ещё не видел в колокольчике
+function myTodo(){
+  const mineP = dayProjectItems(GUEST ? '' : ME).filter(i => !i.done && (GUEST || !i.p._ext || myTeamIds(i.p).includes(i.who)));
+  const mineI = itAll().filter(t => t.status !== 'done' && (GUEST || t.assignee_id === ME)).map(t => ({ kind:'i', id:t.id, it:t, done:false, due:t.due_date || '', title:t.title }));
+  return [...mineP, ...mineI];
+}
+const NSEEN_KEY = () => KEY + '-seen', NSENT_KEY = () => KEY + '-notified';
+const readSet = k => { try { return new Set(JSON.parse(localStorage.getItem(k) || '[]')); } catch(e) { return new Set(); } };
+const writeSet = (k, set) => { try { localStorage.setItem(k, JSON.stringify([...set].slice(-500))); } catch(e) {} };
+function myAlerts(){
+  const t0 = today(); const seen = readSet(NSEEN_KEY()); const first = (() => { try { return localStorage.getItem(NSEEN_KEY()) === null; } catch(e) { return true; } })();
+  const list = myTodo();
+  if (first){ writeSet(NSEEN_KEY(), new Set(list.map(i => i.id))); return { over:list.filter(i => i.due && i.due < t0), today:list.filter(i => i.due === t0), fresh:[] }; }
+  return { over:list.filter(i => i.due && i.due < t0), today:list.filter(i => i.due === t0), fresh:list.filter(i => !seen.has(i.id)) };
+}
+function alertCount(){ const a = myAlerts(); return new Set([...a.over, ...a.today, ...a.fresh].map(i => i.id)).size; }
+// уведомления браузера (если человек разрешил): о новых задачах и раз в день — что на сегодня
+function pushNotify(){
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  const a = myAlerts(); const sent = readSet(NSENT_KEY());
+  a.fresh.filter(i => !sent.has('new:' + i.id)).slice(0, 3).forEach(i => { try { new Notification('Новая задача', { body:`${i.title}${i.p ? ` — ${i.p.name}` : ''}${i.due ? `, срок ${fmt(i.due)}` : ''}`, tag:'kz-' + i.id }); } catch(e) {} sent.add('new:' + i.id); });
+  const day = 'day:' + today(); const n = a.over.length + a.today.length;
+  if (n && !sent.has(day)){ try { new Notification('Задачи на сегодня', { body:`${a.today.length ? `Сегодня: ${a.today.length}. ` : ''}${a.over.length ? `Просрочено: ${a.over.length}.` : ''}`.trim(), tag:'kz-day' }); } catch(e) {} sent.add(day); }
+  writeSet(NSENT_KEY(), sent);
+}
+const ntfItem = i => i.kind === 'i'
+  ? `<button class="ntf" data-itopen="${i.id}"><span class="sw ${i.due && i.due < today() ? 'red' : 'yellow'}"></span><span><b>${esc(i.title)}</b><small>Внутренняя${i.due ? ` · срок ${fmt(i.due)}` : ''}</small></span></button>`
+  : `<button class="ntf" ${i.t ? `data-task="${i.t.id}"` : `data-ntfday="1"`}><span class="sw ${i.due && i.due < today() ? 'red' : 'yellow'}"></span><span><b>${esc(i.title)}</b><small>${esc(i.p.name)} · ${esc(i.s.name)}${i.due ? ` · срок ${fmt(i.due)}` : ''}</small></span></button>`;
 function openItask(id){
   const t = id ? itAll().find(x => x.id === id) : null; const manage = itCanManage(t);
   const v = t || { title:'', description:'', assignee_id:ui.dayWho || ME, priority:'medium', category:'admin', status:'todo', due_date:'' };
@@ -4266,11 +4357,12 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('click', e => {
   const dt = e.target.closest?.('[data-daytab]'); if (dt){ ui.dayTab = dt.dataset.daytab; render(); return; }
+  const fd = e.target.closest?.('[data-dtfold]'); if (fd){ ui.dayFold = ui.dayFold || {}; ui.dayFold[fd.dataset.dtfold] = ui.dayFold[fd.dataset.dtfold] === false; render(); return; }
   const mm = e.target.closest?.('[data-minemode]'); if (mm){ ui.mineMode = mm.dataset.minemode; render(); return; }
   if (e.target.closest?.('[data-itnew]')){ openItask(null); return; }
   if (e.target.id === 'itDel'){ const t = itAll().find(x => x.id === $('#itForm').dataset.itid);
     askConfirm({ title:`Удалить задачу «${t.title}»?`, text:'Задача исчезнет у исполнителя. Восстановить её будет нельзя.', ok:'Удалить' }).then(y => { if (y){ itDelete(t); layer.innerHTML = ''; render(); toast('Задача удалена'); } }); return; }
-  if (e.target.closest?.('select, input, a, button:not(.dt)')) return;
+  if (e.target.closest?.('select, input, a, label.dt-date, button:not(.dt):not([data-dtopen]):not(.ntf)')) return;
   const io = e.target.closest?.('[data-itopen]'); if (io){ openItask(io.dataset.itopen); return; }
   const po = e.target.closest?.('[data-dtopen]'); if (po){ const [pid, sid] = po.dataset.dtopen.split('|'); const q = projById(pid);
     if (q && !q._ext) openProject(pid, sid); else { ui.mineMode = 'projects'; ui.myProject = pid; ui.view = 'mine'; render(); } }
@@ -4629,7 +4721,7 @@ function moveDraftItem(from, to){ const a = ui.taskDraft.items; if (to < 0 || to
 document.addEventListener('click', e => {
   const tg = e.target;
   const pm = tg.closest('[data-pmode]'); if (pm){ ui.prodMode = pm.dataset.pmode; render(); return; }
-  const card = tg.closest('[data-task]'); if (card && !tg.closest('#taskLayer') && !tg.closest('.dt-chk, .dt-status')){ e.preventDefault(); openTask(card.dataset.task); return; }
+  const card = tg.closest('[data-task]'); if (card && !tg.closest('#taskLayer') && !tg.closest('.dt-chk, .dt-status, .dt-date')){ e.preventDefault(); openTask(card.dataset.task); return; }
   if (tg.closest('[data-tnew]')){ openNewTask({ project_id: ui.tf?.project }); return; }
   const fs = tg.closest('[data-fn-tasks]'); if (fs){ ui.prodMode = 'tasks'; ui.dayTab = 'p'; render(); return; }
   const ts = tg.closest('[data-tsubs]'); if (ts){ const [pid, sid] = ts.dataset.tsubs.split('|'); const p = projById(pid); const n = tasksFromSubs(p, p.stages.find(s => s.id === sid)); commit(); toast(`Создано задач: ${n}`); return; }

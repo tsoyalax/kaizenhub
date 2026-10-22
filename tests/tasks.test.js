@@ -30,6 +30,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   });
   return { dom, w: dom.window, errors, reloads };
 }
+const getComputedStyle_ok = w => w.getComputedStyle(w.document.getElementById('bell')).display !== 'none';
 (async () => {
   const be = makeBackend();
   const A = 'aaaaaaaa-0000-0000-0000-000000000001', T = 'cccccccc-0000-0000-0000-000000000003';
@@ -51,6 +52,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   // 1) вкладка «Задачи» в «Производстве»
   D.querySelector('[data-view="production"]').click(); await wait(100); $('[data-pmode="tasks"]').click(); await wait(150);
   assert.ok($('[data-daytab="all"]') && $('[data-daytab="p"]') && $('[data-daytab="i"]')); ok('«Задачи»: подфильтры «Все (Мой день)», «Проектные», «Внутренние»');
+  assert.ok(!/[\u{1F300}-\u{1FAFF}]/u.test(D.getElementById('app').textContent)); ok('без эмодзи');
   assert.equal($('[data-daytab="all"]').getAttribute('aria-pressed'), 'true'); ok('по умолчанию — «Все (Мой день)»');
   assert.ok($('#dayWho') && $('[data-itnew]')); ok('у руководителя есть выбор исполнителя и «+ Внутренняя задача»');
   // только текущий этап
@@ -58,10 +60,22 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(items.length > 0 && items.every(([p, s]) => own.w.eval(`currentStage(projById('${p}')).id`) === s)); ok('проектные задачи — только текущего этапа каждого проекта');
   const otherStage = own.w.eval(`(() => { const p = projById('${pid}'); const c = currentStage(p); return p.stages.filter(s => s !== c).flatMap(s => (s.subs || []).map(x => x.name)); })()`);
   const curNames = own.w.eval(`(currentStage(projById('${pid}')).subs || []).map(x => x.name)`);
-  const shown = $$('.dt-p').filter(c => c.textContent.includes(own.w.eval(`projById('${pid}').name`))).map(c => c.querySelector('.dt-main b').textContent);
+  const shown = $$(`[data-dtproj="${pid}"] .dt-p`).map(c => c.querySelector('.dt-main b').textContent);
   assert.ok(shown.length && shown.every(n => curNames.includes(n)) && !shown.some(n => otherStage.includes(n) && !curNames.includes(n))); ok('подзадачи будущих и прошлых этапов скрыты');
-  const pc = $$('.dt-p')[0];
-  assert.ok(pc.querySelector('.dt-proj') && /💼/.test(pc.querySelector('.dt-proj').textContent) && /^\d+\/\d+ /.test(pc.querySelector('.dt-stage').textContent)); ok('проектная карточка: бейдж проекта 💼 и этап «X/N Название»');
+  const secs = $$('[data-dtproj]');
+  assert.ok(secs.length > 1 && secs.every(sc => sc.querySelectorAll('.dt-p').length && /^\d+\/\d+ /.test(sc.querySelector('.dt-ph .dt-stage').textContent))); ok('проектные задачи разложены по проектам: у каждого блок с этапом «X/N Название»');
+  assert.equal(new Set(secs.map(sc => sc.dataset.dtproj)).size, secs.length); ok('каждый проект — один блок');
+  // свернуть / развернуть проект
+  secs[0].querySelector('[data-dtfold]').click(); await wait(100);
+  assert.ok($(`[data-dtproj="${secs[0].dataset.dtproj}"]`).classList.contains('folded') && !$(`[data-dtproj="${secs[0].dataset.dtproj}"] .dt-p`)); ok('блок проекта сворачивается');
+  $(`[data-dtproj="${secs[0].dataset.dtproj}"] [data-dtfold]`).click(); await wait(100);
+  // срок подзадачи ставит руководитель прямо в карточке
+  const dIn = $(`[data-dtproj="${pid}"] [data-dtdue]`); const dk = dIn.dataset.dtdue;
+  dIn.value = '2026-11-03'; fire(dIn, 'change'); await wait(200);
+  const [dkind, ...dids] = dk.split('|');
+  const saved = dkind === 't' ? own.w.eval(`taskById('${dids[0]}').due_date`) : own.w.eval(`projById('${dids[0]}').stages.find(s => s.id === '${dids[1]}').subs.find(x => x.id === '${dids[2]}').due_date`);
+  assert.equal(saved, '2026-11-03'); ok('руководитель ставит срок подзадаче прямо в карточке');
+  assert.ok($(`[data-dtproj="${pid}"] .dt-date.own`)); ok('свой срок подзадачи виден в карточке');
   // 2) внутренняя задача
   $('[data-itnew]').click(); await wait(50);
   $('#itTitle').value = 'Подготовить договор'; $('#itDesc').value = 'Для нового сотрудника';
@@ -72,7 +86,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const j = JSON.parse(doc.data.json);
   assert.ok(j.title === 'Подготовить договор' && j.status === 'todo' && j.priority === 'urgent' && j.category === 'hr' && j.creator_id && j.created_at); ok('поля задачи: статус по умолчанию «todo», приоритет, категория, постановщик, время');
   const ic = $$('.dt-i').find(c => c.textContent.includes('Подготовить договор'));
-  assert.ok(ic && /🏢 Внутренняя · HR/.test(ic.textContent) && ic.querySelector('.pri-urgent') && ic.querySelector('[data-itstatus]')); ok('внутренняя карточка: 🏢 категория, флажок «Срочно», быстрый статус');
+  assert.ok(ic && /Внутренняя · HR/.test(ic.textContent) && ic.querySelector('.pri-urgent') && ic.querySelector('[data-itstatus]')); ok('внутренняя карточка: категория, флажок «Срочно», быстрый статус');
   // фильтры
   $('[data-daytab="i"]').click(); await wait(100);
   assert.ok($$('.dt').length && $$('.dt').every(c => c.classList.contains('dt-i'))); ok('«Внутренние» — только внутренние');
@@ -80,14 +94,24 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok($$('.dt').length && $$('.dt').every(c => c.classList.contains('dt-p'))); ok('«Проектные» — только проектные');
   $('[data-daytab="all"]').click(); await wait(100);
   const w2 = $('#dayWho'); w2.value = tu.id; fire(w2, 'change'); await wait(100);
-  assert.ok($$('.dt').length && $$('.dt-p').every(c => c.textContent.includes(own.w.eval(`projById('${pid}').name`)))); ok('выбор исполнителя: видны только его задачи');
+  assert.ok($$('.dt').length && $$('[data-dtproj]').every(sc => sc.dataset.dtproj === pid)); ok('выбор исполнителя: видны только его задачи');
   // 3) исполнитель видит свои задачи
   await wait(1500);
   wk.w.document.querySelector('[data-minemode="tasks"]').click(); await wait(200);
   const wD = wk.w.document;
   const wTxt = wD.getElementById('app').textContent;
   assert.ok(wTxt.includes('Подготовить договор')); ok('исполнитель видит поставленную ему внутреннюю задачу');
-  assert.ok(wD.querySelectorAll('.dt-p').length > 0 && [...wD.querySelectorAll('.dt-p')].every(c => c.textContent.includes(own.w.eval(`projById('${pid}').name`)))); ok('исполнитель видит подзадачи текущего этапа, где он ответственный, и только их');
+  assert.ok(wD.querySelectorAll('.dt-p').length > 0 && [...wD.querySelectorAll('[data-dtproj]')].every(sc => sc.dataset.dtproj === pid)); ok('исполнитель видит подзадачи текущего этапа, где он ответственный, и только их');
+  assert.ok(!wD.querySelector('[data-dtdue]') && /3 нояб/.test(wD.querySelector(`[data-dtproj="${pid}"]`).textContent)); ok('исполнитель видит срок подзадачи, но не меняет его');
+  // уведомления исполнителю
+  assert.ok(!wD.getElementById('bell').hidden && getComputedStyle_ok(wk.w)); ok('у исполнителя есть колокольчик');
+  assert.ok(+(wD.querySelector('#bellCount .badge')?.textContent || 0) >= 1); ok('на колокольчике число новых задач');
+  wD.getElementById('bell').click(); await wait(100);
+  assert.ok(/Новые задачи/.test(wD.querySelector('.pop').textContent) && wD.querySelector('.pop').textContent.includes('Подготовить договор')); ok('в колокольчике — новая задача от руководителя');
+  wD.querySelector('.pop [data-itopen]').click(); await wait(100);
+  assert.ok(wD.querySelector('#itForm')); ok('из уведомления задача открывается');
+  wD.querySelector('[data-close]').click(); await wait(50);
+  assert.equal(wk.w.eval('myAlerts().fresh.length'), 0); ok('после просмотра новые задачи отмечены прочитанными');
   assert.ok(!wD.querySelector('[data-itnew]') && !wD.querySelector('#dayWho')); ok('исполнитель не ставит задачи и не выбирает исполнителя');
   // смена статуса исполнителем — сразу у владельца
   const ws = [...wD.querySelectorAll('[data-itstatus]')][0]; ws.value = 'in_progress'; ws.dispatchEvent(new wk.w.Event('change', { bubbles: true })); await wait(1500);
