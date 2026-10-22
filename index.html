@@ -594,7 +594,8 @@ body.selecting #app{padding-bottom:90px}
 .top-actions{gap:10px;align-items:center}
 .top #bell{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);color:var(--ink);background:var(--surface)}
 .top #bell:hover{border-color:var(--line-strong);background:var(--surface-2)}
-.top #bell svg{width:20px;height:20px}
+.top #bell svg{width:20px;height:20px;grid-area:1/1}
+.top #bell #bellCount{position:absolute;inset:0;pointer-events:none}
 .top #bell .badge{top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;font-size:11px;box-shadow:0 0 0 2px var(--bg)}
 .side-foot{display:flex;align-items:center;gap:4px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--ink) 10%,transparent)}
 .side-foot:not(.with-sp){margin-top:auto}
