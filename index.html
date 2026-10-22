@@ -194,9 +194,6 @@ table.cx{width:100%;border-collapse:collapse;min-width:800px;table-layout:fixed}
 .cx .due small.dl-client{color:var(--b)}
 .cx .due small.dl-m{color:var(--m)}
 .cx .st-age.slow{color:var(--y)}
-/* маркер риска у названия: зелёный — по графику, жёлтый — риск, красный — срок сорван */
-.cx .hc{flex:none;width:3px;align-self:stretch;min-height:34px;border-radius:2px;margin:0 -4px 0 -8px;background:var(--hcc,var(--line))}
-.hc-green{--hcc:var(--g)}.hc-yellow{--hcc:var(--y)}.hc-red{--hcc:var(--r)}.hc-maint{--hcc:var(--m)}.hc-done{--hcc:var(--line-strong)}.hc-gray{--hcc:var(--line)}
 .pbar{display:flex;gap:2px;height:6px;margin:4px 0 5px}
 .pseg{flex:1;min-width:4px;border-radius:2px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line)}
 .pseg.p-done{background:var(--tick-on);box-shadow:none}
@@ -1613,6 +1610,7 @@ function health(s, now = new Date()){
   return { key:'green', label:'В работе', note, hours:h };
 }
 const projectRisk = p => p.state === 'completed' ? 'done'
+  : p.deadline && p.deadline < today() && !isMaint(currentStage(p)) && p.stages.some(s => s.status !== 'done' && !isMaint(s)) ? 'red'
   : p.stages.reduce((w,s) => { const k = health(s).key; return WEIGHT[k] > WEIGHT[w] ? k : w; }, 'done');
 // Ответственный по умолчанию: задача → этап → исполнитель проекта → PM проекта
 const projWho = p => p?.worker_id || null;   // задачи проекта по умолчанию — на исполнителя, PM не подставляется
@@ -2651,9 +2649,9 @@ function renderCompact(list){
       const segs = p.stages.map(s => `<i class="pseg p-${s.status === 'done' ? 'done' : (c && s.id === c.id ? h.key : 'todo')}" title="${esc(s.name)}"></i>`).join('');
       const progress = ticksHtml(p, !c ? 'done' : h.key);
       const tm = getProjectTimeMetrics(p);
-      return `<tr class="r-${h.key} hc-${tm.risk}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
-        <td title="${esc(p.name)}"><span class="cx-name"><i class="hc" title="${{ red:'Срок сорван', yellow:'Риск задержки', green:'По графику', maint:'Ведение', gray:'Не стартовал', done:'Завершён' }[tm.risk]}" aria-hidden="true"></i>${projAva(p, 'sm')}<span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
-        <td>${stPill(h.key, h.label)}</td>
+      return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
+        <td title="${esc(p.name)}"><span class="cx-name">${projAva(p, 'sm')}<span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
+        <td>${tm.isOverdue && h.key !== 'red' ? stPill('red', 'Просрочен') : stPill(h.key, h.label)}</td>
         <td>${progress}</td>
         <td class="start">${startCell(p, tm)}</td>
         <td class="due">${deadlineCell(p, tm)}</td></tr>`;
