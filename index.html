@@ -11,7 +11,11 @@
 <style>
 :root{
   color-scheme: light;
-  --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F3F3F5; --fbg:#F2F2F4; --fbg-h:#EAEAED; --row:#FFFFFF; --ink:#17171C; --muted:#71717A; --line:#E8E8EB; --line-strong:#D4D4D8;
+  --bg:#F4F5F7; --surface:#FFFFFF; --surface-2:#F3F3F5; --fbg:#FFFFFF; --fbg-h:#F8F9FA; --row:#FFFFFF; --ink:#17171C; --muted:#71717A; --line:#E9ECEF; --line-strong:#D4D4D8;
+  /* светлая тема: серая подложка + белые блоки (в тёмной эти значения сброшены ниже) */
+  --fbd:#E2E8F0; --seg-on:#F1F3F5; --tbl-bg:#FFFFFF; --side-bg:#F1F3F5; --side-bd:#E5E7EB; --top-bg:rgba(255,255,255,.8);
+  --pl-r-bg:#FEE2E2; --pl-r:#991B1B; --pl-b-bg:#E0F2FE; --pl-b:#0369A1; --pl-g-bg:#DCFCE7; --pl-g:#15803D; --pl-m-bg:#F3E8FF; --pl-m:#6B21A8;
+  --pl-n-bg:#F3F4F6; --pl-n:#4B5563; --pl-y-bg:#FEF3C7; --pl-y:#92400E; --pl-d-bg:#ECFDF5; --pl-d:#047857;
   --accent:#17171C; --accent-ink:#FFFFFF; --brand:#6A5AE0; --link:#2F6BFF; --focus:#2F6BFF; --soft:#EAF1FF;
   --card-hi:transparent; --shadow:none;
   --g:#16A34A; --g-bg:#E7F8EE; --y:#E07800; --y-bg:#FFF3E0; --r:#E5383B; --r-bg:#FFECEC;
@@ -177,7 +181,7 @@ td:has(.cell-as:focus-visible) .cell{outline:2px solid var(--focus);outline-offs
 
 /* ---------- Компактный режим ---------- */
 table.cx{width:100%;border-collapse:collapse;min-width:800px;table-layout:fixed}
-.cx col.c7{width:29%}.cx col.c1{width:25%}.cx col.c6{width:16%}.cx col.c2{width:17%}.cx col.c5{width:18%}.cx col.c3{width:13%}.cx col.c4{width:17%}
+.cx col.c7{width:27%}.cx col.c1{width:25%}.cx col.c6{width:16%}.cx col.c2{width:17%}.cx col.c5{width:18%}.cx col.c3{width:15%}.cx col.c4{width:17%}
 .cx .start small,.cx .due small{white-space:nowrap}
 .cx th{font-size:12.5px;font-weight:500;color:var(--muted);text-align:left;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--line)}
 .cx td{padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle;overflow:hidden;text-overflow:ellipsis}
@@ -654,10 +658,10 @@ body.side-pinned .side-btn{color:var(--ink)}
 .chip-i{display:inline-grid;place-items:center;flex:none}.chip-i .pi{width:14px;height:14px}
 .ci-red{color:var(--r)}.ci-yellow{color:var(--y)}.ci-blue{color:var(--b)}.ci-green{color:var(--w)}.ci-maint{color:var(--m)}.ci-gray,.ci-all{color:var(--muted)}.ci-done{color:var(--g)}
 /* фильтры: в светлой теме — светло-серые на белом фоне (в тёмной — как карточки); :where — чтобы выбранный статус оставался цветным */
-:where(#filters, .mh) :where(.chip, input[type=search], select, .seg-toggle, .f-toggle, .sel-toggle),:where(#tags) .tag{background-color:var(--fbg);border-color:transparent}
-:where(#filters, .mh) :where(.chip, select, .f-toggle, .sel-toggle):hover,:where(#tags) .tag:hover{background-color:var(--fbg-h);border-color:transparent}
+:where(#filters, .mh) :where(.chip, input[type=search], select, .seg-toggle, .f-toggle, .sel-toggle),:where(#tags) .tag{background-color:var(--fbg);border-color:var(--fbd,transparent)}
+:where(#filters, .mh) :where(.chip, select, .f-toggle, .sel-toggle):hover,:where(#tags) .tag:hover{background-color:var(--fbg-h);border-color:var(--fbd,transparent)}
 :where(#filters, .mh) .chip:where([data-risk=""],[data-htile=""])[aria-pressed="true"]{background-color:var(--surface);border-color:var(--ink)}
-:where(#filters) .seg-toggle button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+:where(#filters) .seg-toggle button[aria-pressed="true"]{background:var(--seg-on,var(--surface));box-shadow:0 1px 2px rgba(0,0,0,.08)}
 :where(#filters, .mh) input[type=search]:focus{background-color:var(--surface);border-color:var(--line-strong)}
 :where(#tags){background:transparent;border-color:var(--line)}
 /* фото проекта */
@@ -1478,6 +1482,37 @@ table.cx{border-collapse:collapse}
   .m-sp{flex:none;display:flex;align-items:center;gap:8px;height:42px;padding:0 14px 0 6px;border-radius:12px;border:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
   .m-sp.cur{border-color:var(--c);background:color-mix(in srgb,var(--c) 12%,transparent);font-weight:600}
 }
+
+/* ---------- Светлая тема: слои фона (подложка серая, блоки белые) ---------- */
+.grp .scroll:has(table.cx){background:var(--tbl-bg,transparent);border:1px solid var(--tbl-bd,transparent);border-radius:var(--radius)}
+:root{--tbl-bd:#E9ECEF}
+.pc-list:has(.mc){background:var(--tbl-bg,transparent);border:1px solid var(--tbl-bd,transparent);border-radius:var(--radius);padding:0 12px}
+.top{background:var(--top-bg,var(--surface))}
+@media (min-width:641px){.top{background:var(--top-bg,color-mix(in srgb,var(--bg) 86%,transparent));backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px)}}
+.side{background:var(--side-bg,linear-gradient(180deg,color-mix(in srgb,var(--space,var(--brand)) 14%,var(--surface)),color-mix(in srgb,var(--space,var(--brand)) 6%,var(--surface))))}
+@media (min-width:1101px){
+  body.side-pinned .side{top:0;left:0;bottom:0;border-radius:0;border:0;border-right:1px solid var(--side-bd,color-mix(in srgb,var(--space,var(--brand)) 30%,var(--line)))}
+}
+.side-nav button[aria-current="page"]{background:var(--surface)}
+/* плашки статусов: пастельный фон, тёмный текст */
+.pill.st-pill.s-red{background:var(--pl-r-bg,color-mix(in srgb,currentColor 12%,transparent));color:var(--pl-r,var(--r))}
+.pill.st-pill.s-blue{background:var(--pl-b-bg,color-mix(in srgb,currentColor 12%,transparent));color:var(--pl-b,var(--b))}
+.pill.st-pill.s-green{background:var(--pl-g-bg,color-mix(in srgb,currentColor 12%,transparent));color:var(--pl-g,var(--w))}
+.pill.st-pill.s-maint{background:var(--pl-m-bg,color-mix(in srgb,currentColor 12%,transparent));color:var(--pl-m,var(--m))}
+.pill.st-pill.s-gray{background:var(--pl-n-bg,color-mix(in srgb,currentColor 12%,transparent));color:var(--pl-n,var(--muted))}
+.pill.st-pill.s-yellow{background:var(--pl-y-bg,color-mix(in srgb,currentColor 12%,transparent));color:var(--pl-y,var(--y))}
+.pill.st-pill.s-done{background:var(--pl-d-bg,color-mix(in srgb,currentColor 12%,transparent));color:var(--pl-d,var(--g))}
+.pill.st-pill:where(.s-red,.s-blue,.s-green,.s-maint,.s-gray,.s-yellow,.s-done){border-color:var(--pl-bd,color-mix(in srgb,currentColor 38%,transparent))}
+:root{--pl-bd:transparent}
+/* в тёмной теме — всё как было */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --fbd:initial; --seg-on:initial; --tbl-bg:initial; --tbl-bd:initial; --side-bg:initial; --side-bd:initial; --top-bg:initial; --pl-bd:initial;
+  --pl-r-bg:initial; --pl-r:initial; --pl-b-bg:initial; --pl-b:initial; --pl-g-bg:initial; --pl-g:initial; --pl-m-bg:initial; --pl-m:initial;
+  --pl-n-bg:initial; --pl-n:initial; --pl-y-bg:initial; --pl-y:initial; --pl-d-bg:initial; --pl-d:initial}}
+:root[data-theme="dark"]{
+  --fbd:initial; --seg-on:initial; --tbl-bg:initial; --tbl-bd:initial; --side-bg:initial; --side-bd:initial; --top-bg:initial; --pl-bd:initial;
+  --pl-r-bg:initial; --pl-r:initial; --pl-b-bg:initial; --pl-b:initial; --pl-g-bg:initial; --pl-g:initial; --pl-m-bg:initial; --pl-m:initial;
+  --pl-n-bg:initial; --pl-n:initial; --pl-y-bg:initial; --pl-y:initial; --pl-d-bg:initial; --pl-d:initial}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
