@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KaizenHub — конвейер проектов для студий и агентств</title>
+<meta name="description" content="KaizenHub показывает все проекты студии на одном экране: этапы, сроки, кто что делает и где проект застрял. Канбан, производство, ведение клиентов, задачи команды и AI-отчёты.">
+<meta property="og:title" content="KaizenHub — конвейер проектов">
+<meta property="og:description" content="Все проекты студии на одном экране: этапы, сроки, ответственные и риски.">
+<meta name="theme-color" content="#F4F5F7">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#F4F5F7; --surface:#FFFFFF; --surface-2:#F3F4F6; --ink:#17171C; --muted:#6B6B75; --line:#E9ECEF; --line-2:#E2E8F0;
+  --brand:#6A5AE0; --brand-2:#8B7CF6; --brand-ink:#FFFFFF; --brand-soft:#EFEDFF;
+  --r:#991B1B; --r-bg:#FEE2E2; --b:#0369A1; --b-bg:#E0F2FE; --g:#15803D; --g-bg:#DCFCE7; --m:#6B21A8; --m-bg:#F3E8FF; --n:#4B5563; --n-bg:#F3F4F6; --y:#92400E; --y-bg:#FEF3C7;
+  --tick:#A1A1AA; --tick-off:#E7E7EA;
+  --shadow:0 1px 2px rgba(16,16,24,.04),0 8px 24px rgba(16,16,24,.06);
+  --shadow-lg:0 2px 4px rgba(16,16,24,.04),0 24px 64px rgba(16,16,24,.12);
+  --radius:16px;
+}
+@media (prefers-color-scheme:dark){:root{
+  color-scheme:dark;
+  --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-2:#2E2E36;
+  --brand-soft:#221E3D;
+  --r:#FCA5A5; --r-bg:#2C1416; --b:#7DD3FC; --b-bg:#0E2233; --g:#86EFAC; --g-bg:#11241A; --m:#D8B4FE; --m-bg:#231D3B; --n:#A1A1AA; --n-bg:#1E1E23; --y:#FCD34D; --y-bg:#2A2110;
+  --tick:#71717A; --tick-off:#2A2A31;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3);
+  --shadow-lg:0 2px 4px rgba(0,0,0,.3),0 24px 64px rgba(0,0,0,.5);
+}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;letter-spacing:-.005em;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img,svg{display:block}
+.wrap{width:min(1180px,100% - 40px);margin:0 auto}
+h1,h2,h3{margin:0;letter-spacing:-.03em;line-height:1.1}
+p{margin:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 20px;border-radius:12px;font:inherit;font-weight:600;font-size:15px;cursor:pointer;border:1px solid transparent;transition:transform .15s,box-shadow .15s,background .15s;white-space:nowrap}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--ink);color:var(--bg)}
+.btn-primary:hover{box-shadow:0 8px 24px color-mix(in srgb,var(--ink) 25%,transparent)}
+.btn-brand{background:var(--brand);color:#fff}
+.btn-brand:hover{box-shadow:0 10px 28px color-mix(in srgb,var(--brand) 40%,transparent)}
+.btn-ghost{background:var(--surface);border-color:var(--line-2);color:var(--ink)}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn svg{width:18px;height:18px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--brand);text-transform:uppercase;letter-spacing:.06em}
+.sec{padding:110px 0}
+.sec-head{max-width:720px;margin:0 auto 56px;text-align:center;display:grid;gap:14px;justify-items:center}
+.sec-head h2{font-size:clamp(30px,4.2vw,46px);font-weight:700}
+.sec-head p{font-size:18px;color:var(--muted)}
+
+/* логотип как в приложении */
+.logo{width:30px;height:30px;border-radius:9px;display:grid;grid-template-columns:repeat(3,4px);gap:3px;place-content:center;flex:none;
+  background:linear-gradient(145deg,var(--brand),color-mix(in srgb,var(--brand) 55%,#000));box-shadow:0 4px 14px color-mix(in srgb,var(--brand) 30%,transparent)}
+.logo i{width:4px;height:4px;border-radius:50%;background:#fff}
+.logo i:nth-child(2){opacity:.7}.logo i:nth-child(3){opacity:.45}
+
+/* шапка */
+.top{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:saturate(1.5) blur(14px);-webkit-backdrop-filter:saturate(1.5) blur(14px);border-bottom:1px solid transparent;transition:border-color .2s}
+.top.scrolled{border-bottom-color:var(--line)}
+.top .wrap{display:flex;align-items:center;gap:28px;height:68px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;letter-spacing:-.02em}
+.nav{display:flex;gap:4px;margin-left:12px}
+.nav a{padding:8px 12px;border-radius:9px;font-size:15px;color:var(--muted);font-weight:500}
+.nav a:hover{color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.top-cta{margin-left:auto;display:flex;gap:8px}
+.top-cta .btn{height:40px;padding:0 16px;font-size:14.5px}
+.burger{display:none;margin-left:auto;width:42px;height:42px;border-radius:11px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);cursor:pointer;place-items:center}
+.burger svg{width:20px;height:20px}
+.mnav{display:none}
+
+/* герой */
+.hero{padding:72px 0 40px;position:relative}
+.hero::before{content:"";position:absolute;inset:-120px 0 auto;height:720px;z-index:-1;pointer-events:none;
+  background:radial-gradient(600px 320px at 50% 0%,color-mix(in srgb,var(--brand) 18%,transparent),transparent 70%),
+             radial-gradient(420px 260px at 85% 30%,color-mix(in srgb,#38BDF8 12%,transparent),transparent 70%),
+             radial-gradient(420px 260px at 12% 40%,color-mix(in srgb,#F472B6 10%,transparent),transparent 70%)}
+.hero-in{text-align:center;display:grid;justify-items:center;gap:22px}
+.badge{display:inline-flex;align-items:center;gap:10px;padding:6px 14px 6px 6px;border-radius:999px;background:var(--surface);border:1px solid var(--line-2);font-size:14px;color:var(--muted);box-shadow:var(--shadow)}
+.badge b{background:var(--brand-soft);color:var(--brand);font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px}
+.hero h1{font-size:clamp(38px,6.4vw,72px);font-weight:800;max-width:940px;letter-spacing:-.04em}
+.hero h1 em{font-style:normal;background:linear-gradient(100deg,var(--brand),#C026D3 60%,#F97316);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .lead{font-size:clamp(17px,2vw,20px);color:var(--muted);max-width:680px}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.hero-cta .btn{height:52px;padding:0 24px;font-size:16px}
+.hero-note{font-size:14px;color:var(--muted);display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+.hero-note span{display:inline-flex;align-items:center;gap:6px}
+.hero-note svg{width:16px;height:16px;color:var(--g)}
+
+/* макет приложения */
+.shot{margin:56px auto 0;position:relative;max-width:1120px}
+.frame{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-lg);overflow:hidden}
+.frame-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface)}
+.frame-bar i{width:11px;height:11px;border-radius:50%;background:var(--line-2)}
+.frame-bar .url{margin:0 auto;font-size:12.5px;color:var(--muted);background:var(--surface-2);padding:4px 14px;border-radius:8px}
+.app{display:grid;grid-template-columns:210px 1fr;min-height:430px;background:var(--bg)}
+.app-side{background:color-mix(in srgb,var(--surface-2) 70%,var(--bg));border-right:1px solid var(--line);padding:14px 10px;display:flex;flex-direction:column;gap:3px}
+.app-sp{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px;padding:4px 8px 12px}
+.app-sp span{width:24px;height:24px;border-radius:8px;background:var(--brand-soft);display:grid;place-items:center;color:var(--brand)}
+.app-sp svg{width:14px;height:14px}
+.app-nav{display:flex;align-items:center;gap:9px;height:32px;padding:0 9px;border-radius:8px;font-size:13px;color:var(--muted)}
+.app-nav svg{width:15px;height:15px}
+.app-nav.on{background:var(--surface);color:var(--ink);font-weight:500;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.app-main{padding:16px 18px;min-width:0}
+.app-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:8px;background:var(--surface);border:1px solid var(--line-2);font-size:12px;color:var(--ink);white-space:nowrap}
+.chip b{font-weight:600}
+.chip.on{border-color:var(--ink)}
+.chip .dot{width:7px;height:7px;border-radius:50%}
+.tbl{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tr{display:grid;grid-template-columns:minmax(0,2.1fr) 1fr minmax(0,1.9fr) 1.15fr 1.25fr;gap:12px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);font-size:12.5px}
+.tr:last-child{border-bottom:0}
+.th{font-size:11.5px;color:var(--muted);padding-top:9px;padding-bottom:7px}
+.pn{display:flex;align-items:center;gap:10px;min-width:0}
+.pava{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:11px;flex:none;background:linear-gradient(145deg,hsl(var(--h) 75% 62%),hsl(calc(var(--h) + 30) 70% 48%))}
+.pn b{display:block;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pn small{display:block;color:var(--muted);font-size:11.5px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:7px;font-size:11.5px;font-weight:500;white-space:nowrap;width:max-content}
+.pill svg{width:12px;height:12px}
+.p-red{background:var(--r-bg);color:var(--r)}.p-blue{background:var(--b-bg);color:var(--b)}.p-green{background:var(--g-bg);color:var(--g)}.p-maint{background:var(--m-bg);color:var(--m)}.p-gray{background:var(--n-bg);color:var(--n)}.p-yellow{background:var(--y-bg);color:var(--y)}
+.stg{display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap}
+.ticks{display:flex;gap:2px;flex:none}
+.ticks i{width:4px;height:13px;border-radius:2px;background:var(--tick-off)}
+.ticks i.on{background:var(--tick)}
+.ticks i.cur{background:var(--cc)}
+.stg b{font-weight:600}
+.stg span{overflow:hidden;text-overflow:ellipsis}
+.cell b{display:block;font-weight:500}
+.cell small{display:block;color:var(--muted);font-size:11.5px;white-space:nowrap}
+.c-over{color:var(--r)!important}.c-warn{color:#D97706!important}.c-client{color:var(--b)!important}.c-m{color:var(--m)!important}
+@media (prefers-color-scheme:dark){.c-warn{color:var(--y)!important}}
+.float{position:absolute;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);padding:12px 14px;display:flex;gap:12px;align-items:center;font-size:13.5px;animation:bob 6s ease-in-out infinite}
+.float .ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex:none}
+.float .ic svg{width:18px;height:18px}
+.float b{display:block;font-weight:600}
+.float small{color:var(--muted);font-size:12.5px}
+.f1{left:-36px;top:42%}
+.f2{right:-30px;top:18%;animation-delay:-2s}
+.f3{right:40px;bottom:-26px;animation-delay:-4s}
+@keyframes bob{50%{transform:translateY(-8px)}}
+
+/* для кого */
+.who{padding:56px 0 0;text-align:center}
+.who p{color:var(--muted);font-size:15px;margin-bottom:18px}
+.who-list{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.who-list span{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-weight:500;font-size:15px}
+.who-list svg{width:18px;height:18px;color:var(--brand)}
+
+/* боли */
+.pains{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.pain{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:26px;display:grid;gap:12px;align-content:start}
+.pain .q{font-size:13px;font-weight:600;color:var(--r);background:var(--r-bg);width:max-content;padding:4px 10px;border-radius:8px}
+.pain h3{font-size:20px;font-weight:650}
+.pain p{color:var(--muted);font-size:15px}
+.pain .fix{display:flex;gap:10px;align-items:flex-start;padding-top:14px;border-top:1px dashed var(--line-2);font-size:14.5px}
+.pain .fix svg{width:18px;height:18px;color:var(--g);flex:none;margin-top:2px}
+
+/* возможности: бенто */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:12px;overflow:hidden;position:relative;transition:transform .2s,box-shadow .2s}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.card .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand)}
+.card .ico svg{width:21px;height:21px}
+.card h3{font-size:21px;font-weight:650}
+.card p{color:var(--muted);font-size:15px}
+.w2{grid-column:span 2}.w3{grid-column:span 3}.w4{grid-column:span 4}
+.demo{margin-top:auto;padding-top:14px}
+/* мини-канбан */
+.kb{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kb-col{background:var(--surface-2);border-radius:10px;padding:8px;display:grid;gap:6px;align-content:start}
+.kb-col > small{font-size:11px;color:var(--muted);font-weight:600;padding:0 2px}
+.kb-card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 8px;font-size:11.5px;display:grid;gap:4px}
+.kb-card b{font-weight:600;font-size:12px}
+/* мини-доска производства */
+.pf{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pf-col{border:1px solid var(--line);border-radius:10px;padding:8px;display:grid;gap:6px;align-content:start;background:var(--surface)}
+.pf-col.cur{border:2px solid var(--ink);padding:7px}
+.pf-col > b{font-size:12px}
+.pf-c{border-radius:8px;padding:7px 8px;font-size:11.5px;border:1px solid var(--line)}
+.pf-c.done{background:var(--g-bg);border-color:color-mix(in srgb,var(--g) 35%,transparent)}
+.pf-c.here{border:1.5px solid var(--b)}
+.pf-c i{display:block;height:4px;border-radius:2px;background:var(--line);margin-top:6px;overflow:hidden}
+.pf-c i::after{content:"";display:block;height:100%;width:var(--w);background:var(--g)}
+.here-t{display:inline-block;font-size:10px;font-weight:600;color:#fff;background:var(--b);border-radius:5px;padding:1px 6px;margin-bottom:4px}
+@media (prefers-color-scheme:dark){.here-t{color:#0F0F12}}
+/* ведение */
+.cycle{display:flex;align-items:center;gap:16px}
+.ring{width:84px;height:84px;flex:none}
+.ring circle{fill:none;stroke-width:9}
+.cycle b{font-size:22px;display:block;letter-spacing:-.02em}
+.cycle small{color:var(--muted);font-size:13.5px}
+.rt{display:grid;gap:6px;margin-top:14px}
+.rt div{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:8px 10px;border-radius:9px;background:var(--surface-2)}
+.rt div span{color:var(--muted);font-size:12px}
+/* загрузка */
+.load{display:grid;gap:9px}
+.load div{display:grid;grid-template-columns:72px 1fr 34px;gap:10px;align-items:center;font-size:12.5px}
+.load i{display:block;height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.load i::after{content:"";display:block;height:100%;width:var(--w);border-radius:4px;background:var(--c,var(--brand))}
+.load span{text-align:right;color:var(--muted)}
+/* AI-отчёт */
+.ai{background:var(--surface-2);border-radius:12px;padding:12px 14px;font-size:13px;display:grid;gap:6px}
+.ai b{font-size:12px;color:var(--brand);display:flex;align-items:center;gap:6px}
+.ai b svg{width:14px;height:14px}
+.ai p{color:var(--ink);font-size:13px}
+.typing::after{content:"▍";color:var(--brand);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+/* доступ по ссылке */
+.share{display:flex;gap:8px;align-items:center;background:var(--surface-2);border-radius:10px;padding:8px 8px 8px 12px;font-size:12.5px}
+.share code{flex:1;font-family:inherit;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.share button{border:0;background:var(--ink);color:var(--bg);font:inherit;font-weight:600;font-size:12px;padding:6px 10px;border-radius:7px;cursor:pointer}
+.avs{display:flex;margin-top:10px}
+.avs span{width:28px;height:28px;border-radius:50%;border:2px solid var(--surface);margin-left:-6px;display:grid;place-items:center;font-size:10.5px;font-weight:700;color:#fff}
+.avs span:first-child{margin-left:0}
+/* телефон */
+.phone{width:150px;margin:6px auto 0;border-radius:24px;border:6px solid var(--ink);background:var(--bg);padding:10px 8px;display:grid;gap:7px;box-shadow:var(--shadow)}
+.phone .pc{background:var(--surface);border-radius:10px;padding:8px;display:grid;gap:5px}
+.phone .pc div{display:flex;gap:7px;align-items:center}
+.phone .pava{width:26px;height:26px;font-size:9.5px;border-radius:8px}
+.phone b{font-size:10.5px;line-height:1.2}
+.phone .pill{font-size:9.5px;padding:2px 6px}
+
+/* шаги */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:s}
+.step{padding:28px;border-radius:20px;background:var(--surface);border:1px solid var(--line);display:grid;gap:12px;align-content:start;position:relative}
+.step::before{counter-increment:s;content:counter(s);width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--bg);font-weight:700;font-size:15px}
+.step h3{font-size:20px;font-weight:650}
+.step p{color:var(--muted);font-size:15px}
+
+/* сравнение */
+.cmp{background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden;max-width:920px;margin:0 auto}
+.cmp-r{display:grid;grid-template-columns:1.2fr 1fr 1fr;border-bottom:1px solid var(--line)}
+.cmp-r:last-child{border-bottom:0}
+.cmp-r > div{padding:16px 20px;font-size:15px;display:flex;align-items:center;gap:10px}
+.cmp-r > div:nth-child(2){color:var(--muted)}
+.cmp-r > div:nth-child(3){background:color-mix(in srgb,var(--brand) 5%,transparent);font-weight:500}
+.cmp-h > div{font-weight:700;font-size:14px}
+.cmp-h > div:nth-child(3){color:var(--brand)}
+.cmp svg{width:18px;height:18px;flex:none}
+.no{color:#DC2626}.yes{color:var(--g)}
+
+/* тарифы */
+.bill{display:inline-flex;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;padding:4px;gap:2px;margin:0 auto 36px}
+.bill button{border:0;background:none;font:inherit;font-size:14.5px;font-weight:500;padding:8px 16px;border-radius:9px;cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:8px}
+.bill button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.bill .save{font-size:11.5px;font-weight:700;color:var(--g);background:var(--g-bg);padding:2px 7px;border-radius:6px}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
+.plan{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:30px;display:flex;flex-direction:column;gap:18px;position:relative}
+.plan.hot{border:2px solid var(--brand);padding:29px;box-shadow:0 24px 60px color-mix(in srgb,var(--brand) 18%,transparent)}
+.plan .tag{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--brand);color:#fff;font-size:12.5px;font-weight:700;padding:4px 12px;border-radius:999px;white-space:nowrap}
+.plan h3{font-size:22px;font-weight:700}
+.plan .for{color:var(--muted);font-size:14.5px;margin-top:-10px}
+.price{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.price b{font-size:44px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.price > span{color:var(--muted);font-size:14px}
+.price{min-height:78px;align-content:flex-start}
+.price s{color:var(--muted);font-size:15px;width:100%}
+.plan ul{list-style:none;margin:0;padding:0;display:grid;gap:11px;font-size:15px}
+.plan li{display:flex;gap:10px;align-items:flex-start}
+.plan li svg{width:18px;height:18px;color:var(--g);flex:none;margin-top:2px}
+.plan .btn{width:100%}
+.ent{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:26px 30px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.ent div{flex:1;min-width:260px}
+.ent h3{font-size:20px;font-weight:700;margin-bottom:4px}
+.ent p{color:var(--muted);font-size:15px}
+.price-note{text-align:center;color:var(--muted);font-size:13.5px;margin-top:18px}
+
+/* вопросы */
+.faq{max-width:800px;margin:0 auto;display:grid;gap:10px}
+.faq details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0 22px}
+.faq summary{list-style:none;cursor:pointer;padding:19px 0;font-weight:600;font-size:16.5px;display:flex;justify-content:space-between;gap:16px;align-items:center}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-size:24px;font-weight:400;color:var(--muted);transition:transform .2s;line-height:1}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{padding:0 0 20px;color:var(--muted);font-size:15.5px}
+
+/* финальный призыв */
+.final{margin:0 auto 90px;border-radius:28px;padding:72px 32px;text-align:center;color:#fff;position:relative;overflow:hidden;
+  background:radial-gradient(500px 300px at 15% 0%,rgba(255,255,255,.18),transparent 70%),linear-gradient(135deg,#5B4BD8,#7C3AED 55%,#C026D3)}
+.final h2{font-size:clamp(30px,4.6vw,50px);font-weight:800;max-width:760px;margin:0 auto 14px}
+.final p{font-size:18px;opacity:.85;max-width:560px;margin:0 auto 28px}
+.final .btn{background:#fff;color:#1d1640;height:54px;padding:0 26px;font-size:16px}
+.final .btn-line{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
+.final .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+footer{border-top:1px solid var(--line);padding:40px 0 48px;color:var(--muted);font-size:14px}
+footer .wrap{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+footer nav{display:flex;gap:20px;margin-left:auto;flex-wrap:wrap}
+footer a:hover{color:var(--ink)}
+
+/* появление при прокрутке */
+.rv{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}.float{animation:none}html{scroll-behavior:auto}.typing::after{animation:none}}
+
+/* адаптив */
+@media (max-width:1000px){
+  .nav,.top-cta .btn-ghost{display:none}
+  .bento{grid-template-columns:repeat(2,1fr)}
+  .w2,.w3,.w4{grid-column:span 1}
+  .w-full{grid-column:1/-1}
+  .plans{grid-template-columns:1fr;max-width:480px;margin:0 auto}
+  .plan.hot{order:-1}
+  .f1,.f2{display:none}
+  .app{grid-template-columns:1fr}
+  .app-side{display:none}
+}
+@media (max-width:760px){
+  .sec{padding:76px 0}
+  .wrap{width:calc(100% - 32px)}
+  .top-cta{display:none}
+  .burger{display:grid}
+  .mnav.open{display:grid;gap:4px;padding:8px 16px 16px;border-top:1px solid var(--line);background:var(--bg)}
+  .mnav a{padding:12px 8px;font-size:16px;font-weight:500;border-radius:10px}
+  .mnav .btn{margin-top:6px}
+  .hero{padding-top:44px}
+  .badge{font-size:13px;text-align:left;border-radius:14px}
+  .hero-cta{width:100%;flex-direction:column}
+  .hero-cta .btn{width:100%}
+  .pains,.steps{grid-template-columns:1fr}
+  .bento{grid-template-columns:1fr}
+  .tr{grid-template-columns:minmax(0,1.6fr) auto;row-gap:6px}
+  .tr > :nth-child(3),.tr > :nth-child(4){display:none}
+  .tr > :nth-child(5){grid-column:1/-1;display:flex;gap:8px;align-items:baseline}
+  .th{display:none}
+  .f3{position:static;margin:14px auto 0;width:max-content;animation:none}
+  .cmp-r{grid-template-columns:1fr 1fr}
+  .cmp-r > div:first-child{grid-column:1/-1;padding-bottom:4px;font-weight:600}
+  .cmp-h > div:first-child{display:none}
+  .cmp-r > div:nth-child(2),.cmp-r > div:nth-child(3){font-size:14px;padding-top:8px}
+  .final{border-radius:20px;padding:52px 20px;margin-bottom:60px}
+  .final .btn{width:100%}
+  footer nav{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="#" aria-label="KaizenHub — на главную"><span class="logo" aria-hidden="true"><i></i><i></i><i></i></span>KaizenHub</a>
+    <nav class="nav" aria-label="Разделы страницы">
+      <a href="#features">Возможности</a><a href="#how">Как это работает</a><a href="#pricing">Тарифы</a><a href="#faq">Вопросы</a>
+    </nav>
+    <div class="top-cta">
+      <a class="btn btn-ghost" href="/">Войти</a>
+      <a class="btn btn-primary" href="/">Начать бесплатно</a>
+    </div>
+    <button class="burger" id="burger" aria-label="Открыть меню" aria-expanded="false" aria-controls="mnav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </div>
+  <nav class="mnav" id="mnav" aria-label="Меню">
+    <a href="#features">Возможности</a><a href="#how">Как это работает</a><a href="#pricing">Тарифы</a><a href="#faq">Вопросы</a>
+    <a class="btn btn-ghost" href="/">Войти</a><a class="btn btn-primary" href="/">Начать бесплатно</a>
+  </nav>
+</header>
+
+<main>
+<!-- ГЕРОЙ -->
+<section class="hero">
+  <div class="wrap hero-in">
+    <a class="badge" href="#features"><b>Новое</b>Сроки, время на этапе и циклы ведения в матрице →</a>
+    <h1 >Все проекты студии —<br><em>на одном экране</em></h1>
+    <p class="lead">KaizenHub — конвейер проектов для агентств и продакшнов. Этапы, сроки, ответственные и риски видны сразу: где проект застрял, кто его держит и сколько клиент молчит.</p>
+    <div class="hero-cta">
+      <a class="btn btn-brand" href="/">Попробовать бесплатно <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <a class="btn btn-ghost" href="#features">Посмотреть возможности</a>
+    </div>
+    <div class="hero-note">
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Бесплатно до 3 проектов</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Без банковской карты</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Работает на телефоне</span>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="shot">
+      <div class="frame" role="img" aria-label="Экран KaizenHub: матрица проектов со статусами, этапами и сроками">
+        <div class="frame-bar"><i></i><i></i><i></i><span class="url">kaizenhub.app</span></div>
+        <div class="app">
+          <aside class="app-side">
+            <div class="app-sp"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7v8a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z"/></svg></span>Основное</div>
+            <div class="app-nav on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>Матрица</div>
+            <div class="app-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="15" rx="1.5"/><rect x="10" y="3" width="5" height="10" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/></svg>Канбан</div>
+            <div class="app-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Производство</div>
+            <div class="app-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5 2.5-2.5"/></svg>Мои задачи</div>
+            <div class="app-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2 2 4-4"/></svg>Поручения</div>
+            <div class="app-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>AI-отчёты</div>
+            <div class="app-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Загрузка</div>
+            <div class="app-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7"/></svg>Команда</div>
+          </aside>
+          <div class="app-main">
+            <div class="app-chips">
+              <span class="chip on">Все активные <b>19</b></span>
+              <span class="chip"><span class="dot" style="background:#DC2626"></span>Просрочено <b>4</b></span>
+              <span class="chip"><span class="dot" style="background:#F59E0B"></span>Горит <b>2</b></span>
+              <span class="chip"><span class="dot" style="background:#0EA5E9"></span>У клиента <b>3</b></span>
+              <span class="chip"><span class="dot" style="background:#22C55E"></span>В графике <b>8</b></span>
+              <span class="chip"><span class="dot" style="background:#A855F7"></span>На ведении <b>2</b></span>
+            </div>
+            <div class="tbl" id="demoTable"></div>
+          </div>
+        </div>
+      </div>
+      <div class="float f1"><span class="ic" style="background:var(--b-bg);color:var(--b)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg></span><div><b>Клиент молчит 5-й день</b><small>«Ипотека без визита» · Презентация</small></div></div>
+      <div class="float f2"><span class="ic" style="background:var(--g-bg);color:var(--g)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><b>Этап «Сценарий» сдан</b><small>Следующий уже в работе</small></div></div>
+      <div class="float f3"><span class="ic" style="background:var(--m-bg);color:var(--m)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg></span><div><b>Ведение: месяц 2, день 12/30</b><small>3 регулярные задачи на неделе</small></div></div>
+    </div>
+  </div>
+
+  <div class="wrap who rv">
+    <p>Сделан для команд, которые ведут много проектов одновременно</p>
+    <div class="who-list">
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8Z"/></svg>Маркетинговые агентства</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m16 10 6-3v10l-6-3"/></svg>Видеопродакшн</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18M3 12h18"/></svg>Digital-студии</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7ZM18 13l-1.5-7.5L2 2l3.5 14.5L13 18Z"/></svg>Дизайн-бюро</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>Веб-разработка</span>
+    </div>
+  </div>
+</section>
+
+<!-- БОЛИ -->
+<section class="sec" id="why">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Знакомо?</span>
+      <h2>Проекты не срываются внезапно. Просто этого никто не видит вовремя</h2>
+      <p>Таблицы, чаты и напоминания в голове держат картину, пока проектов мало. Дальше всё рассыпается.</p>
+    </div>
+    <div class="pains">
+      <article class="pain rv">
+        <span class="q">«Где мы по проекту?»</span>
+        <h3>Статус живёт в пяти местах</h3>
+        <p>Таблица у PM, переписка в мессенджере, файлы в облаке. Чтобы ответить клиенту, нужно полчаса собирать картину.</p>
+        <div class="fix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Матрица показывает этап, статус и срок каждого проекта в одной строке.</div>
+      </article>
+      <article class="pain rv">
+        <span class="q">«Мы ждём клиента»</span>
+        <h3>Неделю. И никто не напомнил</h3>
+        <p>Проект «у клиента» выглядит как работа в процессе, а на деле стоит. Дедлайн при этом никуда не двигается.</p>
+        <div class="fix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>KaizenHub считает дни ожидания и подсвечивает, когда клиент молчит дольше трёх дней.</div>
+      </article>
+      <article class="pain rv">
+        <span class="q">«А кто это делает?»</span>
+        <h3>Задача есть, ответственного нет</h3>
+        <p>Этап начался, а исполнитель узнал об этом последним. Половина команды перегружена, другая ждёт задач.</p>
+        <div class="fix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>У каждого этапа ответственный, у каждого человека — «Мои задачи» и видимая загрузка.</div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ВОЗМОЖНОСТИ -->
+<section class="sec" id="features" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Возможности</span>
+      <h2>Всё, что нужно, чтобы проекты шли по конвейеру</h2>
+      <p>От первого брифа до ежемесячного ведения клиента — в одном сервисе, без настроек на неделю.</p>
+    </div>
+    <div class="bento">
+      <article class="card w4 w-full rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg></span>
+        <h3>Матрица проектов</h3>
+        <p>Все проекты списком: текущий этап, статус, сколько дней проект на этапе и сколько осталось до дедлайна. Фильтры по статусу, PM и клиенту, группировка по процессам.</p>
+        <div class="demo"><div class="tbl" id="miniTable"></div></div>
+      </article>
+      <article class="card w2 rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="15" rx="1.5"/><rect x="10" y="3" width="5" height="10" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/></svg></span>
+        <h3>Канбан по этапам</h3>
+        <p>Колонки — этапы вашего процесса. Перетащили карточку — этап закрыт, следующий в работе.</p>
+        <div class="demo kb">
+          <div class="kb-col"><small>Бриф</small><div class="kb-card"><b>Сезон простуд</b><span class="pill p-green">В работе</span></div></div>
+          <div class="kb-col"><small>Сценарий</small><div class="kb-card"><b>Доставка 30 мин</b><span class="pill p-yellow">Горит</span></div><div class="kb-card"><b>Зимние шины</b><span class="pill p-blue">У клиента</span></div></div>
+          <div class="kb-col"><small>Съёмка</small><div class="kb-card"><b>ТВ-ролик</b><span class="pill p-red">Просрочен</span></div></div>
+        </div>
+      </article>
+      <article class="card w3 rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span>
+        <h3>Производство</h3>
+        <p>Доска одного проекта: этапы и подэтапы с чек-листами, «Сейчас здесь» и ответственный за каждый шаг. Переключение между проектами — в один клик.</p>
+        <div class="demo pf">
+          <div class="pf-col"><b>4. Съёмка</b><div class="pf-c done">Площадка<i style="--w:100%"></i></div><div class="pf-c done">Кастинг<i style="--w:100%"></i></div></div>
+          <div class="pf-col cur"><b>5. Монтаж</b><div class="pf-c done">Черновой<i style="--w:100%"></i></div><div class="pf-c here"><span class="here-t">Сейчас здесь</span><br>Цветокоррекция<i style="--w:40%"></i></div></div>
+          <div class="pf-col"><b>6. Сдача</b><div class="pf-c">Мастер-копия<i style="--w:0%"></i></div></div>
+        </div>
+      </article>
+      <article class="card w3 rv">
+        <span class="ico" style="background:var(--m-bg);color:var(--m)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg></span>
+        <h3>Ведение клиентов</h3>
+        <p>После сдачи проект переходит на абонентское обслуживание: месячные циклы и регулярные задачи, которые сами переносятся на следующий период.</p>
+        <div class="demo">
+          <div class="cycle">
+            <svg class="ring" viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="36" stroke="var(--m-bg)"/><circle cx="42" cy="42" r="36" stroke="var(--m)" stroke-linecap="round" stroke-dasharray="226" stroke-dashoffset="136" transform="rotate(-90 42 42)"/></svg>
+            <div><b>Месяц 2 · день 12/30</b><small>«Летний запуск лимонадов»</small></div>
+          </div>
+          <div class="rt"><div>Отчёт по рекламе<span>каждую неделю</span></div><div>Контент-план<span>раз в месяц</span></div></div>
+        </div>
+      </article>
+      <article class="card w2 rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg></span>
+        <h3>AI-отчёты</h3>
+        <p>Сводка по портфелю для руководителя или клиента — за минуту, по живым данным.</p>
+        <div class="demo ai"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9Z"/></svg>Отчёт за неделю</b><p class="typing" id="aiText"></p></div>
+      </article>
+      <article class="card w2 rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
+        <h3>Загрузка команды</h3>
+        <p>Кто перегружен, а кто свободен — до того, как вы раздадите новый проект.</p>
+        <div class="demo load">
+          <div>Алина<i style="--w:92%;--c:#DC2626"></i><span>5</span></div>
+          <div>Марат<i style="--w:64%"></i><span>3</span></div>
+          <div>Дина<i style="--w:40%"></i><span>2</span></div>
+          <div>Олжас<i style="--w:18%;--c:#22C55E"></i><span>1</span></div>
+        </div>
+      </article>
+      <article class="card w2 rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg></span>
+        <h3>Доступ по ссылке</h3>
+        <p>Подрядчик или клиент открывает свой проект по одной ссылке и отмечает выполненное. Остальные проекты ему не видны.</p>
+        <div class="demo"><div class="share"><code>kaizenhub.app/join/7fk2…</code><button type="button" id="copyBtn">Копировать</button></div>
+          <div class="avs"><span style="background:#6A5AE0">АЦ</span><span style="background:#0EA5E9">МК</span><span style="background:#F97316">ДС</span><span style="background:#22C55E">+4</span></div></div>
+      </article>
+      <article class="card w2 rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5 2.5-2.5"/></svg></span>
+        <h3>Мои задачи и поручения</h3>
+        <p>Исполнитель видит только своё: задачи по проектам, внутренние поручения и регулярные дела, со сроками и напоминаниями.</p>
+      </article>
+      <article class="card w2 rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+        <h3>Шаблоны процессов</h3>
+        <p>Опишите процесс один раз: этапы, подэтапы, сроки, шаблоны сообщений клиенту. Изменения шаблона сразу доходят до всех проектов.</p>
+      </article>
+      <article class="card w2 rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></span>
+        <h3>Удобно на телефоне</h3>
+        <p>Карточки проектов, доска производства и задачи — полноценно в браузере телефона, без установки.</p>
+        <div class="demo phone" aria-hidden="true">
+          <div class="pc"><div><span class="pava" style="--h:262">ТВ</span><b>ТВ-ролик для матрасов</b></div><span class="pill p-red">Просрочен</span></div>
+          <div class="pc"><div><span class="pava" style="--h:30">ИБ</span><b>Ипотека без визита</b></div><span class="pill p-blue">У клиента</span></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- КАК РАБОТАЕТ -->
+<section class="sec" id="how" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Как это работает</span>
+      <h2>Запуск за один вечер</h2>
+      <p>Не нужно внедрение на месяц и обучение команды. Три шага — и проекты на конвейере.</p>
+    </div>
+    <div class="steps">
+      <article class="step rv"><h3>Опишите процесс</h3><p>Возьмите готовый шаблон или соберите свой: этапы, подэтапы и сколько дней на каждый.</p></article>
+      <article class="step rv"><h3>Заведите проекты</h3><p>Клиент, PM, дата старта и дедлайн. Сроки этапов посчитаются сами и сдвинутся, если что-то задержалось.</p></article>
+      <article class="step rv"><h3>Пригласите команду</h3><p>Руководителям — полный доступ, исполнителям и подрядчикам — ссылку только на их проекты и задачи.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- СРАВНЕНИЕ -->
+<section class="sec" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Было → стало</span>
+      <h2>Меньше созвонов «где мы», больше сданных проектов</h2>
+    </div>
+    <div class="cmp rv" role="table" aria-label="Сравнение: таблицы и чаты против KaizenHub">
+      <div class="cmp-r cmp-h" role="row"><div role="columnheader"></div><div role="columnheader">Таблицы и чаты</div><div role="columnheader">KaizenHub</div></div>
+      <div class="cmp-r" role="row"><div role="cell">Статус всех проектов</div><div role="cell"><svg class="no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Собирать вручную</div><div role="cell"><svg class="yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Один экран</div></div>
+      <div class="cmp-r" role="row"><div role="cell">Сроки после задержки</div><div role="cell"><svg class="no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Пересчитывать руками</div><div role="cell"><svg class="yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Сдвигаются сами</div></div>
+      <div class="cmp-r" role="row"><div role="cell">Сколько ждём клиента</div><div role="cell"><svg class="no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Никто не считает</div><div role="cell"><svg class="yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Счётчик дней и подсветка</div></div>
+      <div class="cmp-r" role="row"><div role="cell">Доступ подрядчику</div><div role="cell"><svg class="no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Вся таблица или ничего</div><div role="cell"><svg class="yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Только его проект</div></div>
+      <div class="cmp-r" role="row"><div role="cell">Ежемесячное ведение</div><div role="cell"><svg class="no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Напоминания в календаре</div><div role="cell"><svg class="yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Циклы и регулярные задачи</div></div>
+      <div class="cmp-r" role="row"><div role="cell">Отчёт руководителю</div><div role="cell"><svg class="no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Полдня в пятницу</div><div role="cell"><svg class="yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>AI-отчёт за минуту</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ТАРИФЫ -->
+<section class="sec" id="pricing" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Тарифы</span>
+      <h2>Простые цены, которые растут вместе с командой</h2>
+      <p>Начните бесплатно. Платите только за тех, кто работает в сервисе — гости по ссылке бесплатны.</p>
+    </div>
+    <div style="text-align:center" class="rv">
+      <div class="bill" role="group" aria-label="Период оплаты">
+        <button type="button" data-bill="m" aria-pressed="false">Помесячно</button>
+        <button type="button" data-bill="y" aria-pressed="true">За год <span class="save">−20%</span></button>
+      </div>
+    </div>
+    <div class="plans">
+      <article class="plan rv">
+        <h3>Старт</h3>
+        <p class="for">Для фрилансера или маленькой команды</p>
+        <div class="price"><b>0 ₸</b><span>навсегда</span></div>
+        <a class="btn btn-ghost" href="/">Начать бесплатно</a>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>До 3 активных проектов</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>До 2 участников</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Матрица, канбан, производство</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>1 шаблон процесса</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Мобильная версия</li>
+        </ul>
+      </article>
+      <article class="plan hot rv">
+        <span class="tag">Популярный</span>
+        <h3>Команда</h3>
+        <p class="for">Для агентств и продакшнов до 25 человек</p>
+        <div class="price" data-m="3 900" data-y="3 120"><b><span class="pv">3 120</span> ₸</b><span>за участника в месяц</span><s class="pold">при оплате помесячно — 3 900 ₸</s></div>
+        <a class="btn btn-brand" href="/">Попробовать 14 дней бесплатно</a>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Без ограничения проектов</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Все шаблоны и синхронизация процессов</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Ведение клиентов и регулярные задачи</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Поручения, «Мои задачи», уведомления</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Загрузка команды</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Гости и подрядчики по ссылке — бесплатно</li>
+        </ul>
+      </article>
+      <article class="plan rv">
+        <h3>Студия</h3>
+        <p class="for">Для нескольких команд и направлений</p>
+        <div class="price" data-m="6 500" data-y="5 200"><b><span class="pv">5 200</span> ₸</b><span>за участника в месяц</span><s class="pold">при оплате помесячно — 6 500 ₸</s></div>
+        <a class="btn btn-primary" href="/">Попробовать 14 дней бесплатно</a>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Всё из тарифа «Команда»</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Несколько пространств с отдельными цветами</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>AI-отчёты по портфелю и для клиентов</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Руководители с правами владельца</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Приоритетная поддержка</li>
+        </ul>
+      </article>
+    </div>
+    <div class="ent rv">
+      <div><h3>Корпоративный</h3><p>Больше 50 участников, своё размещение данных, SSO, договор и помощь с переносом проектов.</p></div>
+      <a class="btn btn-ghost" href="mailto:hello@kaizenhub.app?subject=KaizenHub%20%E2%80%94%20%D0%BA%D0%BE%D1%80%D0%BF%D0%BE%D1%80%D0%B0%D1%82%D0%B8%D0%B2%D0%BD%D1%8B%D0%B9%20%D1%82%D0%B0%D1%80%D0%B8%D1%84">Связаться с нами</a>
+    </div>
+    <p class="price-note rv">Цены указаны без НДС. Можно перейти на другой тариф в любой момент.</p>
+  </div>
+</section>
+
+<!-- ВОПРОСЫ -->
+<section class="sec" id="faq" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head rv"><span class="eyebrow">Вопросы</span><h2>Частые вопросы</h2></div>
+    <div class="faq">
+      <details class="rv"><summary>Чем KaizenHub отличается от Trello, Asana или Битрикс24?</summary><p>Универсальные таск-трекеры показывают задачи. KaizenHub показывает проекты как конвейер: в каком этапе каждый, сколько дней он там, укладывается ли в дедлайн и сколько ждёт клиента. Для студий, где одновременно идут десятки проектов по похожему процессу, это экономит часы на сбор статусов.</p></details>
+      <details class="rv"><summary>Нужно ли что-то устанавливать?</summary><p>Нет. KaizenHub работает в браузере на компьютере и телефоне. Исполнителю достаточно открыть ссылку.</p></details>
+      <details class="rv"><summary>Подрядчик увидит все наши проекты?</summary><p>Нет. По ссылке человек получает доступ только к тем проектам и задачам, которыми вы с ним поделились. Доступ можно закрыть в один клик.</p></details>
+      <details class="rv"><summary>Подходит ли сервис для абонентского обслуживания клиентов?</summary><p>Да. После сдачи проект переходит на этап «Ведение»: месячные циклы, регулярные задачи с периодичностью и счётчик «Месяц 2, день 12 из 30».</p></details>
+      <details class="rv"><summary>Где хранятся данные?</summary><p>В защищённой облачной базе с разграничением доступа на уровне каждой записи. Свои проекты видит только ваша команда и те, кого вы пригласили.</p></details>
+      <details class="rv"><summary>Что будет после пробного периода?</summary><p>Вы выбираете тариф или остаётесь на бесплатном «Старте». Проекты никуда не пропадают.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ПРИЗЫВ -->
+<section class="wrap">
+  <div class="final rv">
+    <h2>Посмотрите на свои проекты по-новому уже сегодня</h2>
+    <p>Заведите первые проекты за 10 минут. Бесплатно, без карты.</p>
+    <div class="row">
+      <a class="btn" href="/">Начать бесплатно</a>
+      <a class="btn btn-line" href="#features">Возможности</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#"><span class="logo" aria-hidden="true"><i></i><i></i><i></i></span>KaizenHub</a>
+    <span>© <span id="yr">2026</span> KaizenHub. Конвейер проектов для студий.</span>
+    <nav aria-label="Ссылки"><a href="#features">Возможности</a><a href="#pricing">Тарифы</a><a href="#faq">Вопросы</a><a href="/">Войти</a></nav>
+  </div>
+</footer>
+
+<script>
+(() => {
+  // демо-данные для макета матрицы
+  const I = {
+    red:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5M12 16.2v.3"/></svg>',
+    blue:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>',
+    green:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3a9 9 0 1 1-9 9" stroke-dasharray="3 3.2"/><path d="M12 3a9 9 0 0 0-9 9"/></svg>',
+    yellow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3 3.5 5 6 5 9a5 5 0 0 1-10 0c0-1.6.6-3 1.6-4.2.4 1.4 1.3 2.2 2.4 2.2 0-2.6.3-4.6 1-7Z"/></svg>',
+    maint:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>'
+  };
+  const COL = { red:'#DC2626', blue:'#0EA5E9', green:'#22C55E', yellow:'#F59E0B', maint:'#A855F7' };
+  const LBL = { red:'Просрочен', blue:'У клиента', green:'В работе', yellow:'Горит', maint:'Ведение' };
+  const rows = [
+    { n:'ТВ-ролик для матрасов', c:'Студия «Сон»', h:262, k:'red', at:6, of:6, st:'Запуск рекламы', s1:'24 сент.', s2:'29-й день · на этапе 19 дн.', d1:'6 окт.', d2:'Просрочено на 16 дней', dc:'c-over', slow:true },
+    { n:'Ипотека без визита в офис', c:'Банк «Город»', h:42, k:'blue', at:3, of:6, st:'Презентация клиенту', s1:'14 окт.', s2:'9-й день · на этапе 5 дн.', d1:'26 окт.', d2:'У клиента: 5-й день', dc:'c-warn', slow:true },
+    { n:'Набор курьеров', c:'Доставка «Быстро»', h:54, k:'yellow', at:4, of:6, st:'Утверждение', s1:'15 окт.', s2:'8-й день · на этапе 2 дн.', d1:'24 окт.', d2:'Осталось 2 дня', dc:'c-warn' },
+    { n:'Акция «Приведи друга»', c:'Фитнес «Пульс»', h:200, k:'green', at:4, of:6, st:'Утверждение заказчиком', s1:'17 окт.', s2:'6-й день', d1:'29 окт.', d2:'Осталось 7 дней', dc:'' },
+    { n:'Летний запуск лимонадов', c:'Напитки «Цитрус»', h:330, k:'maint', at:7, of:7, st:'Ведение / Поддержка', s1:'25 авг.', s2:'59-й день', d1:'Бессрочно', d2:'Месяц 2 (день 12/30)', dc:'c-m' },
+  ];
+  const ini = n => n.replace(/[«»"]/g, '').split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  const ticks = r => Array.from({ length:r.of }, (_, i) => `<i class="${i < r.at - 1 ? 'on' : i === r.at - 1 ? 'cur' : ''}"></i>`).join('');
+  const row = r => `<div class="tr" style="--cc:${COL[r.k]}">
+    <div class="pn"><span class="pava" style="--h:${r.h}">${ini(r.n)}</span><span style="min-width:0"><b>${r.n}</b><small>${r.c}</small></span></div>
+    <div><span class="pill p-${r.k}">${I[r.k]}${LBL[r.k]}</span></div>
+    <div class="stg"><span class="ticks">${ticks(r)}</span><b>${r.at}/${r.of}</b><span>${r.st}</span></div>
+    <div class="cell"><b>${r.s1}</b><small>${r.slow ? r.s2.replace(/(на этапе .+)$/, '<span class="c-warn">$1</span>') : r.s2}</small></div>
+    <div class="cell"><b>${r.d1}</b><small class="${r.dc}">${r.d2}</small></div></div>`;
+  const head = '<div class="tr th"><div>Проект</div><div>Статус</div><div>Этап</div><div>Старт</div><div>Срок</div></div>';
+  document.getElementById('demoTable').innerHTML = head + rows.map(row).join('');
+  document.getElementById('miniTable').innerHTML = head + rows.slice(0, 3).map(row).join('');
+
+  // «печатающийся» AI-отчёт
+  const txt = 'В работе 19 проектов. 4 просрочены — больше всего задержек на этапе «Съёмка». Клиент «Банк Город» не отвечает 5 дней: стоит напомнить.';
+  const el = document.getElementById('aiText'); let started = false;
+  const type = () => { if (started) return; started = true;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches){ el.textContent = txt; return; }
+    let i = 0; const t = setInterval(() => { el.textContent = txt.slice(0, ++i); if (i >= txt.length) clearInterval(t); }, 22); };
+
+  // появление при прокрутке
+  const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return; e.target.classList.add('in'); io.unobserve(e.target);
+    if (e.target.contains(el)) type();
+  }), { rootMargin:'0px 0px -8% 0px', threshold:0.08 }) : null;
+  document.querySelectorAll('.rv').forEach((n, i) => { n.style.transitionDelay = `${(i % 3) * 70}ms`; io ? io.observe(n) : n.classList.add('in'); });
+  if (!io) type();
+
+  // шапка: линия при прокрутке
+  const top = document.getElementById('top');
+  const onScroll = () => top.classList.toggle('scrolled', scrollY > 8); addEventListener('scroll', onScroll, { passive:true }); onScroll();
+
+  // мобильное меню
+  const burger = document.getElementById('burger'), mnav = document.getElementById('mnav');
+  burger.addEventListener('click', () => { const o = mnav.classList.toggle('open'); burger.setAttribute('aria-expanded', o); });
+  mnav.addEventListener('click', e => { if (e.target.closest('a')){ mnav.classList.remove('open'); burger.setAttribute('aria-expanded', 'false'); } });
+
+  // тарифы: месяц / год
+  document.querySelectorAll('[data-bill]').forEach(b => b.addEventListener('click', () => {
+    const y = b.dataset.bill === 'y';
+    document.querySelectorAll('[data-bill]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    document.querySelectorAll('.price[data-m]').forEach(p => { p.querySelector('.pv').textContent = y ? p.dataset.y : p.dataset.m; p.querySelector('.pold').hidden = !y; });
+  }));
+
+  // «Копировать» в демо-ссылке
+  const cb = document.getElementById('copyBtn');
+  cb.addEventListener('click', () => { cb.textContent = 'Скопировано'; setTimeout(() => cb.textContent = 'Копировать', 1400); });
+
+  document.getElementById('yr').textContent = new Date().getFullYear();
+})();
+</script>
+</body>
+</html>
