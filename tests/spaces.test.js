@@ -56,7 +56,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   o.w.close();
   const o2 = openApp(be, A, 'https://kz.test/', {}, store); await wait(4000);
   const w2 = o2.w, D2 = w2.document, $2 = s => D2.querySelector(s);
-  assert.equal($2('#spaceName').textContent, 'Личные проекты'); assert.ok(!$2('#spaceName').hidden); ok('в шапке видно текущее пространство');
+  assert.ok(w2.getComputedStyle($2('#spaceName')).display === 'none'); ok('в шапке нет названия пространства — оно в панели');
   assert.ok(/Проектов пока нет/.test(D2.getElementById('app').textContent)); ok('в новом пространстве нет проектов основного');
   $2('#newBtn').click(); await wait(100); $2('#cName').value = 'Личный проект'; $2('#cClient').value = 'Я'; fire($2('#cForm'), 'submit'); await wait(2500);
   const keys = [...be.rows.keys()];
@@ -69,10 +69,16 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.equal(D2.querySelectorAll('.side-dots [data-sidesp]').length, 2); assert.ok($2('.side-dot.cur')); ok('панель: пространства цветными кружками, текущее отмечено');
   $2('.side-nav [data-sideview="kanban"]').click(); await wait(80);
   assert.ok(D2.body.dataset.view === 'kanban' && $2('#side').hidden); ok('панель: выбор раздела переключает его и прячет панель');
+  assert.ok(D2.querySelector('.top .tabs') && w2.getComputedStyle(D2.querySelector('.top .tabs')).display === 'none' && $2('#viewName').textContent === 'Канбан'); ok('верхнего меню нет, в шапке — название раздела');
+  Object.defineProperty(w2, 'innerWidth', { value: 1400, configurable: true }); w2.dispatchEvent(new w2.Event('resize')); await wait(50);
+  assert.ok(D2.body.classList.contains('side-pinned') && !$2('#side').hidden); ok('на широком экране панель по умолчанию закреплена');
+  $2('[data-sidepin]').click(); await wait(80);
+  assert.ok(!D2.body.classList.contains('side-pinned') && w2.localStorage.getItem('kz-side-pin') === '0'); ok('открепили — браузер это запомнил');
   $2('#sideBtn').click(); await wait(50); $2('[data-sidepin]').click(); await wait(80);
   assert.ok(D2.body.classList.contains('side-pinned') && !$2('#side').hidden && w2.localStorage.getItem('kz-side-pin') === '1'); ok('панель: закрепляется и остаётся открытой');
   $2('[data-sidepin]').click(); await wait(80);
   assert.ok(!D2.body.classList.contains('side-pinned') && $2('#side').hidden); ok('панель: открепляется');
+  Object.defineProperty(w2, 'innerWidth', { value: 1024, configurable: true }); w2.dispatchEvent(new w2.Event('resize')); await wait(50);
   // цвет пространства
   D2.querySelector('.tabs [data-view="templates"]').click(); await wait(100); $2('[data-settab="spaces"]').click(); await wait(200);
   const cBtn = $2(`[data-spcolor="${sid}|#EF4444"]`); assert.ok(cBtn); cBtn.click(); await wait(300);

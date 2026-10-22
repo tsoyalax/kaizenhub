@@ -583,6 +583,11 @@ body.selecting #app{padding-bottom:90px}
 .msg-box.copied{border-color:var(--g)}.msg-box.copied .msg-copy{color:var(--g)}
 /* меню-панель в стиле Arc */
 .side-btn{flex:none;margin-right:-14px}
+/* верхнее меню больше не нужно: разделы — в панели слева (на телефоне — нижнее меню) */
+.top .tabs,.top .space-name{display:none!important}
+.view-name{font-size:14.5px;font-weight:500;color:var(--muted);padding-left:14px;border-left:1px solid var(--line);white-space:nowrap}
+@media (max-width:640px){.view-name{display:none}}
+body.side-pinned .side-btn{color:var(--ink)}
 .side{position:fixed;z-index:40;top:8px;left:8px;bottom:8px;width:264px;display:flex;flex-direction:column;gap:14px;padding:12px;border-radius:16px;
   border:1px solid color-mix(in srgb,var(--space,var(--brand)) 30%,var(--line));
   background:linear-gradient(180deg,color-mix(in srgb,var(--space,var(--brand)) 14%,var(--surface)),color-mix(in srgb,var(--space,var(--brand)) 6%,var(--surface)));
@@ -613,7 +618,7 @@ body.selecting #app{padding-bottom:90px}
 .side-spnames button:hover{background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink)}
 .side-spnames button.cur{color:var(--ink);font-weight:500}
 /* закреплённая панель: сдвигает страницу, верхние вкладки не дублируются */
-@media (min-width:901px){
+@media (min-width:1101px){
   body.side-pinned{padding-left:280px}
   body.side-pinned .side{animation:none;box-shadow:none;z-index:6}
   body.side-pinned .top .tabs{display:none}
@@ -1366,6 +1371,7 @@ table.cx{border-collapse:collapse}
     <button data-view="team">Команда</button>
     <button data-view="templates">Настройки</button>
   </nav>
+  <span class="view-name" id="viewName"></span>
   <div class="top-actions">
     <button class="icon-btn" id="cloudBtn" aria-label="Сохранение данных"></button>
     <button class="icon-btn" id="themeBtn" aria-label="Переключить тему"></button>
@@ -2138,6 +2144,7 @@ function restoreView(){
 function render(){
   if (GUEST && ui.view !== 'mytasks') ui.view = 'mine';
   try { renderSide(); } catch(e) {}
+  try { const vn = $('#viewName'); if (vn) vn.textContent = ({ production:'Производство', templates:'Настройки' })[ui.view] || MNAV[ui.view]?.[0] || ''; } catch(e) {}
   if (!GUEST && ui.view === 'mytasks'){ ui.view = 'production'; ui.prodMode = 'tasks'; }
   paintSpace(); rememberView();
   document.body.dataset.view = ui.view;
@@ -3414,7 +3421,8 @@ function watchSpaces(){
 // =====================================================================
 const SIDE_PIN = 'kz-side-pin';
 let sideOpen = false;
-const sidePinned = () => { try { return localStorage.getItem(SIDE_PIN) === '1' && innerWidth > 900; } catch(e) { return false; } };
+const sidePinned = () => { if (innerWidth <= 1100) return false; try { const v = localStorage.getItem(SIDE_PIN); return v === null ? true : v === '1'; } catch(e) { return true; } };
+const setPin = on => { try { localStorage.setItem(SIDE_PIN, on ? '1' : '0'); } catch(e) {} };
 function sideViews(){
   if (GUEST) return ['mine', 'mytasks'];
   return [...document.querySelectorAll('.tabs [data-view]')].filter(b => !b.hidden).map(b => b.dataset.view);
@@ -3431,7 +3439,7 @@ function renderSide(){
     ...spaces.orgs.map(o => ({ id:'o:' + o.id, name:`Проекты: ${o.name}`, color:spColorsCache()['o:' + o.id] || hashColor(o.id), cur:ORG === o.id }))];
   const cur = all.find(x => x.cur) || { name:'Основное', color:spColor('') };
   el.innerHTML = `<div class="side-head"><span class="side-sp"><i style="background:${cur.color}"></i><b>${esc(GUEST ? 'Мои проекты' : cur.name)}</b></span>
-      ${innerWidth > 900 ? `<button class="icon-btn side-pin" data-sidepin aria-pressed="${pinned}" title="${pinned ? 'Открепить панель' : 'Закрепить панель'}" aria-label="${pinned ? 'Открепить панель' : 'Закрепить панель'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${pinned ? '<path d="M15 6l-6 6 6 6"/>' : '<path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3z"/>'}</svg></button>` : ''}
+      ${innerWidth > 1100 ? `<button class="icon-btn side-pin" data-sidepin aria-pressed="${pinned}" title="${pinned ? 'Открепить панель' : 'Закрепить панель'}" aria-label="${pinned ? 'Открепить панель' : 'Закрепить панель'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${pinned ? '<path d="M15 6l-6 6 6 6"/>' : '<path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3z"/>'}</svg></button>` : ''}
       ${pinned ? '' : '<button class="icon-btn" data-sideclose aria-label="Закрыть меню">×</button>'}</div>
     <nav class="side-nav" aria-label="Разделы">${sideViews().map(v => `<button data-sideview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v]?.[1] || ''}<span>${label(v)}</span></button>`).join('')}</nav>
     ${all.length ? `<div class="side-spaces"><div class="side-spl"><span>Пространства</span><button class="link" data-sidespset>Настроить</button></div>
@@ -3442,9 +3450,9 @@ function renderSide(){
 function openSide(){ sideOpen = true; renderSide(); }
 function closeSide(){ if (!sideOpen) return; sideOpen = false; renderSide(); }
 document.addEventListener('click', e => {
-  if (e.target.closest?.('#sideBtn')){ if (sidePinned()){ try { localStorage.removeItem(SIDE_PIN); } catch(x) {} sideOpen = false; renderSide(); render(); } else { sideOpen = !sideOpen; renderSide(); } return; }
+  if (e.target.closest?.('#sideBtn')){ if (sidePinned()){ setPin(false); sideOpen = false; renderSide(); render(); } else { sideOpen = !sideOpen; renderSide(); } return; }
   if (e.target.closest?.('#sideBack') || e.target.closest?.('[data-sideclose]')){ closeSide(); return; }
-  const pin = e.target.closest?.('[data-sidepin]'); if (pin){ const on = !sidePinned(); try { if (on) localStorage.setItem(SIDE_PIN, '1'); else localStorage.removeItem(SIDE_PIN); } catch(x) {} sideOpen = false; renderSide(); render(); return; }
+  const pin = e.target.closest?.('[data-sidepin]'); if (pin){ setPin(!sidePinned()); sideOpen = false; renderSide(); render(); return; }
   const v = e.target.closest?.('[data-sideview]'); if (v){ ui.view = v.dataset.sideview; ui.draft = null; if (!sidePinned()) sideOpen = false; render(); renderSide(); scrollTo(0, 0); return; }
   const sp = e.target.closest?.('[data-sidesp]'); if (sp){ const id = sp.dataset.sidesp;
     if (id.startsWith('o:')){ if (ORG !== id.slice(2)) switchOrg(id.slice(2)); }
@@ -3456,7 +3464,7 @@ document.addEventListener('click', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && sideOpen) closeSide(); });
 // как в Arc: подвели мышь к левому краю — панель выглядывает
 document.addEventListener('mousemove', e => {
-  if (sidePinned() || sideOpen || innerWidth <= 900 || layer.innerHTML || e.clientX > 4 || e.buttons) return;
+  if (sidePinned() || sideOpen || innerWidth <= 1100 || layer.innerHTML || e.clientX > 4 || e.buttons) return;
   clearTimeout(window.__sideT); window.__sideT = setTimeout(() => { if (!sideOpen) { sideOpen = true; window.__sideHover = true; renderSide(); } }, 180);
 });
 document.addEventListener('mouseleave', () => clearTimeout(window.__sideT));
