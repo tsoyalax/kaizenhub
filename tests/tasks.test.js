@@ -49,12 +49,12 @@ const getComputedStyle_ok = w => w.getComputedStyle(w.document.getElementById('b
   // назначаем Тимура ответственным за текущий этап одного проекта
   const pid = own.w.eval(`db.projects.find(p => p.state === 'active' && currentStage(p) && (currentStage(p).subs || []).length && p.stages.indexOf(currentStage(p)) > 0).id`);
   own.w.eval(`(() => { const p = projById('${pid}'); currentStage(p).assignee_id = '${tu.id}'; commit(); })()`); await wait(2500);
-  // 1) вкладка «Задачи» в «Производстве»
+  // 1) «Мои задачи» — отдельный раздел
   D.querySelector('[data-view="production"]').click(); await wait(100);
-  assert.ok($('[data-pmode="tasks"]') && !$('[data-pmode="assign"]') && $('.tabs [data-view="assign"]') && /Поручения/.test($('.tabs [data-view="assign"]').textContent)); ok('«Поручения» — отдельная вкладка главного меню, «Мои задачи» — в «Производстве»');
-  $('[data-pmode="tasks"]').click(); await wait(150);
+  assert.ok(!$('[data-pmode]') && $('.tabs [data-view="mytasks"]') && /Мои задачи/.test($('.tabs [data-view="mytasks"]').textContent) && $('.tabs [data-view="assign"]')); ok('«Мои задачи» и «Поручения» — отдельные пункты меню, в «Производстве» переключателя нет');
+  D.querySelector('.tabs [data-view="mytasks"]').click(); await wait(150);
   assert.ok(!$('#dayWho') && !$('[data-itnew]') && !$('[data-dtdue]') && $('#dayAs')); ok('«Мои задачи»: как у исполнителя — без постановки и сроков, с выбором «Смотреть как»');
-  assert.ok(!$('#myTasksTab') || $('#myTasksTab').hidden); ok('у руководства нет отдельной вкладки исполнителя');
+  assert.ok(!$('#myTasksTab').hidden); ok('у руководства тоже есть пункт «Мои задачи»');
   $('.tabs [data-view="assign"]').click(); await wait(150);
   assert.ok($$('[data-dtproj]').length && $$('[data-dtproj]').every(sc => sc.classList.contains('folded') && !sc.querySelector('.dt-p'))); ok('«Поручения»: проекты по умолчанию свёрнуты');
   $('[data-dtall="1"]').click(); await wait(100);
@@ -143,7 +143,7 @@ const getComputedStyle_ok = w => w.getComputedStyle(w.document.getElementById('b
   { const [p0, s0, x0] = chk.dataset.sub.split('|'); chk.checked = true; fire(chk, 'change'); await wait(200);
     assert.ok(own.w.eval(`projById('${p0}').stages.find(s => s.id === '${s0}').subs.find(x => x.id === '${x0}').done`)); ok('отметка подзадачи во «Задачах» сразу отмечена в проекте и воронке'); }
   // «Мои задачи» глазами исполнителя
-  D.querySelector('.tabs [data-view="production"]').click(); await wait(100); $('[data-pmode="tasks"]').click(); await wait(150);
+  D.querySelector('.tabs [data-view="mytasks"]').click(); await wait(150);
   const as = $('#dayAs'); as.value = tu.id; fire(as, 'change'); await wait(150);
   assert.ok($('.as-note') && /Тимур/.test($('.as-note').textContent)); ok('«Смотреть как»: видно, чьими глазами');
   assert.ok($$('.td-row[data-kind="p"]').length && $$('.td-row[data-kind="p"]').every(r => r.dataset.pid === pid) && D.getElementById('app').textContent.includes('Подготовить договор')); ok('«Смотреть как»: ровно то, что видит исполнитель');

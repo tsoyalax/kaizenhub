@@ -133,7 +133,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const copied = []; Object.defineProperty(w.navigator, 'clipboard', { value: { writeText: async s => { copied.push(s); } }, configurable: true });
   const want = `Здравствуйте, ${pB.client}! По проекту «${pB.name}» всё готово.`;
   // иконка справа у подэтапа на доске → окошко с готовым сообщением → «Копировать»
-  D.querySelector('.tabs [data-view="production"]').click(); await wait(100); $('[data-pmode="project"]').click(); await wait(100);
+  D.querySelector('.tabs [data-view="production"]').click(); await wait(100);
   w.eval(`ui.prodProject = '${pB.id}'; render();`); await wait(150);
   const ico = $(`.pf-card[data-pfsub$="|${tB.substage_id}"] .msg-ico`);
   assert.ok(ico); ok('иконка шаблона сообщения справа на карточке подэтапа');
