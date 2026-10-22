@@ -177,7 +177,8 @@ td:has(.cell-as:focus-visible) .cell{outline:2px solid var(--focus);outline-offs
 
 /* ---------- Компактный режим ---------- */
 table.cx{width:100%;border-collapse:collapse;min-width:800px;table-layout:fixed}
-.cx col.c7{width:35%}.cx col.c1{width:26%}.cx col.c6{width:12%}.cx col.c2{width:17%}.cx col.c5{width:18%}.cx col.c3{width:13%}.cx col.c4{width:14%}
+.cx col.c7{width:29%}.cx col.c1{width:25%}.cx col.c6{width:16%}.cx col.c2{width:17%}.cx col.c5{width:18%}.cx col.c3{width:13%}.cx col.c4{width:17%}
+.cx .start small,.cx .due small{white-space:nowrap}
 .cx th{font-size:12.5px;font-weight:500;color:var(--muted);text-align:left;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--line)}
 .cx td{padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle;overflow:hidden;text-overflow:ellipsis}
 .cx tbody tr:last-child td{border-bottom:0}
@@ -188,8 +189,11 @@ table.cx{width:100%;border-collapse:collapse;min-width:800px;table-layout:fixed}
 .cx small{display:block;color:var(--muted);font-size:12.5px;font-weight:400}
 .cx .pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .cx .pill .sw{width:6px;height:6px}
-.cx tr.r-red .due small{color:var(--r)}
-.cx tr.r-yellow .due small{color:var(--y)}
+.cx .due small.dl-over{color:var(--r)}
+.cx .due small.dl-warn{color:var(--y)}
+.cx .due small.dl-client{color:var(--b)}
+.cx .due small.dl-m{color:var(--m)}
+.cx .st-age.slow{color:var(--y)}
 .pbar{display:flex;gap:2px;height:6px;margin:4px 0 5px}
 .pseg{flex:1;min-width:4px;border-radius:2px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line)}
 .pseg.p-done{background:var(--tick-on);box-shadow:none}
@@ -1420,6 +1424,60 @@ table.cx{border-collapse:collapse}
 .pill.st-pill.s-gray{color:var(--muted)}
 .pill.st-pill.s-done{color:var(--g)}
 
+
+/* ---------- Телефон: карточки матрицы с крупным фото ---------- */
+.pava.md{width:56px;height:56px;font-size:19px;border-radius:16px}
+.mc-hd{display:flex;gap:12px;align-items:flex-start}
+.mc-tt{flex:1;min-width:0;display:grid;gap:3px}
+.mc-tt b{font-size:16px;font-weight:600;line-height:1.3}
+.mc-badges{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-top:3px}
+.mc-badges .mc-dl{margin-left:0}
+.mc .mc-stage{margin-top:8px}
+.mc .mc-subnow{color:var(--muted);font-size:12.5px;margin-top:-2px}
+/* ---------- Телефон: Производство — текущий проект и выдвижной список ---------- */
+.pm-head{padding:8px;gap:2px;grid-template-columns:minmax(0,1fr)}
+.pm-nav{min-width:0}
+.pm-cur{display:flex;align-items:center;gap:12px;width:100%;border:0;background:var(--surface-2);border-radius:12px;padding:10px;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
+.pm-ct{flex:1;min-width:0;display:grid;gap:2px}
+.pm-ct b{font-size:16.5px;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pm-ct small{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm-cnt{flex:none;display:flex;align-items:center;gap:2px;font-size:12.5px;color:var(--muted)}
+.pm-cnt svg{width:18px;height:18px}
+.pm-nav .pm-meta{flex:1;min-width:0;display:block;padding:0 4px;text-align:center;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm-nav .pf-sharebtn{margin:0;position:relative}
+.pm-nav .icon-btn svg{width:18px;height:18px}
+.pm-sc{position:absolute;top:4px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--b);color:#fff;font-size:10px;font-weight:700;line-height:16px}
+.pk-sheet{display:flex;flex-direction:column;padding:14px 12px calc(env(safe-area-inset-bottom,0px) + 12px)}
+.pk-head{display:flex;align-items:center;justify-content:space-between;padding:0 4px 8px}
+.pk-head b{font-size:17px;font-weight:600}.pk-head b span{color:var(--muted);font-weight:400;margin-left:4px}
+#pkQ{width:100%;height:42px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink);padding:0 12px;margin-bottom:8px}
+.pk-list{display:grid;gap:2px;overflow-y:auto;min-height:0}
+.pk-row{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;padding:8px;border-radius:12px;text-align:left;font:inherit;color:var(--ink);cursor:pointer;min-height:56px}
+.pk-row[hidden]{display:none}
+.pk-row.on{background:var(--surface-2);box-shadow:inset 3px 0 0 var(--ink)}
+.pk-t{flex:1;min-width:0;display:grid;gap:1px}
+.pk-t b{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pk-t small{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pk-row .chip-i .pi{width:18px;height:18px}
+/* ---------- Телефон: одно меню — нижняя панель + лист «Ещё» ---------- */
+@media (max-width:640px){
+  .side-btn,#side,#sideBack{display:none!important}
+  .brand-t{display:none}
+  .view-name{display:block;border-left:0;padding-left:2px;color:var(--ink);font-size:17px;font-weight:600}
+  .more-sheet{padding:14px 14px calc(env(safe-area-inset-bottom,0px) + 16px)}
+  .more-sheet .side-foot{border-top:0;padding:0 0 12px;margin:0 0 12px;border-bottom:1px solid var(--line)}
+  .more-sheet .side-me b{font-size:15px}
+  .more-sheet .mlist{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0}
+  .more-sheet .mlist button{flex-direction:column;justify-content:center;gap:7px;padding:14px 4px;min-height:78px;border-radius:14px;background:var(--surface-2);font-size:13px;text-align:center}
+  .more-sheet .mlist button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .more-sheet .mlist button[aria-current="page"]{background:var(--ink);color:var(--surface)}
+  .more-sheet .mlist button[aria-current="page"] svg{color:var(--surface)}
+  .m-spaces{display:grid;gap:8px;margin-top:16px}
+  .m-splist{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -14px;padding:0 14px 2px}
+  .m-splist::-webkit-scrollbar{display:none}
+  .m-sp{flex:none;display:flex;align-items:center;gap:8px;height:42px;padding:0 14px 0 6px;border-radius:12px;border:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
+  .m-sp.cur{border-color:var(--c);background:color-mix(in srgb,var(--c) 12%,transparent);font-weight:600}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -1552,6 +1610,7 @@ function health(s, now = new Date()){
   return { key:'green', label:'В работе', note, hours:h };
 }
 const projectRisk = p => p.state === 'completed' ? 'done'
+  : p.deadline && p.deadline < today() && !isMaint(currentStage(p)) && p.stages.some(s => s.status !== 'done' && !isMaint(s)) ? 'red'
   : p.stages.reduce((w,s) => { const k = health(s).key; return WEIGHT[k] > WEIGHT[w] ? k : w; }, 'done');
 // Ответственный по умолчанию: задача → этап → исполнитель проекта → PM проекта
 const projWho = p => p?.worker_id || null;   // задачи проекта по умолчанию — на исполнителя, PM не подставляется
@@ -1698,7 +1757,7 @@ function seed(){
     p.log.push({ at: start+'T10:00:00', user:ME, text:`Проект создан по шаблону «${tpl.name}»` });
     if (kind !== 'gray') p.stages.forEach(s => {
       if (s.position < k || kind === 'done'){ s.status='done'; s.started_at=s.planned_start; s.completed_at=addDays(s.due_date, -ri(0,1)); }
-      else if (s.position === k){ s.status = kind === 'blue' ? 'client_review' : 'in_progress'; s.started_at = s.planned_start; }
+      else if (s.position === k){ s.status = kind === 'blue' ? 'client_review' : 'in_progress'; s.started_at = s.planned_start; if (kind === 'blue') s.client_at = addDays(today(), -ri(1, 6)); }
     });
     p.stages.forEach(s => {
       if (s.status === 'done') s.subs.forEach(x => x.done = true);
@@ -1815,6 +1874,7 @@ function setStatus(p, s, status){
     if (n) toast(`Этап закрыт с опозданием на ${days(late)}. Сдвинуто последующих: ${n}`);
   } else {
     s.status = status; s.completed_at = null; s.started_at = status === 'not_started' ? null : (s.started_at || t);
+    s.client_at = status === 'client_review' ? (s.client_at || t) : null;   // с какого дня ждём клиента
     addLog(p, `Этап «${s.name}»: ${STATUS[status]}`);
   }
   syncState(p); commit();
@@ -2445,10 +2505,11 @@ function renderPhoneList(list){
     const dlTxt = p.state === 'completed' ? 'Проект завершён' : target ? `${p.deadline ? 'Дедлайн' : 'Финиш'} ${fmt(target)}${late ? ` · <span class="ut-over">план позже на ${days(diffDays(end, p.deadline))}</span>` : ''}` : '';
     return `<article class="pc mc">
       <button class="mc-main" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''}>
-        <span class="mc-r1">${projAva(p, 'sm')}<b>${esc(p.name)}</b>${stPill(risk, risk === 'green' ? 'В работе' : RISK_RU[risk])}</span>
-        <small class="mc-sub"><span>${esc(p.client)}</span><span>PM ${esc(short(p.pm_id))}</span>${p.priority === 'high' ? '<span class="hp">Высокий</span>' : ''}</small>
+        <span class="mc-hd">${projAva(p, 'md')}<span class="mc-tt"><b>${esc(p.name)}</b>
+          <small class="mc-sub"><span>${esc(p.client)}</span><span>PM ${esc(short(p.pm_id))}</span>${p.priority === 'high' ? '<span class="hp">Высокий</span>' : ''}</small>
+          <span class="mc-badges">${stPill(risk, risk === 'green' ? 'В работе' : RISK_RU[risk])}${target || p.state === 'completed' ? `<span class="mc-dl dl-${p.state === 'completed' ? 'ok' : late ? 'over' : tu.k}">${FLAG}${p.state === 'completed' ? 'Завершён' : fmt(target)}</span>` : ''}</span></span></span>
         <span class="mc-stage">${ticksHtml(p, risk)}</span>
-        <span class="mc-foot"><small class="mc-subnow">${sub ? esc(sub) : ''}</small>${target || p.state === 'completed' ? `<span class="mc-dl dl-${p.state === 'completed' ? 'ok' : late ? 'over' : tu.k}">${FLAG}${p.state === 'completed' ? 'Завершён' : fmt(target)}</span>` : ''}</span>
+        ${sub ? `<small class="mc-subnow">${esc(sub)}</small>` : ''}
       </button>
     </article>`;
   };
@@ -2463,15 +2524,11 @@ document.addEventListener('click', e => {
 // ---------- Производство на телефоне: лента проектов + этапы сверху вниз ----------
 function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage, curSub }){
   const key = mine ? 'myProject' : 'prodProject';
+  list = all;   // на телефоне поиск — в выдвижной панели, листаем по всем проектам
   const idx = list.findIndex(x => x.id === p.id);
   const prev = idx > 0 ? list[idx - 1] : null, next = idx >= 0 && idx < list.length - 1 ? list[idx + 1] : null;
-  const chips = list.map(x => {
-    const c = currentStage(x); const r = projectRisk(x); const xp = projectProgress(x);
-    return `<button class="pm-chip${x.id === p.id ? ' on' : ''}" data-pfsel="${x.id}" aria-current="${x.id === p.id}">
-      <span class="pm-cn">${projAva(x, 'xs')}${esc(x.name)}</span>
-      <small>${c ? `${c.position + 1}/${x.stages.length} · ${esc(c.name)}` : 'Все этапы пройдены'}</small>
-      <span class="pf-mini" aria-hidden="true"><i style="width:${xp.pct}%"></i></span></button>`;
-  }).join('');
+  ui.pmList = list.map(x => x.id);
+  const cs = currentStage(p); const risk = projectRisk(p);
   const prevBoard = app.querySelector('.pm-board')?.scrollLeft || 0;
   const cols = p.stages.map(s => {
     const h = health(s); const isCur = s.id === cur.stageId; const passed = s.status === 'done';
@@ -2495,18 +2552,17 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
   }).join('');
   const steps = p.stages.map(s => `<button class="pm-step${s.status === 'done' ? ' done' : ''}${s.id === cur.stageId ? ' cur' : ''} h-${health(s).key}" data-pmgo="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">${s.status === 'done' ? '✓' : s.position + 1}</button>`).join('');
   app.innerHTML = `${mine ? '<div class="fn-head-row"><h2 class="mine-h">Мои проекты</h2><button class="ghost" id="joinOpen">Открыть по ссылке</button></div>' : `<div class="fn-head-row">${prodSwitch()}</div>`}
-    <div class="pm-switch">
-      ${all.length > 6 ? `<input type="search" id="pfQ" placeholder="Найти проект" value="${esc(ui.pfQ || '')}" aria-label="Поиск проекта">` : ''}
-      <div class="pm-strip" role="tablist" aria-label="Проекты">${chips || '<p class="hint">Ничего не найдено</p>'}</div>
-    </div>
     <div class="pm-head">
+      <button class="pm-cur" data-pmpick aria-haspopup="dialog" aria-label="Проект ${esc(p.name)}. Открыть список всех проектов">
+        ${projAva(p, 'md')}<span class="pm-ct"><b>${esc(p.name)}</b><small>${cs ? `${cs.position + 1}/${p.stages.length} · ${esc(cs.name)}` : 'Все этапы пройдены'}</small></span>
+        <span class="pm-cnt">${idx + 1}/${list.length}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
       <div class="pm-nav">
         <button class="icon-btn" ${prev ? `data-pfsel="${prev.id}"` : 'disabled'} aria-label="Предыдущий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
-        <div class="pm-title"><h2>${mine ? esc(p.name) : `<button class="link-plain" data-open="${p.id}">${esc(p.name)}</button>`}</h2>
-          <small>${idx + 1} из ${list.length} · ${mine ? `ваша роль: ${ROLE_RU[role].toLowerCase()}` : `${esc(p.client)} · PM ${esc(short(p.pm_id))}${execTxt(p, ' · ')} · финиш ${fmt(plannedEnd(p))}`}</small></div>
+        <small class="pm-meta">${mine ? `Ваша роль: ${ROLE_RU[role].toLowerCase()}` : `${esc(p.client)} · PM ${esc(short(p.pm_id))} · финиш ${fmt(plannedEnd(p))}`}</small>
+        ${!mine ? `<button class="icon-btn" data-open="${p.id}" aria-label="Карточка проекта" title="Карточка проекта"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/></svg></button>
+        <button class="icon-btn pf-sharebtn" data-share="${p.id}" aria-label="Поделиться проектом" title="Поделиться">${SHARE_ICON}${shareCount(p) ? `<span class="pm-sc">${shareCount(p)}</span>` : ''}</button>` : ''}
         <button class="icon-btn" ${next ? `data-pfsel="${next.id}"` : 'disabled'} aria-label="Следующий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
       </div>
-      <div class="pm-acts">${!mine ? `<button class="ghost pf-sharebtn" data-share="${p.id}">${SHARE_ICON} Поделиться${shareCount(p) ? ` · ${shareCount(p)}` : ''}</button>` : ''}</div>
     </div>
     <div class="pm-steps" role="group" aria-label="Перейти к этапу">${steps}</div>
     <div class="pf-board pm-board">${cols}</div>`;
@@ -2517,13 +2573,32 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
   const mark = () => { if (!board) return; const cs = [...board.children]; const i = cs.findIndex(c => c.offsetLeft - board.offsetLeft + c.offsetWidth / 2 > board.scrollLeft + 12);
     app.querySelectorAll('.pm-step').forEach((b, j) => b.classList.toggle('vis', j === i)); };
   board?.addEventListener('scroll', mark, { passive:true }); mark();
-  // лента: активный проект всегда виден
-  const on = app.querySelector('.pm-chip.on'); const strip = app.querySelector('.pm-strip');
-  if (on && strip){ const x = on.offsetLeft - (strip.clientWidth - on.offsetWidth) / 2; strip.scrollLeft = ui.pmStripX != null && ui.pfScrolled === p.id ? ui.pmStripX : Math.max(0, x); }
-  if (ui.pfScrolled !== p.id){ ui.pfScrolled = p.id; }
-  strip?.addEventListener('scroll', () => { ui.pmStripX = strip.scrollLeft; }, { passive:true });
   if (mine && cloud.user) cloud.user.profiles([p._ext.ownerId]).then(pr => { const el = app.querySelector('.owner-name'); if (el) el.textContent = pr[p._ext.ownerId]?.name || 'владелец'; });
 }
+// выдвижная панель со всеми проектами (телефон)
+function openProjPicker(){
+  const mine = ui.view === 'mine'; const curId = ui[mine ? 'myProject' : 'prodProject'];
+  const ids = ui.pmList || []; const ps = ids.map(projById).filter(Boolean);
+  const row = x => { const c = currentStage(x); const r = projectRisk(x);
+    return `<button class="pk-row${x.id === curId ? ' on' : ''}" data-pkpick="${x.id}" data-q="${esc(norm(x.name + ' ' + (x.client || '')))}" aria-current="${x.id === curId}">
+      ${projAva(x, 'sm')}<span class="pk-t"><b>${esc(x.name)}</b><small>${esc(x.client || '')}${c ? ` · ${c.position + 1}/${x.stages.length} ${esc(c.name)}` : ' · все этапы пройдены'}</small></span>
+      <span class="chip-i ci-${r}" title="${esc(RISK_RU[r] || '')}">${STATUS_ICO[r] || STATUS_ICO.gray}</span></button>`; };
+  layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal sheet pk-sheet" role="dialog" aria-modal="true" aria-label="Все проекты">
+    <div class="pk-head"><b>Проекты <span>${ps.length}</span></b><button class="icon-btn" data-close aria-label="Закрыть">×</button></div>
+    ${ps.length > 5 ? '<input type="search" id="pkQ" placeholder="Найти проект или клиента" aria-label="Поиск проекта">' : ''}
+    <div class="pk-list">${ps.map(row).join('')}<p class="hint pk-none" hidden>Ничего не найдено</p></div></div>`;
+  const on = layer.querySelector('.pk-row.on'), box = layer.querySelector('.pk-list');
+  if (on && box) box.scrollTop = Math.max(0, on.offsetTop - box.offsetTop - box.clientHeight / 2 + on.offsetHeight / 2);
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-pmpick]')){ openProjPicker(); return; }
+  const k = e.target.closest('[data-pkpick]'); if (!k) return;
+  ui[ui.view === 'mine' ? 'myProject' : 'prodProject'] = k.dataset.pkpick; layer.innerHTML = ''; render(); scrollTo(0, 0);
+});
+document.addEventListener('input', e => { if (e.target.id !== 'pkQ') return;
+  const q = norm(e.target.value); let n = 0;
+  layer.querySelectorAll('.pk-row').forEach(r => { const v = !q || r.dataset.q.includes(q); r.hidden = !v; n += v; });
+  const none = layer.querySelector('.pk-none'); if (none) none.hidden = n > 0; });
 document.addEventListener('click', e => {
   const g = e.target.closest('[data-pmgo]'); if (!g) return;
   const board = app.querySelector('.pm-board'); const col = app.querySelector(`.pm-board [data-pmcol="${g.dataset.pmgo}"]`);
@@ -2573,16 +2648,13 @@ function renderCompact(list){
       const pct = Math.round(doneN / n * 100);
       const segs = p.stages.map(s => `<i class="pseg p-${s.status === 'done' ? 'done' : (c && s.id === c.id ? h.key : 'todo')}" title="${esc(s.name)}"></i>`).join('');
       const progress = ticksHtml(p, !c ? 'done' : h.key);
-      const last = p.stages.at(-1);
-      const nextR = isMaint(c) ? (c.rtasks || []).map(r => r.due_date).filter(Boolean).sort()[0] : null;
-      const due = c && isMaint(c) ? (nextR ? `${fmt(nextR)}<small>ближайшая регулярная задача</small>` : `бессрочно<small>${h.note}</small>`)
-        : c ? `${fmt(c.due_date)}<small>${h.note}</small>` : `${fmt(last.completed_at || last.due_date)}<small>Сдан</small>`;
+      const tm = getProjectTimeMetrics(p);
       return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
         <td title="${esc(p.name)}"><span class="cx-name">${projAva(p, 'sm')}<span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
-        <td>${stPill(h.key, h.label)}</td>
+        <td>${tm.isOverdue && h.key !== 'red' ? stPill('red', 'Просрочен') : stPill(h.key, h.label)}</td>
         <td>${progress}</td>
-        <td class="start">${fmt(p.start_date)}<small>${startDay(p)}</small></td>
-        <td class="due">${due}</td></tr>`;
+        <td class="start">${startCell(p, tm)}</td>
+        <td class="due">${deadlineCell(p, tm)}</td></tr>`;
     }).join('');
     return `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2>
       <div class="scroll"><table class="cx"><colgroup><col class="c1"><col class="c3"><col class="c7"><col class="c6"><col class="c4"></colgroup>
@@ -3595,10 +3667,11 @@ function sideFoot(){
 function openSide(){ sideOpen = true; renderSide(); }
 function closeSide(){ if (!sideOpen) return; sideOpen = false; renderSide(); }
 document.addEventListener('click', e => {
+  if (layer.querySelector('.more-sheet') && e.target.closest?.('.more-sheet [data-sideme], .more-sheet [data-sidecloud], .more-sheet [data-sidesp], .more-sheet [data-sidespset]')) layer.innerHTML = '';
   if (e.target.closest?.('#sideBtn')){ if (sidePinned()){ setPin(false); sideOpen = false; renderSide(); render(); } else { sideOpen = !sideOpen; renderSide(); } return; }
   if (e.target.closest?.('#sideBack') || e.target.closest?.('[data-sideclose]')){ closeSide(); return; }
   if (e.target.closest?.('[data-sideme]')){ if (!sidePinned()) closeSide(); openProfile(false); return; }
-  if (e.target.closest?.('[data-sidetheme]')){ $('#themeBtn').click(); renderSide(); return; }
+  if (e.target.closest?.('[data-sidetheme]')){ $('#themeBtn').click(); renderSide(); if (layer.querySelector('.more-sheet')) openMore(); return; }
   if (e.target.closest?.('[data-sidecloud]')){ if (!sidePinned()) closeSide(); openCloudInfo(); return; }
   const pin = e.target.closest?.('[data-sidepin]'); if (pin){ setPin(!sidePinned()); sideOpen = false; renderSide(); render(); return; }
   const v = e.target.closest?.('[data-sideview]'); if (v){ ui.view = v.dataset.sideview; ui.draft = null; if (!sidePinned()) sideOpen = false; render(); renderSide(); scrollTo(0, 0); return; }
@@ -5699,6 +5772,45 @@ const curSubTxt = p => { const r = curSub(p); return r ? (r.all ? r.name : `${r.
 const startDay = p => p.start_date > today() ? `через ${days(diffDays(p.start_date, today()))}` : p.state === 'completed' ? 'завершён' : `${diffDays(today(), p.start_date) + 1}-й день`;
 const startTxt = p => p.start_date > today() ? `Старт ${fmt(p.start_date)}, через ${days(diffDays(p.start_date, today()))}`
   : `Старт ${fmt(p.start_date)}${p.state !== 'completed' ? `, ${diffDays(today(), p.start_date) + 1}-й день` : ''}`;
+// Время проекта: срок, сколько на текущем этапе, сколько ждём клиента, цикл ведения
+function getProjectTimeMetrics(p){
+  const t = today(); const c = currentStage(p);
+  const done = p.state === 'completed' || !c;
+  const maint = !done && isMaint(c) && c.status === 'in_progress';
+  const deadline = done || maint ? null : (p.deadline || plannedEnd(p) || null);
+  const daysLeft = deadline ? diffDays(deadline, t) : null;
+  const isOverdue = daysLeft !== null && daysLeft < 0;
+  const from = c && c.status !== 'not_started' ? (c.started_at || c.planned_start) : null;
+  const daysAtCurrentStage = !done && from && from <= t ? diffDays(t, from) + 1 : 0;
+  const plannedStage = c && !isMaint(c) && c.planned_start && c.due_date ? diffDays(c.due_date, c.planned_start) + 1 : null;
+  const clientDays = c?.status === 'client_review' ? Math.max(1, diffDays(t, c.client_at || c.started_at || t) + 1) : 0;
+  let maintenanceCycle = null;
+  if (maint){ const d = Math.max(0, diffDays(t, c.started_at || t)); maintenanceCycle = { month:Math.floor(d / 30) + 1, dayInCycle:d % 30 + 1 }; }
+  const stageKey = c ? health(c).key : 'done';
+  const risk = done ? 'done' : maint ? (stageKey === 'red' ? 'red' : stageKey === 'yellow' ? 'yellow' : 'maint')
+    : c.status === 'not_started' ? 'gray'
+    : isOverdue || stageKey === 'red' ? 'red'
+    : (daysLeft !== null && daysLeft <= 2) || clientDays > 3 || stageKey === 'yellow' ? 'yellow' : 'green';
+  return { isOverdue, daysLeft, deadline, daysAtCurrentStage, plannedStage, clientDays, maintenanceCycle, risk, done, maint };
+}
+// ячейка «Срок»: дата + остаток / ожидание клиента / цикл ведения
+function deadlineCell(p, m){
+  const last = p.stages.at(-1);
+  if (m.done) return `${fmt(last?.completed_at || last?.due_date || p.deadline)}<small>Сдан</small>`;
+  if (m.maint) return `Бессрочно<small class="dl-m" title="Ведение идёт месяцами по 30 дней">Месяц ${m.maintenanceCycle.month} (день ${m.maintenanceCycle.dayInCycle}/30)</small>`;
+  const top = m.deadline ? fmt(m.deadline) : '—';
+  if (m.clientDays) return `${top}<small class="dl-${m.clientDays > 3 ? 'warn' : 'client'}" title="Сколько дней этап ждёт ответа клиента">У клиента: ${m.clientDays}-й день</small>`;
+  if (m.daysLeft === null) return top;
+  if (m.daysLeft < 0) return `${top}<small class="dl-over">Просрочено на ${days(-m.daysLeft)}</small>`;
+  if (m.daysLeft === 0) return `${top}<small class="dl-warn">Сегодня</small>`;
+  return `${top}<small class="${m.daysLeft <= 2 ? 'dl-warn' : ''}">Осталось ${days(m.daysLeft)}</small>`;
+}
+// ячейка «Старт»: дата запуска, день проекта и сколько на текущем этапе
+function startCell(p, m){
+  const slow = m.plannedStage && m.daysAtCurrentStage > m.plannedStage;
+  const at = m.daysAtCurrentStage && !m.maint ? ` · <span class="st-age${slow ? ' slow' : ''}" title="${slow ? `Этап идёт дольше плана (${days(m.plannedStage)})` : 'Сколько дней проект на текущем этапе'}">на этапе ${m.daysAtCurrentStage} дн.</span>` : '';
+  return `${fmt(p.start_date)}<small>${startDay(p)}${at}</small>`;
+}
 // сколько дней идёт этап (или сколько занял, если закрыт)
 function stageAge(s){
   const from = s.started_at || (s.status !== 'not_started' ? s.planned_start : null);
@@ -6830,8 +6942,15 @@ function renderMobileNav(){
   const f = $('#fToggle'); if (f){ const k = ui.pms.length + ui.clients.length; f.classList.toggle('on', !!k); const nb = f.querySelector('.f-n'); if (nb) nb.textContent = k || ''; }
 }
 function openMore(){
-  layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal more-sheet" role="dialog" aria-modal="true" aria-label="Другие разделы">
-    <div class="mlist">${moreViews().map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}${MNAV[v][0]}</button>`).join('')}</div></div>`;
+  const all = GUEST ? [] : [{ id:'', name:'Основное', color:spColor(''), icon:spIcon(''), cur:!SPACE && !ORG },
+    ...spaces.list.map(x => ({ id:x.id, name:x.name, color:spColor(x.id), icon:spIcon(x.id), cur:x.id === SPACE })),
+    ...spaces.orgs.map(o => ({ id:'o:' + o.id, name:`Проекты: ${o.name}`, color:spColorsCache()['o:' + o.id] || hashColor(o.id), icon:'users', cur:ORG === o.id }))];
+  layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal more-sheet" role="dialog" aria-modal="true" aria-label="Меню">
+    ${sideFoot()}
+    <div class="mlist">${moreViews().map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')}</div>
+    ${all.length > 1 || (cloud.store && cloud.uid) ? `<div class="m-spaces"><div class="side-spl"><span>Пространства</span><button class="link" data-sidespset>Настроить</button></div>
+      <div class="m-splist">${all.map(x => `<button class="m-sp${x.cur ? ' cur' : ''}" data-sidesp="${x.id}" style="--c:${x.color}" aria-pressed="${x.cur}"><span class="side-sp-ico">${spIco(x.icon)}</span><span>${esc(x.name)}</span></button>`).join('')}</div></div>` : ''}
+  </div>`;
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-mview]');
