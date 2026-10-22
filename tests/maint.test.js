@@ -79,7 +79,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.equal(P().stages.at(-1).rtasks.find(r => r.frequency === 'monthly').due_date, '2026-11-30'); ok('ежемесячная — на месяц вперёд');
   // 6) регулярные задачи в задачах исполнителя и в «Поручениях»
   E(`(() => { const p = projById('${pid}'); p.stages.at(-1).rtasks.forEach(r => r.assignee_id = ME); commit(); })()`);
-  D.querySelector('.tabs [data-view="production"]').click(); await wait(100); $('[data-pmode="tasks"]').click(); await wait(150);
+  D.querySelector('.tabs [data-view="mytasks"]').click(); await wait(150);
   assert.ok(!$$('.td-chk[data-tddone^="r|"]').length && $('[data-todotab="m"]')); ok('«Мои задачи»: регулярные задачи не смешаны с обычными, есть вкладка «Ведение»');
   $('[data-todotab="m"]').click(); await wait(100);
   assert.ok($$('.td-chk[data-tddone^="r|"]').length === 2 && $$('.td-row').length === 2); ok('вкладка «Ведение»: только регулярные задачи');

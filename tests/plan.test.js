@@ -134,6 +134,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(o.w.document.querySelector(`.card[data-card="${demoP.id}"] .subnow`)); ok('канбан: на карточке «Сейчас: подэтап»');
   o.w.document.querySelector('[data-view="production"]').click(); await wait(150);
   assert.ok(o.w.document.querySelector(`.pf-item[data-pfsel="${demoP.id}"]`) && !o.w.document.querySelector('.pf-item .subnow')); ok('производство: в списке проектов слева подэтапа нет');
+  assert.ok(!o.w.document.querySelector('.pf-items [data-share]') && o.w.document.querySelectorAll('.pf-head [data-share].pf-shareic').length === 1 && !o.w.document.querySelector('[data-pmode]')); ok('производство: без переключателя, «Поделиться» — одна иконка в шапке проекта');
   assert.ok(o.w.document.querySelector('.pf-card.here')); ok('производство: на доске метка «Сейчас здесь» осталась');
   // 8) загрузка: считаются проекты, где человек назначен в любой роли
   w.mergeSnapshot({ meta: {}, projects: [

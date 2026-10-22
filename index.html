@@ -1513,6 +1513,22 @@ table.cx{border-collapse:collapse}
   --fbd:initial; --seg-on:initial; --tbl-bg:initial; --tbl-bd:initial; --side-bg:initial; --side-bd:initial; --top-bg:initial; --pl-bd:initial;
   --pl-r-bg:initial; --pl-r:initial; --pl-b-bg:initial; --pl-b:initial; --pl-g-bg:initial; --pl-g:initial; --pl-m-bg:initial; --pl-m:initial;
   --pl-n-bg:initial; --pl-n:initial; --pl-y-bg:initial; --pl-y:initial; --pl-d-bg:initial; --pl-d:initial}
+
+/* ---------- Производство (компьютер): список проектов с тонкой прокруткой, «Поделиться» иконкой справа ---------- */
+.pf-row .pf-item{padding-right:10px}
+.pf-items{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent;padding-right:6px}
+.pf-items::-webkit-scrollbar{width:6px}
+.pf-items::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:3px}
+.pf-items::-webkit-scrollbar-track{background:transparent}
+.pf-head{align-items:flex-start;flex-wrap:nowrap}
+.pf-shareic{position:relative;flex:none;width:36px;height:36px;border:1px solid var(--fbd,var(--line));background:var(--surface);border-radius:10px;color:var(--muted)}
+.pf-shareic:hover{color:var(--ink)}
+.pf-shareic svg{width:16px;height:16px}
+.pf-shareic.on{color:var(--b)}
+.pf-shareic span{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--b);color:#fff;font-size:10px;font-weight:700;line-height:16px;text-align:center}
+.fn-head-row.pf-top{margin:0}
+@media (min-width:861px){.fn-head-row.pf-top{display:none}}
+.pf{margin-top:6px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -1527,9 +1543,9 @@ table.cx{border-collapse:collapse}
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
+    <button data-view="mytasks" id="myTasksTab">Мои задачи</button>
     <button data-view="assign">Поручения</button>
     <button data-view="mine" id="mineTab" hidden>Мои проекты</button>
-    <button data-view="mytasks" id="myTasksTab" hidden>Задачи</button>
     <button data-view="reports">AI-отчёты</button>
     <button data-view="load">Загрузка</button>
     <button data-view="team">Команда</button>
@@ -2330,19 +2346,18 @@ function restoreView(){
     const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine', 'mytasks');
     if (ok.includes(v.view)) ui.view = v.view;
     if (['deadlines','templates','categories','spaces'].includes(v.setTab)) ui.setTab = v.setTab;
-    if (['project','funnel','tasks','assign'].includes(v.prodMode)) ui.prodMode = v.prodMode;
+    if (v.view === 'production' && v.prodMode === 'tasks') ui.view = 'mytasks';
   } catch(e) {}
 }
 function render(){
   if (GUEST && ui.view !== 'mytasks') ui.view = 'mine';
   try { renderSide(); } catch(e) {}
   try { const vn = $('#viewName'); if (vn) vn.textContent = ({ production:'Производство', templates:'Настройки' })[ui.view] || MNAV[ui.view]?.[0] || ''; } catch(e) {}
-  if (!GUEST && ui.view === 'mytasks'){ ui.view = 'production'; ui.prodMode = 'tasks'; }
   paintSpace(); rememberView();
   document.body.dataset.view = ui.view;
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
-  $('#myTasksTab').hidden = !GUEST;
+  $('#myTasksTab').hidden = false;
   renderFilters();
   ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.open) renderDrawer();
@@ -2586,7 +2601,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
     </section>`;
   }).join('');
   const steps = p.stages.map(s => `<button class="pm-step${s.status === 'done' ? ' done' : ''}${s.id === cur.stageId ? ' cur' : ''} h-${health(s).key}" data-pmgo="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">${s.status === 'done' ? '✓' : s.position + 1}</button>`).join('');
-  app.innerHTML = `${mine ? '<div class="fn-head-row"><h2 class="mine-h">Мои проекты</h2><button class="ghost" id="joinOpen">Открыть по ссылке</button></div>' : `<div class="fn-head-row">${prodSwitch()}</div>`}
+  app.innerHTML = `${mine ? '<div class="fn-head-row"><h2 class="mine-h">Мои проекты</h2><button class="ghost" id="joinOpen">Открыть по ссылке</button></div>' : ''}
     <div class="pm-head">
       <button class="pm-cur" data-pmpick aria-haspopup="dialog" aria-label="Проект ${esc(p.name)}. Открыть список всех проектов">
         ${projAva(p, 'md')}<span class="pm-ct"><b>${esc(p.name)}</b><small>${cs ? `${cs.position + 1}/${p.stages.length} · ${esc(cs.name)}` : 'Все этапы пройдены'}</small></span>
@@ -2797,55 +2812,8 @@ function openSubsModal(t, i){
   };
 }
 
-// ---------- Производство: воронка процесса с подэтапами ----------
-function renderProduction(){
-  const t = tplById(ui.prodTpl) || db.templates[0];
-  if (ui.prodMode === 'tasks') return renderMyDay('exec');
-  if (ui.prodMode === 'assign'){ ui.prodMode = 'tasks'; ui.view = 'assign'; return renderMyDay('admin'); }
-  if (ui.prodMode === 'project') return renderProjectFocus();
-  if (!t){ app.innerHTML = `<div class="empty">Создайте шаблон процесса, чтобы увидеть воронку</div>`; return; }
-  ui.prodTpl = t.id;
-  const list = db.projects.filter(p => p.template_id === t.id && (p.state === 'active' || p.state === 'completed'));
-  const total = list.length, completed = list.filter(p => p.state === 'completed').length;
-  const rank = p => { const k = colIndex(t, p); return k === 'done' || k === 'maint' ? Infinity : k === 'other' ? -1 : k; };
-  const stagesHtml = t.stages.map((ts, i) => {
-    const here = list.filter(p => p.state === 'active' && rank(p) === i);
-    const reached = list.filter(p => rank(p) >= i).length;
-    const fillW = total && reached ? Math.max(6, Math.round(reached / total * 100)) : 0;
-    const nowW = reached ? Math.round(here.length / reached * 100) : 0;
-    const subs = ts.subs || [];
-    const counts = subs.map(() => 0);
-    here.forEach(p => {
-      const s = stageByName(p, ts.name); const nx = s?.subs?.find(x => !x.done); if (!nx) return;
-      const k = subs.findIndex(x => norm(x.name) === norm(nx.name)); if (k >= 0) counts[k]++;
-    });
-    const open = !!ui.prodOpen[ts.id];
-    const subsHtml = subs.length
-      ? subs.map((x,k) => `<li class="${counts[k] ? 'on' : ''}">${esc(x.name)}${counts[k] ? `<b title="Проектов на этом подэтапе">${counts[k]}</b>` : ''}</li>`).join('<li class="arr" aria-hidden="true">→</li>')
-      : '<li class="none">Подэтапов нет</li>';
-    const rows = open ? here.map(p => {
-      const s = stageByName(p, ts.name); const h = health(s); const dn = s.subs.filter(x => x.done).length;
-      return `<li><button class="pn" data-open="${p.id}" data-stage="${s.id}"><i class="sw ${h.key}"></i>${esc(p.name)} <small>${h.note}, ${esc(short(whoId(p, s)))}</small></button>
-        <span class="prog">${s.subs.length ? `${dn} из ${s.subs.length}` : ''}</span>
-        ${s.subs.length ? `<div class="subs">${s.subs.map(x => subChk(p, s, x)).join('')}</div>` : ''}</li>`;
-    }).join('') : '';
-    return `<section class="fn-stage">
-      <div class="fn-top"><span class="fn-num">${i + 1}</span>
-        <div class="fn-title"><b>${esc(ts.name)}</b><small>${days(ts.days)} по плану${ts.approval ? ', согласование клиента' : ''}</small></div>
-        <div class="fn-stats"><span><b>${here.length}</b>сейчас</span><span><b>${reached}</b>дошли из ${total}</span></div></div>
-      <div class="fn-bar" aria-hidden="true"><div class="fn-fill" style="width:${fillW}%"><div class="fn-now" style="width:${nowW}%"></div></div></div>
-      <ol class="fn-subs" aria-label="Подэтапы этапа «${esc(ts.name)}»">${subsHtml}</ol>
-      <div class="fn-actions"><button class="link" data-subs-edit="${i}">${subs.length ? 'Настроить подэтапы' : 'Добавить подэтапы'}</button>${(() => {
-        const ts_ = db.tasks.filter(x => { const pp = projById(x.project_id); return pp && pp.template_id === t.id && pp.state === 'active' && norm(pp.stages.find(y => y.id === x.stage_id)?.name) === norm(ts.name); });
-        return ts_.length ? `<button class="link" data-fn-tasks="${esc(ts.name)}">Задачи этапа: ${ts_.filter(x => taskProgress(x).done).length} из ${ts_.length} выполнено</button>` : ''; })()}${here.length ? `<button class="link" data-fn-toggle="${ts.id}">${open ? 'Скрыть проекты' : `Проекты на этапе: ${here.length}`}</button>` : ''}</div>
-      ${open ? `<ul class="fn-list">${rows}</ul>` : ''}
-    </section>`;
-  }).join('');
-  app.innerHTML = `<div class="fn-head-row">${prodSwitch()}<select id="fnTpl" aria-label="Процесс">${db.templates.map(x => `<option value="${x.id}" ${x.id===t.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
-    <span class="fn-sum">${total - completed} в работе, ${completed} завершено. Ширина полосы — сколько проектов дошли до этапа, тёмная часть — сколько на нём сейчас. Число на подэтапе — сколько проектов его выполняют.</span></div>
-    <div class="fn">${stagesHtml}</div>
-    <p><button class="ghost" id="fnAdd">Добавить этап в процесс</button></p>`;
-}
+// ---------- Производство: доска выбранного проекта (поиск и список всех проектов слева) ----------
+function renderProduction(){ return renderProjectFocus(); }
 
 // ---------- Загрузка команды ----------
 // кто отвечает за этап: свой ответственный, иначе исполнитель проекта (так же, как показано в матрице)
@@ -3229,7 +3197,7 @@ function paintBell(){
   const b = $('#bellCount'); if (b) b.innerHTML = n ? `<span class="badge">${n}</span>` : '';
 }
 document.addEventListener('click', e => {
-  if (e.target.closest?.('[data-ntfday]')){ layer.innerHTML = ''; if (GUEST) ui.view = 'mytasks'; else { ui.view = 'production'; ui.prodMode = 'tasks'; ui.dayAs = ''; } render(); return; }
+  if (e.target.closest?.('[data-ntfday]')){ layer.innerHTML = ''; ui.view = 'mytasks'; if (!GUEST) ui.dayAs = ''; render(); return; }
   if (e.target.id === 'ntfPerm'){ Notification.requestPermission().then(p => { if (p === 'granted'){ toast('Уведомления включены'); pushNotify(); } openBell(); }); }
 });
 
@@ -4855,8 +4823,6 @@ function videoEmbed(url){
 const linkify = text => esc(text).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>').replace(/\n/g, '<br>');
 
 // ---------- доска задач ----------
-const prodSwitch = () => `<div class="seg-toggle" role="group" aria-label="Вид производства">
-  <button data-pmode="project" aria-pressed="${ui.prodMode === 'project'}">По проекту</button><button data-pmode="funnel" aria-pressed="${!ui.prodMode || ui.prodMode === 'funnel'}">Воронка</button><button data-pmode="tasks" aria-pressed="${ui.prodMode === 'tasks'}">Мои задачи</button></div>`;
 function renderTaskBoard(){
   const f = ui.tf || (ui.tf = { tpl:'', project:'', assignee:'', stage:'', hideDone:false });
   const projects = db.projects.filter(p => p.state !== 'archived' && (!f.tpl || p.template_id === f.tpl));
@@ -4880,7 +4846,7 @@ function renderTaskBoard(){
       ${t.video_url || t.result_link ? `<div class="tk-tags">${t.video_url ? '<span>видео</span>' : ''}${t.result_link ? '<span>результат сдан</span>' : ''}</div>` : ''}
     </article>`;
   };
-  app.innerHTML = `<div class="fn-head-row">${prodSwitch()}
+  app.innerHTML = `<div class="fn-head-row">
       <select id="tfTpl" aria-label="Процесс"><option value="">Все процессы</option>${db.templates.map(x => `<option value="${x.id}" ${x.id===f.tpl?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
       <select id="tfProject" aria-label="Проект"><option value="">Все проекты</option>${projects.map(p => `<option value="${p.id}" ${p.id===f.project?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
       <select id="tfStage" aria-label="Этап"><option value="">Все этапы</option>${stageNames.map(n => `<option ${n===f.stage?'selected':''}>${esc(n)}</option>`).join('')}</select>
@@ -4909,7 +4875,7 @@ function watchIT(){
   const on = snap => {
     IT.list = snap.docs.map(d => { try { const b = d.data(); return { ...JSON.parse(b.json), _owner:b.ownerId, _members:b.memberIds || [] }; } catch(e) { return null; } }).filter(t => t && !t.deleted);
     syncItMembers();
-    if ((ui.view === 'production' && ui.prodMode === 'tasks') || ui.view === 'mytasks' || ui.view === 'assign') render(); else paintBell();
+    if (ui.view === 'mytasks' || ui.view === 'assign') render(); else paintBell();
   };
   IT.subs.push(cloud.store.collection('it').where('memberIds', 'array-contains', GUEST ? cloud.uid : OWNER()).onSnapshot(on, () => {}));
 }
@@ -4994,7 +4960,7 @@ function renderMyDay(mode = 'exec'){
   const vis = list => (showDone ? list : list.filter(i => !i.done)).sort(byDue);
   const pItems = vis(pAll), iItems = vis(iAll);
   const asU = !admin && !GUEST && ui.dayAs ? userById(ui.dayAs) : null;
-  const head = `<div class="fn-head-row">${GUEST || admin ? '' : prodSwitch()}
+  const head = `<div class="fn-head-row">${GUEST || admin ? '' : '<h2 class="td-title">Мои задачи</h2>'}
       <div class="seg-toggle" role="group" aria-label="Какие задачи">
         <button data-daytab="all" aria-pressed="${tab === 'all'}">Все (Мой день)</button><button data-daytab="p" aria-pressed="${tab === 'p'}">Проектные</button><button data-daytab="i" aria-pressed="${tab === 'i'}">Внутренние</button><button data-daytab="m" aria-pressed="${tab === 'm'}">Ведение</button></div>
       ${admin ? `<select id="dayWho" aria-label="Исполнитель"><option value="">Исполнитель: все</option>${db.users.map(u => `<option value="${u.id}" ${u.id === who ? 'selected' : ''}>${esc(u.id === ME ? `${u.name || 'Вы'} (вы)` : u.name || 'Без имени')}</option>`).join('')}</select>`
@@ -5049,7 +5015,7 @@ function renderTodo(who){
       <button class="td-main" data-tdopen="${key}"><b>${esc(i.title)}${i.t ? msgIcon(i.p, i.t) : ''}</b><small>${sub}</small></button>
       ${i.due ? dueTxt(i.due) : '<span class="dt-due td-nodue">без срока</span>'}</li>`;
   };
-  app.innerHTML = `<div class="fn-head-row">${GUEST ? '<h2 class="td-title">Мои задачи</h2>' : prodSwitch()}
+  app.innerHTML = `<div class="fn-head-row"><h2 class="td-title">Мои задачи</h2>
       ${maintN ? `<div class="seg-toggle" role="group" aria-label="Задачи или ведение"><button data-todotab="t" aria-pressed="${!mtab}">Задачи</button><button data-todotab="m" aria-pressed="${!!mtab}">Ведение <span class="seg-n">${maintN}</span></button></div>` : ''}
       ${GUEST ? '' : `<select id="dayAs" aria-label="Смотреть как"><option value="">Смотреть как: я</option>${db.users.filter(u => u.id !== ME).map(u => `<option value="${u.id}" ${u.id === ui.dayAs ? 'selected' : ''}>Как видит: ${esc(u.name || 'Без имени')}</option>`).join('')}</select>`}
       <label class="inl hint"><input type="checkbox" id="dayDone" ${showDone ? 'checked' : ''}> Выполненные${doneN ? ` (${doneN})` : ''}</label></div>
@@ -5634,7 +5600,6 @@ function tSave(t, rerenderModal, focusSel){ save(); render(); if (rerenderModal)
 function moveDraftItem(from, to){ const a = ui.taskDraft.items; if (to < 0 || to >= a.length || from === to) return; const [x] = a.splice(from, 1); a.splice(to, 0, x); renderTaskModal(); }
 document.addEventListener('click', e => {
   const tg = e.target;
-  const pm = tg.closest('[data-pmode]'); if (pm){ ui.prodMode = pm.dataset.pmode; render(); return; }
   const card = tg.closest('[data-task]'); if (card && !tg.closest('#taskLayer') && !tg.closest('.dt-chk, .dt-status, .dt-date')){ e.preventDefault(); openTask(card.dataset.task); return; }
   if (tg.closest('[data-tnew]')){ openNewTask({ project_id: ui.tf?.project }); return; }
   const fs = tg.closest('[data-fn-tasks]'); if (fs){ ui.view = 'assign'; ui.dayTab = 'p'; render(); return; }
@@ -5902,7 +5867,7 @@ function renderProjectFocus(mine = false){
   const list = all.filter(p => !q || norm(p.name).includes(q) || norm(p.client).includes(q));
   let p = projById(ui[key]);
   if (!p || p.state === 'archived') p = all.find(x => x.state === 'active') || all[0];
-  if (!p){ app.innerHTML = mine ? joinBoxHtml() : `<div class="fn-head-row">${prodSwitch()}</div><div class="empty">Проектов пока нет</div>`; return; }
+  if (!p){ app.innerHTML = mine ? joinBoxHtml() : '<div class="empty">Проектов пока нет</div>'; return; }
   const role = roleOf(p); const canEdit = canEditProject(p);
   ui[key] = p.id;
   const prevScroll = app.querySelector('.pf-board')?.scrollLeft || 0;
@@ -5913,8 +5878,7 @@ function renderProjectFocus(mine = false){
 
   const listHtml = list.map(x => {
     const c = currentStage(x); const h = c ? health(c) : { key:'done', label:'Завершён' }; const xp = projectProgress(x);
-    const nShare = shareCount(x);
-    return `<div class="pf-row">${!mine ? `<button class="pf-share${nShare ? ' on' : ''}" data-share="${x.id}" aria-label="Поделиться проектом ${esc(x.name)}" title="Поделиться">${SHARE_ICON}${nShare ? `<span>${nShare}</span>` : ''}</button>` : ''}<button class="pf-item${x.id === p.id ? ' on' : ''}" data-pfsel="${x.id}" aria-current="${x.id === p.id}">
+    return `<div class="pf-row"><button class="pf-item${x.id === p.id ? ' on' : ''}" data-pfsel="${x.id}" aria-current="${x.id === p.id}">
       <span class="pf-name">${projAva(x, 'xs')}${esc(x.name)}</span>
       <small>${c ? `${c.position + 1}. ${esc(c.name)}` : 'Все этапы пройдены'}, ${xp.pct}%</small>
       <span class="pf-mini" aria-hidden="true"><i style="width:${xp.pct}%"></i></span></button></div>`;
@@ -5945,7 +5909,7 @@ function renderProjectFocus(mine = false){
     </section>`;
   }).join('');
 
-  app.innerHTML = `<div class="fn-head-row">${mine ? '<h2 class="mine-h">Мои проекты</h2><span class="hint">Проекты, которыми с вами поделились. Отметки и результаты сразу видны владельцу.</span><button class="ghost" id="joinOpen">Открыть по ссылке</button>' : prodSwitch()}
+  app.innerHTML = `<div class="fn-head-row${mine ? '' : ' pf-top'}">${mine ? '<h2 class="mine-h">Мои проекты</h2><span class="hint">Проекты, которыми с вами поделились. Отметки и результаты сразу видны владельцу.</span><button class="ghost" id="joinOpen">Открыть по ссылке</button>' : ''}
       <select id="pfSelect" class="pf-select" aria-label="Проект">${list.map(x => `<option value="${x.id}" ${x.id===p.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div>
     <div class="pf">
       <aside class="pf-list"><input type="search" id="pfQ" placeholder="Найти проект" value="${esc(ui.pfQ || '')}" aria-label="Поиск проекта"><div class="pf-items">${listHtml || '<p class="hint">Ничего не найдено</p>'}</div></aside>
@@ -5953,7 +5917,8 @@ function renderProjectFocus(mine = false){
         <div class="pf-head">
           <div><h2>${mine ? esc(p.name) : `<button class="link-plain" data-open="${p.id}">${esc(p.name)}</button>`}</h2>
             <small>${mine ? `${esc(p.client)}, ваша роль: ${ROLE_RU[role].toLowerCase()}, владелец: <span class="owner-name">…</span>` : `${esc(p.client)}, PM ${esc(short(p.pm_id))}${execTxt(p)}, финиш ${fmt(plannedEnd(p))}`}</small>
-            ${!mine ? `<p><button class="ghost pf-sharebtn" data-share="${p.id}">${SHARE_ICON} Поделиться${shareCount(p) ? ` · ${shareCount(p)}` : ''}</button></p>` : ''}</div>
+          </div>
+          ${!mine ? `<button class="icon-btn pf-shareic${shareCount(p) ? ' on' : ''}" data-share="${p.id}" title="Поделиться проектом${shareCount(p) ? ` · доступ у ${shareCount(p)}` : ''}" aria-label="Поделиться проектом">${SHARE_ICON}${shareCount(p) ? `<span>${shareCount(p)}</span>` : ''}</button>` : ''}
         </div>
         <div class="pf-board">${cols}</div>
       </div>
@@ -6925,7 +6890,7 @@ const MNAV = {
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
   assign:['Поручения', MI('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2 2 4-4M8.5 17h7"/>')],
-  mytasks:['Задачи', MI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5 2.5-2.5"/>')],
+  mytasks:['Мои задачи', MI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5 2.5-2.5"/>')],
   reports:['AI-отчёты', MI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')],
   team:['Команда', MI('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>')],
   templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
@@ -6967,7 +6932,7 @@ document.addEventListener('click', e => {
   const k = c.dataset.kdrisk; ui.risk = ui.risk === k ? '' : k; render();
 });
 const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>');
-const moreViews = () => ['assign', 'mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
+const moreViews = () => ['mytasks', 'assign', 'mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
 function renderMobileNav(){
   const nav = $('#mnav'); if (!nav) return;
   if (GUEST){ nav.innerHTML = ['mine', 'mytasks'].map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
