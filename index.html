@@ -548,6 +548,33 @@ body.selecting #app{padding-bottom:90px}
 .stg-maint .dot,.maint-check svg,.rt-freq{color:var(--m)}
 .rt-chk,.dt-chk[data-rdone]{accent-color:var(--m)}
 [data-col="maint"] h3 .cname{color:var(--m)}
+.msg-ico{display:inline-flex;align-items:center;gap:2px;vertical-align:-2px;margin-left:6px;padding:3px;border-radius:6px;color:var(--link);cursor:pointer;line-height:1;border:1px solid transparent}
+.pf-card{position:relative}.pf-card .msg-ico{position:absolute;top:8px;right:8px;margin:0;border-color:var(--line);background:var(--surface)}
+.pf-card:has(.msg-ico) b{padding-right:28px}
+.tk-head .msg-ico{margin:4px 0 0;padding:6px;border-color:var(--line)}.tk-head .msg-ico svg{width:17px;height:17px}
+.td-main .msg-ico,.dt-main .msg-ico{float:none}
+.msg-ico:hover{background:var(--soft)}.msg-ico svg{width:15px;height:15px}.msg-ico b{font-size:11px;font-weight:600}
+.msg-ico.copied{color:var(--g)}
+.msg-pop-h{display:flex;align-items:baseline;gap:8px;padding:2px 2px 6px}.msg-pop-h b{font-size:13.5px}.msg-pop-h small{color:var(--muted);font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msg-pop-text{font-size:14px;line-height:1.5;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;max-height:240px;overflow:auto;word-break:break-word}
+.msg-pop-text{position:relative;padding-right:34px!important}
+.msg-pop .msg-pop-copy{position:absolute;top:6px;right:6px;display:grid;place-items:center;width:24px;height:24px;padding:0;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.msg-pop .msg-pop-copy:hover{color:var(--ink);background:var(--surface);border-color:var(--line-strong)}
+.msg-pop .msg-pop-copy.done{color:var(--g);border-color:var(--g)}
+.msg-pop-copy svg{width:13px;height:13px}
+.msg-pop .msg-pop-h .tx{display:inline-grid;place-items:center;opacity:1;width:24px;height:24px;padding:0;font-size:18px;color:var(--muted)}
+.msg-field textarea{width:100%;margin-top:8px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:9px 10px;font:inherit;font-size:14px;resize:vertical}
+.msg-field .check span b{font-weight:600}
+.msg-pop{position:fixed;z-index:60;width:290px;background:var(--surface);border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.3);padding:8px;display:grid;gap:4px}
+.msg-pop>b{font-size:12.5px;color:var(--muted);font-weight:500;padding:2px 6px 4px}
+.msg-pop button{display:grid;gap:2px;text-align:left;border:0;background:none;border-radius:8px;padding:7px 8px;cursor:pointer;color:var(--ink);font:inherit}
+.msg-pop button:hover{background:var(--surface-2)}.msg-pop button span{font-size:13.5px;font-weight:500}.msg-pop button small{color:var(--muted);font-size:12px}
+.msg-box{display:grid;gap:8px;width:100%;text-align:left;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);padding:12px 14px;cursor:pointer;color:var(--ink);font:inherit;position:relative}
+.msg-box:hover{border-color:var(--line-strong)}
+.msg-text{font-size:14px;line-height:1.5;white-space:normal;word-break:break-word}
+.msg-copy{display:inline-flex;align-items:center;gap:6px;justify-self:end;font-size:12.5px;font-weight:500;color:var(--link)}
+.msg-copy svg{width:14px;height:14px}
+.msg-box.copied{border-color:var(--g)}.msg-box.copied .msg-copy{color:var(--g)}
 .team-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
 .cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
@@ -1463,9 +1490,15 @@ const mergeSubs = (old = [], tpl = [], allDone = false, keepExtra = false) => {
   return out;
 };
 // Подэтап с задачей показывается кнопкой с прогрессом чек-листа: его состояние ведёт задача
+// иконка «скопировать сообщение» у подэтапа, если в его карточке есть шаблоны сообщений
+function msgIcon(p, t){
+  const has = (t?.blocks || []).some(b => b.type === 'msg' && String(b.value || '').trim()); if (!has) return '';
+  return `<span class="msg-ico" role="button" tabindex="0" data-msgpick="${t.id}" title="Шаблон сообщения" aria-label="Открыть шаблон сообщения">${MSG_ICO}</span>`;
+}
+const MSG_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/><path d="M8 9h8M8 13h5"/></svg>';
 const subChk = (p, s, x) => {
   const t = taskFor(p.id, s.id, x.id);
-  if (t){ const pr = taskProgress(t); return `<button class="sub-task${subDone(p, s, x) ? ' done' : ''}" data-task="${t.id}" title="Открыть задачу">${esc(x.name)}<small>${pr.total ? `${pr.n}/${pr.total}` : 'задача'}</small></button>`; }
+  if (t){ const pr = taskProgress(t); return `<button class="sub-task${subDone(p, s, x) ? ' done' : ''}" data-task="${t.id}" title="Открыть задачу">${esc(x.name)}<small>${pr.total ? `${pr.n}/${pr.total}` : 'задача'}</small>${msgIcon(p, t)}</button>`; }
   return `<label class="sub-chk"><input type="checkbox" data-sub="${p.id}|${s.id}|${x.id}" ${x.done ? 'checked' : ''}>${esc(x.name)}</label>`;
 };
 // Данные из прошлых версий: добавляем подэтапы, ничего не теряя
@@ -2293,7 +2326,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
       const here = isCur && x.id === cur.subId;
       if (mine && !t) return tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
-        ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<b>${esc(x.name)}</b>
+        ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<b>${esc(x.name)}${msgIcon(p, t)}</b>
         <small>${esc(short(whoId(p, s, t)))}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}</button>`;
@@ -4602,7 +4635,7 @@ function renderTodo(who){
       : `${esc(i.p.name)} · ${i.p.stages.indexOf(i.s) + 1}/${i.p.stages.length} ${esc(i.s.name)}${i.t && taskProgress(i.t).total ? ` · ${taskProgress(i.t).n} из ${taskProgress(i.t).total}` : ''}`;
     return `<li class="td-row${i.done ? ' done' : ''}" data-kind="${i.kind}"${i.p ? ` data-pid="${i.p.id}"` : ''}>
       <input type="checkbox" class="td-chk" data-tddone="${key}" ${i.done ? 'checked' : ''} aria-label="Выполнено: ${esc(i.title)}">
-      <button class="td-main" data-tdopen="${key}"><b>${esc(i.title)}</b><small>${sub}</small></button>
+      <button class="td-main" data-tdopen="${key}"><b>${esc(i.title)}${i.t ? msgIcon(i.p, i.t) : ''}</b><small>${sub}</small></button>
       ${i.due ? dueTxt(i.due) : '<span class="dt-due td-nodue">без срока</span>'}</li>`;
   };
   app.innerHTML = `<div class="fn-head-row">${GUEST ? '<h2 class="td-title">Мои задачи</h2>' : prodSwitch()}
@@ -4666,7 +4699,7 @@ function dayCard(i){
     const canDue = DAY_MODE === 'admin' && !GUEST && !p._ext;
     const dueKey = t ? `t|${t.id}` : `x|${p.id}|${s.id}|${x?.id || ''}`;
     return `<article class="dt dt-p${i.done ? ' done' : ''}" ${t ? `data-task="${t.id}"` : `data-dtopen="${p.id}|${s.id}"`} tabindex="0">
-      <div class="dt-main">${!t || !pr.total ? `<input type="checkbox" class="dt-chk" data-sub="${p.id}|${s.id}|${x?.id || ''}" ${i.done ? 'checked' : ''} aria-label="Выполнено: ${esc(i.title)}" ${x ? '' : 'disabled'}>` : ''}<b>${esc(i.title)}</b></div>
+      <div class="dt-main">${!t || !pr.total ? `<input type="checkbox" class="dt-chk" data-sub="${p.id}|${s.id}|${x?.id || ''}" ${i.done ? 'checked' : ''} aria-label="Выполнено: ${esc(i.title)}" ${x ? '' : 'disabled'}>` : ''}<b>${esc(i.title)}${t ? msgIcon(p, t) : ''}</b></div>
       <div class="dt-meta">${t && pr.total ? `<span class="dt-ck">${pr.n} из ${pr.total}</span>` : ''}${showWho && i.who ? `<span>${esc(nameOf_(i.who))}</span>` : ''}
         ${canDue ? `<label class="dt-date${i.own ? ' own' : ''}" title="${i.own ? 'Срок подзадачи' : 'Срок этапа — нажмите, чтобы поставить свой срок подзадаче'}">${FLAG}<input type="date" data-dtdue="${dueKey}" value="${esc(i.own || '')}" aria-label="Срок подзадачи «${esc(i.title)}»"><span>${i.own ? fmt(i.own) : `${fmt(s.due_date)} (этап)`}</span></label>${i.own && !i.done ? dueWarn(i.own) : ''}` : dueTxt(i.due)}
         <span class="dt-st">${i.done ? 'Готово' : esc(health(s).label)}</span></div>
@@ -4848,34 +4881,92 @@ function migrateLinks(){
 //  исполнители видят. Блоки — часть шаблона карточки и расходятся по проектам вместе с ней.
 //  Файлы лежат в закрытой корзине Supabase: <кто загрузил>/p/<проект>/… или <кто загрузил>/t/<шаблон>/…
 // =====================================================================
-const BLOCK_T = { text:'Текст', link:'Ссылка', video:'Видео', file:'Файл' };
+const BLOCK_T = { text:'Текст', link:'Ссылка', video:'Видео', file:'Файл', msg:'Шаблон сообщения' };
+const ADD_T = ['text', 'link', 'video', 'file'];   // сообщение включается отдельной галочкой
+// шаблон сообщения: {клиент}, {проект}, {этап}, {pm} подставляются при показе и копировании
+const fillMsg = (text, p, t) => String(text || '').replace(/\{(клиент|проект|этап|pm|подэтап)\}/gi, (m, k) => {
+  if (!p) return m; const s = p.stages?.find(x => x.id === t?.stage_id);
+  return ({ 'клиент':p.client, 'проект':p.name, 'этап':s?.name, 'pm':(p._ext ? '' : userById(p.pm_id)?.name), 'подэтап':t?.title })[k.toLowerCase()] || m; });
 const clone = o => JSON.parse(JSON.stringify(o ?? null));
 const blkOk = b => b && (b.type === 'file' ? !!b.path : !!String(b.value || '').trim());
 const cleanBlocks = list => (list || []).filter(blkOk).map(b => ({ id:b.id || uid(), type:b.type, title:String(b.title || '').trim(), value:String(b.value || '').trim(),
   ...(b.type === 'file' ? { path:b.path, name:b.name || 'Файл', size:b.size || 0 } : {}) }));
 const fsize = n => !n ? '' : n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} КБ` : `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} МБ`;
 const safeFileName = n => String(n || 'file').replace(/[^\w.\-а-яё ]+/gi, '_').replace(/\s+/g, '_').slice(-80) || 'file';
-function blocksView(list){
+function blocksView(list, p, t){
   return (list || []).filter(blkOk).map(b => {
     const h = `<h3>${esc(b.title || BLOCK_T[b.type])}</h3>`;
     if (b.type === 'text') return `<section class="tk-sec bk-v">${h}<div class="tk-text">${linkify(b.value)}</div></section>`;
+    if (b.type === 'msg') return '';
     if (b.type === 'link'){ const u = safeUrl(b.value); return `<section class="tk-sec bk-v">${h}${u ? `<a class="ghost tk-reg" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(b.title ? 'Открыть' : u.replace(/^https?:\/\//, '').slice(0, 60))} ↗</a>` : `<span class="hint">${esc(b.value)}</span>`}</section>`; }
     if (b.type === 'video') return `<section class="tk-sec bk-v">${h}${taskPlayer(b.value)}</section>`;
     return `<section class="tk-sec bk-v">${h}<button type="button" class="fchip" data-fopen="${esc(b.path)}"><span aria-hidden="true">📎</span>${esc(b.name)}<small>${fsize(b.size)}</small></button></section>`;
   }).join('');
 }
+// галочка «Шаблон сообщения» в редактировании подэтапа и карточки шаблона
+function msgEditor(list, ctx){
+  const m = (list || []).find(b => b.type === 'msg');
+  return `<div class="field msg-field" data-msgctx="${ctx}"><label class="check"><input type="checkbox" data-msgon="${ctx}" ${m ? 'checked' : ''}> <span><b>Шаблон сообщения</b> — у подэтапа появится иконка, по ней сообщение можно скопировать</span></label>
+    ${m ? `<textarea data-msgval="${ctx}" rows="5" placeholder="Здравствуйте, {клиент}! …" aria-label="Текст шаблона сообщения">${esc(m.value || '')}</textarea>
+      <small class="hint">Можно вставить {клиент}, {проект}, {этап}, {pm}, {подэтап} — подставятся сами.</small>` : ''}</div>`;
+}
+document.addEventListener('change', e => {
+  const ctx = e.target.dataset?.msgon; if (!ctx) return; if ((ctx === 'td' && !ui.taskDraft) || (ctx === 'ce' && !ui.ce)) return;
+  const list = bkList(ctx); const i = list.findIndex(b => b.type === 'msg');
+  if (e.target.checked && i < 0) list.push({ id:uid(), type:'msg', title:'', value:'' }); else if (!e.target.checked && i >= 0) list.splice(i, 1);
+  bkRender(ctx); if (e.target.checked) document.querySelector(`[data-msgval="${ctx}"]`)?.focus();
+});
+document.addEventListener('input', e => {
+  const ctx = e.target.dataset?.msgval; if (!ctx) return; const m = bkList(ctx).find(b => b.type === 'msg'); if (m) m.value = e.target.value;
+});
 function blocksEditor(list, ctx){
-  return `<div class="field bk-field"><label>Блоки карточки</label>
-    <ol class="bk-list" data-bkctx="${ctx}">${(list || []).map((b, k) => `<li class="bk" data-bk="${k}">
+  return `${msgEditor(list, ctx)}<div class="field bk-field"><label>Блоки карточки</label>
+    <ol class="bk-list" data-bkctx="${ctx}">${(list || []).map((b, k) => b.type === 'msg' ? '' : `<li class="bk" data-bk="${k}">
       <span class="grip" data-bkdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить блок ${k + 1}. Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
       <div class="bk-body"><div class="bk-top"><span class="bk-type">${BLOCK_T[b.type]}</span><input data-bkf="title" data-bki="${k}" value="${esc(b.title || '')}" placeholder="Заголовок (необязательно)" aria-label="Заголовок блока ${k + 1}"></div>
         ${b.type === 'text' ? `<textarea data-bkf="value" data-bki="${k}" rows="3" placeholder="Текст" aria-label="Текст блока ${k + 1}">${esc(b.value || '')}</textarea>`
+        : b.type === 'msg' ? `<textarea data-bkf="value" data-bki="${k}" rows="4" placeholder="Здравствуйте, {клиент}! …" aria-label="Текст сообщения ${k + 1}">${esc(b.value || '')}</textarea><small class="hint">Исполнитель скопирует сообщение одним нажатием. Можно вставить {клиент}, {проект}, {этап}, {pm} — подставятся сами.</small>`
         : b.type === 'file' ? `<div class="row bk-file">${b.uploading ? '<span class="hint">Загружаю…</span>' : b.path ? `<span class="fchip static"><span aria-hidden="true">📎</span>${esc(b.name)}<small>${fsize(b.size)}</small></span><label class="link file-btn">Заменить<input type="file" data-bkfile="${k}"></label>` : `<label class="ghost file-btn">Выбрать файл<input type="file" data-bkfile="${k}"></label><span class="hint">до 25 МБ</span>`}</div>`
         : `<input data-bkf="value" data-bki="${k}" value="${esc(b.value || '')}" inputmode="url" placeholder="${b.type === 'video' ? 'YouTube, Vimeo, Google Drive, Loom или MP4' : 'https://…'}" aria-label="Ссылка блока ${k + 1}">`}
       </div>
       <button type="button" class="tx bk-x" data-bkdel="${k}" aria-label="Удалить блок ${k + 1}" title="Удалить блок">×</button></li>`).join('')}</ol>
-    <div class="bk-add" data-bkctx="${ctx}"><span class="hint">Добавить блок:</span>${Object.entries(BLOCK_T).map(([k, v]) => `<button type="button" class="ghost" data-bkadd="${k}">+ ${v}</button>`).join('')}</div></div>`;
+    <div class="bk-add" data-bkctx="${ctx}"><span class="hint">Добавить блок:</span>${ADD_T.map(k => `<button type="button" class="ghost" data-bkadd="${k}">+ ${BLOCK_T[k]}</button>`).join('')}</div></div>`;
 }
+const OK_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+const COPY_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+// копирование шаблона сообщения
+async function copyText(txt){
+  try { await navigator.clipboard.writeText(txt); return true; }
+  catch(e){ const ta = document.createElement('textarea'); ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0'; document.body.append(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch(x) {} ta.remove(); return ok; }
+}
+async function doCopy(b){
+  const ok = await copyText(decodeURIComponent(b.dataset.msgcopy));
+  if (ok){ b.classList.add('copied'); const sp = b.querySelector('.msg-copy span'); if (sp) sp.textContent = 'Скопировано';
+    setTimeout(() => { b.classList.remove('copied'); const s2 = b.querySelector('.msg-copy span'); if (s2) s2.textContent = 'Копировать'; }, 1600); toast('Сообщение скопировано'); }
+  else toast('Не удалось скопировать: откройте подэтап и выделите текст вручную');
+  return ok;
+}
+// окошко с готовым сообщением подэтапа и кнопкой «Копировать»
+function openMsgPick(el){
+  const t = taskById(el.dataset.msgpick); if (!t) return; const p = projById(t.project_id);
+  const ms = (t.blocks || []).filter(b => b.type === 'msg' && String(b.value || '').trim()); if (!ms.length) return;
+  document.querySelector('.msg-pop')?.remove();
+  const r = el.getBoundingClientRect(); const W = Math.min(360, innerWidth - 16);
+  document.body.insertAdjacentHTML('beforeend', `<div class="msg-pop" role="dialog" aria-label="Шаблон сообщения" style="top:${Math.round(Math.min(r.bottom + 6, innerHeight - 220))}px;left:${Math.round(Math.max(8, Math.min(r.right - W, innerWidth - W - 8)))}px;width:${W}px">
+    <div class="msg-pop-h"><b>Шаблон сообщения</b><small>${esc(t.title)}</small><button type="button" class="tx" data-msgclose aria-label="Закрыть">×</button></div>
+    ${ms.map(m => { const txt = fillMsg(m.value, p, t); return `<div class="msg-pop-text"><button type="button" class="msg-pop-copy" data-msgcopy="${esc(encodeURIComponent(txt))}" title="Копировать" aria-label="Копировать сообщение">${COPY_ICO}</button>${esc(txt).replace(/\n/g, '<br>')}</div>`; }).join('')}</div>`);
+}
+document.addEventListener('click', async e => {
+  const pk = e.target.closest?.('[data-msgpick]');
+  if (pk){ e.preventDefault(); e.stopPropagation(); openMsgPick(pk); return; }
+  if (e.target.closest?.('[data-msgclose]')){ e.stopPropagation(); document.querySelector('.msg-pop')?.remove(); return; }
+  const b = e.target.closest?.('[data-msgcopy]');
+  if (!b){ if (!e.target.closest?.('.msg-pop')) document.querySelector('.msg-pop')?.remove(); return; }
+  e.preventDefault(); e.stopPropagation();
+  if (await doCopy(b)){ if (b.classList.contains('msg-pop-copy')){ b.innerHTML = OK_ICO; b.classList.add('done'); } setTimeout(() => document.querySelector('.msg-pop')?.remove(), 900); }
+}, true);
+document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('.msg-ico')){ e.preventDefault(); e.target.click(); } });
 const bkList = ctx => ctx === 'ce' ? (ui.ce.b = ui.ce.b || []) : (ui.taskDraft.blocks = ui.taskDraft.blocks || []);
 const bkRender = ctx => ctx === 'ce' ? renderCardEditor() : renderTaskModal();
 document.addEventListener('click', e => {
@@ -4995,6 +5086,7 @@ function renderTaskModal(focusSel){
   const head = `<div class="tk-head">
       <div class="tk-headtxt"><small>${p?._ext ? esc(p.name) : `<button class="link-plain" data-open="${p.id}" data-stage="${s?.id || ''}">${esc(p.name)}</button>`} · ${esc(s?.name || 'Этап удалён')}${sub ? ` · подэтап «${esc(sub.name)}»` : ''}</small>
         <h2 id="tkTitle">${d ? 'Редактирование подэтапа' : esc(t.title)}</h2></div>
+      ${!d ? msgIcon(p, t) : ''}
       ${!d && editable ? '<button class="ghost" data-tedit>Редактировать</button>' : ''}
       <button class="close" data-tclose aria-label="Закрыть">×</button></div>`;
   let body;
@@ -5006,7 +5098,7 @@ function renderTaskModal(focusSel){
         <div class="tk-text">${t.description ? linkify(t.description) : '<span class="hint">Инструкции пока нет.</span>'}</div>
         ${reg ? `<p><a class="ghost tk-reg" href="${esc(reg)}" target="_blank" rel="noopener noreferrer">Открыть регламент ↗</a></p>` : ''}</section>
       ${t.video_url || ui.localVideo ? `<section class="tk-sec"><h3>Видео</h3>${taskPlayer(ui.localVideo || t.video_url)}</section>` : ''}
-      ${blocksView(t.blocks)}
+      ${blocksView(t.blocks, projById(t.project_id), t)}
       <section class="tk-sec"><h3>Чек-лист</h3>
         ${t.checklist.length ? `<ul class="ck${t.checklist.length > 1 ? ' sortable' : ''}">${t.checklist.map((i, k) => `<li class="${i.done ? 'on' : ''}" data-ckv="${k}">
           ${t.checklist.length > 1 ? `<span class="grip" data-ckvdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить пункт «${esc(i.text)}». Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>` : ''}
@@ -5389,7 +5481,7 @@ function renderProjectFocus(mine = false){
       if (mine && !t) return tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
-        <b>${esc(x.name)}</b>
+        <b>${esc(x.name)}${msgIcon(p, t)}</b>
         <small>${esc(short(whoId(p, s, t)))}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
