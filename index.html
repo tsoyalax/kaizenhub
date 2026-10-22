@@ -509,6 +509,26 @@ body.selecting #app{padding-bottom:90px}
 .dt-st{margin-left:auto}
 .dt-status{margin-left:auto;height:28px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:12.5px;padding:0 6px;color:var(--ink)}
 .dt-status.st-in_progress{color:var(--g)}.dt-status.st-review{color:var(--b)}.dt-status.st-done{color:var(--muted)}
+.maint-check{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin:4px 0}
+.maint-check input{margin-top:3px}.maint-check span{display:grid;grid-template-columns:auto 1fr;gap:2px 7px;align-items:center}
+.maint-check svg{width:15px;height:15px;color:var(--g)}.maint-check small{grid-column:1/-1;color:var(--muted);font-size:12.5px}
+.p-maint{grid-column:1/-1}
+.stg-maint .dot{display:grid;place-items:center;color:var(--g)}.stg-maint .dot svg{width:14px;height:14px}
+.rt-block{display:grid;gap:6px;margin-top:8px}
+.rt-block h4{margin:0;font-size:13px;font-weight:600}
+.rt-list{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.rt-row{display:flex;align-items:center;gap:9px;padding:6px 2px;border-bottom:1px solid var(--line)}
+.rt-row:last-child{border-bottom:0}
+.rt-chk,.stg input.rt-chk,.pf-col input.rt-chk,.card input.rt-chk{width:17px;height:17px;min-width:17px;padding:0;border:0;flex:none;accent-color:var(--g);cursor:pointer;background:none}
+.rt-main{flex:1;min-width:0;display:grid;gap:1px;border:0;background:none;padding:0;text-align:left;cursor:pointer;color:var(--ink);font:inherit}
+.rt-main b{font-weight:500;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rt-main small{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rt-freq{display:inline-flex;align-items:center;gap:4px}.rt-freq svg{width:12px;height:12px}
+.rt-row .dt-due{flex:none;font-size:12px}
+.rt-add{justify-self:start;font-size:13px}
+.rt-block.compact .rt-row{padding:4px 0}.rt-block.compact .rt-main b{font-size:13px;white-space:normal}
+.rt-block.compact .rt-main small{white-space:normal}.rt-block.compact .dt-due{font-size:12px}.rt-block.compact .dt-due svg{width:11px;height:11px}
+.pf-maint{gap:0}
 .team-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
 .cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
@@ -1344,6 +1364,13 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 
 // ---------- светофор (та же логика, что в backend/src/schedule.js) ----------
 function health(s, now = new Date()){
+  if (isMaint(s)){
+    if (s.status !== 'in_progress') return { key:'gray', label:'Не начат', note:'после воронки' };
+    const rt = s.rtasks || []; const t0 = today(); const over = rt.filter(r => r.due_date && r.due_date < t0).length;
+    if (over) return { key:'red', label:'Просрочено', note:`регулярных задач просрочено: ${over}` };
+    if (rt.some(r => r.due_date && r.due_date <= addDays(t0, 1))) return { key:'yellow', label:'Ведение', note:'есть задача на сегодня или завтра' };
+    return { key:'green', label:'Ведение', note:rt.length ? `регулярных задач: ${rt.length}` : 'бессрочно' };
+  }
   if (s.status === 'done') return { key:'done', label:'Завершён', note: s.completed_at ? `Сдан ${fmt(s.completed_at)}` : 'Сдан' };
   if (s.status === 'not_started') return { key:'gray', label:'Не начат', note:`Старт ${fmt(s.planned_start)}` };
   const end = parse(s.due_date); end.setHours(23,59,59,999);
@@ -1362,7 +1389,16 @@ const execLabel = p => p?.worker_id ? `Как у проекта: ${esc(short(p.w
 const whoId = (p, s, t) => t?.assignee_id || s?.assignee_id || projWho(p);
 const execTxt = (p, sep = ', ') => p?.worker_id ? `${sep}исп. ${esc(short(p.worker_id))}` : '';
 const currentStage = p => p.stages.find(s => s.status==='in_progress'||s.status==='client_review') || p.stages.find(s => s.status!=='done') || null;
-const plannedEnd = p => p.stages.reduce((m,s) => s.due_date > m ? s.due_date : m, '');
+const plannedEnd = p => p.stages.reduce((m,s) => !isMaint(s) && s.due_date > m ? s.due_date : m, '');
+const isMaint = s => s?.system === 'maint';
+const FREQ = { weekly:['Раз в неделю', 7], biweekly:['Раз в 2 недели', 14], monthly:['Раз в месяц', 0] };
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// следующий цикл: от срока (если выполнили вовремя) или от сегодня (если с опозданием)
+function nextCycle(due, freq){
+  const base = !due || due < today() ? today() : due;
+  if (freq === 'monthly'){ const d = parse(base); const day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + 1); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); return ymd(d); }
+  return addDays(base, FREQ[freq]?.[1] || 7);
+}
 
 // ---------- данные ----------
 let db = null;
@@ -1496,7 +1532,31 @@ function seed(){
 //  ACTIONS — в серверной версии каждое действие = один запрос к API
 // =====================================================================
 function addLog(p, text){ p.log.unshift({ at:new Date().toISOString(), user:ME, text }); }
-function syncState(p){ const open = p.stages.some(s => s.status !== 'done'); if (!open) p.state='completed'; else if (p.state==='completed') p.state='active'; }
+// Проект на ведении: в конце цепочки — бессрочный системный этап «Ведение / Поддержка» (s.system = 'maint').
+// Пока воронка не пройдена, он «не начат»; когда пройдена — «в работе», и проект не закрывается.
+function syncMaint(p){
+  if (!p || p._ext) return;
+  let ms = p.stages.find(isMaint); const real = p.stages.filter(x => !isMaint(x));
+  if (!p.is_maintenance){
+    if (ms){ p.stages = real; p.stages.forEach((x, i) => x.position = i); addLog(p, 'Ведение выключено: этап «Ведение / Поддержка» убран'); }
+    return;
+  }
+  const allDone = real.length > 0 && real.every(x => x.status === 'done');
+  if (!ms){
+    const last = real.at(-1); const st = last ? (allDone ? today() : last.due_date) : today();
+    ms = { id:'m' + uid(), system:'maint', custom:true, name:'Ведение / Поддержка', days:0, approval:false, assignee_id:null, status:'not_started',
+      started_at:null, completed_at:null, planned_start:st, due_date:st, subs:[], rtasks:[] };
+    p.stages.push(ms);
+  }
+  if (p.stages.at(-1) !== ms){ p.stages = [...p.stages.filter(x => x !== ms), ms]; }
+  p.stages.forEach((x, i) => x.position = i);
+  const want = allDone ? 'in_progress' : 'not_started';
+  if (ms.status !== want){
+    ms.status = want; ms.completed_at = null;
+    if (want === 'in_progress'){ ms.started_at = ms.started_at || today(); addLog(p, 'Воронка пройдена: проект перешёл на этап «Ведение / Поддержка»'); }
+  }
+}
+function syncState(p){ syncMaint(p); const open = p.stages.some(s => s.status !== 'done'); if (!open) p.state='completed'; else if (p.state==='completed') p.state='active'; }
 function shiftFrom(p, pos, delta){
   let n = 0;
   p.stages.forEach(s => { if (s.position > pos && s.status !== 'done'){ s.planned_start = addDays(s.planned_start, delta); s.due_date = addDays(s.due_date, delta); n++; } });
@@ -1729,7 +1789,7 @@ function moveStage(p, s, dir){
 // ---------- Этапы процесса (колонки канбана) и подэтапы ----------
 const stageByName = (p, name) => p.stages.find(s => norm(s.name) === norm(name));
 const activeOf = tid => db.projects.filter(p => p.template_id === tid && p.state === 'active');
-const colIndex = (t, p) => { const c = currentStage(p); if (!c) return 'done'; const i = t.stages.findIndex(s => norm(s.name) === norm(c.name)); return i >= 0 ? i : 'other'; };
+const colIndex = (t, p) => { const c = currentStage(p); if (!c) return 'done'; if (isMaint(c)) return 'maint'; const i = t.stages.findIndex(s => norm(s.name) === norm(c.name)); return i >= 0 ? i : 'other'; };
 // Перенос на доске: колонка = этап процесса, в проекте ищем этап с тем же названием
 function moveToColumn(p, t, i){
   const s = stageByName(p, t.stages[i].name);
@@ -1791,6 +1851,76 @@ function moveToDone(p){
   p.stages.forEach(s => { if (s.status !== 'done'){ s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; completeStage(p, s); } });
   syncState(p); addLog(p, 'Все этапы отмечены завершёнными'); commit();
 }
+// ---------- Регулярные задачи ведения (абонентка): s.rtasks этапа ведения ----------
+const canManageR = p => p && (p._ext ? canEditProject(p) : !GUEST);
+const rWho = (p, id) => p._ext ? ((p._team || []).find(m => m.id === id)?.name || '') : (id ? short(id) : 'Не назначен');
+function rtaskBlock(p, s, compact = false){
+  const rt = (s.rtasks || []).slice().sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999'));
+  const list = compact ? rt.slice(0, 4) : rt;
+  return `<div class="rt-block${compact ? ' compact' : ''}">${compact ? '' : '<h4>Регулярные задачи (абонентка)</h4>'}
+    ${list.length ? `<ul class="rt-list">${list.map(r => `<li class="rt-row">
+      <input type="checkbox" class="rt-chk" data-rdone="${p.id}|${r.id}" aria-label="Выполнено в этом цикле: ${esc(r.title)}">
+      <button class="rt-main" data-redit="${p.id}|${r.id}"><b>${esc(r.title)}</b><small><span class="rt-freq">${RT_ICO}${FREQ[r.frequency]?.[0] || ''}</span>${compact ? ` · ${dueTxt(r.due_date)}` : ` · ${esc(rWho(p, r.assignee_id))}${r.last_done ? ` · последний раз ${fmt(r.last_done)}` : ''}`}</small></button>
+      ${compact ? '' : dueTxt(r.due_date)}</li>`).join('')}</ul>${compact && rt.length > list.length ? `<p class="hint">и ещё ${rt.length - list.length}</p>` : ''}`
+    : `<p class="hint">${s.status === 'in_progress' ? 'Регулярных задач пока нет.' : 'Задачи начнутся после завершения воронки — их можно подготовить заранее.'}</p>`}
+    ${canManageR(p) ? `<button class="link rt-add" data-radd="${p.id}">+ Добавить регулярную задачу</button>` : ''}</div>`;
+}
+const RT_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>';
+function openRtask(pid, rid){
+  const p = projById(pid); const s = p?.stages.find(isMaint); if (!s) return;
+  const r = rid ? (s.rtasks || []).find(x => x.id === rid) : null; const manage = canManageR(p);
+  const v = r || { title:'', frequency:'weekly', assignee_id:s.assignee_id || p.worker_id || '', due_date:nextCycle('', 'weekly') };
+  const ro = manage ? '' : 'disabled';
+  const people = p._ext ? `<option value="">Не назначен</option>${(p._team || []).map(m => `<option value="${m.id}" ${m.id === v.assignee_id ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}` : peopleOpts(v.assignee_id, 'Не назначен');
+  layer.innerHTML = `<div class="backdrop" data-close></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rtT">
+    <h2 id="rtT">${r ? 'Регулярная задача' : 'Новая регулярная задача'}</h2><p class="lead">${esc(p.name)} · Ведение / Поддержка</p>
+    <form class="form" id="rtForm" data-pid="${p.id}" data-rid="${r ? r.id : ''}" novalidate>
+      <div class="field"><label for="rtTitle">Название</label><input id="rtTitle" value="${esc(v.title)}" maxlength="200" placeholder="Например: еженедельный отчёт по ROMI" ${ro} autocomplete="off"></div>
+      <div class="two">
+        <div class="field"><label for="rtFreq">Как часто</label><select id="rtFreq" ${ro}>${Object.entries(FREQ).map(([k, [l]]) => `<option value="${k}" ${k === v.frequency ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <div class="field"><label for="rtDue">Срок текущего цикла</label><input id="rtDue" type="date" value="${esc(v.due_date || '')}" ${ro}></div>
+      </div>
+      <div class="field"><label for="rtWho">Исполнитель</label><select id="rtWho" ${ro}>${people}</select></div>
+      ${r ? `<p class="hint">Выполнено циклов: ${r.done_count || 0}${r.last_done ? `, последний раз ${fmt(r.last_done)}` : ''}</p>` : ''}
+      <div class="err" id="rtErr" aria-live="polite"></div>
+      <div class="actions">${r && manage ? '<button type="button" class="ghost danger m-out" id="rtDel">Удалить</button>' : ''}<button type="button" class="ghost" data-close>${manage ? 'Отмена' : 'Закрыть'}</button>${manage ? `<button class="primary">${r ? 'Сохранить' : 'Добавить'}</button>` : ''}</div>
+    </form></div>`;
+  if (manage) $('#rtTitle').focus();
+}
+function completeRtask(p, r){
+  const now = new Date().toISOString();
+  r.last_done = today(); r.done_count = (r.done_count || 0) + 1; r.status = 'todo'; r.updated_at = now;
+  r.due_date = nextCycle(r.due_date, r.frequency);
+  addLog(p, `Регулярная задача «${r.title}» выполнена, следующий раз ${fmt(r.due_date)}`); commit();
+  toast(`Готово. Следующий раз: ${fmt(r.due_date)}`);
+}
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'rtForm') return; e.preventDefault();
+  const p = projById(e.target.dataset.pid); const s = p?.stages.find(isMaint); if (!s || !canManageR(p)) return;
+  const title = $('#rtTitle').value.trim(); if (!title){ $('#rtErr').textContent = 'Укажите название'; return; }
+  const due = $('#rtDue').value; if (!due){ $('#rtErr').textContent = 'Укажите срок текущего цикла'; return; }
+  const now = new Date().toISOString(); s.rtasks = s.rtasks || [];
+  const r = s.rtasks.find(x => x.id === e.target.dataset.rid);
+  const data = { title, frequency:$('#rtFreq').value, assignee_id:$('#rtWho').value || null, due_date:due, status:'todo', updated_at:now };
+  if (r) Object.assign(r, data); else s.rtasks.push({ id:'r' + uid(), project_id:p.id, created_at:now, done_count:0, ...data });
+  addLog(p, `${r ? 'Изменена' : 'Добавлена'} регулярная задача «${title}» (${FREQ[data.frequency][0].toLowerCase()})`);
+  layer.innerHTML = ''; commit(); if (ui.open === p.id) renderDrawer(); toast(r ? 'Сохранено' : 'Регулярная задача добавлена');
+});
+document.addEventListener('change', e => {
+  const k = e.target.dataset?.rdone; if (!k) return;
+  const [pid, rid] = k.split('|'); const p = projById(pid); const r = p?.stages.find(isMaint)?.rtasks?.find(x => x.id === rid); if (!r) return;
+  completeRtask(p, r); if (ui.open === pid) renderDrawer();
+});
+document.addEventListener('click', e => {
+  const a = e.target.closest?.('[data-radd]'); if (a){ e.stopPropagation(); openRtask(a.dataset.radd, null); return; }
+  const ed = e.target.closest?.('[data-redit]'); if (ed && !e.target.closest('input, select, label')){ e.stopPropagation(); const [pid, rid] = ed.dataset.redit.split('|'); openRtask(pid, rid); return; }
+  if (e.target.id === 'rtDel'){ const f = $('#rtForm'); const p = projById(f.dataset.pid); const s = p.stages.find(isMaint); const r = s.rtasks.find(x => x.id === f.dataset.rid);
+    askConfirm({ title:`Удалить «${r.title}»?`, text:'Регулярная задача перестанет появляться в ведении проекта.', ok:'Удалить' }).then(y => { if (!y) return;
+      s.rtasks = s.rtasks.filter(x => x !== r); addLog(p, `Удалена регулярная задача «${r.title}»`); layer.innerHTML = ''; commit(); if (ui.open === p.id) renderDrawer(); toast('Удалено'); });
+  }
+}, true);
+
 // PATCH /api/projects/:id
 function updateProject(p, field, value, label){
   if (p[field] === value) return; p[field] = value; addLog(p, label); commit();
@@ -2025,7 +2155,7 @@ function renderMatrix(){
   const dimOn = ui.risk && ui.risk !== 'done';
   app.innerHTML = groupsFor(list).map(g => {
     const cols = Math.max(g.tpl ? g.tpl.stages.length : 0, ...g.items.map(p => p.stages.length));
-    const head = Array.from({length:cols}, (_,i) => `<th><span class="num">${i+1}</span>${g.tpl ? esc(g.tpl.stages[i]?.name ?? '') : 'Этап'}</th>`).join('');
+    const head = Array.from({length:cols}, (_,i) => `<th><span class="num">${i+1}</span>${g.tpl ? esc(g.tpl.stages[i]?.name ?? (g.items.some(p => isMaint(p.stages[i])) ? 'Ведение' : '')) : 'Этап'}</th>`).join('');
     const body = g.items.map(p => {
       const cur = currentStage(p); const end = plannedEnd(p); const late = p.deadline && end > p.deadline;
       const cells = Array.from({length:cols}, (_,i) => {
@@ -2139,7 +2269,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
   const cols = p.stages.map(s => {
     const h = health(s); const isCur = s.id === cur.stageId; const passed = s.status === 'done';
     const subs = s.subs || []; const doneN = subs.filter(x => subDone(p, s, x)).length;
-    const cards = subs.map(x => {
+    const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
       if (mine && !t) return tickCard(p, s, x, here);
@@ -2152,8 +2282,8 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" data-pmcol="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}</header>
-      <div class="pf-cards">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
-      ${canEdit ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
+      <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
+      ${canEdit && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
     </section>`;
   }).join('');
   const steps = p.stages.map(s => `<button class="pm-step${s.status === 'done' ? ' done' : ''}${s.id === cur.stageId ? ' cur' : ''} h-${health(s).key}" data-pmgo="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">${s.status === 'done' ? '✓' : s.position + 1}</button>`).join('');
@@ -2258,11 +2388,17 @@ function renderKanban(){
   const cols = t.stages.map((s,i) => ({ pos:i, name:s.name, items:[] }));
   const other = { pos:'other', name:'Вне процесса', items:[] };
   const done = { pos:'done', name:'Завершены', items:[] };
-  list.forEach(p => { const k = colIndex(t, p); (k === 'done' ? done : k === 'other' ? other : cols[k]).items.push(p); });
+  const maint = { pos:'maint', name:'Ведение', items:[] };
+  list.forEach(p => { const k = colIndex(t, p); (k === 'done' ? done : k === 'maint' ? maint : k === 'other' ? other : cols[k]).items.push(p); });
   const card = p => {
     const c = currentStage(p); const h = c ? health(c) : { key:'done', label:'Завершён', note:'' };
     const statusSel = c ? `<select data-kstatus="${p.id}" aria-label="Статус этапа">${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${c.status===k?'selected':''}>${v}</option>`).join('')}</select>` : '';
-    const moveSel = `<select data-kmove="${p.id}" aria-label="Перенести на этап"><option value="">Перенести…</option>${t.stages.map((s,i) => `<option value="${i}">${i+1}. ${esc(s.name)}</option>`).join('')}<option value="done">Завершить проект</option></select>`;
+    const moveSel = `<select data-kmove="${p.id}" aria-label="Перенести на этап"><option value="">Перенести…</option>${t.stages.map((s,i) => `<option value="${i}">${i+1}. ${esc(s.name)}</option>`).join('')}<option value="maint">Ведение</option>${p.is_maintenance ? '' : '<option value="done">Завершить проект</option>'}</select>`;
+    if (c && isMaint(c)) return `<article class="card card-maint" draggable="true" data-card="${p.id}">
+      <button class="t" data-open="${p.id}">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</button>
+      <div class="meta">${esc(p.client)}, PM ${esc(short(p.pm_id))}</div>
+      <div class="stline"><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span><span>${h.note}</span></div>
+      ${rtaskBlock(p, c, true)}</article>`;
     const subsDone = c?.subs?.filter(x => x.done).length ?? 0;
     return `<article class="card" draggable="true" data-card="${p.id}">
       <button class="t" data-open="${p.id}">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</button>
@@ -2281,7 +2417,7 @@ function renderKanban(){
   };
   app.innerHTML = `<div class="kb-head"><select id="kbTpl" aria-label="Шаблон процесса">${db.templates.map(x => `<option value="${x.id}" ${x.id===t.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
     <span class="hint kb-tip">Перетащите карточку в колонку этапа. Свой этап добавляется кнопкой «Добавить этап» и становится частью процесса.</span></div>
-    <div class="kb">${cols.map(colHtml).join('')}<button class="col-add" id="kbAdd"><span aria-hidden="true">+</span>Добавить этап</button>${other.items.length ? colHtml(other) : ''}${colHtml(done)}</div>`;
+    <div class="kb">${cols.map(colHtml).join('')}<button class="col-add" id="kbAdd"><span aria-hidden="true">+</span>Добавить этап</button>${other.items.length ? colHtml(other) : ''}${colHtml(maint)}${colHtml(done)}</div>`;
 }
 
 function openStageModal(t, mode, i){
@@ -2351,7 +2487,7 @@ function renderProduction(){
   ui.prodTpl = t.id;
   const list = db.projects.filter(p => p.template_id === t.id && (p.state === 'active' || p.state === 'completed'));
   const total = list.length, completed = list.filter(p => p.state === 'completed').length;
-  const rank = p => { const k = colIndex(t, p); return k === 'done' ? Infinity : k === 'other' ? -1 : k; };
+  const rank = p => { const k = colIndex(t, p); return k === 'done' || k === 'maint' ? Infinity : k === 'other' ? -1 : k; };
   const stagesHtml = t.stages.map((ts, i) => {
     const here = list.filter(p => p.state === 'active' && rank(p) === i);
     const reached = list.filter(p => rank(p) >= i).length;
@@ -2603,6 +2739,10 @@ function renderDrawer(){
   const opt = (list, val, empty) => (empty ? `<option value="">${empty}</option>` : '') + list.map(u => `<option value="${u.id}" ${u.id===val?'selected':''}>${esc(u.name || 'Вы')}${u.status==='invited' ? ' (приглашён)' : ''}</option>`).join('');
   const stages = p.stages.map((s,i) => {
     const h = health(s);
+    if (isMaint(s)) return `<li class="stg stg-maint k-${h.key}" id="stg-${s.id}"><span class="dot">${RT_ICO}</span>
+      <div class="r1"><b>${esc(s.name)}</b><span class="pill s-${h.key}">${h.label}</span></div>
+      <div class="note">${s.status === 'in_progress' ? `Бессрочный этап с ${fmt(s.started_at)}: регулярные задачи по абонентке.` : 'Начнётся, когда будут завершены все этапы воронки.'}</div>
+      ${rtaskBlock(p, s)}</li>`;
     if (ui.editChain){
       const done = s.status === 'done';
       return `<li class="stg k-${h.key}" id="stg-${s.id}">
@@ -2639,6 +2779,7 @@ function renderDrawer(){
         <div class="field"><label>Клиент</label><div class="val">${esc(p.client)}</div></div>
         <div class="field"><label for="pCat">Категория</label><select id="pCat">${catOpts(p.category_id)}</select></div>
         <div class="field"><label for="pTpl">Шаблон процесса</label><select id="pTpl">${tplById(p.template_id) ? '' : '<option value="" selected>Шаблон удалён</option>'}${db.templates.map(t => `<option value="${t.id}" ${t.id===p.template_id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></div>
+        <label class="check maint-check p-maint"><input type="checkbox" id="pMaint" ${p.is_maintenance ? 'checked' : ''}> <span>${RT_ICO}<b>На ведении после воронки</b><small>Проект не закроется, а перейдёт на этап «Ведение / Поддержка» с регулярными задачами.</small></span></label>
         <div class="field"><label for="pPri">Приоритет</label><select id="pPri">${Object.entries(PRI).map(([k,[v]]) => `<option value="${k}" ${p.priority===k?'selected':''}>${v}</option>`).join('')}</select></div>
       </div></section>
       <section class="d-box"><h3>Команда</h3><div class="d-g">
@@ -2698,6 +2839,7 @@ function openCreate(){
         <div class="field"><label for="cWorker">Ответственный (Исп)</label><select id="cWorker"><option value="">Не назначен</option>${db.users.map(u => `<option value="${u.id}">${esc(u.name || 'Вы')}</option>`).join('')}</select></div>
         <div class="field"><label for="cPri">Приоритет</label><select id="cPri"><option value="high">Высокий</option><option value="medium" selected>Средний</option><option value="low">Низкий</option></select></div>
       </div>
+      <label class="check maint-check"><input type="checkbox" id="cMaint"> <span>${RT_ICO}<b>Перевести проект на этап абонентского ведения после запуска</b><small>После завершения воронки проект перейдёт на этап регулярных задач и поддержки.</small></span></label>
       <div class="preview" id="cPrev"></div>
       <div class="err" id="cErr"></div>
       <div class="actions"><button type="button" class="ghost" data-close>Отмена</button><button class="primary">Создать проект</button></div>
@@ -2721,6 +2863,7 @@ function openCreate(){
     const p = createProject({ name, client, template_id:$('#cTpl').value, start_date:start, pm_id:$('#cPm').value, worker_id:$('#cWorker').value || null,
       priority:$('#cPri').value });
     const cat = $('#cCat')?.value; if (cat){ p.category_id = cat; save(); }
+    if ($('#cMaint')?.checked){ p.is_maintenance = true; syncState(p); addLog(p, 'Проект на ведении: после воронки — этап «Ведение / Поддержка»'); save(); }
     if (dl){ p.deadline = dl; if (fit) fitToDeadline(p); else commit(); }
     layer.innerHTML = ''; toast(`Проект «${p.name}» создан: ${p.stages.length} этапов, финиш ${fmt(plannedEnd(p))}`);
   };
@@ -3467,6 +3610,12 @@ document.addEventListener('click', e => {
 });
 
 document.addEventListener('change', e => {
+  if (e.target.id === 'pMaint'){ const q = projById(ui.open); if (!q) return; const on = e.target.checked;
+    const ms = q.stages.find(isMaint);
+    const go = () => { q.is_maintenance = on; syncState(q); addLog(q, on ? 'Проект переведён на ведение после воронки' : 'Ведение выключено'); commit(); renderDrawer(); toast(on ? (q.stages.find(isMaint)?.status === 'in_progress' ? 'Проект на этапе «Ведение / Поддержка»' : 'После воронки проект перейдёт на ведение') : 'Ведение выключено'); };
+    if (!on && ms?.rtasks?.length) askConfirm({ title:'Выключить ведение?', text:`Этап «Ведение / Поддержка» и ${ms.rtasks.length} ${plural(ms.rtasks.length, 'регулярная задача', 'регулярные задачи', 'регулярных задач')} будут удалены. Если воронка пройдена, проект станет завершённым.`, ok:'Выключить' }).then(y => { if (y) go(); else e.target.checked = true; });
+    else go();
+    return; }
   const el = e.target; const p = projById(ui.open);
   if (el.dataset.sub){
     const [pid, sid, xid] = el.dataset.sub.split('|'); const q = projById(pid); const s = q?.stages.find(y => y.id === sid); const x = s?.subs.find(y => y.id === xid);
@@ -3475,7 +3624,7 @@ document.addEventListener('change', e => {
   if (el.id === 'fnTpl'){ ui.prodTpl = el.value; render(); return; }
   if (el.id === 'kbTpl'){ ui.kbTpl = el.value; render(); return; }
   if (el.dataset.kstatus){ const q = projById(el.dataset.kstatus); setStatus(q, currentStage(q), el.value); return; }
-  if (el.dataset.kmove){ const q = projById(el.dataset.kmove); if (el.value === 'done') moveToDone(q); else if (el.value !== '') moveToColumn(q, tplById(ui.kbTpl), +el.value); return; }
+  if (el.dataset.kmove){ const q = projById(el.dataset.kmove); if (el.value === 'maint'){ q.is_maintenance = true; moveToDone(q); } else if (el.value === 'done') moveToDone(q); else if (el.value !== '') moveToColumn(q, tplById(ui.kbTpl), +el.value); return; }
   if (el.dataset.uf){
     const u = userById(el.dataset.uid); const f = el.dataset.uf;
     if (f === 'capacity'){ const v = Math.round(+el.value); if (!(v >= 1)){ el.value = u.capacity; toast('Норма — от 1 проекта'); return; } return updateMember(u, f, v); }
@@ -3520,7 +3669,8 @@ app.addEventListener('drop', e => {
   const col = e.target.closest('[data-col]'); if (!col || !dragId) return; e.preventDefault();
   const p = projById(dragId); const pos = col.dataset.col; const t = tplById(ui.kbTpl);
   if (pos === 'other') return;
-  if (pos === 'done'){ moveToDone(p); toast(`«${p.name}»: проект завершён`); return; }
+  if (pos === 'maint'){ p.is_maintenance = true; moveToDone(p); toast(`«${p.name}»: на ведении`); return; }
+  if (pos === 'done'){ moveToDone(p); toast(p.is_maintenance ? `«${p.name}»: на ведении` : `«${p.name}»: проект завершён`); return; }
   if (moveToColumn(p, t, +pos)) toast(`«${p.name}»: этап «${t.stages[+pos].name}»`);
 });
 
@@ -4339,6 +4489,12 @@ function dayProjectItems(who){
   projects.forEach(p => {
     const c = currentStage(p); if (!c) return;
     const mine = p._ext ? myTeamIds(p) : null;
+    if (isMaint(c)){
+      (c.rtasks || []).forEach(r => { const w = r.assignee_id;
+        if (p._ext){ if (!mine.includes(w)) return; } else if (who && w !== who) return;
+        out.push({ kind:'p', id:`r|${p.id}|${r.id}`, p, s:c, r, x:null, t:null, who:w, done:false, own:r.due_date, due:r.due_date, title:r.title }); });
+      return;
+    }
     const tasks = (p._ext ? ext.tasks : (db.tasks || [])).filter(t => t.project_id === p.id && t.stage_id === c.id);
     const rows = (c.subs || []).map(x => ({ x, t:tasks.find(t => t.substage_id === x.id) || null }))
       .concat(tasks.filter(t => !t.substage_id || !(c.subs || []).some(x => x.id === t.substage_id)).map(t => ({ x:null, t })));
@@ -4414,9 +4570,10 @@ function renderTodo(who){
   const overN = list.filter(i => !i.done && i.due && i.due < t0).length;
   const asU = !GUEST && ui.dayAs ? userById(ui.dayAs) : null;
   const row = i => {
-    const key = i.kind === 'i' ? `i|${i.id}` : i.t ? `t|${i.t.id}` : `x|${i.p.id}|${i.s.id}|${i.x?.id || ''}`;
+    const key = i.kind === 'i' ? `i|${i.id}` : i.r ? `r|${i.p.id}|${i.r.id}` : i.t ? `t|${i.t.id}` : `x|${i.p.id}|${i.s.id}|${i.x?.id || ''}`;
     const sub = i.kind === 'i'
       ? `Внутренняя · ${esc(IT_CAT[i.it.category] || 'Другое')}${i.it.priority === 'urgent' || i.it.priority === 'high' ? ` · <span class="td-pri pri-t-${i.it.priority}">${IT_PRI[i.it.priority]}</span>` : ''}${i.it.status === 'in_progress' || i.it.status === 'review' ? ` · ${IT_STATUS[i.it.status]}` : ''}`
+      : i.r ? `${esc(i.p.name)} · Ведение · ${FREQ[i.r.frequency]?.[0] || ''}`
       : `${esc(i.p.name)} · ${i.p.stages.indexOf(i.s) + 1}/${i.p.stages.length} ${esc(i.s.name)}${i.t && taskProgress(i.t).total ? ` · ${taskProgress(i.t).n} из ${taskProgress(i.t).total}` : ''}`;
     return `<li class="td-row${i.done ? ' done' : ''}" data-kind="${i.kind}"${i.p ? ` data-pid="${i.p.id}"` : ''}>
       <input type="checkbox" class="td-chk" data-tddone="${key}" ${i.done ? 'checked' : ''} aria-label="Выполнено: ${esc(i.title)}">
@@ -4434,6 +4591,7 @@ function renderTodo(who){
 document.addEventListener('change', e => {
   const k = e.target.dataset?.tddone; if (!k) return;
   const on = e.target.checked; const [kind, ...ids] = k.split('|');
+  if (kind === 'r'){ const p = projById(ids[0]); const r = p?.stages.find(isMaint)?.rtasks?.find(x => x.id === ids[1]); if (r && on) completeRtask(p, r); else render(); return; }
   if (kind === 'i'){ const t = itAll().find(x => x.id === ids[0]); if (!t) return; itSave({ ...t, status:on ? 'done' : 'todo' }); render(); if (on) toast(`«${t.title}» — готово`); return; }
   if (kind === 't'){
     const t = taskById(ids[0]); if (!t) return; const p = projById(t.project_id); const s = p?.stages.find(y => y.id === t.stage_id);
@@ -4448,12 +4606,20 @@ document.addEventListener('click', e => {
   const o = e.target.closest?.('[data-tdopen]'); if (!o) return;
   const [kind, ...ids] = o.dataset.tdopen.split('|');
   if (kind === 'i') return openItask(ids[0]);
+  if (kind === 'r') return openRtask(ids[0], ids[1]);
   if (kind === 't') return openTask(ids[0]);
   const q = projById(ids[0]); if (q && !q._ext) openProject(ids[0], ids[1]); else { ui.myProject = ids[0]; ui.view = 'mine'; render(); }
 });
 const dueTxt = d => { if (!d) return ''; const u = urg(d); return `<span class="dt-due ut-${u.k}">${FLAG}${fmt(d)}${u.k === 'over' || u.k === 'hot' ? ` · ${u.txt}` : ''}</span>`; };
 function dayCard(i){
   const showWho = DAY_MODE === 'admin' && !GUEST && !(ui.dayWho);
+  if (i.kind === 'p' && i.r){
+    const { p, r } = i;
+    return `<article class="dt dt-p dt-r" data-redit="${p.id}|${r.id}" tabindex="0">
+      <div class="dt-main"><input type="checkbox" class="dt-chk" data-rdone="${p.id}|${r.id}" aria-label="Выполнено в этом цикле: ${esc(r.title)}"><b>${esc(r.title)}</b></div>
+      <div class="dt-meta"><span class="rt-freq">${RT_ICO}${FREQ[r.frequency]?.[0] || ''}</span>${showWho && r.assignee_id ? `<span>${esc(rWho(p, r.assignee_id))}</span>` : ''}${dueTxt(r.due_date)}<span class="dt-st">Ведение</span></div>
+    </article>`;
+  }
   if (i.kind === 'p'){
     const { p, s, x, t } = i; const pr = t ? taskProgress(t) : null;
     const nameOf_ = id => p._ext ? ((p._team || []).find(m => m.id === id)?.name || '') : short(id);
@@ -5176,7 +5342,7 @@ function renderProjectFocus(mine = false){
     const subs = s.subs || [];
     const doneN = subs.filter(x => subDone(p, s, x)).length;
     const passed = s.status === 'done';
-    const cards = subs.map(x => {
+    const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
       if (mine && !t) return tickCard(p, s, x, here);
@@ -5191,8 +5357,8 @@ function renderProjectFocus(mine = false){
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}</header>
-      <div class="pf-cards">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
-      ${canEdit ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
+      <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
+      ${canEdit && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
     </section>`;
   }).join('');
 
