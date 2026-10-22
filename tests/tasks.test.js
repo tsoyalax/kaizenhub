@@ -108,8 +108,10 @@ const getComputedStyle_ok = w => w.getComputedStyle(w.document.getElementById('b
   const wD = wk.w.document;
   const wTxt = wD.getElementById('app').textContent;
   assert.ok(wTxt.includes('Подготовить договор')); ok('исполнитель видит поставленную ему внутреннюю задачу');
-  assert.ok(wD.querySelectorAll('.dt-p').length > 0 && [...wD.querySelectorAll('[data-dtproj]')].every(sc => sc.dataset.dtproj === pid)); ok('исполнитель видит подзадачи текущего этапа, где он ответственный, и только их');
-  assert.ok(!wD.querySelector('[data-dtdue]') && /3 нояб/.test(wD.querySelector(`[data-dtproj="${pid}"]`).textContent)); ok('исполнитель видит срок подзадачи, но не меняет его');
+  assert.ok(wD.querySelector('.td-list') && !wD.querySelector('.dt-ph') && !wD.querySelector('[data-daytab]')); ok('у исполнителя — простой список задач');
+  assert.ok([...wD.querySelectorAll('.td-row')].every(r => r.querySelector('.td-chk'))); ok('у каждой задачи — галочка «выполнено»');
+  assert.ok(wD.querySelectorAll('.td-row[data-kind="p"]').length > 0 && [...wD.querySelectorAll('.td-row[data-kind="p"]')].every(r => r.dataset.pid === pid)); ok('исполнитель видит подзадачи текущего этапа, где он ответственный, и только их');
+  assert.ok(!wD.querySelector('[data-dtdue]') && /3 нояб/.test(wD.getElementById('app').textContent)); ok('исполнитель видит срок подзадачи, но не меняет его');
   // уведомления исполнителю
   assert.ok(!wD.getElementById('bell').hidden && getComputedStyle_ok(wk.w)); ok('у исполнителя есть колокольчик');
   assert.ok(+(wD.querySelector('#bellCount .badge')?.textContent || 0) >= 1); ok('на колокольчике число новых задач');
@@ -121,10 +123,13 @@ const getComputedStyle_ok = w => w.getComputedStyle(w.document.getElementById('b
   assert.equal(wk.w.eval('myAlerts().fresh.length'), 0); ok('после просмотра новые задачи отмечены прочитанными');
   assert.ok(!wD.querySelector('[data-itnew]') && !wD.querySelector('#dayWho')); ok('исполнитель не ставит задачи и не выбирает исполнителя');
   // смена статуса исполнителем — сразу у владельца
-  const ws = [...wD.querySelectorAll('[data-itstatus]')][0]; ws.value = 'in_progress'; ws.dispatchEvent(new wk.w.Event('change', { bubbles: true })); await wait(1500);
-  assert.equal(JSON.parse([...be.rows.values()].find(r => r.path.startsWith('it/')).data.json).status, 'in_progress'); ok('исполнитель меняет статус');
-  assert.equal(own.w.eval('IT.list[0].status'), 'in_progress'); ok('владелец сразу видит новый статус');
-  wk.w.document.querySelector('.dt-i').click(); await wait(100);
+  const ws = wD.querySelector('.td-row[data-kind="i"] .td-chk'); ws.checked = true; ws.dispatchEvent(new wk.w.Event('change', { bubbles: true })); await wait(1500);
+  assert.equal(JSON.parse([...be.rows.values()].find(r => r.path.startsWith('it/')).data.json).status, 'done'); ok('исполнитель отмечает задачу выполненной');
+  assert.equal(own.w.eval('IT.list[0].status'), 'done'); ok('владелец сразу видит, что задача выполнена');
+  wk.w.document.getElementById('dayDone').click(); await wait(100);
+  const ws2 = wD.querySelector('.td-row[data-kind="i"] .td-chk'); ws2.checked = false; ws2.dispatchEvent(new wk.w.Event('change', { bubbles: true })); await wait(1500);
+  assert.equal(own.w.eval('IT.list[0].status'), 'todo'); ok('снятая галочка возвращает задачу в работу');
+  wk.w.document.querySelector('.td-row[data-kind="i"] .td-main').click(); await wait(100);
   assert.ok(wk.w.document.querySelector('#itTitle').disabled && !wk.w.document.querySelector('#itDel')); ok('исполнитель не меняет задачу и не удаляет её — только статус');
   wk.w.document.querySelector('[data-close]').click(); await wait(50);
   // 4) отметка подзадачи во вкладке «Задачи» видна в воронке/проекте
@@ -138,7 +143,11 @@ const getComputedStyle_ok = w => w.getComputedStyle(w.document.getElementById('b
   $('[data-pmode="tasks"]').click(); await wait(150);
   const as = $('#dayAs'); as.value = tu.id; fire(as, 'change'); await wait(150);
   assert.ok($('.as-note') && /Тимур/.test($('.as-note').textContent)); ok('«Смотреть как»: видно, чьими глазами');
-  assert.ok($$('[data-dtproj]').length && $$('[data-dtproj]').every(sc => sc.dataset.dtproj === pid) && D.getElementById('app').textContent.includes('Подготовить договор')); ok('«Смотреть как»: ровно то, что видит исполнитель');
+  assert.ok($$('.td-row[data-kind="p"]').length && $$('.td-row[data-kind="p"]').every(r => r.dataset.pid === pid) && D.getElementById('app').textContent.includes('Подготовить договор')); ok('«Смотреть как»: ровно то, что видит исполнитель');
+  // «выполнено» у карточки с чек-листом — отмечает весь чек-лист и подэтап
+  const tc = $$('.td-chk[data-tddone^="t|"]').find(c => own.w.eval(`taskById('${c.dataset.tddone.slice(2)}').checklist.length`) > 0);
+  if (tc){ tc.checked = true; fire(tc, 'change'); await wait(200); const tid = tc.dataset.tddone.slice(2);
+    assert.ok(own.w.eval(`taskById('${tid}').checklist.every(i => i.done)`) && own.w.eval(`(() => { const t = taskById('${tid}'); return projById(t.project_id).stages.find(s => s.id === t.stage_id).subs.find(x => x.id === t.substage_id)?.done !== false; })()`)); ok('галочка у подзадачи с чек-листом закрывает весь чек-лист и подэтап'); }
   $('[data-dayas=""]').click(); await wait(100);
   assert.ok(!$('.as-note')); ok('«Вернуться к моим»');
   $('[data-pmode="assign"]').click(); await wait(150);

@@ -449,6 +449,18 @@ body.selecting #app{padding-bottom:90px}
 .st-lead{display:inline-block;font-size:12px;font-weight:600;color:var(--b);background:var(--b-bg);border-radius:6px;padding:1px 7px;margin-bottom:3px}
 .lead-check{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
 .lead-check input{margin-top:3px}.lead-check span{display:grid;gap:2px}.lead-check small{color:var(--muted);font-size:12.5px}
+.td-title{font-size:18px;font-weight:600;margin:0}
+.td-list{list-style:none;margin:6px 0 0;padding:0;border-top:1px solid var(--line);max-width:900px}
+.td-row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line)}
+.td-row:hover{background:var(--surface-2)}
+.td-chk{width:19px;height:19px;flex:none;accent-color:var(--g);cursor:pointer}
+.td-main{flex:1;min-width:0;display:grid;gap:2px;border:0;background:none;padding:0;text-align:left;cursor:pointer;color:var(--ink);font:inherit}
+.td-main b{font-weight:500;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td-main small{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td-row.done .td-main b{text-decoration:line-through;color:var(--muted)}
+.td-row .dt-due{flex:none;font-size:12.5px;color:var(--muted)}
+.td-nodue{opacity:.7}
+.pri-t-urgent{color:var(--r)}.pri-t-high{color:var(--y)}
 .as-note{margin:-4px 0 12px;padding:9px 12px;border:1px dashed var(--line-strong);border-radius:10px;font-size:13.5px;color:var(--muted)}
 .as-note b{color:var(--ink)}
 .dt-person h3{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:14px}
@@ -4226,6 +4238,7 @@ function renderMyDay(mode = 'exec'){
   const tab = ui.dayTab || 'all';
   // исполнитель — свои; «Мои задачи» руководителя — свои или «глазами» выбранного сотрудника; «Поручения» — все или выбранный
   const who = GUEST ? '' : admin ? (ui.dayWho ?? '') : (ui.dayAs || ME);
+  if (!admin) return renderTodo(who);
   const showDone = !!ui.dayDone; ui.dayFold = ui.dayFold || {};
   const pAll = tab !== 'i' ? dayProjectItems(who) : [], iAll = tab !== 'p' ? dayInternalItems(who) : [];
   const doneN = [...pAll, ...iAll].filter(i => i.done).length;
@@ -4266,6 +4279,52 @@ function renderMyDay(mode = 'exec'){
     + (empty ? `<div class="empty">${tab === 'i' ? 'Внутренних задач нет.' : tab === 'p' ? 'По текущим этапам проектов задач нет.' : 'Задач нет.'}${admin ? '<br><button class="primary" data-itnew>+ Поставить задачу</button>' : ''}</div>`
       : intHtml + (groups.length ? `<h3 class="dt-h">Задачи по проектам</h3>${projHtml}` : ''));
 }
+// «Мои задачи» / вкладка исполнителя: простой список с галочкой «выполнено»
+function renderTodo(who){
+  const showDone = !!ui.dayDone; const t0 = today();
+  const all = [...dayProjectItems(who), ...dayInternalItems(who)];
+  const doneN = all.filter(i => i.done).length;
+  const list = (showDone ? all : all.filter(i => !i.done)).sort(byDue);
+  const overN = list.filter(i => !i.done && i.due && i.due < t0).length;
+  const asU = !GUEST && ui.dayAs ? userById(ui.dayAs) : null;
+  const row = i => {
+    const key = i.kind === 'i' ? `i|${i.id}` : i.t ? `t|${i.t.id}` : `x|${i.p.id}|${i.s.id}|${i.x?.id || ''}`;
+    const sub = i.kind === 'i'
+      ? `Внутренняя · ${esc(IT_CAT[i.it.category] || 'Другое')}${i.it.priority === 'urgent' || i.it.priority === 'high' ? ` · <span class="td-pri pri-t-${i.it.priority}">${IT_PRI[i.it.priority]}</span>` : ''}${i.it.status === 'in_progress' || i.it.status === 'review' ? ` · ${IT_STATUS[i.it.status]}` : ''}`
+      : `${esc(i.p.name)} · ${i.p.stages.indexOf(i.s) + 1}/${i.p.stages.length} ${esc(i.s.name)}${i.t && taskProgress(i.t).total ? ` · ${taskProgress(i.t).n} из ${taskProgress(i.t).total}` : ''}`;
+    return `<li class="td-row${i.done ? ' done' : ''}" data-kind="${i.kind}"${i.p ? ` data-pid="${i.p.id}"` : ''}>
+      <input type="checkbox" class="td-chk" data-tddone="${key}" ${i.done ? 'checked' : ''} aria-label="Выполнено: ${esc(i.title)}">
+      <button class="td-main" data-tdopen="${key}"><b>${esc(i.title)}</b><small>${sub}</small></button>
+      ${i.due ? dueTxt(i.due) : '<span class="dt-due td-nodue">без срока</span>'}</li>`;
+  };
+  app.innerHTML = `<div class="fn-head-row">${GUEST ? '<h2 class="td-title">Мои задачи</h2>' : prodSwitch()}
+      ${GUEST ? '' : `<select id="dayAs" aria-label="Смотреть как"><option value="">Смотреть как: я</option>${db.users.filter(u => u.id !== ME).map(u => `<option value="${u.id}" ${u.id === ui.dayAs ? 'selected' : ''}>Как видит: ${esc(u.name || 'Без имени')}</option>`).join('')}</select>`}
+      <label class="inl hint"><input type="checkbox" id="dayDone" ${showDone ? 'checked' : ''}> Выполненные${doneN ? ` (${doneN})` : ''}</label></div>
+    ${asU ? `<div class="as-note">Так видит свои задачи <b>${esc(asU.name || 'сотрудник')}</b>${asU.account_id ? '' : ' (ещё не вошёл в приложение)'}. <button class="link" data-dayas="">Вернуться к моим</button></div>` : ''}
+    <p class="fn-sum">${list.filter(i => !i.done).length ? `Задач: ${list.filter(i => !i.done).length}${overN ? `, просрочено: ${overN}` : ''}. Отметьте галочкой, когда сделано.` : 'Все задачи выполнены.'}</p>
+    ${list.length ? `<ul class="td-list">${list.map(row).join('')}</ul>` : '<div class="empty">Задач нет.</div>'}`;
+}
+// галочка «выполнено»: внутренняя — статус «Готово»; карточка — все пункты чек-листа; подэтап — отметка подэтапа
+document.addEventListener('change', e => {
+  const k = e.target.dataset?.tddone; if (!k) return;
+  const on = e.target.checked; const [kind, ...ids] = k.split('|');
+  if (kind === 'i'){ const t = itAll().find(x => x.id === ids[0]); if (!t) return; itSave({ ...t, status:on ? 'done' : 'todo' }); render(); if (on) toast(`«${t.title}» — готово`); return; }
+  if (kind === 't'){
+    const t = taskById(ids[0]); if (!t) return; const p = projById(t.project_id); const s = p?.stages.find(y => y.id === t.stage_id);
+    if (t.checklist.length){ const now = new Date().toISOString();
+      t.checklist.forEach(i => { if (i.done !== on){ i.done = on; i.completed_at = on ? now : null; i.completed_by = on ? meName() : null; } });
+      syncTaskToSub(t); save(); render(); if (on) toast(`«${t.title}» — выполнено`); return; }
+    const x = s?.subs?.find(y => y.id === t.substage_id); if (x) toggleSub(p, s, x, on); return;
+  }
+  const p = projById(ids[0]); const s = p?.stages.find(y => y.id === ids[1]); const x = s?.subs?.find(y => y.id === ids[2]); if (x) toggleSub(p, s, x, on);
+});
+document.addEventListener('click', e => {
+  const o = e.target.closest?.('[data-tdopen]'); if (!o) return;
+  const [kind, ...ids] = o.dataset.tdopen.split('|');
+  if (kind === 'i') return openItask(ids[0]);
+  if (kind === 't') return openTask(ids[0]);
+  const q = projById(ids[0]); if (q && !q._ext) openProject(ids[0], ids[1]); else { ui.myProject = ids[0]; ui.view = 'mine'; render(); }
+});
 const dueTxt = d => { if (!d) return ''; const u = urg(d); return `<span class="dt-due ut-${u.k}">${FLAG}${fmt(d)}${u.k === 'over' || u.k === 'hot' ? ` · ${u.txt}` : ''}</span>`; };
 function dayCard(i){
   const showWho = DAY_MODE === 'admin' && !GUEST && !(ui.dayWho);
