@@ -62,6 +62,27 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const keys = [...be.rows.keys()];
   assert.ok(keys.some(k => k.startsWith(`data/users/${A}/spaces/list/${sid}/items/p_`))); ok('проект нового пространства сохраняется в его папку');
   assert.equal(keys.filter(k => /^data\/users\/[^/]+\/p_/.test(k)).length, mainProjects); ok('основное пространство не тронуто');
+  // меню-панель как в Arc
+  assert.ok($2('#sideBtn') && $2('#side').hidden); ok('панель: есть кнопка меню, панель скрыта');
+  $2('#sideBtn').click(); await wait(80);
+  assert.ok(!$2('#side').hidden && $2('.side-nav [data-sideview="matrix"]') && /Личные проекты/.test($2('.side-head').textContent)); ok('панель: открывается, в ней разделы и текущее пространство');
+  assert.equal(D2.querySelectorAll('.side-dots [data-sidesp]').length, 2); assert.ok($2('.side-dot.cur')); ok('панель: пространства цветными кружками, текущее отмечено');
+  $2('.side-nav [data-sideview="kanban"]').click(); await wait(80);
+  assert.ok(D2.body.dataset.view === 'kanban' && $2('#side').hidden); ok('панель: выбор раздела переключает его и прячет панель');
+  $2('#sideBtn').click(); await wait(50); $2('[data-sidepin]').click(); await wait(80);
+  assert.ok(D2.body.classList.contains('side-pinned') && !$2('#side').hidden && w2.localStorage.getItem('kz-side-pin') === '1'); ok('панель: закрепляется и остаётся открытой');
+  $2('[data-sidepin]').click(); await wait(80);
+  assert.ok(!D2.body.classList.contains('side-pinned') && $2('#side').hidden); ok('панель: открепляется');
+  // цвет пространства
+  D2.querySelector('.tabs [data-view="templates"]').click(); await wait(100); $2('[data-settab="spaces"]').click(); await wait(200);
+  const cBtn = $2(`[data-spcolor="${sid}|#EF4444"]`); assert.ok(cBtn); cBtn.click(); await wait(300);
+  assert.equal(be.rows.get(`data/users/${A}/spaces/list/${sid}`).data.color, '#EF4444'); ok('цвет пространства сохраняется в аккаунте');
+  assert.equal(w2.getComputedStyle(D2.documentElement).getPropertyValue('--space').trim(), '#EF4444'); ok('цвет текущего пространства окрашивает интерфейс');
+  // переключение пространства кружком
+  let re1 = 0; w2.kzReloadHook = () => { re1++; };
+  $2('#sideBtn').click(); await wait(50); $2('.side-dots [data-sidesp=""]').click(); await wait(400);
+  assert.ok(re1 === 1 && !w2.localStorage.getItem('kz-space')); ok('панель: нажатие на кружок открывает другое пространство');
+  w2.localStorage.setItem('kz-space', sid);
   // 3) раздел страницы помнится при обновлении
   D2.querySelector('.tabs [data-view="load"]').click(); await wait(100);
   const view = w2.sessionStorage.getItem('kz-view');
