@@ -548,6 +548,12 @@ body.selecting #app{padding-bottom:90px}
 .stg-maint .dot,.maint-check svg,.rt-freq{color:var(--m)}
 .rt-chk,.dt-chk[data-rdone]{accent-color:var(--m)}
 [data-col="maint"] h3 .cname{color:var(--m)}
+.msg-box{display:grid;gap:8px;width:100%;text-align:left;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);padding:12px 14px;cursor:pointer;color:var(--ink);font:inherit;position:relative}
+.msg-box:hover{border-color:var(--line-strong)}
+.msg-text{font-size:14px;line-height:1.5;white-space:normal;word-break:break-word}
+.msg-copy{display:inline-flex;align-items:center;gap:6px;justify-self:end;font-size:12.5px;font-weight:500;color:var(--link)}
+.msg-copy svg{width:14px;height:14px}
+.msg-box.copied{border-color:var(--g)}.msg-box.copied .msg-copy{color:var(--g)}
 .team-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
 .cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
@@ -4848,17 +4854,24 @@ function migrateLinks(){
 //  исполнители видят. Блоки — часть шаблона карточки и расходятся по проектам вместе с ней.
 //  Файлы лежат в закрытой корзине Supabase: <кто загрузил>/p/<проект>/… или <кто загрузил>/t/<шаблон>/…
 // =====================================================================
-const BLOCK_T = { text:'Текст', link:'Ссылка', video:'Видео', file:'Файл' };
+const BLOCK_T = { text:'Текст', msg:'Шаблон сообщения', link:'Ссылка', video:'Видео', file:'Файл' };
+// шаблон сообщения: {клиент}, {проект}, {этап}, {pm} подставляются при показе и копировании
+const fillMsg = (text, p, t) => String(text || '').replace(/\{(клиент|проект|этап|pm|подэтап)\}/gi, (m, k) => {
+  if (!p) return m; const s = p.stages?.find(x => x.id === t?.stage_id);
+  return ({ 'клиент':p.client, 'проект':p.name, 'этап':s?.name, 'pm':(p._ext ? '' : userById(p.pm_id)?.name), 'подэтап':t?.title })[k.toLowerCase()] || m; });
 const clone = o => JSON.parse(JSON.stringify(o ?? null));
 const blkOk = b => b && (b.type === 'file' ? !!b.path : !!String(b.value || '').trim());
 const cleanBlocks = list => (list || []).filter(blkOk).map(b => ({ id:b.id || uid(), type:b.type, title:String(b.title || '').trim(), value:String(b.value || '').trim(),
   ...(b.type === 'file' ? { path:b.path, name:b.name || 'Файл', size:b.size || 0 } : {}) }));
 const fsize = n => !n ? '' : n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} КБ` : `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} МБ`;
 const safeFileName = n => String(n || 'file').replace(/[^\w.\-а-яё ]+/gi, '_').replace(/\s+/g, '_').slice(-80) || 'file';
-function blocksView(list){
+function blocksView(list, p, t){
   return (list || []).filter(blkOk).map(b => {
     const h = `<h3>${esc(b.title || BLOCK_T[b.type])}</h3>`;
     if (b.type === 'text') return `<section class="tk-sec bk-v">${h}<div class="tk-text">${linkify(b.value)}</div></section>`;
+    if (b.type === 'msg'){ const txt = fillMsg(b.value, p, t);
+      return `<section class="tk-sec bk-v bk-msg">${h}<button type="button" class="msg-box" data-msgcopy="${esc(encodeURIComponent(txt))}" title="Нажмите, чтобы скопировать">
+        <span class="msg-text">${esc(txt).replace(/\n/g, '<br>')}</span><span class="msg-copy">${COPY_ICO}<span>Копировать</span></span></button></section>`; }
     if (b.type === 'link'){ const u = safeUrl(b.value); return `<section class="tk-sec bk-v">${h}${u ? `<a class="ghost tk-reg" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(b.title ? 'Открыть' : u.replace(/^https?:\/\//, '').slice(0, 60))} ↗</a>` : `<span class="hint">${esc(b.value)}</span>`}</section>`; }
     if (b.type === 'video') return `<section class="tk-sec bk-v">${h}${taskPlayer(b.value)}</section>`;
     return `<section class="tk-sec bk-v">${h}<button type="button" class="fchip" data-fopen="${esc(b.path)}"><span aria-hidden="true">📎</span>${esc(b.name)}<small>${fsize(b.size)}</small></button></section>`;
@@ -4870,12 +4883,26 @@ function blocksEditor(list, ctx){
       <span class="grip" data-bkdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить блок ${k + 1}. Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
       <div class="bk-body"><div class="bk-top"><span class="bk-type">${BLOCK_T[b.type]}</span><input data-bkf="title" data-bki="${k}" value="${esc(b.title || '')}" placeholder="Заголовок (необязательно)" aria-label="Заголовок блока ${k + 1}"></div>
         ${b.type === 'text' ? `<textarea data-bkf="value" data-bki="${k}" rows="3" placeholder="Текст" aria-label="Текст блока ${k + 1}">${esc(b.value || '')}</textarea>`
+        : b.type === 'msg' ? `<textarea data-bkf="value" data-bki="${k}" rows="4" placeholder="Здравствуйте, {клиент}! …" aria-label="Текст сообщения ${k + 1}">${esc(b.value || '')}</textarea><small class="hint">Исполнитель скопирует сообщение одним нажатием. Можно вставить {клиент}, {проект}, {этап}, {pm} — подставятся сами.</small>`
         : b.type === 'file' ? `<div class="row bk-file">${b.uploading ? '<span class="hint">Загружаю…</span>' : b.path ? `<span class="fchip static"><span aria-hidden="true">📎</span>${esc(b.name)}<small>${fsize(b.size)}</small></span><label class="link file-btn">Заменить<input type="file" data-bkfile="${k}"></label>` : `<label class="ghost file-btn">Выбрать файл<input type="file" data-bkfile="${k}"></label><span class="hint">до 25 МБ</span>`}</div>`
         : `<input data-bkf="value" data-bki="${k}" value="${esc(b.value || '')}" inputmode="url" placeholder="${b.type === 'video' ? 'YouTube, Vimeo, Google Drive, Loom или MP4' : 'https://…'}" aria-label="Ссылка блока ${k + 1}">`}
       </div>
       <button type="button" class="tx bk-x" data-bkdel="${k}" aria-label="Удалить блок ${k + 1}" title="Удалить блок">×</button></li>`).join('')}</ol>
     <div class="bk-add" data-bkctx="${ctx}"><span class="hint">Добавить блок:</span>${Object.entries(BLOCK_T).map(([k, v]) => `<button type="button" class="ghost" data-bkadd="${k}">+ ${v}</button>`).join('')}</div></div>`;
 }
+const COPY_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+// копирование шаблона сообщения
+async function copyText(txt){
+  try { await navigator.clipboard.writeText(txt); return true; }
+  catch(e){ const ta = document.createElement('textarea'); ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0'; document.body.append(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch(x) {} ta.remove(); return ok; }
+}
+document.addEventListener('click', async e => {
+  const b = e.target.closest?.('[data-msgcopy]'); if (!b) return;
+  const ok = await copyText(decodeURIComponent(b.dataset.msgcopy));
+  if (ok){ b.classList.add('copied'); b.querySelector('.msg-copy span').textContent = 'Скопировано'; setTimeout(() => { b.classList.remove('copied'); const sp = b.querySelector('.msg-copy span'); if (sp) sp.textContent = 'Копировать'; }, 1600); toast('Сообщение скопировано'); }
+  else toast('Не удалось скопировать: выделите текст вручную');
+});
 const bkList = ctx => ctx === 'ce' ? (ui.ce.b = ui.ce.b || []) : (ui.taskDraft.blocks = ui.taskDraft.blocks || []);
 const bkRender = ctx => ctx === 'ce' ? renderCardEditor() : renderTaskModal();
 document.addEventListener('click', e => {
@@ -5006,7 +5033,7 @@ function renderTaskModal(focusSel){
         <div class="tk-text">${t.description ? linkify(t.description) : '<span class="hint">Инструкции пока нет.</span>'}</div>
         ${reg ? `<p><a class="ghost tk-reg" href="${esc(reg)}" target="_blank" rel="noopener noreferrer">Открыть регламент ↗</a></p>` : ''}</section>
       ${t.video_url || ui.localVideo ? `<section class="tk-sec"><h3>Видео</h3>${taskPlayer(ui.localVideo || t.video_url)}</section>` : ''}
-      ${blocksView(t.blocks)}
+      ${blocksView(t.blocks, projById(t.project_id), t)}
       <section class="tk-sec"><h3>Чек-лист</h3>
         ${t.checklist.length ? `<ul class="ck${t.checklist.length > 1 ? ' sortable' : ''}">${t.checklist.map((i, k) => `<li class="${i.done ? 'on' : ''}" data-ckv="${k}">
           ${t.checklist.length > 1 ? `<span class="grip" data-ckvdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить пункт «${esc(i.text)}». Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>` : ''}

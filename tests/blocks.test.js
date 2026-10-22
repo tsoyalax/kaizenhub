@@ -116,6 +116,29 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   $('[data-tedit]').click(); await wait(100);
   assert.ok(!D.querySelector('[data-td="video_url"]') && !D.querySelector('[data-td="regulation_link"]') && !D.querySelector('#tkVideoFile')); ok('редактирование: полей «регламент», «видео» и «проверить локальный файл» нет');
   w.closeTask(); await wait(50);
+  // шаблон сообщения: добавляется в карточку шаблона, приходит в проекты, копируется одним нажатием
+  D.querySelector('.tabs [data-view="templates"]').click(); await wait(100); $('[data-settab="templates"]').click(); await wait(100);
+  $(`[data-tpl="${tpl}"]`).click(); await wait(100);
+  { const st = LS().templates.find(t => t.id === tpl).stages[stIdx]; if (!D.querySelector('.tsub')) { $(`[data-tsubtog="${st.id}"]`).click(); await wait(100); } }
+  const rowM = [...D.querySelectorAll('.tsub')].find(r => r.querySelector('input').value.toLowerCase() === sub.toLowerCase());
+  rowM.querySelector('[data-tcard]').click(); await wait(100);
+  assert.ok($('.bk-add[data-bkctx="ce"] [data-bkadd="msg"]')); ok('сообщение: в карточке шаблона есть блок «Шаблон сообщения»');
+  $('.bk-add[data-bkctx="ce"] [data-bkadd="msg"]').click(); await wait(50);
+  const mk = D.querySelectorAll('.bk-list[data-bkctx="ce"] .bk').length - 1;
+  const mv = $(`.bk-list[data-bkctx="ce"] [data-bkf="value"][data-bki="${mk}"]`); mv.value = 'Здравствуйте, {клиент}! По проекту «{проект}» всё готово.'; fire(mv, 'input');
+  fire($('#ceForm'), 'submit'); await wait(100); $('#tSave').click(); await wait(300);
+  const tB = LS().tasks.find(x => others.some(o2 => o2.id === x.id)); const pB = LS().projects.find(x => x.id === tB.project_id);
+  assert.ok(tB.blocks.some(b => b.type === 'msg')); ok('сообщение: пришло в карточки проектов процесса');
+  const copied = []; Object.defineProperty(w.navigator, 'clipboard', { value: { writeText: async s => { copied.push(s); } }, configurable: true });
+  w.openTask(tB.id); await wait(150);
+  const box = $('.tk-modal .msg-box');
+  assert.ok(box && box.textContent.includes(`Здравствуйте, ${pB.client}!`) && box.textContent.includes(`«${pB.name}»`)); ok('сообщение: {клиент} и {проект} подставлены');
+  box.click(); await wait(100);
+  assert.equal(copied[0], `Здравствуйте, ${pB.client}! По проекту «${pB.name}» всё готово.`); ok('сообщение: нажатие копирует готовый текст');
+  assert.ok(/Скопировано/.test($('.tk-modal .msg-box').textContent)); ok('сообщение: видно, что скопировано');
+  w.closeTask(); await wait(50);
+  const noMsg = LS().tasks.find(x => x.project_id === pB.id && x.id !== tB.id && !(x.blocks || []).some(b => b.type === 'msg'));
+  if (noMsg){ w.openTask(noMsg.id); await wait(100); assert.ok(!$('.tk-modal .msg-box')); ok('сообщение необязательно: в подэтапе без него блока нет'); w.closeTask(); await wait(50); }
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('ошибок нет');
   o.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
