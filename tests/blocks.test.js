@@ -122,31 +122,31 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   { const st = LS().templates.find(t => t.id === tpl).stages[stIdx]; if (!D.querySelector('.tsub')) { $(`[data-tsubtog="${st.id}"]`).click(); await wait(100); } }
   const rowM = [...D.querySelectorAll('.tsub')].find(r => r.querySelector('input').value.toLowerCase() === sub.toLowerCase());
   rowM.querySelector('[data-tcard]').click(); await wait(100);
-  assert.ok($('.bk-add[data-bkctx="ce"] [data-bkadd="msg"]')); ok('сообщение: в карточке шаблона есть блок «Шаблон сообщения»');
-  $('.bk-add[data-bkctx="ce"] [data-bkadd="msg"]').click(); await wait(50);
-  const mk = D.querySelectorAll('.bk-list[data-bkctx="ce"] .bk').length - 1;
-  const mv = $(`.bk-list[data-bkctx="ce"] [data-bkf="value"][data-bki="${mk}"]`); mv.value = 'Здравствуйте, {клиент}! По проекту «{проект}» всё готово.'; fire(mv, 'input');
+  assert.ok($('[data-msgon="ce"]') && !$('.bk-add[data-bkctx="ce"] [data-bkadd="msg"]')); ok('сообщение: в редактировании — галочка «Шаблон сообщения», а не обычный блок');
+  assert.ok(!$('[data-msgval="ce"]')); ok('сообщение: без галочки поля нет');
+  { const cb = $('[data-msgon="ce"]'); cb.checked = true; fire(cb, 'change'); await wait(50); }
+  const mv = $('[data-msgval="ce"]'); assert.ok(mv); ok('сообщение: поставили галочку — появилось поле текста');
+  mv.value = 'Здравствуйте, {клиент}! По проекту «{проект}» всё готово.'; fire(mv, 'input');
   fire($('#ceForm'), 'submit'); await wait(100); $('#tSave').click(); await wait(300);
   const tB = LS().tasks.find(x => others.some(o2 => o2.id === x.id)); const pB = LS().projects.find(x => x.id === tB.project_id);
   assert.ok(tB.blocks.some(b => b.type === 'msg')); ok('сообщение: пришло в карточки проектов процесса');
   const copied = []; Object.defineProperty(w.navigator, 'clipboard', { value: { writeText: async s => { copied.push(s); } }, configurable: true });
-  w.openTask(tB.id); await wait(150);
-  const box = $('.tk-modal .msg-box');
-  assert.ok(box && box.textContent.includes(`Здравствуйте, ${pB.client}!`) && box.textContent.includes(`«${pB.name}»`)); ok('сообщение: {клиент} и {проект} подставлены');
-  box.click(); await wait(100);
-  assert.equal(copied[0], `Здравствуйте, ${pB.client}! По проекту «${pB.name}» всё готово.`); ok('сообщение: нажатие копирует готовый текст');
-  assert.ok(/Скопировано/.test($('.tk-modal .msg-box').textContent)); ok('сообщение: видно, что скопировано');
-  w.closeTask(); await wait(50);
-  // иконка на доске «По проекту»: копирует, не открывая подэтап
+  const want = `Здравствуйте, ${pB.client}! По проекту «${pB.name}» всё готово.`;
+  // иконка справа у подэтапа на доске → окошко с готовым сообщением → «Копировать»
   D.querySelector('.tabs [data-view="production"]').click(); await wait(100); $('[data-pmode="project"]').click(); await wait(100);
   w.eval(`ui.prodProject = '${pB.id}'; render();`); await wait(150);
   const ico = $(`.pf-card[data-pfsub$="|${tB.substage_id}"] .msg-ico`);
-  assert.ok(ico); ok('сообщение: иконка рядом с подэтапом на доске');
-  copied.length = 0; ico.click(); await wait(100);
-  assert.equal(copied[0], `Здравствуйте, ${pB.client}! По проекту «${pB.name}» всё готово.`); ok('иконка: нажатие копирует сообщение');
-  assert.ok(!$('.tk-modal')); ok('иконка: окно подэтапа при этом не открывается');
+  assert.ok(ico); ok('иконка шаблона сообщения справа на карточке подэтапа');
+  ico.click(); await wait(100);
+  assert.ok(!$('.tk-modal') && $('.msg-pop') && $('.msg-pop .msg-pop-text').textContent.includes(want.replace(/\n/g, ''))); ok('нажатие на иконку — окошко с готовым сообщением (подэтап не открывается)');
+  $('.msg-pop .msg-pop-copy').click(); await wait(100);
+  assert.equal(copied[0], want); ok('«Копировать» копирует готовый текст с подставленным клиентом и проектом');
+  // окно подэтапа: сообщение не отдельным блоком, а той же иконкой
+  w.openTask(tB.id); await wait(150);
+  assert.ok(!$('.tk-modal .msg-box') && $('.tk-modal .tk-head .msg-ico')); ok('в окне подэтапа — иконка сообщения в шапке');
+  w.closeTask(); await wait(50);
   const noMsg = LS().tasks.find(x => x.project_id === pB.id && x.id !== tB.id && !(x.blocks || []).some(b => b.type === 'msg'));
-  if (noMsg){ w.openTask(noMsg.id); await wait(100); assert.ok(!$('.tk-modal .msg-box')); ok('сообщение необязательно: в подэтапе без него блока нет'); w.closeTask(); await wait(50); }
+  if (noMsg){ w.openTask(noMsg.id); await wait(100); assert.ok(!$('.tk-modal .msg-ico')); ok('сообщение необязательно: у подэтапа без него иконки нет'); w.closeTask(); await wait(50); }
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('ошибок нет');
   o.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
