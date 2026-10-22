@@ -669,14 +669,19 @@ body.side-pinned .side-btn{color:var(--ink)}
 .pm-cn,.pf-name{display:flex;align-items:center;min-width:0}
 .dt-fold .pava,.card .t .pava{margin-right:2px}
 .card .t{display:flex;align-items:center;gap:6px}
-.d-head{align-items:center;gap:14px}
+.d-head{align-items:center;gap:14px;min-height:64px}
+.d-head .close{align-self:center}
+.d-title input#pName{padding:0;line-height:1.25}
+.d-head .pava-edit input{font-size:0;padding:0;border:0}
 .pava-edit{position:relative;cursor:pointer;flex:none;display:block}
 .pava-edit input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 .pava-cam{position:absolute;right:-4px;bottom:-4px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line-strong);color:var(--ink)}
 .pava-cam svg{width:13px;height:13px}
 .pava-edit:hover .pava{filter:brightness(.92)}
-.d-title{flex:1;min-width:0;display:grid;gap:2px}
+.d-title{flex:1;min-width:0;display:grid;gap:4px;align-content:center}
 .d-img-del,.d-img-hint{justify-self:start;font-size:12px}
+.c-head{display:flex;align-items:center;gap:14px}.c-head .field{flex:1;min-width:0;margin:0}
+.c-head .pava-edit input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
 .team-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
 .cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
@@ -3022,7 +3027,8 @@ function openCreate(){
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cTitle">
     <h2 id="cTitle">Новый проект</h2>
     <form class="form" id="cForm" novalidate>
-      <div class="field"><label for="cName">Название</label><input id="cName" autocomplete="off"></div>
+      <div class="c-head"><label class="pava-edit" title="Фото проекта (необязательно)"><span id="cImgPrev">${projAva({ id:'new', name:'' }, 'lg')}</span><span class="pava-cam" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></span><input type="file" id="cImg" accept="image/*" aria-label="Фото проекта"></label>
+        <div class="field"><label for="cName">Название</label><input id="cName" autocomplete="off"><small class="hint">Фото — нажмите на квадрат слева (необязательно)</small></div></div>
       <div class="field"><label for="cClient">Клиент</label><input id="cClient" list="cClients" autocomplete="off">
         <datalist id="cClients">${[...new Set(db.projects.map(p => p.client))].map(c => `<option value="${esc(c)}">`).join('')}</datalist></div>
       ${(db.categories || []).length ? `<div class="field"><label for="cCat">Категория</label><select id="cCat">${catOpts('')}</select></div>` : ''}
@@ -3049,6 +3055,12 @@ function openCreate(){
       ${over ? `<label class="check" style="margin-top:6px"><input type="checkbox" id="cFit" checked> Уместить этапы в дедлайн</label>` : ''}`;
   };
   $('#cTpl').onchange = prev; $('#cStart').oninput = prev; $('#cDl').oninput = prev; prev();
+  ui.cImg = null;
+  const paintC = () => { const pv = $('#cImgPrev'); if (pv) pv.innerHTML = projAva({ id:'new', name:$('#cName').value || '', image:ui.cImg }, 'lg'); };
+  $('#cName').addEventListener('input', () => { if (!ui.cImg) paintC(); });
+  $('#cImg').onchange = async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return;
+    if (!/^image\//.test(f.type)){ toast('Это не картинка'); return; }
+    try { ui.cImg = await squareImage(f); paintC(); } catch(err) { toast('Не удалось обработать картинку. Попробуйте JPG или PNG.'); } };
   $('#cName').focus();
   $('#cForm').onsubmit = e => {
     e.preventDefault();
@@ -3060,6 +3072,7 @@ function openCreate(){
     const p = createProject({ name, client, template_id:$('#cTpl').value, start_date:start, pm_id:$('#cPm').value, worker_id:$('#cWorker').value || null,
       priority:$('#cPri').value });
     const cat = $('#cCat')?.value; if (cat){ p.category_id = cat; save(); }
+    if (ui.cImg){ p.image = ui.cImg; ui.cImg = null; save(); }
     if ($('#cMaint')?.checked){ p.is_maintenance = true; syncState(p); addLog(p, 'Проект на ведении: после воронки — этап «Ведение / Поддержка»'); save(); }
     if (dl){ p.deadline = dl; if (fit) fitToDeadline(p); else commit(); }
     layer.innerHTML = ''; toast(`Проект «${p.name}» создан: ${p.stages.length} этапов, финиш ${fmt(plannedEnd(p))}`);
