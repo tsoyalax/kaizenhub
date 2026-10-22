@@ -162,7 +162,12 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   r2.querySelector('[data-sdel]').click(); await wait(100); $('#tSave').click(); await wait(150);
   L = LS();
   assert.ok(!L.cardTpls[key] && !L.templates.find(t => t.id === tpl.id).stages[0].subs.some(x => x.name === 'Тестовый подэтап')); ok('удалили подэтап из шаблона — его карточка тоже удалена');
-  assert.ok(L.tasks.some(t => t.id === tk.id)); ok('карточки в уже созданных проектах остались');
+  { const busy = L.tasks.filter(t => t.title === 'Тестовый подэтап' && t.checklist.some(i => i.done));
+    const idle = L.tasks.filter(t => t.title === 'Тестовый подэтап' && !t.checklist.some(i => i.done) && L.projects.find(p => p.id === t.project_id && p.template_id === tpl.id)?.state === 'active');
+    assert.ok(busy.length >= 1); ok('карточки, где уже есть отметки, остались в проектах');
+    assert.equal(idle.length, 0); ok('пустые карточки удалённого подэтапа убраны из идущих проектов этого процесса');
+    assert.ok(L.tasks.some(t => t.id === 'tforeign' || L.projects.find(p => p.id === t.project_id)?.template_id !== tpl.id && t.title === 'Тестовый подэтап')); ok('проекты другого процесса не тронуты');
+    assert.ok(busy.every(t => L.projects.find(p => p.id === t.project_id).stages.some(s => (s.subs || []).some(x => x.id === t.substage_id)))); ok('подэтап с работой в проекте сохранился'); }
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('ошибок нет');
   o.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);

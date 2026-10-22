@@ -15,7 +15,7 @@
   --accent:#17171C; --accent-ink:#FFFFFF; --brand:#6A5AE0; --link:#3B5BDB; --focus:#3B5BDB; --soft:#EEF1FB;
   --card-hi:transparent; --shadow:none;
   --g:#15803D; --g-bg:#EFF8F2; --y:#B45309; --y-bg:#FEF6E7; --r:#DC2626; --r-bg:#FDF0F0;
-  --b:#2563EB; --b-bg:#EEF3FE; --w:#15803D; --n:#A1A1AA; --n-bg:#F4F4F5; --d:#71717A; --d-bg:#F7F7F8;
+  --b:#2563EB; --b-bg:#EEF3FE; --w:#15803D; --m:#7C3AED; --m-bg:#F3EEFF; --n:#A1A1AA; --n-bg:#F4F4F5; --d:#71717A; --d-bg:#F7F7F8;
   --radius:12px; --cell-w:140px;
   font-family:"Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   box-sizing:border-box;
@@ -27,7 +27,7 @@
     --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --row:#16161A; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-strong:#3A3A42;
     --accent:#EDEDEF; --accent-ink:#0F0F12; --brand:#7C6CF6; --link:#8DA2F7; --focus:#8DA2F7; --soft:#1C2033;
     --card-hi:transparent; --shadow:none;
-    --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80;
+    --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80; --m:#B197FC; --m-bg:#231D3B;
     --n:#71717A; --n-bg:#1F1F24; --d:#8A8A93; --d-bg:#18181C;
   }
 }
@@ -36,7 +36,7 @@
   --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --row:#16161A; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-strong:#3A3A42;
   --accent:#EDEDEF; --accent-ink:#0F0F12; --brand:#7C6CF6; --link:#8DA2F7; --focus:#8DA2F7; --soft:#1C2033;
   --card-hi:transparent; --shadow:none;
-  --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80;
+  --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80; --m:#B197FC; --m-bg:#231D3B;
   --n:#71717A; --n-bg:#1F1F24; --d:#8A8A93; --d-bg:#18181C;
 }
 *,*::before,*::after{box-sizing:inherit}
@@ -449,6 +449,105 @@ body.selecting #app{padding-bottom:90px}
 .st-lead{display:inline-block;font-size:12px;font-weight:600;color:var(--b);background:var(--b-bg);border-radius:6px;padding:1px 7px;margin-bottom:3px}
 .lead-check{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
 .lead-check input{margin-top:3px}.lead-check span{display:grid;gap:2px}.lead-check small{color:var(--muted);font-size:12.5px}
+.td-title{font-size:18px;font-weight:600;margin:0}
+.td-list{list-style:none;margin:6px 0 0;padding:0;border-top:1px solid var(--line);max-width:900px}
+.td-row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line)}
+.td-row:hover{background:var(--surface-2)}
+.td-chk{width:19px;height:19px;flex:none;accent-color:var(--g);cursor:pointer}
+.td-main{flex:1;min-width:0;display:grid;gap:2px;border:0;background:none;padding:0;text-align:left;cursor:pointer;color:var(--ink);font:inherit}
+.td-main b{font-weight:500;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td-main small{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td-row.done .td-main b{text-decoration:line-through;color:var(--muted)}
+.td-row .dt-due{flex:none;font-size:12.5px;color:var(--muted)}
+.td-nodue{opacity:.7}
+.pri-t-urgent{color:var(--r)}.pri-t-high{color:var(--y)}
+.as-note{margin:-4px 0 12px;padding:9px 12px;border:1px dashed var(--line-strong);border-radius:10px;font-size:13.5px;color:var(--muted)}
+.as-note b{color:var(--ink)}
+.dt-person h3{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:14px}
+.dt-person h3 span{color:var(--muted);font-weight:500;font-size:12.5px}
+.dt-group{margin:18px 0 6px}
+.dt-group h3{font-size:13px;font-weight:600;color:var(--muted);margin:0 0 8px;text-transform:none}
+.dt-group h3 span{font-weight:500;margin-left:4px}
+.dt-list{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))}
+.dt{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 14px;display:grid;gap:7px;cursor:pointer;text-align:left}
+.dt:hover{border-color:var(--line-strong)}
+.dt.done{opacity:.55}.dt.done .dt-main b{text-decoration:line-through}
+.dt-badges{display:flex;flex-wrap:wrap;gap:6px}
+.dt-badges span{font-size:12px;font-weight:500;border-radius:6px;padding:1px 8px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.dt-h{font-size:13px;font-weight:600;color:var(--muted);margin:22px 0 8px;display:flex;align-items:center;gap:12px}
+.dt-all{font-size:12.5px;font-weight:500}
+.m-sec .rt-block{max-width:900px}
+.seg-n{font-weight:600;color:var(--m);margin-left:3px}
+.dt-proj-sec{border-top:1px solid var(--line);padding:10px 0 12px}
+.dt-ph{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-bottom:10px}
+.dt-fold{display:flex;align-items:baseline;gap:8px;border:0;background:none;padding:0;cursor:pointer;color:var(--ink);font:inherit;text-align:left;min-width:0}
+.dt-fold b{font-size:15px;font-weight:600}.dt-fold small{color:var(--muted);font-size:12.5px}
+.dt-fold i{width:7px;height:7px;border-right:1.6px solid var(--muted);border-bottom:1.6px solid var(--muted);transform:rotate(45deg) translate(-2px,-2px);flex:none;transition:transform .15s}
+.folded .dt-fold i{transform:rotate(-45deg)}
+.folded .dt-ph{margin-bottom:0}
+.dt-ph .dt-stage{font-size:12px;font-weight:500;border-radius:6px;padding:1px 8px;background:var(--surface-2);color:var(--muted)}
+.dt-cnt{font-size:12.5px;color:var(--muted)}
+.dt-ph .link{margin-left:auto;font-size:12.5px}
+.dt-date{position:relative;display:inline-flex;align-items:center;gap:4px;color:var(--muted);cursor:pointer;border-radius:6px;padding:1px 4px;margin:-1px -4px}
+.dt-date:hover{background:var(--surface-2);color:var(--ink)}
+.dt-date.own{color:var(--ink)}
+.dt-date svg{width:13px;height:13px}
+.dt-date input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.ntf-n{font-weight:500;color:var(--muted);margin-left:4px}
+.ntf-all{display:block;padding:6px 8px}
+.ntf-perm{margin:6px 8px;width:calc(100% - 16px)}
+.dt-proj{background:var(--b-bg);color:var(--b)}
+.dt-stage{background:var(--surface-2);color:var(--muted)}
+.dt-int{background:var(--g-bg);color:var(--g)}
+.dt-pri{display:inline-flex;align-items:center;gap:4px}.dt-pri svg{width:12px;height:12px}
+.pri-urgent{background:var(--r-bg);color:var(--r)}.pri-high{background:var(--y-bg);color:var(--y)}
+.dt-main{display:flex;align-items:flex-start;gap:9px}.dt-main b{font-weight:600;font-size:14.5px;line-height:1.35}
+.dt-chk{width:17px;height:17px;margin-top:1px;flex:none;accent-color:var(--g)}
+.dt-desc{margin:0;color:var(--muted);font-size:13px}
+.dt-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:12.5px;color:var(--muted)}
+.dt-ck{color:var(--ink);font-weight:500}
+.dt-due{display:inline-flex;align-items:center;gap:4px}.dt-due svg{width:13px;height:13px}
+.dt-due.ut-over{color:var(--r)}.dt-due.ut-hot{color:var(--y)}
+.dt-st{margin-left:auto}
+.dt-status{margin-left:auto;height:28px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:12.5px;padding:0 6px;color:var(--ink)}
+.dt-status.st-in_progress{color:var(--g)}.dt-status.st-review{color:var(--b)}.dt-status.st-done{color:var(--muted)}
+.maint-check{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin:4px 0}
+.maint-check input{margin-top:3px}.maint-check span{display:grid;grid-template-columns:auto 1fr;gap:2px 7px;align-items:center}
+.maint-check svg{width:15px;height:15px;color:var(--g)}.maint-check small{grid-column:1/-1;color:var(--muted);font-size:12.5px}
+.p-maint{grid-column:1/-1}
+.stg-maint .dot{display:grid;place-items:center;color:var(--g)}.stg-maint .dot svg{width:14px;height:14px}
+.rt-block{display:grid;gap:6px;margin-top:8px}
+.rt-block h4{margin:0;font-size:13px;font-weight:600}
+.rt-list{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.rt-row{display:flex;align-items:center;gap:9px;padding:6px 2px;border-bottom:1px solid var(--line)}
+.rt-row:last-child{border-bottom:0}
+.rt-chk,.stg input.rt-chk,.pf-col input.rt-chk,.card input.rt-chk{width:17px;height:17px;min-width:17px;padding:0;border:0;flex:none;accent-color:var(--g);cursor:pointer;background:none}
+.rt-main{flex:1;min-width:0;display:grid;gap:1px;border:0;background:none;padding:0;text-align:left;cursor:pointer;color:var(--ink);font:inherit}
+.rt-main b{font-weight:500;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rt-main small{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rt-freq{display:inline-flex;align-items:center;gap:4px}.rt-freq svg{width:12px;height:12px}
+.rt-row .dt-due{flex:none;font-size:12px}
+.rt-add{justify-self:start;font-size:13px}
+.rt-block.compact .rt-row{padding:4px 0}.rt-block.compact .rt-main b{font-size:13px;white-space:normal}
+.rt-block.compact .rt-main small{white-space:normal}.rt-block.compact .dt-due{font-size:12px}.rt-block.compact .dt-due svg{width:11px;height:11px}
+.pf-maint{gap:0}
+/* ведение — свой фиолетовый цвет, чтобы не путать с «В работе» */
+.sw.maint{background:var(--m)}
+.s-maint{background:var(--m-bg)}.s-maint::before{background:var(--m)}.s-maint .st{color:var(--m)}
+.pill.s-maint,.pill.st-pill.s-maint{color:var(--m)}
+.seg.maint{background:var(--m)}
+.stg.k-maint .dot{box-shadow:inset 0 0 0 1.5px var(--m);color:var(--m)}
+.pc.r-maint::before{background:var(--m)}
+.b-maint{background:var(--m-bg);color:var(--m)}
+.s-maintt{color:var(--m);font-weight:600}
+.tile.t-maint b{color:var(--m)}
+.rk-maint .ring-fg{stroke:var(--m)}
+.t-maint{--fc:var(--m)}
+.pseg.p-maint{background:var(--m);box-shadow:none}
+.chip[data-risk="maint"][aria-pressed="true"]{background:var(--m-bg);border-color:var(--m);box-shadow:none}
+.stg-maint .dot,.maint-check svg,.rt-freq{color:var(--m)}
+.rt-chk,.dt-chk[data-rdone]{accent-color:var(--m)}
+[data-col="maint"] h3 .cname{color:var(--m)}
 .team-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
 .cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
@@ -809,7 +908,7 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .sh-mem select{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 6px;font-size:13px}
 .sh-h{font-size:14px;font-weight:600;margin:14px 0 2px}
 .mine-h{margin:0;font-size:18px;font-weight:600}
-body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #newBtn,body.guest #bell,body.guest #cloudBtn{display:none!important}
+body.guest .tabs button:not([data-view="mine"]):not([data-view="mytasks"]),body.guest #filters,body.guest #newBtn,body.guest #cloudBtn{display:none!important}
 .sh-link{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .sh-link input{flex:1;min-width:180px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);padding:0 8px;font-size:13px}
 .sh-link small{color:var(--muted);font-size:12.5px;flex-basis:100%}
@@ -846,11 +945,11 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
   .mnav button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mnav button[aria-current="page"]{color:var(--ink)}
   .mnav button[aria-current="page"] svg{stroke-width:2.4}
-  body.guest .mnav{display:none}
+  body.guest .mnav{display:flex}
   main{padding:12px 12px calc(env(safe-area-inset-bottom,0px) + 150px)}
-  body.guest main{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 32px)}
+  body.guest main{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 90px)}
   .toast{bottom:calc(env(safe-area-inset-bottom,0px) + 140px)}
-  body.guest .toast{bottom:calc(env(safe-area-inset-bottom,0px) + 20px)}
+  body.guest .toast{bottom:calc(env(safe-area-inset-bottom,0px) + 76px)}
   /* фильтры: одна строка статусов + поиск, остальное по кнопке */
   .filters{padding:12px 12px 0;gap:10px}
   #chips{flex-wrap:nowrap;overflow-x:auto;margin:0 -12px;padding:0 12px 2px;scrollbar-width:none}
@@ -1128,6 +1227,8 @@ body{letter-spacing:-.005em}
   .tabs button[aria-current="page"]{background:var(--surface);border-color:var(--line);box-shadow:var(--shadow)}
   .tabs button[aria-current="page"]::after{display:none}
 }
+@media (min-width:1100px) and (max-width:1440px){.tabs{gap:1px}.tabs button{padding:0 8px;font-size:13.5px}.top{gap:0 12px}.top-actions{gap:2px}}
+@media (min-width:1100px) and (max-width:1240px){.tabs button{padding:0 6px;font-size:13px}.brand-t{display:none}}
 @media (min-width:1100px){.top{flex-wrap:nowrap;gap:0 18px}.tabs{flex:0 1 auto;min-width:0;scrollbar-width:none}.top-actions{flex:none}}
 @media (min-width:1480px){.tabs button svg{display:block;width:16px;height:16px;flex:none;stroke-width:1.9}}
 
@@ -1183,7 +1284,9 @@ table.cx{border-collapse:collapse}
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
+    <button data-view="assign">Поручения</button>
     <button data-view="mine" id="mineTab" hidden>Мои проекты</button>
+    <button data-view="mytasks" id="myTasksTab" hidden>Задачи</button>
     <button data-view="reports">AI-отчёты</button>
     <button data-view="load">Загрузка</button>
     <button data-view="team">Команда</button>
@@ -1257,8 +1360,8 @@ const spacePath = (uid, sp) => sp ? `data/users/${uid}/spaces/list/${sp}/items` 
 // «Я» в данных: у владельца — запись 'me', у руководителя — его запись в команде владельца
 let ME = (() => { try { return (ORG && localStorage.getItem(`agency-pipeline-demo-v2-o-${ORG}-me`)) || 'me'; } catch(e) { return 'me'; } })();
 const STATUS = { not_started:'Не начат', in_progress:'В работе', client_review:'На согласовании у клиента', done:'Завершён' };
-const RISK = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике'],['gray','Не стартовали'],['done','Завершены']];
-const WEIGHT = { red:5, yellow:4, blue:3, green:2, gray:1, done:0 };
+const RISK = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике'],['maint','На ведении'],['gray','Не стартовали'],['done','Завершены']];
+const WEIGHT = { red:5, yellow:4, blue:3, green:2, maint:1.5, gray:1, done:0 };
 const PRI = { high:['Высокий',3], medium:['Средний',2], low:['Низкий',1] };
 const ROLES = { admin:'Руководитель', pm:'Менеджер проекта', specialist:'Исполнитель' };
 const DEPTS = ['Руководство','Аккаунтинг (PM)','Креатив','Дизайн','Монтаж и моушн','Продакшн','Digital и таргет','Другое'];
@@ -1280,6 +1383,13 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 
 // ---------- светофор (та же логика, что в backend/src/schedule.js) ----------
 function health(s, now = new Date()){
+  if (isMaint(s)){
+    if (s.status !== 'in_progress') return { key:'gray', label:'Не начат', note:'после воронки' };
+    const rt = s.rtasks || []; const t0 = today(); const over = rt.filter(r => r.due_date && r.due_date < t0).length;
+    if (over) return { key:'red', label:'Просрочено', note:`регулярных задач просрочено: ${over}` };
+    if (rt.some(r => r.due_date && r.due_date <= addDays(t0, 1))) return { key:'yellow', label:'Ведение', note:'есть задача на сегодня или завтра' };
+    return { key:'maint', label:'Ведение', note:rt.length ? `регулярных задач: ${rt.length}` : 'бессрочно' };
+  }
   if (s.status === 'done') return { key:'done', label:'Завершён', note: s.completed_at ? `Сдан ${fmt(s.completed_at)}` : 'Сдан' };
   if (s.status === 'not_started') return { key:'gray', label:'Не начат', note:`Старт ${fmt(s.planned_start)}` };
   const end = parse(s.due_date); end.setHours(23,59,59,999);
@@ -1298,7 +1408,16 @@ const execLabel = p => p?.worker_id ? `Как у проекта: ${esc(short(p.w
 const whoId = (p, s, t) => t?.assignee_id || s?.assignee_id || projWho(p);
 const execTxt = (p, sep = ', ') => p?.worker_id ? `${sep}исп. ${esc(short(p.worker_id))}` : '';
 const currentStage = p => p.stages.find(s => s.status==='in_progress'||s.status==='client_review') || p.stages.find(s => s.status!=='done') || null;
-const plannedEnd = p => p.stages.reduce((m,s) => s.due_date > m ? s.due_date : m, '');
+const plannedEnd = p => p.stages.reduce((m,s) => !isMaint(s) && s.due_date > m ? s.due_date : m, '');
+const isMaint = s => s?.system === 'maint';
+const FREQ = { weekly:['Раз в неделю', 7], biweekly:['Раз в 2 недели', 14], monthly:['Раз в месяц', 0] };
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// следующий цикл: от срока (если выполнили вовремя) или от сегодня (если с опозданием)
+function nextCycle(due, freq){
+  const base = !due || due < today() ? today() : due;
+  if (freq === 'monthly'){ const d = parse(base); const day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + 1); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); return ymd(d); }
+  return addDays(base, FREQ[freq]?.[1] || 7);
+}
 
 // ---------- данные ----------
 let db = null;
@@ -1336,8 +1455,8 @@ const subsFor = (tid, name) => (DEFAULT_SUBS[tid]?.[name] || []).map(n => ({ id:
 // Подэтапы проекта по списку шаблона: отметки о выполнении сохраняются по названию
 const mergeSubs = (old = [], tpl = [], allDone = false, keepExtra = false) => {
   const out = tpl.map(t => {
-    const o = old.find(x => norm(x.name) === norm(t.name));
-    return { id: o ? o.id : uid(), name: t.name, done: allDone || !!o?.done };
+    const o = old.find(x => (t.id && x.tsub === t.id) || norm(x.name) === norm(t.name));
+    return { ...(o || {}), id: o ? o.id : uid(), name: t.name, done: allDone || !!o?.done, ...(t.id ? { tsub:t.id } : {}) };
   });
   // подэтапы, добавленные только в этом проекте, при обновлении по шаблону не теряются
   if (keepExtra) old.forEach((x, i) => { if (!tpl.some(t => norm(t.name) === norm(x.name))) out.splice(Math.min(i, out.length), 0, x); });
@@ -1373,7 +1492,7 @@ function makeProject({ name, client, template_id, start_date, pm_id, worker_id=n
   const stages = tpl.stages.map((ts,i) => {
     const n = stageDaysFor(ts);
     const s = { id:uid(), position:i, name:ts.name, days:n, approval:!!ts.approval, assignee_id:null, subs:mergeSubs([], ts.subs || []),
-      status:'not_started', planned_start:cur, due_date:addDays(cur, n), started_at:null, completed_at:null };
+      status:'not_started', planned_start:cur, due_date:addDays(cur, n), started_at:null, completed_at:null, tsid:ts.id };
     cur = s.due_date; return s;
   });
   return { id:uid(), name, client, template_id, pm_id, start_date, deadline:stages.at(-1).due_date,
@@ -1432,7 +1551,31 @@ function seed(){
 //  ACTIONS — в серверной версии каждое действие = один запрос к API
 // =====================================================================
 function addLog(p, text){ p.log.unshift({ at:new Date().toISOString(), user:ME, text }); }
-function syncState(p){ const open = p.stages.some(s => s.status !== 'done'); if (!open) p.state='completed'; else if (p.state==='completed') p.state='active'; }
+// Проект на ведении: в конце цепочки — бессрочный системный этап «Ведение / Поддержка» (s.system = 'maint').
+// Пока воронка не пройдена, он «не начат»; когда пройдена — «в работе», и проект не закрывается.
+function syncMaint(p){
+  if (!p || p._ext) return;
+  let ms = p.stages.find(isMaint); const real = p.stages.filter(x => !isMaint(x));
+  if (!p.is_maintenance){
+    if (ms){ p.stages = real; p.stages.forEach((x, i) => x.position = i); addLog(p, 'Ведение выключено: этап «Ведение / Поддержка» убран'); }
+    return;
+  }
+  const allDone = real.length > 0 && real.every(x => x.status === 'done');
+  if (!ms){
+    const last = real.at(-1); const st = last ? (allDone ? today() : last.due_date) : today();
+    ms = { id:'m' + uid(), system:'maint', custom:true, name:'Ведение / Поддержка', days:0, approval:false, assignee_id:null, status:'not_started',
+      started_at:null, completed_at:null, planned_start:st, due_date:st, subs:[], rtasks:[] };
+    p.stages.push(ms);
+  }
+  if (p.stages.at(-1) !== ms){ p.stages = [...p.stages.filter(x => x !== ms), ms]; }
+  p.stages.forEach((x, i) => x.position = i);
+  const want = allDone ? 'in_progress' : 'not_started';
+  if (ms.status !== want){
+    ms.status = want; ms.completed_at = null;
+    if (want === 'in_progress'){ ms.started_at = ms.started_at || today(); addLog(p, 'Воронка пройдена: проект перешёл на этап «Ведение / Поддержка»'); }
+  }
+}
+function syncState(p){ syncMaint(p); const open = p.stages.some(s => s.status !== 'done'); if (!open) p.state='completed'; else if (p.state==='completed') p.state='active'; }
 function shiftFrom(p, pos, delta){
   let n = 0;
   p.stages.forEach(s => { if (s.position > pos && s.status !== 'done'){ s.planned_start = addDays(s.planned_start, delta); s.due_date = addDays(s.due_date, delta); n++; } });
@@ -1569,11 +1712,11 @@ function changeTemplate(p, tplId){
   let added = 0, kept = 0;
   tpl.stages.forEach(t => {
     const o = old.find(x => !used.has(x.id) && norm(x.name) === norm(t.name));
-    if (o){ used.add(o.id); o.approval = !!t.approval; o.subs = mergeSubs(o.subs, t.subs || [], o.status === 'done'); next.push(o); cursor = o.due_date; kept++; }
+    if (o){ used.add(o.id); o.approval = !!t.approval; o.tsid = t.id; o.subs = mergeSubs(o.subs, t.subs || [], o.status === 'done'); next.push(o); cursor = o.due_date; kept++; }
     else {
       const n = stageDaysFor(t);
       const s = { id:uid(), position:0, name:t.name, days:n, approval:!!t.approval, assignee_id:null, status:'not_started', subs:mergeSubs([], t.subs || []),
-        planned_start:cursor, due_date:addDays(cursor, n), started_at:null, completed_at:null };
+        planned_start:cursor, due_date:addDays(cursor, n), started_at:null, completed_at:null, tsid:t.id };
       next.push(s); cursor = s.due_date; added++;
     }
   });
@@ -1636,12 +1779,13 @@ function addStage(p){
   const last = p.stages.at(-1); const start = last ? last.due_date : p.start_date;
   const n = defDays();
   const s = { id:uid(), position:p.stages.length, name:'Новый этап', days:n, approval:false, assignee_id:null, status:'not_started', subs:[],
-    planned_start:start, due_date:addDays(start, n), started_at:null, completed_at:null };
+    planned_start:start, due_date:addDays(start, n), started_at:null, completed_at:null, custom:true };
   p.stages.push(s); ensureActive(p); syncState(p); addLog(p, 'Добавлен этап «Новый этап»'); commit();
   return s;
 }
 // DELETE /api/stages/:id — следующие этапы подтягиваются на его длительность
 function removeStage(p, s){
+  if (s.tsid) p.tplSkip = [...new Set([...(p.tplSkip || []), s.tsid])];
   shiftFrom(p, s.position, -stageDur(s));
   p.stages = p.stages.filter(x => x.id !== s.id);
   normalizeChain(p); ensureActive(p); syncState(p);
@@ -1664,7 +1808,7 @@ function moveStage(p, s, dir){
 // ---------- Этапы процесса (колонки канбана) и подэтапы ----------
 const stageByName = (p, name) => p.stages.find(s => norm(s.name) === norm(name));
 const activeOf = tid => db.projects.filter(p => p.template_id === tid && p.state === 'active');
-const colIndex = (t, p) => { const c = currentStage(p); if (!c) return 'done'; const i = t.stages.findIndex(s => norm(s.name) === norm(c.name)); return i >= 0 ? i : 'other'; };
+const colIndex = (t, p) => { const c = currentStage(p); if (!c) return 'done'; if (isMaint(c)) return 'maint'; const i = t.stages.findIndex(s => norm(s.name) === norm(c.name)); return i >= 0 ? i : 'other'; };
 // Перенос на доске: колонка = этап процесса, в проекте ищем этап с тем же названием
 function moveToColumn(p, t, i){
   const s = stageByName(p, t.stages[i].name);
@@ -1726,6 +1870,76 @@ function moveToDone(p){
   p.stages.forEach(s => { if (s.status !== 'done'){ s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; completeStage(p, s); } });
   syncState(p); addLog(p, 'Все этапы отмечены завершёнными'); commit();
 }
+// ---------- Регулярные задачи ведения (абонентка): s.rtasks этапа ведения ----------
+const canManageR = p => p && (p._ext ? canEditProject(p) : !GUEST);
+const rWho = (p, id) => p._ext ? ((p._team || []).find(m => m.id === id)?.name || '') : (id ? short(id) : 'Не назначен');
+function rtaskBlock(p, s, compact = false, who = ''){
+  const rt = (s.rtasks || []).filter(r => !who || r.assignee_id === who).slice().sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999'));
+  const list = compact ? rt.slice(0, 4) : rt;
+  return `<div class="rt-block${compact ? ' compact' : ''}">${compact ? '' : '<h4>Регулярные задачи (абонентка)</h4>'}
+    ${list.length ? `<ul class="rt-list">${list.map(r => `<li class="rt-row">
+      <input type="checkbox" class="rt-chk" data-rdone="${p.id}|${r.id}" aria-label="Выполнено в этом цикле: ${esc(r.title)}">
+      <button class="rt-main" data-redit="${p.id}|${r.id}"><b>${esc(r.title)}</b><small><span class="rt-freq">${RT_ICO}${FREQ[r.frequency]?.[0] || ''}</span>${compact ? ` · ${dueTxt(r.due_date)}` : ` · ${esc(rWho(p, r.assignee_id))}${r.last_done ? ` · последний раз ${fmt(r.last_done)}` : ''}`}</small></button>
+      ${compact ? '' : dueTxt(r.due_date)}</li>`).join('')}</ul>${compact && rt.length > list.length ? `<p class="hint">и ещё ${rt.length - list.length}</p>` : ''}`
+    : `<p class="hint">${s.status === 'in_progress' ? 'Регулярных задач пока нет.' : 'Задачи начнутся после завершения воронки — их можно подготовить заранее.'}</p>`}
+    ${canManageR(p) ? `<button class="link rt-add" data-radd="${p.id}">+ Добавить регулярную задачу</button>` : ''}</div>`;
+}
+const RT_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>';
+function openRtask(pid, rid){
+  const p = projById(pid); const s = p?.stages.find(isMaint); if (!s) return;
+  const r = rid ? (s.rtasks || []).find(x => x.id === rid) : null; const manage = canManageR(p);
+  const v = r || { title:'', frequency:'weekly', assignee_id:s.assignee_id || p.worker_id || '', due_date:nextCycle('', 'weekly') };
+  const ro = manage ? '' : 'disabled';
+  const people = p._ext ? `<option value="">Не назначен</option>${(p._team || []).map(m => `<option value="${m.id}" ${m.id === v.assignee_id ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}` : peopleOpts(v.assignee_id, 'Не назначен');
+  layer.innerHTML = `<div class="backdrop" data-close></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rtT">
+    <h2 id="rtT">${r ? 'Регулярная задача' : 'Новая регулярная задача'}</h2><p class="lead">${esc(p.name)} · Ведение / Поддержка</p>
+    <form class="form" id="rtForm" data-pid="${p.id}" data-rid="${r ? r.id : ''}" novalidate>
+      <div class="field"><label for="rtTitle">Название</label><input id="rtTitle" value="${esc(v.title)}" maxlength="200" placeholder="Например: еженедельный отчёт по ROMI" ${ro} autocomplete="off"></div>
+      <div class="two">
+        <div class="field"><label for="rtFreq">Как часто</label><select id="rtFreq" ${ro}>${Object.entries(FREQ).map(([k, [l]]) => `<option value="${k}" ${k === v.frequency ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <div class="field"><label for="rtDue">Срок текущего цикла</label><input id="rtDue" type="date" value="${esc(v.due_date || '')}" ${ro}></div>
+      </div>
+      <div class="field"><label for="rtWho">Исполнитель</label><select id="rtWho" ${ro}>${people}</select></div>
+      ${r ? `<p class="hint">Выполнено циклов: ${r.done_count || 0}${r.last_done ? `, последний раз ${fmt(r.last_done)}` : ''}</p>` : ''}
+      <div class="err" id="rtErr" aria-live="polite"></div>
+      <div class="actions">${r && manage ? '<button type="button" class="ghost danger m-out" id="rtDel">Удалить</button>' : ''}<button type="button" class="ghost" data-close>${manage ? 'Отмена' : 'Закрыть'}</button>${manage ? `<button class="primary">${r ? 'Сохранить' : 'Добавить'}</button>` : ''}</div>
+    </form></div>`;
+  if (manage) $('#rtTitle').focus();
+}
+function completeRtask(p, r){
+  const now = new Date().toISOString();
+  r.last_done = today(); r.done_count = (r.done_count || 0) + 1; r.status = 'todo'; r.updated_at = now;
+  r.due_date = nextCycle(r.due_date, r.frequency);
+  addLog(p, `Регулярная задача «${r.title}» выполнена, следующий раз ${fmt(r.due_date)}`); commit();
+  toast(`Готово. Следующий раз: ${fmt(r.due_date)}`);
+}
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'rtForm') return; e.preventDefault();
+  const p = projById(e.target.dataset.pid); const s = p?.stages.find(isMaint); if (!s || !canManageR(p)) return;
+  const title = $('#rtTitle').value.trim(); if (!title){ $('#rtErr').textContent = 'Укажите название'; return; }
+  const due = $('#rtDue').value; if (!due){ $('#rtErr').textContent = 'Укажите срок текущего цикла'; return; }
+  const now = new Date().toISOString(); s.rtasks = s.rtasks || [];
+  const r = s.rtasks.find(x => x.id === e.target.dataset.rid);
+  const data = { title, frequency:$('#rtFreq').value, assignee_id:$('#rtWho').value || null, due_date:due, status:'todo', updated_at:now };
+  if (r) Object.assign(r, data); else s.rtasks.push({ id:'r' + uid(), project_id:p.id, created_at:now, done_count:0, ...data });
+  addLog(p, `${r ? 'Изменена' : 'Добавлена'} регулярная задача «${title}» (${FREQ[data.frequency][0].toLowerCase()})`);
+  layer.innerHTML = ''; commit(); if (ui.open === p.id) renderDrawer(); toast(r ? 'Сохранено' : 'Регулярная задача добавлена');
+});
+document.addEventListener('change', e => {
+  const k = e.target.dataset?.rdone; if (!k) return;
+  const [pid, rid] = k.split('|'); const p = projById(pid); const r = p?.stages.find(isMaint)?.rtasks?.find(x => x.id === rid); if (!r) return;
+  completeRtask(p, r); if (ui.open === pid) renderDrawer();
+});
+document.addEventListener('click', e => {
+  const a = e.target.closest?.('[data-radd]'); if (a){ e.stopPropagation(); openRtask(a.dataset.radd, null); return; }
+  const ed = e.target.closest?.('[data-redit]'); if (ed && !e.target.closest('input, select, label')){ e.stopPropagation(); const [pid, rid] = ed.dataset.redit.split('|'); openRtask(pid, rid); return; }
+  if (e.target.id === 'rtDel'){ const f = $('#rtForm'); const p = projById(f.dataset.pid); const s = p.stages.find(isMaint); const r = s.rtasks.find(x => x.id === f.dataset.rid);
+    askConfirm({ title:`Удалить «${r.title}»?`, text:'Регулярная задача перестанет появляться в ведении проекта.', ok:'Удалить' }).then(y => { if (!y) return;
+      s.rtasks = s.rtasks.filter(x => x !== r); addLog(p, `Удалена регулярная задача «${r.title}»`); layer.innerHTML = ''; commit(); if (ui.open === p.id) renderDrawer(); toast('Удалено'); });
+  }
+}, true);
+
 // PATCH /api/projects/:id
 function updateProject(p, field, value, label){
   if (p[field] === value) return; p[field] = value; addLog(p, label); commit();
@@ -1796,7 +2010,7 @@ function renderFilters(){
   const show = ui.view === 'matrix' || ui.view === 'kanban';
   $('#filters').hidden = !show;
   const hot = hotStages();
-  $('#bellCount').innerHTML = hot.length ? `<span class="badge">${hot.length}</span>` : '';
+  try { paintBell(); pushNotify(); } catch(e) { $('#bellCount').innerHTML = hot.length ? `<span class="badge">${hot.length}</span>` : ''; }
   if (!show) return;
   $('#groupWrap').hidden = ui.view !== 'matrix';
   $('#density').hidden = ui.view !== 'matrix';
@@ -1832,20 +2046,22 @@ function rememberView(){ try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({
 function restoreView(){
   try {
     const v = JSON.parse(sessionStorage.getItem(VIEW_KEY) || 'null'); if (!v) return;
-    const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine');
+    const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine', 'mytasks');
     if (ok.includes(v.view)) ui.view = v.view;
     if (['deadlines','templates','categories','spaces'].includes(v.setTab)) ui.setTab = v.setTab;
-    if (['project','funnel','tasks'].includes(v.prodMode)) ui.prodMode = v.prodMode;
+    if (['project','funnel','tasks','assign'].includes(v.prodMode)) ui.prodMode = v.prodMode;
   } catch(e) {}
 }
 function render(){
-  if (GUEST) ui.view = 'mine';
+  if (GUEST && ui.view !== 'mytasks') ui.view = 'mine';
+  if (!GUEST && ui.view === 'mytasks'){ ui.view = 'production'; ui.prodMode = 'tasks'; }
   paintSpace(); rememberView();
   document.body.dataset.view = ui.view;
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
+  $('#myTasksTab').hidden = !GUEST;
   renderFilters();
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:() => renderProjectFocus(true), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.open) renderDrawer();
   try { paintPage(); } catch(e) {}
   paintSelect();
@@ -1958,7 +2174,7 @@ function renderMatrix(){
   const dimOn = ui.risk && ui.risk !== 'done';
   app.innerHTML = groupsFor(list).map(g => {
     const cols = Math.max(g.tpl ? g.tpl.stages.length : 0, ...g.items.map(p => p.stages.length));
-    const head = Array.from({length:cols}, (_,i) => `<th><span class="num">${i+1}</span>${g.tpl ? esc(g.tpl.stages[i]?.name ?? '') : 'Этап'}</th>`).join('');
+    const head = Array.from({length:cols}, (_,i) => `<th><span class="num">${i+1}</span>${g.tpl ? esc(g.tpl.stages[i]?.name ?? (g.items.some(p => isMaint(p.stages[i])) ? 'Ведение' : '')) : 'Этап'}</th>`).join('');
     const body = g.items.map(p => {
       const cur = currentStage(p); const end = plannedEnd(p); const late = p.deadline && end > p.deadline;
       const cells = Array.from({length:cols}, (_,i) => {
@@ -1989,7 +2205,7 @@ function renderMatrix(){
 // ---------- Главная на телефоне: карточка на проект ----------
 const IS_PHONE = matchMedia('(max-width:640px)');
 IS_PHONE.addEventListener?.('change', () => { if (typeof db !== 'undefined' && db) render(); });
-const RISK_RU = { red:'Просрочено', yellow:'Горит', blue:'У клиента', green:'В графике', gray:'Не стартовал', done:'Завершён' };
+const RISK_RU = { red:'Просрочено', yellow:'Горит', blue:'У клиента', green:'В графике', maint:'Ведение', gray:'Не стартовал', done:'Завершён' };
 // Срочность срока: over — просрочено, hot — 0–3 дня, warn — 4–7 дней, ok — больше недели
 function urg(date){
   if (!date) return { k:'ok', d:null, txt:'' };
@@ -2010,9 +2226,9 @@ function renderPhoneList(list){
   const pool = db.projects.filter(baseOk).filter(p => p.state === 'active');
   const cnt = k => pool.filter(p => projectRisk(p) === k).length;
   const week = pool.filter(p => { const c = currentStage(p); return c && c.status !== 'not_started' && urg(c.due_date).k !== 'ok'; }).length;
-  const tiles = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике']].map(([k, l]) =>
+  const tiles = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике'],['maint','На ведении']].map(([k, l]) =>
     `<button class="tile t-${k}" data-htile="${k}" aria-pressed="${ui.risk === k}"><b>${cnt(k)}</b><span>${l}</span></button>`).join('');
-  const chips = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике']].map(([k, l]) =>
+  const chips = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике'],['maint','На ведении']].filter(([k]) => k !== 'maint' || cnt(k)).map(([k, l]) =>
     `<button class="chip" data-htile="${k}" aria-pressed="${ui.risk === k}"><span class="sw ${k}"></span>${l} <b>${cnt(k)}</b></button>`).join('');
   const hero = `<section class="mh"><h2>${pool.length} ${plural(pool.length, 'проект', 'проекта', 'проектов')} в работе${week ? `<small>${week} ${plural(week, 'срок', 'срока', 'сроков')} на неделе</small>` : ''}</h2>
     <div class="mh-chips">${chips}${ui.risk ? `<button class="chip" data-htile="">Все</button>` : ''}</div></section>`;
@@ -2072,7 +2288,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
   const cols = p.stages.map(s => {
     const h = health(s); const isCur = s.id === cur.stageId; const passed = s.status === 'done';
     const subs = s.subs || []; const doneN = subs.filter(x => subDone(p, s, x)).length;
-    const cards = subs.map(x => {
+    const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
       if (mine && !t) return tickCard(p, s, x, here);
@@ -2085,8 +2301,8 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" data-pmcol="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}</header>
-      <div class="pf-cards">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
-      ${canEdit ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
+      <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
+      ${canEdit && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
     </section>`;
   }).join('');
   const steps = p.stages.map(s => `<button class="pm-step${s.status === 'done' ? ' done' : ''}${s.id === cur.stageId ? ' cur' : ''} h-${health(s).key}" data-pmgo="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">${s.status === 'done' ? '✓' : s.position + 1}</button>`).join('');
@@ -2137,6 +2353,7 @@ const density = () => db.prefs?.density || 'detailed';
 // значки статусов в плашках списка
 const sico = path => `<svg class="pi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
 const STATUS_ICO = {
+  maint:sico('<path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/>'),
   green:sico('<path d="M12 3a9 9 0 1 1-9 9" stroke-dasharray="3 3.2"/><path d="M12 3a9 9 0 0 0-9 9"/>'),
   yellow:sico('<path d="M12 3c3 3.5 5 6 5 9a5 5 0 0 1-10 0c0-1.6.6-3 1.6-4.2.4 1.4 1.3 2.2 2.4 2.2 0-2.6.3-4.6 1-7Z"/>'),
   red:sico('<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5M12 16.2v.3"/>'),
@@ -2166,7 +2383,9 @@ function renderCompact(list){
       const segs = p.stages.map(s => `<i class="pseg p-${s.status === 'done' ? 'done' : (c && s.id === c.id ? h.key : 'todo')}" title="${esc(s.name)}"></i>`).join('');
       const progress = ticksHtml(p, !c ? 'done' : h.key);
       const last = p.stages.at(-1);
-      const due = c ? `${fmt(c.due_date)}<small>${h.note}</small>` : `${fmt(last.completed_at || last.due_date)}<small>Сдан</small>`;
+      const nextR = isMaint(c) ? (c.rtasks || []).map(r => r.due_date).filter(Boolean).sort()[0] : null;
+      const due = c && isMaint(c) ? (nextR ? `${fmt(nextR)}<small>ближайшая регулярная задача</small>` : `бессрочно<small>${h.note}</small>`)
+        : c ? `${fmt(c.due_date)}<small>${h.note}</small>` : `${fmt(last.completed_at || last.due_date)}<small>Сдан</small>`;
       return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
         <td title="${esc(p.name)}"><span class="cx-name"><span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
         <td>${stPill(h.key, h.label)}</td>
@@ -2191,11 +2410,17 @@ function renderKanban(){
   const cols = t.stages.map((s,i) => ({ pos:i, name:s.name, items:[] }));
   const other = { pos:'other', name:'Вне процесса', items:[] };
   const done = { pos:'done', name:'Завершены', items:[] };
-  list.forEach(p => { const k = colIndex(t, p); (k === 'done' ? done : k === 'other' ? other : cols[k]).items.push(p); });
+  const maint = { pos:'maint', name:'Ведение', items:[] };
+  list.forEach(p => { const k = colIndex(t, p); (k === 'done' ? done : k === 'maint' ? maint : k === 'other' ? other : cols[k]).items.push(p); });
   const card = p => {
     const c = currentStage(p); const h = c ? health(c) : { key:'done', label:'Завершён', note:'' };
     const statusSel = c ? `<select data-kstatus="${p.id}" aria-label="Статус этапа">${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${c.status===k?'selected':''}>${v}</option>`).join('')}</select>` : '';
-    const moveSel = `<select data-kmove="${p.id}" aria-label="Перенести на этап"><option value="">Перенести…</option>${t.stages.map((s,i) => `<option value="${i}">${i+1}. ${esc(s.name)}</option>`).join('')}<option value="done">Завершить проект</option></select>`;
+    const moveSel = `<select data-kmove="${p.id}" aria-label="Перенести на этап"><option value="">Перенести…</option>${t.stages.map((s,i) => `<option value="${i}">${i+1}. ${esc(s.name)}</option>`).join('')}<option value="maint">Ведение</option>${p.is_maintenance ? '' : '<option value="done">Завершить проект</option>'}</select>`;
+    if (c && isMaint(c)) return `<article class="card card-maint" draggable="true" data-card="${p.id}">
+      <button class="t" data-open="${p.id}">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</button>
+      <div class="meta">${esc(p.client)}, PM ${esc(short(p.pm_id))}</div>
+      <div class="stline"><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span><span>${h.note}</span></div>
+      ${rtaskBlock(p, c, true)}</article>`;
     const subsDone = c?.subs?.filter(x => x.done).length ?? 0;
     return `<article class="card" draggable="true" data-card="${p.id}">
       <button class="t" data-open="${p.id}">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</button>
@@ -2214,7 +2439,7 @@ function renderKanban(){
   };
   app.innerHTML = `<div class="kb-head"><select id="kbTpl" aria-label="Шаблон процесса">${db.templates.map(x => `<option value="${x.id}" ${x.id===t.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
     <span class="hint kb-tip">Перетащите карточку в колонку этапа. Свой этап добавляется кнопкой «Добавить этап» и становится частью процесса.</span></div>
-    <div class="kb">${cols.map(colHtml).join('')}<button class="col-add" id="kbAdd"><span aria-hidden="true">+</span>Добавить этап</button>${other.items.length ? colHtml(other) : ''}${colHtml(done)}</div>`;
+    <div class="kb">${cols.map(colHtml).join('')}<button class="col-add" id="kbAdd"><span aria-hidden="true">+</span>Добавить этап</button>${other.items.length ? colHtml(other) : ''}${colHtml(maint)}${colHtml(done)}</div>`;
 }
 
 function openStageModal(t, mode, i){
@@ -2277,13 +2502,14 @@ function openSubsModal(t, i){
 // ---------- Производство: воронка процесса с подэтапами ----------
 function renderProduction(){
   const t = tplById(ui.prodTpl) || db.templates[0];
-  if (ui.prodMode === 'tasks') return renderTaskBoard();
+  if (ui.prodMode === 'tasks') return renderMyDay('exec');
+  if (ui.prodMode === 'assign'){ ui.prodMode = 'tasks'; ui.view = 'assign'; return renderMyDay('admin'); }
   if (ui.prodMode === 'project') return renderProjectFocus();
   if (!t){ app.innerHTML = `<div class="empty">Создайте шаблон процесса, чтобы увидеть воронку</div>`; return; }
   ui.prodTpl = t.id;
   const list = db.projects.filter(p => p.template_id === t.id && (p.state === 'active' || p.state === 'completed'));
   const total = list.length, completed = list.filter(p => p.state === 'completed').length;
-  const rank = p => { const k = colIndex(t, p); return k === 'done' ? Infinity : k === 'other' ? -1 : k; };
+  const rank = p => { const k = colIndex(t, p); return k === 'done' || k === 'maint' ? Infinity : k === 'other' ? -1 : k; };
   const stagesHtml = t.stages.map((ts, i) => {
     const here = list.filter(p => p.state === 'active' && rank(p) === i);
     const reached = list.filter(p => rank(p) >= i).length;
@@ -2535,6 +2761,10 @@ function renderDrawer(){
   const opt = (list, val, empty) => (empty ? `<option value="">${empty}</option>` : '') + list.map(u => `<option value="${u.id}" ${u.id===val?'selected':''}>${esc(u.name || 'Вы')}${u.status==='invited' ? ' (приглашён)' : ''}</option>`).join('');
   const stages = p.stages.map((s,i) => {
     const h = health(s);
+    if (isMaint(s)) return `<li class="stg stg-maint k-${h.key}" id="stg-${s.id}"><span class="dot">${RT_ICO}</span>
+      <div class="r1"><b>${esc(s.name)}</b><span class="pill s-${h.key}">${h.label}</span></div>
+      <div class="note">${s.status === 'in_progress' ? `Бессрочный этап с ${fmt(s.started_at)}: регулярные задачи по абонентке.` : 'Начнётся, когда будут завершены все этапы воронки.'}</div>
+      ${rtaskBlock(p, s)}</li>`;
     if (ui.editChain){
       const done = s.status === 'done';
       return `<li class="stg k-${h.key}" id="stg-${s.id}">
@@ -2571,6 +2801,7 @@ function renderDrawer(){
         <div class="field"><label>Клиент</label><div class="val">${esc(p.client)}</div></div>
         <div class="field"><label for="pCat">Категория</label><select id="pCat">${catOpts(p.category_id)}</select></div>
         <div class="field"><label for="pTpl">Шаблон процесса</label><select id="pTpl">${tplById(p.template_id) ? '' : '<option value="" selected>Шаблон удалён</option>'}${db.templates.map(t => `<option value="${t.id}" ${t.id===p.template_id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></div>
+        <label class="check maint-check p-maint"><input type="checkbox" id="pMaint" ${p.is_maintenance ? 'checked' : ''}> <span>${RT_ICO}<b>На ведении после воронки</b><small>Проект не закроется, а перейдёт на этап «Ведение / Поддержка» с регулярными задачами.</small></span></label>
         <div class="field"><label for="pPri">Приоритет</label><select id="pPri">${Object.entries(PRI).map(([k,[v]]) => `<option value="${k}" ${p.priority===k?'selected':''}>${v}</option>`).join('')}</select></div>
       </div></section>
       <section class="d-box"><h3>Команда</h3><div class="d-g">
@@ -2630,6 +2861,7 @@ function openCreate(){
         <div class="field"><label for="cWorker">Ответственный (Исп)</label><select id="cWorker"><option value="">Не назначен</option>${db.users.map(u => `<option value="${u.id}">${esc(u.name || 'Вы')}</option>`).join('')}</select></div>
         <div class="field"><label for="cPri">Приоритет</label><select id="cPri"><option value="high">Высокий</option><option value="medium" selected>Средний</option><option value="low">Низкий</option></select></div>
       </div>
+      <label class="check maint-check"><input type="checkbox" id="cMaint"> <span>${RT_ICO}<b>Перевести проект на этап абонентского ведения после запуска</b><small>После завершения воронки проект перейдёт на этап регулярных задач и поддержки.</small></span></label>
       <div class="preview" id="cPrev"></div>
       <div class="err" id="cErr"></div>
       <div class="actions"><button type="button" class="ghost" data-close>Отмена</button><button class="primary">Создать проект</button></div>
@@ -2653,6 +2885,7 @@ function openCreate(){
     const p = createProject({ name, client, template_id:$('#cTpl').value, start_date:start, pm_id:$('#cPm').value, worker_id:$('#cWorker').value || null,
       priority:$('#cPri').value });
     const cat = $('#cCat')?.value; if (cat){ p.category_id = cat; save(); }
+    if ($('#cMaint')?.checked){ p.is_maintenance = true; syncState(p); addLog(p, 'Проект на ведении: после воронки — этап «Ведение / Поддержка»'); save(); }
     if (dl){ p.deadline = dl; if (fit) fitToDeadline(p); else commit(); }
     layer.innerHTML = ''; toast(`Проект «${p.name}» создан: ${p.stages.length} этапов, финиш ${fmt(plannedEnd(p))}`);
   };
@@ -2667,13 +2900,30 @@ function hotStages(){
   return out.sort((a,b) => a.h.hours - b.h.hours);
 }
 function openBell(){
-  const list = hotStages();
+  const list = GUEST ? [] : hotStages(); const a = myAlerts();
+  const sec = (title, items) => items.length ? `<h3>${title} <span class="ntf-n">${items.length}</span></h3>${items.slice(0, 8).map(ntfItem).join('')}` : '';
+  const perm = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
   layer.innerHTML = `<div class="backdrop" data-close style="background:transparent"></div>
-  <div class="pop" role="dialog" aria-label="Уведомления"><h3>Горящие и просроченные этапы</h3>
+  <div class="pop" role="dialog" aria-label="Уведомления">
+  ${(() => { const nw = new Set(a.fresh.map(i => i.id)); return sec('Новые задачи', a.fresh) + sec('Просрочено', a.over.filter(i => !nw.has(i.id))) + sec('На сегодня', a.today.filter(i => !nw.has(i.id))); })()}
+  ${!a.fresh.length && !a.over.length && !a.today.length ? '<h3>Мои задачи</h3><p class="hint" style="padding:0 8px">Срочного нет. Все задачи — во вкладке «Задачи».</p>' : ''}
+  <button class="link ntf-all" data-ntfday="1">Все мои задачи</button>
+  ${perm === 'default' ? '<button class="ghost ntf-perm" id="ntfPerm">Включить уведомления на этом устройстве</button>' : perm === 'denied' ? '<p class="hint" style="padding:4px 8px">Уведомления браузера выключены в настройках сайта.</p>' : ''}
+  ${GUEST ? '' : `<h3>Горящие и просроченные этапы</h3>
   ${list.length ? list.map(({p,s,h}) => `<button class="ntf" data-open="${p.id}" data-stage="${s.id}"><span class="sw ${h.key==='blue'?'yellow':h.key}"></span>
     <span><b>${esc(p.name)}</b><small>${esc(s.name)}: ${h.note}. ${esc(short(whoId(p, s)))}</small></span></button>`).join('')
-  : '<p class="hint" style="padding:0 8px">Все этапы идут по графику</p>'}</div>`;
+  : '<p class="hint" style="padding:0 8px">Все этапы идут по графику</p>'}`}</div>`;
+  // открыли колокольчик — новые задачи просмотрены
+  const seen = readSet(NSEEN_KEY()); myTodo().forEach(i => seen.add(i.id)); writeSet(NSEEN_KEY(), seen); paintBell();
 }
+function paintBell(){
+  const n = (GUEST ? 0 : hotStages().length) + alertCount();
+  const b = $('#bellCount'); if (b) b.innerHTML = n ? `<span class="badge">${n}</span>` : '';
+}
+document.addEventListener('click', e => {
+  if (e.target.closest?.('[data-ntfday]')){ layer.innerHTML = ''; if (GUEST) ui.view = 'mytasks'; else { ui.view = 'production'; ui.prodMode = 'tasks'; ui.dayAs = ''; } render(); return; }
+  if (e.target.id === 'ntfPerm'){ Notification.requestPermission().then(p => { if (p === 'granted'){ toast('Уведомления включены'); pushNotify(); } openBell(); }); }
+});
 
 // ---------- Шаблоны ----------
 const setNav = () => `<div class="set-nav seg-toggle" role="tablist" aria-label="Разделы настроек">
@@ -2838,6 +3088,127 @@ function syncCardToProjects(tplId, subName, c, skipTaskId){
   return n;
 }
 // обновить активные проекты шаблона: недостающие подэтапы и карточки (уже заполненные карточки не трогаем)
+// =====================================================================
+//  СИНХРОНИЗАЦИЯ ШАБЛОНА С ПРОЕКТАМИ
+//  Этап проекта помнит этап шаблона (s.tsid), подэтап — подэтап шаблона (x.tsub). По этой связи в идущих проектах:
+//  • переименование этапа/подэтапа в шаблоне переименовывает его (отметки и карточки сохраняются);
+//  • новый этап шаблона встаёт на своё место, если проект ещё не прошёл это место; новые подэтапы добавляются;
+//  • удалённый из шаблона этап/подэтап убирается, если в нём ничего не начато и не отмечено, иначе остаётся «своим»;
+//  • пустые не начатые этапы вне шаблона (без подэтапов и карточек) убираются;
+//  • этап шаблона, который удалили в проекте вручную, обратно не добавляется (p.tplSkip).
+//  Завершённые и архивные проекты не меняются.
+// =====================================================================
+function ensureTplIds(){
+  let n = 0;
+  (db.templates || []).forEach(t => t.stages.forEach(st => { if (!st.id){ st.id = uid(); n++; } (st.subs || []).forEach(x => { if (!x.id){ x.id = uid(); n++; } }); }));
+  return n;
+}
+const ptasks = p => (p._ext ? ext.tasks : (db.tasks || [])).filter(t => t.project_id === p.id);
+const taskBusy = t => !!t && (t.checklist.some(i => i.done) || !!t.result_link);
+function linkToTemplate(p, tpl){
+  // этапы: живая связь, иначе — по названию (первый свободный этап шаблона)
+  const used = new Set();
+  p.stages.forEach(s => { if (s.tsid && tpl.stages.some(t => t.id === s.tsid) && !used.has(s.tsid)) used.add(s.tsid); else if (s.tsid) s._lost = true; });
+  p.stages.forEach(s => {
+    if (s.tsid && !s._lost) return;
+    if (s.custom && !s.tsid) return;
+    const t = tpl.stages.find(x => !used.has(x.id) && norm(x.name) === norm(s.name));
+    if (t){ s.tsid = t.id; used.add(t.id); delete s._lost; }
+  });
+  // этап шаблона без пары — связываем по месту: несвязанный этап проекта между теми же соседями (переименовали вручную)
+  tpl.stages.forEach((t, ti) => {
+    if (used.has(t.id)) return;
+    let lo = -1, hi = p.stages.length;
+    for (let k = ti - 1; k >= 0; k--){ const j = p.stages.findIndex(st => st.tsid === tpl.stages[k].id && !st._lost); if (j >= 0){ lo = j; break; } }
+    for (let k = ti + 1; k < tpl.stages.length; k++){ const j = p.stages.findIndex(st => st.tsid === tpl.stages[k].id && !st._lost); if (j >= 0){ hi = j; break; } }
+    const c = p.stages.slice(lo + 1, hi).find(st => (!st.tsid || st._lost) && !st.custom && (st.subs || []).length);
+    if (c){ c.tsid = t.id; used.add(t.id); delete c._lost; }
+  });
+  // подэтапы внутри связанных этапов
+  p.stages.forEach(s => {
+    const t = tpl.stages.find(x => x.id === s.tsid); if (!t || s._lost) return;
+    const u = new Set();
+    (s.subs || []).forEach(x => { if (x.tsub && (t.subs || []).some(y => y.id === x.tsub) && !u.has(x.tsub)) u.add(x.tsub); else if (x.tsub) x._lost = true; });
+    (s.subs || []).forEach(x => {
+      if (x.tsub && !x._lost) return;
+      const ts = (t.subs || []).find(y => !u.has(y.id) && norm(y.name) === norm(x.name));
+      if (ts){ x.tsub = ts.id; u.add(ts.id); delete x._lost; }
+    });
+  });
+}
+function syncProjectWithTemplate(p, tpl){
+  if (!p || !tpl || p._ext || p.state !== 'active') return 0;
+  const before = JSON.stringify([p.stages, ptasks(p).map(t => [t.id, t.title])]);
+  linkToTemplate(p, tpl);
+  const T = id => tpl.stages.find(t => t.id === id);
+  const skip = new Set(p.tplSkip || []);
+  const removeTasks = (pred) => { const ids = new Set(ptasks(p).filter(pred).map(t => t.id)); if (ids.size) db.tasks = db.tasks.filter(t => !ids.has(t.id)); };
+  // 1) этапы: переименование, согласование, подэтапы
+  p.stages.forEach(s => {
+    const t = T(s.tsid); if (!t || s._lost) return;
+    if (s.name !== t.name){ addLog(p, `Этап «${s.name}» переименован в «${t.name}» по шаблону`); s.name = t.name; }
+    s.approval = !!t.approval;
+    const old = s.subs || []; const next = [];
+    (t.subs || []).forEach(ts => {
+      let x = old.find(y => y.tsub === ts.id && !y._lost);
+      if (x){
+        if (x.name !== ts.name){ const tk = ptasks(p).find(k => k.stage_id === s.id && k.substage_id === x.id); if (tk && norm(tk.title) === norm(x.name)) tk.title = ts.name; x.name = ts.name; }
+        next.push(x);
+      } else next.push({ id:uid(), name:ts.name, done:s.status === 'done', tsub:ts.id });
+    });
+    old.forEach((x, i) => {
+      if (next.includes(x)) return;
+      if (x.tsub){                                                 // подэтап убрали из шаблона
+        const tk = ptasks(p).find(k => k.stage_id === s.id && k.substage_id === x.id);
+        if (!x.done && !taskBusy(tk)){ if (tk) removeTasks(k => k.id === tk.id); addLog(p, `Подэтап «${x.name}» убран по шаблону`); return; }
+        delete x.tsub;                                              // в нём уже есть работа — остаётся своим
+      }
+      next.splice(Math.min(i, next.length), 0, x);
+    });
+    old.forEach(x => delete x._lost);
+    s.subs = next;
+  });
+  // 2) этапы, которых больше нет в шаблоне, и пустые этапы вне шаблона
+  const busy = st => st.status !== 'not_started' || (st.subs || []).some(x => x.done) || ptasks(p).some(k => k.stage_id === st.id && taskBusy(k));
+  const keep = p.stages.filter(st => {
+    if (p.stages.length < 2) return true;
+    if (st.tsid && (st._lost || !T(st.tsid))){
+      if (!busy(st)){ removeTasks(k => k.stage_id === st.id); addLog(p, `Этап «${st.name}» убран по шаблону`); return false; }
+      delete st.tsid; delete st._lost; st.custom = true; return true;
+    }
+    if (!st.tsid && !st.custom && st.status === 'not_started' && !(st.subs || []).length && !ptasks(p).some(k => k.stage_id === st.id)){
+      addLog(p, `Пустой этап «${st.name}» вне шаблона убран`); return false;
+    }
+    return true;
+  });
+  if (keep.length) p.stages = keep;
+  // 3) новые этапы шаблона — на своё место, если проект ещё не прошёл его
+  tpl.stages.forEach((t, ti) => {
+    if (p.stages.some(st => st.tsid === t.id) || skip.has(t.id)) return;
+    let idx = 0;
+    for (let k = ti - 1; k >= 0; k--){ const j = p.stages.findIndex(st => st.tsid === tpl.stages[k].id); if (j >= 0){ idx = j + 1; break; } }
+    if (p.stages.slice(idx).some(st => st.status !== 'not_started') && idx < p.stages.length) return;
+    if (idx >= p.stages.length && p.state !== 'active') return;
+    const prev = p.stages[idx - 1]; const start = prev ? prev.due_date : p.start_date; const n = stageDaysFor(t);
+    p.stages.splice(idx, 0, { id:uid(), position:idx, name:t.name, days:n, approval:!!t.approval, assignee_id:null, status:'not_started',
+      planned_start:start, due_date:addDays(start, n), started_at:null, completed_at:null, tsid:t.id,
+      subs:(t.subs || []).map(ts => ({ id:uid(), name:ts.name, done:false, tsub:ts.id })) });
+    addLog(p, `Добавлен этап «${t.name}» по шаблону`);
+  });
+  p.stages.forEach(st => delete st._lost);
+  const changed = JSON.stringify([p.stages, ptasks(p).map(t => [t.id, t.title])]) !== before;
+  if (changed){ normalizeChain(p); ensureActive(p); syncState(p); }
+  const cards = copyCards(p);
+  return changed || cards ? 1 : 0;
+}
+// все свои проекты по всем шаблонам; вызывается при загрузке и при сохранении шаблона
+function syncAllTemplates(tplId){
+  if (GUEST) return 0;
+  ensureTplIds();
+  let n = 0;
+  db.projects.forEach(p => { if (!tplId || p.template_id === tplId) n += syncProjectWithTemplate(p, tplById(p.template_id)); });
+  return n;
+}
 function applyTplToProjects(t){
   let subs = 0, cards = 0, projs = 0;
   activeOf(t.id).forEach(p => {
@@ -3135,7 +3506,7 @@ const toggle = (arr, v) => arr.includes(v) ? arr.filter(x => x !== v) : [...arr,
 function resetFilters(){ ui.q=''; ui.pms=[]; ui.clients=[]; ui.risk=''; render(); }
 
 document.querySelector('.tabs').onclick = e => {
-  const b = e.target.closest('[data-view]'); if (!b || (GUEST && b.dataset.view !== 'mine')) return;
+  const b = e.target.closest('[data-view]'); if (!b || (GUEST && !['mine', 'mytasks'].includes(b.dataset.view))) return;
   ui.view = b.dataset.view; ui.draft = null; render();
 };
 $('#newBtn').onclick = openCreate;
@@ -3251,16 +3622,22 @@ document.addEventListener('click', e => {
     const clean = JSON.parse(JSON.stringify(d)); clean.stages.forEach(s => s.subs.forEach(x => delete x.card));
     const at = db.templates.findIndex(t => t.id === d.id); if (at >= 0) db.templates[at] = clean; else db.templates.push(clean);
     // активные проекты процесса сразу получают новые подэтапы, новые и изменённые карточки
-    const r = applyTplToProjects(clean); let upd = 0;
+    const projN = syncAllTemplates(clean.id); let upd = 0;
     changed.forEach(c => { upd += syncCardToProjects(clean.id, c.sub, c.card); });
     ui.tplSel = d.id; ui.draft = null; ui.draftDirty = false; commit();
-    const bits = [r.subs && `подэтапов добавлено: ${r.subs}`, (r.cards + upd) && `карточек обновлено: ${r.cards + upd}`].filter(Boolean);
-    toast(bits.length ? `Шаблон сохранён. В активных проектах ${bits.join(', ')}` : 'Шаблон сохранён'); return;
+    const bits = [projN && `обновлено проектов: ${projN}`, upd && `карточек: ${upd}`].filter(Boolean);
+    toast(bits.length ? `Шаблон сохранён. ${bits.join(', ')}` : 'Шаблон сохранён'); return;
   }
   if (e.target.id === 'tDel'){ db.templates = db.templates.filter(t => t.id !== ui.draft.id); ui.draft = null; ui.tplSel = null; commit(); toast('Шаблон удалён'); }
 });
 
 document.addEventListener('change', e => {
+  if (e.target.id === 'pMaint'){ const q = projById(ui.open); if (!q) return; const on = e.target.checked;
+    const ms = q.stages.find(isMaint);
+    const go = () => { q.is_maintenance = on; syncState(q); addLog(q, on ? 'Проект переведён на ведение после воронки' : 'Ведение выключено'); commit(); renderDrawer(); toast(on ? (q.stages.find(isMaint)?.status === 'in_progress' ? 'Проект на этапе «Ведение / Поддержка»' : 'После воронки проект перейдёт на ведение') : 'Ведение выключено'); };
+    if (!on && ms?.rtasks?.length) askConfirm({ title:'Выключить ведение?', text:`Этап «Ведение / Поддержка» и ${ms.rtasks.length} ${plural(ms.rtasks.length, 'регулярная задача', 'регулярные задачи', 'регулярных задач')} будут удалены. Если воронка пройдена, проект станет завершённым.`, ok:'Выключить' }).then(y => { if (y) go(); else e.target.checked = true; });
+    else go();
+    return; }
   const el = e.target; const p = projById(ui.open);
   if (el.dataset.sub){
     const [pid, sid, xid] = el.dataset.sub.split('|'); const q = projById(pid); const s = q?.stages.find(y => y.id === sid); const x = s?.subs.find(y => y.id === xid);
@@ -3269,7 +3646,7 @@ document.addEventListener('change', e => {
   if (el.id === 'fnTpl'){ ui.prodTpl = el.value; render(); return; }
   if (el.id === 'kbTpl'){ ui.kbTpl = el.value; render(); return; }
   if (el.dataset.kstatus){ const q = projById(el.dataset.kstatus); setStatus(q, currentStage(q), el.value); return; }
-  if (el.dataset.kmove){ const q = projById(el.dataset.kmove); if (el.value === 'done') moveToDone(q); else if (el.value !== '') moveToColumn(q, tplById(ui.kbTpl), +el.value); return; }
+  if (el.dataset.kmove){ const q = projById(el.dataset.kmove); if (el.value === 'maint'){ q.is_maintenance = true; moveToDone(q); } else if (el.value === 'done') moveToDone(q); else if (el.value !== '') moveToColumn(q, tplById(ui.kbTpl), +el.value); return; }
   if (el.dataset.uf){
     const u = userById(el.dataset.uid); const f = el.dataset.uf;
     if (f === 'capacity'){ const v = Math.round(+el.value); if (!(v >= 1)){ el.value = u.capacity; toast('Норма — от 1 проекта'); return; } return updateMember(u, f, v); }
@@ -3314,7 +3691,8 @@ app.addEventListener('drop', e => {
   const col = e.target.closest('[data-col]'); if (!col || !dragId) return; e.preventDefault();
   const p = projById(dragId); const pos = col.dataset.col; const t = tplById(ui.kbTpl);
   if (pos === 'other') return;
-  if (pos === 'done'){ moveToDone(p); toast(`«${p.name}»: проект завершён`); return; }
+  if (pos === 'maint'){ p.is_maintenance = true; moveToDone(p); toast(`«${p.name}»: на ведении`); return; }
+  if (pos === 'done'){ moveToDone(p); toast(p.is_maintenance ? `«${p.name}»: на ведении` : `«${p.name}»: проект завершён`); return; }
   if (moveToColumn(p, t, +pos)) toast(`«${p.name}»: этап «${t.stages[+pos].name}»`);
 });
 
@@ -4034,7 +4412,7 @@ const linkify = text => esc(text).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1"
 
 // ---------- доска задач ----------
 const prodSwitch = () => `<div class="seg-toggle" role="group" aria-label="Вид производства">
-  <button data-pmode="project" aria-pressed="${ui.prodMode === 'project'}">По проекту</button><button data-pmode="funnel" aria-pressed="${!ui.prodMode || ui.prodMode === 'funnel'}">Воронка</button><button data-pmode="tasks" aria-pressed="${ui.prodMode === 'tasks'}">Задачи</button></div>`;
+  <button data-pmode="project" aria-pressed="${ui.prodMode === 'project'}">По проекту</button><button data-pmode="funnel" aria-pressed="${!ui.prodMode || ui.prodMode === 'funnel'}">Воронка</button><button data-pmode="tasks" aria-pressed="${ui.prodMode === 'tasks'}">Мои задачи</button></div>`;
 function renderTaskBoard(){
   const f = ui.tf || (ui.tf = { tpl:'', project:'', assignee:'', stage:'', hideDone:false });
   const projects = db.projects.filter(p => p.state !== 'archived' && (!f.tpl || p.template_id === f.tpl));
@@ -4072,6 +4450,341 @@ function renderTaskBoard(){
         <div class="tk-grid">${tasks.map(card).join('')}</div></div>`; }).join('')}</section>`).join('')
       : `<div class="empty">Задач пока нет${f.project || f.assignee || f.stage || f.hideDone ? ' под эти фильтры' : ''}.<br>Создайте задачу или сгенерируйте задачи из подэтапов текущего этапа проекта.<br><button class="primary" data-tnew>Новая задача</button></div>`}`;
 }
+
+// =====================================================================
+//  ЗАДАЧИ («Мой день»): проектные подзадачи текущего этапа + внутренние задачи
+//  Внутренние задачи — документы it/<id> { ownerId, memberIds:[владелец, исполнитель], json }:
+//  видят владелец, его руководители и исполнитель (права — миграция 20261024000000_internal_tasks.sql).
+// =====================================================================
+const IT = { list:[], subs:[] };
+const IT_STATUS = { todo:'К выполнению', in_progress:'В работе', review:'На проверке', done:'Готово' };
+const IT_PRI = { low:'Низкий', medium:'Средний', high:'Высокий', urgent:'Срочно' };
+const IT_CAT = { admin:'Административная', hr:'HR', marketing:'Маркетинг', finance:'Финансы', other:'Другое' };
+function watchIT(){
+  if (!cloud.store || !cloud.uid || IT.subs.length) return;
+  const on = snap => {
+    IT.list = snap.docs.map(d => { try { const b = d.data(); return { ...JSON.parse(b.json), _owner:b.ownerId, _members:b.memberIds || [] }; } catch(e) { return null; } }).filter(t => t && !t.deleted);
+    syncItMembers();
+    if ((ui.view === 'production' && ui.prodMode === 'tasks') || ui.view === 'mytasks' || ui.view === 'assign') render(); else paintBell();
+  };
+  IT.subs.push(cloud.store.collection('it').where('memberIds', 'array-contains', GUEST ? cloud.uid : OWNER()).onSnapshot(on, () => {}));
+}
+const itLocal = () => !cloud.store || !cloud.uid;
+const itAll = () => itLocal() ? (db.itasks || []) : IT.list;
+async function itSave(t){
+  t.updated_at = new Date().toISOString();
+  if (itLocal()){ db.itasks = db.itasks || []; const i = db.itasks.findIndex(x => x.id === t.id); if (i >= 0) db.itasks[i] = t; else db.itasks.push(t); commit(); return; }
+  const owner = t._owner || OWNER(); const acc = accOf(userById(t.assignee_id));
+  const members = [...new Set([owner, ...(t._members || []).filter(x => x !== owner), ...(acc && !t._members ? [acc] : [])])];
+  const { _owner, _members, ...json } = t;
+  const i = IT.list.findIndex(x => x.id === t.id); const keep = { ...t, _owner:owner, _members:members };
+  if (i >= 0) IT.list[i] = keep; else IT.list.push(keep);                  // сразу показываем, база догонит
+  try { await cloud.store.doc(`it/${t.id}`).set({ ownerId:owner, memberIds:members, json:JSON.stringify(json) }); }
+  catch(e) { toast('Не удалось сохранить задачу. Проверьте связь и попробуйте ещё раз.'); }
+}
+// исполнитель вошёл в приложение позже, чем ему поставили задачу, — открываем ему задачу
+function syncItMembers(){
+  if (GUEST || itLocal()) return;
+  IT.list.forEach(t => {
+    const acc = accOf(userById(t.assignee_id)); if (!acc || t._members.includes(acc) || (t._owner && t._owner !== OWNER())) return;
+    const members = [...new Set([...t._members.filter(x => x === t._owner), acc])];
+    const { _owner, _members, ...json } = t; t._members = members;
+    cloud.store.doc(`it/${t.id}`).set({ ownerId:t._owner, memberIds:members, json:JSON.stringify(json) }).catch(() => {});
+  });
+}
+async function itDelete(t){
+  if (itLocal()){ db.itasks = (db.itasks || []).filter(x => x.id !== t.id); commit(); return; }
+  IT.list = IT.list.filter(x => x.id !== t.id);
+  // удаления база не рассылает сразу: сначала помечаем задачу удалённой (это видят все), потом удаляем
+  const { _owner, _members, ...json } = t;
+  try { await cloud.store.doc(`it/${t.id}`).set({ ownerId:_owner || OWNER(), memberIds:_members || [OWNER()], json:JSON.stringify({ ...json, deleted:true }) });
+    await cloud.store.doc(`it/${t.id}`).delete(); } catch(e) { toast('Не удалось удалить задачу'); }
+}
+const itCanManage = t => !GUEST && (!t || !t._owner || t._owner === OWNER());
+// мои записи в командах чужих проектов (исполнитель знает себя по аккаунту)
+const myTeamIds = p => (p?._team || []).filter(x => x.acc === cloud.uid).map(x => x.id);
+
+// проектные подзадачи — только текущего этапа активных проектов
+function dayProjectItems(who){
+  const out = [];
+  const projects = [...(GUEST ? [] : db.projects), ...ext.projects].filter(p => p.state === 'active');
+  projects.forEach(p => {
+    const c = currentStage(p); if (!c) return;
+    const mine = p._ext ? myTeamIds(p) : null;
+    if (isMaint(c)){
+      (c.rtasks || []).forEach(r => { const w = r.assignee_id;
+        if (p._ext){ if (!mine.includes(w)) return; } else if (who && w !== who) return;
+        out.push({ kind:'p', id:`r|${p.id}|${r.id}`, p, s:c, r, x:null, t:null, who:w, done:false, own:r.due_date, due:r.due_date, title:r.title }); });
+      return;
+    }
+    const tasks = (p._ext ? ext.tasks : (db.tasks || [])).filter(t => t.project_id === p.id && t.stage_id === c.id);
+    const rows = (c.subs || []).map(x => ({ x, t:tasks.find(t => t.substage_id === x.id) || null }))
+      .concat(tasks.filter(t => !t.substage_id || !(c.subs || []).some(x => x.id === t.substage_id)).map(t => ({ x:null, t })));
+    rows.forEach(({ x, t }) => {
+      const w = whoId(p, c, t);
+      if (p._ext){ if (!mine.includes(w)) return; }
+      else if (who && w !== who) return;
+      const pr = t ? taskProgress(t) : null;
+      const done = t ? (pr.total ? pr.done : !!x?.done) : !!x?.done;
+      out.push({ kind:'p', id:t ? t.id : `${p.id}|${c.id}|${x.id}`, p, s:c, x, t, who:w, done, own:(t?.due_date || x?.due_date || ''), due:(t?.due_date || x?.due_date || c.due_date), title:t ? t.title : x.name });
+    });
+  });
+  return out;
+}
+function dayInternalItems(who){
+  return itAll().filter(t => GUEST ? true : (!who || t.assignee_id === who)).map(t => ({ kind:'i', id:t.id, it:t, who:t.assignee_id, done:t.status === 'done', due:t.due_date || '', title:t.title }));
+}
+const PRI_W = { urgent:0, high:1, medium:2, low:3 };
+const byDue = (a, b) => (a.done - b.done) || (a.due || '9999').localeCompare(b.due || '9999') || (PRI_W[a.it?.priority] ?? 2) - (PRI_W[b.it?.priority] ?? 2);
+let DAY_MODE = 'exec';
+function renderMyDay(mode = 'exec'){
+  DAY_MODE = mode; const admin = mode === 'admin' && !GUEST;
+  const tab = ui.dayTab || 'all';
+  // исполнитель — свои; «Мои задачи» руководителя — свои или «глазами» выбранного сотрудника; «Поручения» — все или выбранный
+  const who = GUEST ? '' : admin ? (ui.dayWho ?? '') : (ui.dayAs || ME);
+  if (!admin) return renderTodo(who);
+  const showDone = !!ui.dayDone; ui.dayFold = ui.dayFold || {};
+  if (admin && tab === 'm') return renderAssignMaint(who);
+  const pAll = tab !== 'i' ? dayProjectItems(who).filter(i => !i.r) : [], iAll = tab !== 'p' ? dayInternalItems(who) : [];
+  const doneN = [...pAll, ...iAll].filter(i => i.done).length;
+  const vis = list => (showDone ? list : list.filter(i => !i.done)).sort(byDue);
+  const pItems = vis(pAll), iItems = vis(iAll);
+  const asU = !admin && !GUEST && ui.dayAs ? userById(ui.dayAs) : null;
+  const head = `<div class="fn-head-row">${GUEST || admin ? '' : prodSwitch()}
+      <div class="seg-toggle" role="group" aria-label="Какие задачи">
+        <button data-daytab="all" aria-pressed="${tab === 'all'}">Все (Мой день)</button><button data-daytab="p" aria-pressed="${tab === 'p'}">Проектные</button><button data-daytab="i" aria-pressed="${tab === 'i'}">Внутренние</button><button data-daytab="m" aria-pressed="${tab === 'm'}">Ведение</button></div>
+      ${admin ? `<select id="dayWho" aria-label="Исполнитель"><option value="">Исполнитель: все</option>${db.users.map(u => `<option value="${u.id}" ${u.id === who ? 'selected' : ''}>${esc(u.id === ME ? `${u.name || 'Вы'} (вы)` : u.name || 'Без имени')}</option>`).join('')}</select>`
+        : GUEST ? '' : `<select id="dayAs" aria-label="Смотреть как"><option value="">Смотреть как: я</option>${db.users.filter(u => u.id !== ME).map(u => `<option value="${u.id}" ${u.id === ui.dayAs ? 'selected' : ''}>Как видит: ${esc(u.name || 'Без имени')}</option>`).join('')}</select>`}
+      <label class="inl hint"><input type="checkbox" id="dayDone" ${showDone ? 'checked' : ''}> Выполненные${doneN ? ` (${doneN})` : ''}</label>
+      ${admin ? '<button class="primary" data-itnew>+ Поставить задачу</button>' : ''}</div>
+    ${asU ? `<div class="as-note">Так видит свои задачи <b>${esc(asU.name || 'сотрудник')}</b>${asU.account_id ? '' : ' (ещё не вошёл в приложение)'}. <button class="link" data-dayas="">Вернуться к моим</button></div>` : ''}`;
+  // проекты: блок на проект, сначала те, где срок ближе
+  const groups = [];
+  pItems.forEach(i => { let g = groups.find(x => x.p.id === i.p.id); if (!g){ g = { p:i.p, s:i.s, items:[] }; groups.push(g); } g.items.push(i); });
+  groups.sort((a, b) => (a.items[0].due || '9999').localeCompare(b.items[0].due || '9999'));
+  const projHtml = groups.map(({ p, s, items }) => {
+    const open = ui.dayFold[p.id] === true; const left = items.filter(i => !i.done).length;   // по умолчанию свёрнуто
+    const n = p.stages.length, at = p.stages.indexOf(s) + 1;
+    return `<section class="dt-proj-sec${open ? '' : ' folded'}" data-dtproj="${p.id}">
+      <header class="dt-ph"><button class="dt-fold" data-dtfold="${p.id}" aria-expanded="${open}"><i aria-hidden="true"></i><b>${esc(p.name)}</b><small>${esc(p.client || '')}</small></button>
+        <span class="dt-stage">${at}/${n} ${esc(s.name)}</span>${dueTxt(s.due_date)}<span class="dt-cnt">${left ? `${left} ${plural(left, 'задача', 'задачи', 'задач')}` : 'всё готово'}</span>
+        <button class="link" data-dtopen="${p.id}|${s.id}">Открыть проект</button></header>
+      ${open ? `<div class="dt-list">${items.map(dayCard).join('')}</div>` : ''}</section>`;
+  }).join('');
+  let intHtml = '';
+  if (iItems.length && admin && !who){
+    const people = [...new Set(iItems.map(i => i.who))];
+    intHtml = `<h3 class="dt-h">Внутренние задачи по исполнителям</h3>` + people.map(id => { const g = iItems.filter(i => i.who === id); const left = g.filter(i => !i.done).length;
+      return `<section class="dt-group dt-person"><h3>${avHtml(userById(id) || {}, 'av av-sm')} ${esc(userById(id)?.name || 'Без исполнителя')} <span>${left ? `${left} в работе` : 'всё готово'}</span></h3><div class="dt-list">${g.map(dayCard).join('')}</div></section>`; }).join('');
+  } else if (iItems.length) intHtml = `<section class="dt-group"><h3>Внутренние задачи <span>${iItems.filter(i => !i.done).length}</span></h3><div class="dt-list">${iItems.map(dayCard).join('')}</div></section>`;
+  const empty = !pItems.length && !iItems.length;
+  const sum = admin ? 'Постановка и контроль: внутренние задачи по людям, проектные подзадачи текущих этапов. Срок подзадачи ставится прямо в карточке.'
+    : 'Что нужно сделать: подзадачи текущего этапа ваших проектов и внутренние задачи.';
+  app.innerHTML = head + `<p class="fn-sum">${sum}</p>`
+    + (empty ? `<div class="empty">${tab === 'i' ? 'Внутренних задач нет.' : tab === 'p' ? 'По текущим этапам проектов задач нет.' : 'Задач нет.'}${admin ? '<br><button class="primary" data-itnew>+ Поставить задачу</button>' : ''}</div>`
+      : intHtml + (groups.length ? `<h3 class="dt-h">Задачи по проектам <button class="link dt-all" data-dtall="${groups.every(g => ui.dayFold[g.p.id] === true) ? '0' : '1'}">${groups.every(g => ui.dayFold[g.p.id] === true) ? 'Свернуть все' : 'Развернуть все'}</button></h3>${projHtml}` : ''));
+}
+// «Мои задачи» / вкладка исполнителя: простой список с галочкой «выполнено»
+function renderTodo(who){
+  const showDone = !!ui.dayDone; const t0 = today();
+  const proj = dayProjectItems(who); const maintN = proj.filter(i => i.r).length;
+  const mtab = maintN && ui.todoTab === 'm';
+  const all = mtab ? proj.filter(i => i.r) : [...proj.filter(i => !i.r), ...dayInternalItems(who)];
+  const doneN = all.filter(i => i.done).length;
+  const list = (showDone ? all : all.filter(i => !i.done)).sort(byDue);
+  const overN = list.filter(i => !i.done && i.due && i.due < t0).length;
+  const asU = !GUEST && ui.dayAs ? userById(ui.dayAs) : null;
+  const row = i => {
+    const key = i.kind === 'i' ? `i|${i.id}` : i.r ? `r|${i.p.id}|${i.r.id}` : i.t ? `t|${i.t.id}` : `x|${i.p.id}|${i.s.id}|${i.x?.id || ''}`;
+    const sub = i.kind === 'i'
+      ? `Внутренняя · ${esc(IT_CAT[i.it.category] || 'Другое')}${i.it.priority === 'urgent' || i.it.priority === 'high' ? ` · <span class="td-pri pri-t-${i.it.priority}">${IT_PRI[i.it.priority]}</span>` : ''}${i.it.status === 'in_progress' || i.it.status === 'review' ? ` · ${IT_STATUS[i.it.status]}` : ''}`
+      : i.r ? `${esc(i.p.name)} · Ведение · ${FREQ[i.r.frequency]?.[0] || ''}`
+      : `${esc(i.p.name)} · ${i.p.stages.indexOf(i.s) + 1}/${i.p.stages.length} ${esc(i.s.name)}${i.t && taskProgress(i.t).total ? ` · ${taskProgress(i.t).n} из ${taskProgress(i.t).total}` : ''}`;
+    return `<li class="td-row${i.done ? ' done' : ''}" data-kind="${i.kind}"${i.p ? ` data-pid="${i.p.id}"` : ''}>
+      <input type="checkbox" class="td-chk" data-tddone="${key}" ${i.done ? 'checked' : ''} aria-label="Выполнено: ${esc(i.title)}">
+      <button class="td-main" data-tdopen="${key}"><b>${esc(i.title)}</b><small>${sub}</small></button>
+      ${i.due ? dueTxt(i.due) : '<span class="dt-due td-nodue">без срока</span>'}</li>`;
+  };
+  app.innerHTML = `<div class="fn-head-row">${GUEST ? '<h2 class="td-title">Мои задачи</h2>' : prodSwitch()}
+      ${maintN ? `<div class="seg-toggle" role="group" aria-label="Задачи или ведение"><button data-todotab="t" aria-pressed="${!mtab}">Задачи</button><button data-todotab="m" aria-pressed="${!!mtab}">Ведение <span class="seg-n">${maintN}</span></button></div>` : ''}
+      ${GUEST ? '' : `<select id="dayAs" aria-label="Смотреть как"><option value="">Смотреть как: я</option>${db.users.filter(u => u.id !== ME).map(u => `<option value="${u.id}" ${u.id === ui.dayAs ? 'selected' : ''}>Как видит: ${esc(u.name || 'Без имени')}</option>`).join('')}</select>`}
+      <label class="inl hint"><input type="checkbox" id="dayDone" ${showDone ? 'checked' : ''}> Выполненные${doneN ? ` (${doneN})` : ''}</label></div>
+    ${asU ? `<div class="as-note">Так видит свои задачи <b>${esc(asU.name || 'сотрудник')}</b>${asU.account_id ? '' : ' (ещё не вошёл в приложение)'}. <button class="link" data-dayas="">Вернуться к моим</button></div>` : ''}
+    <p class="fn-sum">${mtab ? 'Регулярные задачи проектов на ведении. Отметьте галочкой — задача уйдёт на следующий цикл.' : list.filter(i => !i.done).length ? `Задач: ${list.filter(i => !i.done).length}${overN ? `, просрочено: ${overN}` : ''}. Отметьте галочкой, когда сделано.` : 'Все задачи выполнены.'}</p>
+    ${list.length ? `<ul class="td-list">${list.map(row).join('')}</ul>` : '<div class="empty">Задач нет.</div>'}`;
+}
+// галочка «выполнено»: внутренняя — статус «Готово»; карточка — все пункты чек-листа; подэтап — отметка подэтапа
+document.addEventListener('change', e => {
+  const k = e.target.dataset?.tddone; if (!k) return;
+  const on = e.target.checked; const [kind, ...ids] = k.split('|');
+  if (kind === 'r'){ const p = projById(ids[0]); const r = p?.stages.find(isMaint)?.rtasks?.find(x => x.id === ids[1]); if (r && on) completeRtask(p, r); else render(); return; }
+  if (kind === 'i'){ const t = itAll().find(x => x.id === ids[0]); if (!t) return; itSave({ ...t, status:on ? 'done' : 'todo' }); render(); if (on) toast(`«${t.title}» — готово`); return; }
+  if (kind === 't'){
+    const t = taskById(ids[0]); if (!t) return; const p = projById(t.project_id); const s = p?.stages.find(y => y.id === t.stage_id);
+    if (t.checklist.length){ const now = new Date().toISOString();
+      t.checklist.forEach(i => { if (i.done !== on){ i.done = on; i.completed_at = on ? now : null; i.completed_by = on ? meName() : null; } });
+      syncTaskToSub(t); save(); render(); if (on) toast(`«${t.title}» — выполнено`); return; }
+    const x = s?.subs?.find(y => y.id === t.substage_id); if (x) toggleSub(p, s, x, on); return;
+  }
+  const p = projById(ids[0]); const s = p?.stages.find(y => y.id === ids[1]); const x = s?.subs?.find(y => y.id === ids[2]); if (x) toggleSub(p, s, x, on);
+});
+document.addEventListener('click', e => {
+  const o = e.target.closest?.('[data-tdopen]'); if (!o) return;
+  const [kind, ...ids] = o.dataset.tdopen.split('|');
+  if (kind === 'i') return openItask(ids[0]);
+  if (kind === 'r') return openRtask(ids[0], ids[1]);
+  if (kind === 't') return openTask(ids[0]);
+  const q = projById(ids[0]); if (q && !q._ext) openProject(ids[0], ids[1]); else { ui.myProject = ids[0]; ui.view = 'mine'; render(); }
+});
+// «Поручения → Ведение»: все проекты на ведении, их регулярные задачи и постановка новых
+function renderAssignMaint(who){
+  const list = db.projects.filter(p => p.state !== 'archived' && p.is_maintenance && p.stages.some(isMaint))
+    .sort((a, b) => (b.stages.find(isMaint).status === 'in_progress') - (a.stages.find(isMaint).status === 'in_progress') || a.name.localeCompare(b.name, 'ru'));
+  const head = `<div class="fn-head-row"><div class="seg-toggle" role="group" aria-label="Какие задачи">
+      <button data-daytab="all">Все (Мой день)</button><button data-daytab="p">Проектные</button><button data-daytab="i">Внутренние</button><button data-daytab="m" aria-pressed="true">Ведение</button></div>
+    <select id="dayWho" aria-label="Исполнитель"><option value="">Исполнитель: все</option>${db.users.map(u => `<option value="${u.id}" ${u.id === who ? 'selected' : ''}>${esc(u.id === ME ? `${u.name || 'Вы'} (вы)` : u.name || 'Без имени')}</option>`).join('')}</select></div>`;
+  app.innerHTML = head + `<p class="fn-sum">Проекты на абонентском ведении и их регулярные задачи. Задача по проекту ставится кнопкой «+ Добавить регулярную задачу».</p>`
+    + (list.length ? list.map(p => { const ms = p.stages.find(isMaint); const h = health(ms); const n = (ms.rtasks || []).filter(r => !who || r.assignee_id === who).length;
+        return `<section class="dt-proj-sec m-sec" data-mproj="${p.id}"><header class="dt-ph"><span class="dt-fold"><b>${esc(p.name)}</b><small>${esc(p.client || '')}</small></span>
+          <span class="pill st-pill s-${h.key}">${STATUS_ICO[h.key] || STATUS_ICO.maint}${ms.status === 'in_progress' ? h.label : 'Ещё в воронке'}</span><span class="dt-cnt">${n} ${plural(n, 'регулярная задача', 'регулярные задачи', 'регулярных задач')}</span>
+          <button class="link" data-open="${p.id}" data-stage="${ms.id}">Открыть проект</button></header>${rtaskBlock(p, ms, false, who)}</section>`; }).join('')
+      : '<div class="empty">Проектов на ведении нет. Включите «На ведении после воронки» в карточке проекта или при создании.</div>');
+}
+const dueTxt = d => { if (!d) return ''; const u = urg(d); return `<span class="dt-due ut-${u.k}">${FLAG}${fmt(d)}${u.k === 'over' || u.k === 'hot' ? ` · ${u.txt}` : ''}</span>`; };
+function dayCard(i){
+  const showWho = DAY_MODE === 'admin' && !GUEST && !(ui.dayWho);
+  if (i.kind === 'p' && i.r){
+    const { p, r } = i;
+    return `<article class="dt dt-p dt-r" data-redit="${p.id}|${r.id}" tabindex="0">
+      <div class="dt-main"><input type="checkbox" class="dt-chk" data-rdone="${p.id}|${r.id}" aria-label="Выполнено в этом цикле: ${esc(r.title)}"><b>${esc(r.title)}</b></div>
+      <div class="dt-meta"><span class="rt-freq">${RT_ICO}${FREQ[r.frequency]?.[0] || ''}</span>${showWho && r.assignee_id ? `<span>${esc(rWho(p, r.assignee_id))}</span>` : ''}${dueTxt(r.due_date)}<span class="dt-st">Ведение</span></div>
+    </article>`;
+  }
+  if (i.kind === 'p'){
+    const { p, s, x, t } = i; const pr = t ? taskProgress(t) : null;
+    const nameOf_ = id => p._ext ? ((p._team || []).find(m => m.id === id)?.name || '') : short(id);
+    const canDue = DAY_MODE === 'admin' && !GUEST && !p._ext;
+    const dueKey = t ? `t|${t.id}` : `x|${p.id}|${s.id}|${x?.id || ''}`;
+    return `<article class="dt dt-p${i.done ? ' done' : ''}" ${t ? `data-task="${t.id}"` : `data-dtopen="${p.id}|${s.id}"`} tabindex="0">
+      <div class="dt-main">${!t || !pr.total ? `<input type="checkbox" class="dt-chk" data-sub="${p.id}|${s.id}|${x?.id || ''}" ${i.done ? 'checked' : ''} aria-label="Выполнено: ${esc(i.title)}" ${x ? '' : 'disabled'}>` : ''}<b>${esc(i.title)}</b></div>
+      <div class="dt-meta">${t && pr.total ? `<span class="dt-ck">${pr.n} из ${pr.total}</span>` : ''}${showWho && i.who ? `<span>${esc(nameOf_(i.who))}</span>` : ''}
+        ${canDue ? `<label class="dt-date${i.own ? ' own' : ''}" title="${i.own ? 'Срок подзадачи' : 'Срок этапа — нажмите, чтобы поставить свой срок подзадаче'}">${FLAG}<input type="date" data-dtdue="${dueKey}" value="${esc(i.own || '')}" aria-label="Срок подзадачи «${esc(i.title)}»"><span>${i.own ? fmt(i.own) : `${fmt(s.due_date)} (этап)`}</span></label>${i.own && !i.done ? dueWarn(i.own) : ''}` : dueTxt(i.due)}
+        <span class="dt-st">${i.done ? 'Готово' : esc(health(s).label)}</span></div>
+    </article>`;
+  }
+  const t = i.it;
+  return `<article class="dt dt-i${i.done ? ' done' : ''}" data-itopen="${t.id}" tabindex="0">
+    <div class="dt-badges"><span class="dt-int">Внутренняя · ${esc(IT_CAT[t.category] || 'Другое')}</span>${t.priority === 'urgent' || t.priority === 'high' ? `<span class="dt-pri pri-${t.priority}">${FLAG}${IT_PRI[t.priority]}</span>` : ''}</div>
+    <div class="dt-main"><b>${esc(t.title)}</b></div>
+    ${t.description ? `<p class="dt-desc">${esc(t.description.slice(0, 140))}${t.description.length > 140 ? '…' : ''}</p>` : ''}
+    <div class="dt-meta">${t.creator_name ? `<span>от ${esc(t.creator_name)}</span>` : ''}${showWho ? `<span>→ ${esc(short(t.assignee_id))}</span>` : ''}${dueTxt(t.due_date)}
+      <select class="dt-status st-${t.status}" data-itstatus="${t.id}" aria-label="Статус задачи «${esc(t.title)}»">${Object.entries(IT_STATUS).map(([k, v]) => `<option value="${k}" ${k === t.status ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+  </article>`;
+}
+const dueWarn = d => { const u = urg(d); return u.k === 'over' || u.k === 'hot' ? `<span class="dt-due ut-${u.k}">${u.txt}</span>` : ''; };
+// срок подзадачи ставит руководитель: у карточки — t.due_date, у подэтапа без карточки — x.due_date
+document.addEventListener('change', e => {
+  const k = e.target.dataset?.dtdue; if (!k) return;
+  const v = e.target.value || null; const [kind, ...ids] = k.split('|');
+  if (kind === 't'){ const t = taskById(ids[0]); if (!t) return; t.due_date = v; const p = projById(t.project_id); if (p) addLog(p, `Срок подзадачи «${t.title}»: ${v ? fmt(v) : 'как у этапа'}`); }
+  else { const p = projById(ids[0]); const st = p?.stages.find(y => y.id === ids[1]); const x = st?.subs?.find(y => y.id === ids[2]); if (!x) return; x.due_date = v; addLog(p, `Срок подэтапа «${x.name}»: ${v ? fmt(v) : 'как у этапа'}`); }
+  commit(); toast(v ? `Срок: ${fmt(v)}` : 'Срок как у этапа');
+});
+
+// ---------- Уведомления: что мне сделать ----------
+// мои невыполненные задачи (проектные текущего этапа + внутренние); «новые» — которых я ещё не видел в колокольчике
+function myTodo(){
+  const mineP = dayProjectItems(GUEST ? '' : ME).filter(i => !i.done && (GUEST || !i.p._ext || myTeamIds(i.p).includes(i.who)));
+  const mineI = itAll().filter(t => t.status !== 'done' && (GUEST || t.assignee_id === ME)).map(t => ({ kind:'i', id:t.id, it:t, done:false, due:t.due_date || '', title:t.title }));
+  return [...mineP, ...mineI];
+}
+const NSEEN_KEY = () => KEY + '-seen', NSENT_KEY = () => KEY + '-notified';
+const readSet = k => { try { return new Set(JSON.parse(localStorage.getItem(k) || '[]')); } catch(e) { return new Set(); } };
+const writeSet = (k, set) => { try { localStorage.setItem(k, JSON.stringify([...set].slice(-500))); } catch(e) {} };
+function myAlerts(){
+  const t0 = today(); const seen = readSet(NSEEN_KEY()); const first = (() => { try { return localStorage.getItem(NSEEN_KEY()) === null; } catch(e) { return true; } })();
+  const list = myTodo();
+  if (first){ writeSet(NSEEN_KEY(), new Set(list.map(i => i.id))); return { over:list.filter(i => i.due && i.due < t0), today:list.filter(i => i.due === t0), fresh:[] }; }
+  return { over:list.filter(i => i.due && i.due < t0), today:list.filter(i => i.due === t0), fresh:list.filter(i => !seen.has(i.id)) };
+}
+function alertCount(){ const a = myAlerts(); return new Set([...a.over, ...a.today, ...a.fresh].map(i => i.id)).size; }
+// уведомления браузера (если человек разрешил): о новых задачах и раз в день — что на сегодня
+function pushNotify(){
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  const a = myAlerts(); const sent = readSet(NSENT_KEY());
+  a.fresh.filter(i => !sent.has('new:' + i.id)).slice(0, 3).forEach(i => { try { new Notification('Новая задача', { body:`${i.title}${i.p ? ` — ${i.p.name}` : ''}${i.due ? `, срок ${fmt(i.due)}` : ''}`, tag:'kz-' + i.id }); } catch(e) {} sent.add('new:' + i.id); });
+  const day = 'day:' + today(); const n = a.over.length + a.today.length;
+  if (n && !sent.has(day)){ try { new Notification('Задачи на сегодня', { body:`${a.today.length ? `Сегодня: ${a.today.length}. ` : ''}${a.over.length ? `Просрочено: ${a.over.length}.` : ''}`.trim(), tag:'kz-day' }); } catch(e) {} sent.add(day); }
+  writeSet(NSENT_KEY(), sent);
+}
+const ntfItem = i => i.kind === 'i'
+  ? `<button class="ntf" data-itopen="${i.id}"><span class="sw ${i.due && i.due < today() ? 'red' : 'yellow'}"></span><span><b>${esc(i.title)}</b><small>Внутренняя${i.due ? ` · срок ${fmt(i.due)}` : ''}</small></span></button>`
+  : `<button class="ntf" ${i.t ? `data-task="${i.t.id}"` : `data-ntfday="1"`}><span class="sw ${i.due && i.due < today() ? 'red' : 'yellow'}"></span><span><b>${esc(i.title)}</b><small>${esc(i.p.name)} · ${esc(i.s.name)}${i.due ? ` · срок ${fmt(i.due)}` : ''}</small></span></button>`;
+function openItask(id){
+  const t = id ? itAll().find(x => x.id === id) : null; const manage = itCanManage(t);
+  const v = t || { title:'', description:'', assignee_id:ui.dayWho || ui.dayAs || ME, priority:'medium', category:'admin', status:'todo', due_date:'' };
+  const ro = manage ? '' : 'disabled';
+  layer.innerHTML = `<div class="backdrop" data-close></div>
+  <div class="modal it-modal" role="dialog" aria-modal="true" aria-labelledby="itT">
+    <h2 id="itT">${t ? (manage ? 'Внутренняя задача' : esc(t.title)) : 'Новая внутренняя задача'}</h2>
+    <form class="form" id="itForm" data-itid="${t ? t.id : ''}" novalidate>
+      <div class="field"><label for="itTitle">Название</label><input id="itTitle" value="${esc(v.title)}" maxlength="200" ${ro} autocomplete="off"></div>
+      <div class="field"><label for="itDesc">Описание</label><textarea id="itDesc" rows="3" maxlength="4000" ${ro}>${esc(v.description || '')}</textarea></div>
+      <div class="two">
+        <div class="field"><label for="itWho">Исполнитель</label><select id="itWho" ${ro}>${GUEST ? `<option>${esc(ui.meAcc?.name || 'Вы')}</option>` : peopleOpts(v.assignee_id)}</select></div>
+        <div class="field"><label for="itDue">Дедлайн</label><input id="itDue" type="date" value="${esc(v.due_date || '')}" ${ro}></div>
+      </div>
+      <div class="two">
+        <div class="field"><label for="itPri">Приоритет</label><select id="itPri" ${ro}>${Object.entries(IT_PRI).map(([k, x]) => `<option value="${k}" ${k === v.priority ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+        <div class="field"><label for="itCat">Категория</label><select id="itCat" ${ro}>${Object.entries(IT_CAT).map(([k, x]) => `<option value="${k}" ${k === v.category ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+      </div>
+      <div class="field"><label for="itStatus">Статус</label><select id="itStatus">${Object.entries(IT_STATUS).map(([k, x]) => `<option value="${k}" ${k === v.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+      ${t ? `<p class="hint">Поставил(а): ${esc(t.creator_name || '—')}, ${new Date(t.created_at).toLocaleDateString('ru-RU')}</p>` : ''}
+      <div class="err" id="itErr" aria-live="polite"></div>
+      <div class="actions">${t && manage ? '<button type="button" class="ghost danger m-out" id="itDel">Удалить</button>' : ''}<button type="button" class="ghost" data-close>Отмена</button><button class="primary">${t ? 'Сохранить' : 'Поставить задачу'}</button></div>
+    </form></div>`;
+  (t ? $('#itStatus') : $('#itTitle')).focus();
+}
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'itForm') return; e.preventDefault();
+  const id = e.target.dataset.itid; const old = id ? itAll().find(x => x.id === id) : null;
+  if (old && !itCanManage(old)){ itSave({ ...old, status:$('#itStatus').value }); layer.innerHTML = ''; render(); toast('Статус обновлён'); return; }
+  const title = $('#itTitle').value.trim(); if (!title){ $('#itErr').textContent = 'Укажите название задачи'; return; }
+  const who = $('#itWho').value; if (!who){ $('#itErr').textContent = 'Выберите исполнителя'; return; }
+  const now = new Date().toISOString();
+  const t = { ...(old || { id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Руководитель', created_at:now }),
+    title, description:$('#itDesc').value.trim(), assignee_id:who, priority:$('#itPri').value, category:$('#itCat').value, status:$('#itStatus').value, due_date:$('#itDue').value || '' };
+  if (old && old.assignee_id !== who) delete t._members;                    // сменили исполнителя — пересобираем доступ
+  itSave(t); layer.innerHTML = ''; render();
+  const u = userById(who);
+  toast(old ? 'Задача сохранена' : u && who !== ME && !accOf(u) ? `Задача поставлена. ${u.name} увидит её после входа в приложение` : 'Задача поставлена');
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'dayWho'){ ui.dayWho = e.target.value; render(); return; }
+  if (e.target.id === 'dayAs'){ ui.dayAs = e.target.value; render(); return; }
+  if (e.target.id === 'dayDone'){ ui.dayDone = e.target.checked; render(); return; }
+  const st = e.target.dataset?.itstatus; if (!st) return;
+  const t = itAll().find(x => x.id === st); if (!t) return;
+  itSave({ ...t, status:e.target.value }); render();
+  if (e.target.value === 'done') toast(`«${t.title}» — готово`);
+});
+document.addEventListener('click', e => {
+  const dt = e.target.closest?.('[data-daytab]'); if (dt){ ui.dayTab = dt.dataset.daytab; render(); return; }
+  const tt = e.target.closest?.('[data-todotab]'); if (tt){ ui.todoTab = tt.dataset.todotab; render(); return; }
+  const fd = e.target.closest?.('[data-dtfold]'); if (fd){ ui.dayFold = ui.dayFold || {}; ui.dayFold[fd.dataset.dtfold] = ui.dayFold[fd.dataset.dtfold] !== true; render(); return; }
+  const fa = e.target.closest?.('[data-dtall]'); if (fa){ ui.dayFold = ui.dayFold || {}; const on = fa.dataset.dtall === '1';
+    app.querySelectorAll('[data-dtproj]').forEach(sc => { ui.dayFold[sc.dataset.dtproj] = on; }); render(); return; }
+  const da = e.target.closest?.('[data-dayas]'); if (da){ ui.dayAs = da.dataset.dayas; render(); return; }
+  if (e.target.closest?.('[data-itnew]')){ openItask(null); return; }
+  if (e.target.id === 'itDel'){ const t = itAll().find(x => x.id === $('#itForm').dataset.itid);
+    askConfirm({ title:`Удалить задачу «${t.title}»?`, text:'Задача исчезнет у исполнителя. Восстановить её будет нельзя.', ok:'Удалить' }).then(y => { if (y){ itDelete(t); layer.innerHTML = ''; render(); toast('Задача удалена'); } }); return; }
+  if (e.target.closest?.('select, input, a, label.dt-date, button:not(.dt):not([data-dtopen]):not(.ntf)')) return;
+  const io = e.target.closest?.('[data-itopen]'); if (io){ openItask(io.dataset.itopen); return; }
+  const po = e.target.closest?.('[data-dtopen]'); if (po){ const [pid, sid] = po.dataset.dtopen.split('|'); const q = projById(pid);
+    if (q && !q._ext) openProject(pid, sid); else { ui.myProject = pid; ui.view = 'mine'; render(); } }
+});
+// экран исполнителя: «Проекты | Задачи»
+function renderMine(){ renderProjectFocus(true); }
 
 // ---------- модальное окно задачи: режим просмотра и режим редактирования ----------
 const taskLayer = () => document.getElementById('taskLayer');
@@ -4358,7 +5071,7 @@ function saveTaskDraft(){
     const tpl = tplById(p.template_id); const st = p.stages.find(x => x.id === t.stage_id); const ts = tpl && st && tpl.stages.find(x => norm(x.name) === norm(st.name));
     if (ts && !(ts.subs || []).some(x => norm(x.name) === norm(subX.name))){
       const at = (st.subs || []).findIndex(x => x.id === subX.id); (ts.subs = ts.subs || []).splice(Math.min(at < 0 ? ts.subs.length : at, ts.subs.length), 0, { id:uid(), name:subX.name });
-      synced += applyTplToProjects(tpl).cards;
+      synced += syncAllTemplates(tpl.id);
     } }
   if (d.asTpl && subX && !filled) d.asTpl = false;
   addLog(p, `Подэтап «${t.title}» отредактирован${d.asTpl && subX ? ' и сохранён как шаблон' : ''}`);
@@ -4419,9 +5132,9 @@ function moveDraftItem(from, to){ const a = ui.taskDraft.items; if (to < 0 || to
 document.addEventListener('click', e => {
   const tg = e.target;
   const pm = tg.closest('[data-pmode]'); if (pm){ ui.prodMode = pm.dataset.pmode; render(); return; }
-  const card = tg.closest('[data-task]'); if (card && !tg.closest('#taskLayer')){ e.preventDefault(); openTask(card.dataset.task); return; }
+  const card = tg.closest('[data-task]'); if (card && !tg.closest('#taskLayer') && !tg.closest('.dt-chk, .dt-status, .dt-date')){ e.preventDefault(); openTask(card.dataset.task); return; }
   if (tg.closest('[data-tnew]')){ openNewTask({ project_id: ui.tf?.project }); return; }
-  const fs = tg.closest('[data-fn-tasks]'); if (fs){ ui.prodMode = 'tasks'; ui.tf = { tpl:ui.prodTpl, project:'', assignee:'', stage:fs.dataset.fnTasks, hideDone:false }; render(); return; }
+  const fs = tg.closest('[data-fn-tasks]'); if (fs){ ui.view = 'assign'; ui.dayTab = 'p'; render(); return; }
   const ts = tg.closest('[data-tsubs]'); if (ts){ const [pid, sid] = ts.dataset.tsubs.split('|'); const p = projById(pid); const n = tasksFromSubs(p, p.stages.find(s => s.id === sid)); commit(); toast(`Создано задач: ${n}`); return; }
   if (!tg.closest('#taskLayer')) return;
   if (tg.closest('[data-open]')){ closeTask(); return; }
@@ -4670,7 +5383,7 @@ function renderProjectFocus(mine = false){
     const subs = s.subs || [];
     const doneN = subs.filter(x => subDone(p, s, x)).length;
     const passed = s.status === 'done';
-    const cards = subs.map(x => {
+    const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
       if (mine && !t) return tickCard(p, s, x, here);
@@ -4685,8 +5398,8 @@ function renderProjectFocus(mine = false){
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}</header>
-      <div class="pf-cards">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
-      ${canEdit ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
+      <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
+      ${canEdit && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
     </section>`;
   }).join('');
 
@@ -4792,7 +5505,7 @@ function cloudApply(r){
   migrate(); if (!db.cardTplsInit){ migrateCardTpls(); scheduleCloud(); }
   (db.reports || []).forEach(fixReport);
   if (ORG && adoptOrgMe()) scheduleCloud();
-  if (migrateLinks() + repairStageOrder() + syncDoneStages() + replanAll()) scheduleCloud();
+  if (migrateLinks() + repairStageOrder() + syncAllTemplates() + syncDoneStages() + replanAll()) scheduleCloud();
   if (ui.open && !projById(ui.open)) closeLayer();
   if (db.onboarded && layer.querySelector('#mForm')) layer.innerHTML = '';
   if (ui.taskId){ if (taskById(ui.taskId)) renderTaskModal(); else closeTask(); }
@@ -4824,6 +5537,8 @@ function mergeRemote(remote, base, baseMeta){
 const metaBase = m => Object.fromEntries(META_FIELDS.map(f => [f, m?.[f]]));
 // владелец данных: я сам или владелец команды, в которой я руководитель
 const OWNER = () => cloud.owner || cloud.uid;
+// аккаунт сотрудника команды: вошедший — свой; запись владельца ('me') — аккаунт владельца
+const accOf = u => u ? (u.account_id || (u.id === 'me' ? OWNER() : null)) : null;
 // руководитель в пространстве владельца: находим (или заводим) свою запись в команде — она и есть «Вы»
 function adoptOrgMe(){
   if (!ORG || !cloud.uid) return false;
@@ -5061,9 +5776,11 @@ const shareCount = p => (p?.share?.members?.length || 0) + (p?.share?.guests?.le
 const ownShared = () => db.projects.filter(p => (shareCount(p) || p.share?.links?.length) && p.state !== 'archived');
 function sharedBodies(){
   const out = new Map();
+  const team = db.users.map(u => ({ id:u.id, acc:accOf(u), name:u.name || '' })).filter(x => x.acc);
   const add = (p, ownerId, members) => {
-    let json = JSON.stringify(trimLog(p));
-    if (json.length > 200000) json = JSON.stringify({ ...trimLog(p), log:(p.log || []).slice(0, 20) });
+    const body = { ...trimLog(p), _team:p._ext ? (p._team || []) : team };
+    let json = JSON.stringify(body);
+    if (json.length > 200000) json = JSON.stringify({ ...body, log:(p.log || []).slice(0, 20) });
     out.set(`sp/${p.id}`, { ownerId, members, memberIds:members.map(m => m.id), json });
     const tasks = (p._ext ? ext.tasks : db.tasks).filter(t => t.project_id === p.id);
     tasks.forEach(t => out.set(`sp/${p.id}/tasks/${t.id}`, { json:JSON.stringify(t) }));
@@ -5331,6 +6048,7 @@ function setMode(m){
 }
 function initShared(){
   if (!cloud.store || !cloud.uid) return;
+  try { watchIT(); } catch(e) { /* задачи не критичны */ }
   watchMine(); syncSharedSubs(); watchTeam();
   if (ownShared().length) scheduleShared();
   if (GUEST) cloud.user.me().then(m => { ui.meAcc = m; paintMeBtn(); }, () => {}); else refreshProfiles(true);
@@ -5663,6 +6381,8 @@ const MNAV = {
   production:['Произв.', MI('<path d="M3 12h4l3-8 4 16 3-8h4"/>')],
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
+  assign:['Поручения', MI('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2 2 4-4M8.5 17h7"/>')],
+  mytasks:['Задачи', MI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5 2.5-2.5"/>')],
   reports:['AI-отчёты', MI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')],
   team:['Команда', MI('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>')],
   templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
@@ -5704,9 +6424,10 @@ document.addEventListener('click', e => {
   const k = c.dataset.kdrisk; ui.risk = ui.risk === k ? '' : k; render();
 });
 const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>');
-const moreViews = () => ['mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
+const moreViews = () => ['assign', 'mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
 function renderMobileNav(){
   const nav = $('#mnav'); if (!nav) return;
+  if (GUEST){ nav.innerHTML = ['mine', 'mytasks'].map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
   const inMore = !MNAV_MAIN.includes(ui.view);
   nav.innerHTML = MNAV_MAIN.map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')
     + `<button data-mmore aria-current="${inMore ? 'page' : 'false'}" aria-haspopup="dialog">${inMore ? MNAV[ui.view][1] : MORE_ICON}<span>${inMore ? MNAV[ui.view][0] : 'Ещё'}</span></button>`;
