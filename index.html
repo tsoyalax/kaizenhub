@@ -557,8 +557,11 @@ body.selecting #app{padding-bottom:90px}
 .msg-ico.copied{color:var(--g)}
 .msg-pop-h{display:flex;align-items:baseline;gap:8px;padding:2px 2px 6px}.msg-pop-h b{font-size:13.5px}.msg-pop-h small{color:var(--muted);font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .msg-pop-text{font-size:14px;line-height:1.5;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;max-height:240px;overflow:auto;word-break:break-word}
-.msg-pop .msg-pop-copy{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:8px;background:var(--accent);color:var(--accent-ink);border-radius:9px;padding:9px 14px;font-weight:500}
-.msg-pop .msg-pop-copy:hover{background:var(--accent);opacity:.9}.msg-pop-copy svg{width:15px;height:15px}
+.msg-pop-text{position:relative;padding-right:34px!important}
+.msg-pop .msg-pop-copy{position:absolute;top:6px;right:6px;display:grid;place-items:center;width:24px;height:24px;padding:0;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.msg-pop .msg-pop-copy:hover{color:var(--ink);background:var(--surface);border-color:var(--line-strong)}
+.msg-pop .msg-pop-copy.done{color:var(--g);border-color:var(--g)}
+.msg-pop-copy svg{width:13px;height:13px}
 .msg-pop .msg-pop-h .tx{display:inline-grid;place-items:center;opacity:1;width:24px;height:24px;padding:0;font-size:18px;color:var(--muted)}
 .msg-field textarea{width:100%;margin-top:8px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:9px 10px;font:inherit;font-size:14px;resize:vertical}
 .msg-field .check span b{font-weight:600}
@@ -4929,6 +4932,7 @@ function blocksEditor(list, ctx){
       <button type="button" class="tx bk-x" data-bkdel="${k}" aria-label="Удалить блок ${k + 1}" title="Удалить блок">×</button></li>`).join('')}</ol>
     <div class="bk-add" data-bkctx="${ctx}"><span class="hint">Добавить блок:</span>${ADD_T.map(k => `<button type="button" class="ghost" data-bkadd="${k}">+ ${BLOCK_T[k]}</button>`).join('')}</div></div>`;
 }
+const OK_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 const COPY_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
 // копирование шаблона сообщения
 async function copyText(txt){
@@ -4951,8 +4955,7 @@ function openMsgPick(el){
   const r = el.getBoundingClientRect(); const W = Math.min(360, innerWidth - 16);
   document.body.insertAdjacentHTML('beforeend', `<div class="msg-pop" role="dialog" aria-label="Шаблон сообщения" style="top:${Math.round(Math.min(r.bottom + 6, innerHeight - 220))}px;left:${Math.round(Math.max(8, Math.min(r.right - W, innerWidth - W - 8)))}px;width:${W}px">
     <div class="msg-pop-h"><b>Шаблон сообщения</b><small>${esc(t.title)}</small><button type="button" class="tx" data-msgclose aria-label="Закрыть">×</button></div>
-    ${ms.map(m => { const txt = fillMsg(m.value, p, t); return `<div class="msg-pop-text">${esc(txt).replace(/\n/g, '<br>')}</div>
-      <button type="button" class="primary msg-pop-copy" data-msgcopy="${esc(encodeURIComponent(txt))}">${COPY_ICO}<span class="msg-copy-l">Копировать</span></button>`; }).join('')}</div>`);
+    ${ms.map(m => { const txt = fillMsg(m.value, p, t); return `<div class="msg-pop-text"><button type="button" class="msg-pop-copy" data-msgcopy="${esc(encodeURIComponent(txt))}" title="Копировать" aria-label="Копировать сообщение">${COPY_ICO}</button>${esc(txt).replace(/\n/g, '<br>')}</div>`; }).join('')}</div>`);
 }
 document.addEventListener('click', async e => {
   const pk = e.target.closest?.('[data-msgpick]');
@@ -4961,7 +4964,7 @@ document.addEventListener('click', async e => {
   const b = e.target.closest?.('[data-msgcopy]');
   if (!b){ if (!e.target.closest?.('.msg-pop')) document.querySelector('.msg-pop')?.remove(); return; }
   e.preventDefault(); e.stopPropagation();
-  if (await doCopy(b)){ const l = b.querySelector('.msg-copy-l'); if (l) l.textContent = 'Скопировано'; setTimeout(() => document.querySelector('.msg-pop')?.remove(), 900); }
+  if (await doCopy(b)){ if (b.classList.contains('msg-pop-copy')){ b.innerHTML = OK_ICO; b.classList.add('done'); } setTimeout(() => document.querySelector('.msg-pop')?.remove(), 900); }
 }, true);
 document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('.msg-ico')){ e.preventDefault(); e.target.click(); } });
 const bkList = ctx => ctx === 'ce' ? (ui.ce.b = ui.ce.b || []) : (ui.taskDraft.blocks = ui.taskDraft.blocks || []);
