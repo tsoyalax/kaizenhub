@@ -80,9 +80,19 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   // 6) регулярные задачи в задачах исполнителя и в «Поручениях»
   E(`(() => { const p = projById('${pid}'); p.stages.at(-1).rtasks.forEach(r => r.assignee_id = ME); commit(); })()`);
   D.querySelector('.tabs [data-view="production"]').click(); await wait(100); $('[data-pmode="tasks"]').click(); await wait(150);
-  assert.ok($$('.td-chk[data-tddone^="r|"]').length === 2); ok('«Мои задачи»: регулярные задачи ведения в списке');
+  assert.ok(!$$('.td-chk[data-tddone^="r|"]').length && $('[data-todotab="m"]')); ok('«Мои задачи»: регулярные задачи не смешаны с обычными, есть вкладка «Ведение»');
+  $('[data-todotab="m"]').click(); await wait(100);
+  assert.ok($$('.td-chk[data-tddone^="r|"]').length === 2 && $$('.td-row').length === 2); ok('вкладка «Ведение»: только регулярные задачи');
+  $('[data-todotab="t"]').click(); await wait(50);
   D.querySelector('.tabs [data-view="assign"]').click(); await wait(150); $('[data-dtall="1"]')?.click(); await wait(100);
-  assert.ok($$(`[data-dtproj="${pid}"] .dt-r`).length === 2); ok('«Поручения»: регулярные задачи у проекта на ведении');
+  assert.ok(!$$('.dt-r').length); ok('«Поручения»: в общих вкладках регулярных задач нет');
+  $('[data-daytab="m"]').click(); await wait(100);
+  assert.ok($(`[data-mproj="${pid}"]`) && $$(`[data-mproj="${pid}"] .rt-row`).length === 2 && $(`[data-mproj="${pid}"] [data-radd]`)); ok('«Поручения → Ведение»: проект, его регулярные задачи и постановка новой');
+  // цвет ведения отличается от «В работе»
+  E(`(() => { const ms = projById('${pid}').stages.at(-1); ms.rtasks.forEach(r => r.due_date = addDays(today(), 9)); commit(); })()`);
+  assert.equal(E(`health(projById('${pid}').stages.at(-1)).key`), 'maint'); ok('статус ведения — свой («maint»), не «В работе»');
+  const cm = w.getComputedStyle($(`[data-mproj="${pid}"] .st-pill`)).color, cg = E(`getComputedStyle(document.documentElement).getPropertyValue('--g')`);
+  assert.ok(cm && !/74, 222, 128|21, 128, 61/.test(cm)); ok('цвет ведения отличается от зелёного «В работе»');
   // 7) выключили ведение — проект завершается
   E(`(() => { const p = projById('${pid}'); p.is_maintenance = false; syncState(p); commit(); })()`);
   assert.ok(!P().stages.some(s => s.system === 'maint') && P().state === 'completed'); ok('ведение выключено — этап убран, проект завершён');
