@@ -11,7 +11,7 @@
 <style>
 :root{
   color-scheme: light;
-  --bg:#F7F7F8; --surface:#FFFFFF; --surface-2:#F3F3F5; --row:#FFFFFF; --ink:#17171C; --muted:#71717A; --line:#E8E8EB; --line-strong:#D4D4D8;
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F3F3F5; --fbg:#F2F2F4; --fbg-h:#EAEAED; --row:#FFFFFF; --ink:#17171C; --muted:#71717A; --line:#E8E8EB; --line-strong:#D4D4D8;
   --accent:#17171C; --accent-ink:#FFFFFF; --brand:#6A5AE0; --link:#2F6BFF; --focus:#2F6BFF; --soft:#EAF1FF;
   --card-hi:transparent; --shadow:none;
   --g:#16A34A; --g-bg:#E7F8EE; --y:#E07800; --y-bg:#FFF3E0; --r:#E5383B; --r-bg:#FFECEC;
@@ -28,7 +28,7 @@
     --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --row:#16161A; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-strong:#3A3A42;
     --accent:#EDEDEF; --accent-ink:#0F0F12; --brand:#7C6CF6; --link:#8DA2F7; --focus:#8DA2F7; --soft:#1C2033;
     --card-hi:transparent; --shadow:none;
-    --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --tick-on:#EDEDEF; --tick-off:color-mix(in srgb,#EDEDEF 16%,transparent); --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80; --m:#B197FC; --m-bg:#231D3B;
+    --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --tick-on:#EDEDEF; --tick-off:color-mix(in srgb,#EDEDEF 16%,transparent); --fbg:#16161A; --fbg-h:#1E1E23; --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80; --m:#B197FC; --m-bg:#231D3B;
     --n:#71717A; --n-bg:#1F1F24; --d:#8A8A93; --d-bg:#18181C;
   }
 }
@@ -37,7 +37,7 @@
   --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --row:#16161A; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-strong:#3A3A42;
   --accent:#EDEDEF; --accent-ink:#0F0F12; --brand:#7C6CF6; --link:#8DA2F7; --focus:#8DA2F7; --soft:#1C2033;
   --card-hi:transparent; --shadow:none;
-  --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --tick-on:#EDEDEF; --tick-off:color-mix(in srgb,#EDEDEF 16%,transparent); --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80; --m:#B197FC; --m-bg:#231D3B;
+  --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --tick-on:#EDEDEF; --tick-off:color-mix(in srgb,#EDEDEF 16%,transparent); --fbg:#16161A; --fbg-h:#1E1E23; --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80; --m:#B197FC; --m-bg:#231D3B;
   --n:#71717A; --n-bg:#1F1F24; --d:#8A8A93; --d-bg:#18181C;
 }
 *,*::before,*::after{box-sizing:inherit}
@@ -634,6 +634,13 @@ body.side-pinned .side-btn{color:var(--ink)}
 .space-name{border-color:color-mix(in srgb,var(--space,var(--brand)) 45%,var(--line))}
 .chip-i{display:inline-grid;place-items:center;flex:none}.chip-i .pi{width:14px;height:14px}
 .ci-red{color:var(--r)}.ci-yellow{color:var(--y)}.ci-blue{color:var(--b)}.ci-green{color:var(--w)}.ci-maint{color:var(--m)}.ci-gray,.ci-all{color:var(--muted)}.ci-done{color:var(--g)}
+/* фильтры: в светлой теме — светло-серые на белом фоне (в тёмной — как карточки); :where — чтобы выбранный статус оставался цветным */
+:where(#filters, .mh) :where(.chip, input[type=search], select, .seg-toggle, .f-toggle, .sel-toggle),:where(#tags) .tag{background-color:var(--fbg);border-color:transparent}
+:where(#filters, .mh) :where(.chip, select, .f-toggle, .sel-toggle):hover,:where(#tags) .tag:hover{background-color:var(--fbg-h);border-color:transparent}
+:where(#filters, .mh) .chip:where([data-risk=""],[data-htile=""])[aria-pressed="true"]{background-color:var(--surface);border-color:var(--ink)}
+:where(#filters) .seg-toggle button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+:where(#filters, .mh) input[type=search]:focus{background-color:var(--surface);border-color:var(--line-strong)}
+:where(#tags){background:transparent;border-color:var(--line)}
 .team-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
 .cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
