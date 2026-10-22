@@ -136,6 +136,22 @@ select pg_temp.expect('руководитель: посторонний не в�
 select pg_temp.expect('руководитель: владелец убирает руководителя', pg_temp.try(:O, $q$select doc_delete('team/00000000-0000-0000-0000-00000000000a/managers/00000000-0000-0000-0000-00000000000f')$q$), true);
 select pg_temp.expect('руководитель: после этого данных владельца не видит', pg_temp.rows_as(:L, $q$select * from docs where path like 'data/users/00000000-0000-0000-0000-00000000000a/%'$q$) = 0, true);
 select pg_temp.expect('руководитель: и писать не может', pg_temp.try(:L, $q$select doc_set('data/users/00000000-0000-0000-0000-00000000000a/p_y', '{"json":"{}"}')$q$), false);
+-- ---------- внутренние задачи ----------
+select pg_temp.expect('задачи: владелец ставит задачу исполнителю', pg_temp.try(:O, $q$select doc_set('it/i1', '{"ownerId":"00000000-0000-0000-0000-00000000000a","memberIds":["00000000-0000-0000-0000-00000000000a","00000000-0000-0000-0000-00000000000e"],"json":"{\"status\":\"todo\"}"}')$q$), true);
+select pg_temp.expect('задачи: исполнитель видит свою задачу', pg_temp.rows_as(:T, $q$select * from docs where path = 'it/i1'$q$) = 1, true);
+select pg_temp.expect('задачи: посторонний не видит', pg_temp.rows_as(:S, $q$select * from docs where path like 'it/%'$q$) = 0, true);
+select pg_temp.expect('задачи: исполнитель меняет статус', pg_temp.try(:T, $q$select doc_update('it/i1', '{"json":"{\"status\":\"done\"}"}')$q$), true);
+select pg_temp.expect('задачи: исполнитель не меняет исполнителей', pg_temp.try(:T, $q$select doc_update('it/i1', '{"memberIds":["00000000-0000-0000-0000-00000000000e"]}')$q$), false);
+select pg_temp.expect('задачи: исполнитель не забирает задачу себе', pg_temp.try(:T, $q$select doc_update('it/i1', '{"ownerId":"00000000-0000-0000-0000-00000000000e"}')$q$), false);
+select pg_temp.expect('задачи: исполнитель не удаляет', pg_temp.try(:T, $q$select doc_delete('it/i1')$q$), false);
+select pg_temp.expect('задачи: задача после попытки удаления на месте', (select count(*) from docs where path = 'it/i1') = 1, true);
+select pg_temp.expect('задачи: посторонний не ставит задачу от имени владельца', pg_temp.try(:S, $q$select doc_set('it/i9', '{"ownerId":"00000000-0000-0000-0000-00000000000a","memberIds":["00000000-0000-0000-0000-00000000000d"],"json":"{}"}')$q$), false);
+select pg_temp.expect('задачи: посторонний не правит чужую', pg_temp.try(:S, $q$select doc_update('it/i1', '{"json":"x"}')$q$), false);
+select pg_temp.expect('задачи: владелец назначает руководителя', pg_temp.try(:O, $q$select doc_set('team/00000000-0000-0000-0000-00000000000a/managers/00000000-0000-0000-0000-00000000000b', '{}')$q$), true);
+select pg_temp.expect('задачи: руководитель видит задачи команды', pg_temp.rows_as(:M, $q$select * from docs where path = 'it/i1'$q$) = 1, true);
+select pg_temp.expect('задачи: руководитель ставит задачу от имени владельца', pg_temp.try(:M, $q$select doc_set('it/i2', '{"ownerId":"00000000-0000-0000-0000-00000000000a","memberIds":["00000000-0000-0000-0000-00000000000a"],"json":"{}"}')$q$), true);
+select pg_temp.expect('задачи: руководитель удаляет задачу', pg_temp.try(:M, $q$select doc_delete('it/i2')$q$), true);
+select pg_temp.expect('задачи: владелец удаляет задачу', pg_temp.try(:O, $q$select doc_delete('it/i1')$q$), true);
 select pg_temp.expect('без входа ничего не читается', pg_temp.rows_as('', $q$select * from docs$q$) = 0, true);
 
 select (case when ok then 'PASS ' else 'FAIL ' end) || name from results;

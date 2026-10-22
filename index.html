@@ -449,6 +449,31 @@ body.selecting #app{padding-bottom:90px}
 .st-lead{display:inline-block;font-size:12px;font-weight:600;color:var(--b);background:var(--b-bg);border-radius:6px;padding:1px 7px;margin-bottom:3px}
 .lead-check{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
 .lead-check input{margin-top:3px}.lead-check span{display:grid;gap:2px}.lead-check small{color:var(--muted);font-size:12.5px}
+.mine-switch{margin:0 0 12px}
+.dt-group{margin:18px 0 6px}
+.dt-group h3{font-size:13px;font-weight:600;color:var(--muted);margin:0 0 8px;text-transform:none}
+.dt-group h3 span{font-weight:500;margin-left:4px}
+.dt-list{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))}
+.dt{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 14px;display:grid;gap:7px;cursor:pointer;text-align:left}
+.dt:hover{border-color:var(--line-strong)}
+.dt.done{opacity:.55}.dt.done .dt-main b{text-decoration:line-through}
+.dt-badges{display:flex;flex-wrap:wrap;gap:6px}
+.dt-badges span{font-size:12px;font-weight:500;border-radius:6px;padding:1px 8px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.dt-proj{background:var(--b-bg);color:var(--b)}
+.dt-stage{background:var(--surface-2);color:var(--muted)}
+.dt-int{background:var(--g-bg);color:var(--g)}
+.dt-pri{display:inline-flex;align-items:center;gap:4px}.dt-pri svg{width:12px;height:12px}
+.pri-urgent{background:var(--r-bg);color:var(--r)}.pri-high{background:var(--y-bg);color:var(--y)}
+.dt-main{display:flex;align-items:flex-start;gap:9px}.dt-main b{font-weight:600;font-size:14.5px;line-height:1.35}
+.dt-chk{width:17px;height:17px;margin-top:1px;flex:none;accent-color:var(--g)}
+.dt-desc{margin:0;color:var(--muted);font-size:13px}
+.dt-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:12.5px;color:var(--muted)}
+.dt-ck{color:var(--ink);font-weight:500}
+.dt-due{display:inline-flex;align-items:center;gap:4px}.dt-due svg{width:13px;height:13px}
+.dt-due.ut-over{color:var(--r)}.dt-due.ut-hot{color:var(--y)}
+.dt-st{margin-left:auto}
+.dt-status{margin-left:auto;height:28px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:12.5px;padding:0 6px;color:var(--ink)}
+.dt-status.st-in_progress{color:var(--g)}.dt-status.st-review{color:var(--b)}.dt-status.st-done{color:var(--muted)}
 .team-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
 .cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
@@ -1845,7 +1870,7 @@ function render(){
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
   renderFilters();
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:() => renderProjectFocus(true), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.open) renderDrawer();
   try { paintPage(); } catch(e) {}
   paintSelect();
@@ -2277,7 +2302,7 @@ function openSubsModal(t, i){
 // ---------- Производство: воронка процесса с подэтапами ----------
 function renderProduction(){
   const t = tplById(ui.prodTpl) || db.templates[0];
-  if (ui.prodMode === 'tasks') return renderTaskBoard();
+  if (ui.prodMode === 'tasks') return renderMyDay();
   if (ui.prodMode === 'project') return renderProjectFocus();
   if (!t){ app.innerHTML = `<div class="empty">Создайте шаблон процесса, чтобы увидеть воронку</div>`; return; }
   ui.prodTpl = t.id;
@@ -4073,6 +4098,191 @@ function renderTaskBoard(){
       : `<div class="empty">Задач пока нет${f.project || f.assignee || f.stage || f.hideDone ? ' под эти фильтры' : ''}.<br>Создайте задачу или сгенерируйте задачи из подэтапов текущего этапа проекта.<br><button class="primary" data-tnew>Новая задача</button></div>`}`;
 }
 
+// =====================================================================
+//  ЗАДАЧИ («Мой день»): проектные подзадачи текущего этапа + внутренние задачи
+//  Внутренние задачи — документы it/<id> { ownerId, memberIds:[владелец, исполнитель], json }:
+//  видят владелец, его руководители и исполнитель (права — миграция 20261024000000_internal_tasks.sql).
+// =====================================================================
+const IT = { list:[], subs:[] };
+const IT_STATUS = { todo:'К выполнению', in_progress:'В работе', review:'На проверке', done:'Готово' };
+const IT_PRI = { low:'Низкий', medium:'Средний', high:'Высокий', urgent:'Срочно' };
+const IT_CAT = { admin:'Административная', hr:'HR', marketing:'Маркетинг', finance:'Финансы', other:'Другое' };
+function watchIT(){
+  if (!cloud.store || !cloud.uid || IT.subs.length) return;
+  const on = snap => {
+    IT.list = snap.docs.map(d => { try { const b = d.data(); return { ...JSON.parse(b.json), _owner:b.ownerId, _members:b.memberIds || [] }; } catch(e) { return null; } }).filter(t => t && !t.deleted);
+    syncItMembers();
+    if ((ui.view === 'production' && ui.prodMode === 'tasks') || (ui.view === 'mine' && ui.mineMode === 'tasks')) render();
+  };
+  IT.subs.push(cloud.store.collection('it').where('memberIds', 'array-contains', GUEST ? cloud.uid : OWNER()).onSnapshot(on, () => {}));
+}
+const itLocal = () => !cloud.store || !cloud.uid;
+const itAll = () => itLocal() ? (db.itasks || []) : IT.list;
+async function itSave(t){
+  t.updated_at = new Date().toISOString();
+  if (itLocal()){ db.itasks = db.itasks || []; const i = db.itasks.findIndex(x => x.id === t.id); if (i >= 0) db.itasks[i] = t; else db.itasks.push(t); commit(); return; }
+  const owner = t._owner || OWNER(); const acc = accOf(userById(t.assignee_id));
+  const members = [...new Set([owner, ...(t._members || []).filter(x => x !== owner), ...(acc && !t._members ? [acc] : [])])];
+  const { _owner, _members, ...json } = t;
+  const i = IT.list.findIndex(x => x.id === t.id); const keep = { ...t, _owner:owner, _members:members };
+  if (i >= 0) IT.list[i] = keep; else IT.list.push(keep);                  // сразу показываем, база догонит
+  try { await cloud.store.doc(`it/${t.id}`).set({ ownerId:owner, memberIds:members, json:JSON.stringify(json) }); }
+  catch(e) { toast('Не удалось сохранить задачу. Проверьте связь и попробуйте ещё раз.'); }
+}
+// исполнитель вошёл в приложение позже, чем ему поставили задачу, — открываем ему задачу
+function syncItMembers(){
+  if (GUEST || itLocal()) return;
+  IT.list.forEach(t => {
+    const acc = accOf(userById(t.assignee_id)); if (!acc || t._members.includes(acc) || (t._owner && t._owner !== OWNER())) return;
+    const members = [...new Set([...t._members.filter(x => x === t._owner), acc])];
+    const { _owner, _members, ...json } = t; t._members = members;
+    cloud.store.doc(`it/${t.id}`).set({ ownerId:t._owner, memberIds:members, json:JSON.stringify(json) }).catch(() => {});
+  });
+}
+async function itDelete(t){
+  if (itLocal()){ db.itasks = (db.itasks || []).filter(x => x.id !== t.id); commit(); return; }
+  IT.list = IT.list.filter(x => x.id !== t.id);
+  // удаления база не рассылает сразу: сначала помечаем задачу удалённой (это видят все), потом удаляем
+  const { _owner, _members, ...json } = t;
+  try { await cloud.store.doc(`it/${t.id}`).set({ ownerId:_owner || OWNER(), memberIds:_members || [OWNER()], json:JSON.stringify({ ...json, deleted:true }) });
+    await cloud.store.doc(`it/${t.id}`).delete(); } catch(e) { toast('Не удалось удалить задачу'); }
+}
+const itCanManage = t => !GUEST && (!t || !t._owner || t._owner === OWNER());
+// мои записи в командах чужих проектов (исполнитель знает себя по аккаунту)
+const myTeamIds = p => (p?._team || []).filter(x => x.acc === cloud.uid).map(x => x.id);
+
+// проектные подзадачи — только текущего этапа активных проектов
+function dayProjectItems(who){
+  const out = [];
+  const projects = [...(GUEST ? [] : db.projects), ...ext.projects].filter(p => p.state === 'active');
+  projects.forEach(p => {
+    const c = currentStage(p); if (!c) return;
+    const mine = p._ext ? myTeamIds(p) : null;
+    const tasks = (p._ext ? ext.tasks : (db.tasks || [])).filter(t => t.project_id === p.id && t.stage_id === c.id);
+    const rows = (c.subs || []).map(x => ({ x, t:tasks.find(t => t.substage_id === x.id) || null }))
+      .concat(tasks.filter(t => !t.substage_id || !(c.subs || []).some(x => x.id === t.substage_id)).map(t => ({ x:null, t })));
+    rows.forEach(({ x, t }) => {
+      const w = whoId(p, c, t);
+      if (p._ext){ if (!mine.includes(w)) return; }
+      else if (who && w !== who) return;
+      const pr = t ? taskProgress(t) : null;
+      const done = t ? (pr.total ? pr.done : !!x?.done) : !!x?.done;
+      out.push({ kind:'p', id:t ? t.id : `${p.id}|${c.id}|${x.id}`, p, s:c, x, t, who:w, done, due:c.due_date, title:t ? t.title : x.name });
+    });
+  });
+  return out;
+}
+function dayInternalItems(who){
+  return itAll().filter(t => GUEST ? true : (!who || t.assignee_id === who)).map(t => ({ kind:'i', id:t.id, it:t, who:t.assignee_id, done:t.status === 'done', due:t.due_date || '', title:t.title }));
+}
+const PRI_W = { urgent:0, high:1, medium:2, low:3 };
+function renderMyDay(){
+  const tab = ui.dayTab || 'all'; const who = GUEST ? '' : (ui.dayWho ?? '');
+  const showDone = !!ui.dayDone;
+  let items = [...(tab !== 'i' ? dayProjectItems(who) : []), ...(tab !== 'p' ? dayInternalItems(who) : [])];
+  const doneN = items.filter(i => i.done).length;
+  if (!showDone) items = items.filter(i => !i.done);
+  const t0 = today(), wk = addDays(t0, 7);
+  const bucket = i => i.done ? 'done' : !i.due ? 'none' : i.due < t0 ? 'over' : i.due === t0 ? 'today' : i.due <= wk ? 'week' : 'later';
+  const BUCKETS = [['over','Просрочено'], ['today','Сегодня'], ['week','На этой неделе'], ['later','Позже'], ['none','Без срока'], ['done','Выполнено']];
+  items.sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999') || (PRI_W[a.it?.priority] ?? 2) - (PRI_W[b.it?.priority] ?? 2));
+  const head = `<div class="fn-head-row">${GUEST || ui.view === 'mine' ? mineSwitch() : prodSwitch()}
+      <div class="seg-toggle" role="group" aria-label="Какие задачи">
+        <button data-daytab="all" aria-pressed="${tab === 'all'}">Все (Мой день)</button><button data-daytab="p" aria-pressed="${tab === 'p'}">💼 Проектные</button><button data-daytab="i" aria-pressed="${tab === 'i'}">🏢 Внутренние</button></div>
+      ${GUEST ? '' : `<select id="dayWho" aria-label="Исполнитель"><option value="">Исполнитель: все</option>${db.users.map(u => `<option value="${u.id}" ${u.id === who ? 'selected' : ''}>${esc(u.id === ME ? `${u.name || 'Вы'} (вы)` : u.name || 'Без имени')}</option>`).join('')}</select>`}
+      <label class="inl hint"><input type="checkbox" id="dayDone" ${showDone ? 'checked' : ''}> Выполненные${doneN ? ` (${doneN})` : ''}</label>
+      ${GUEST ? '' : '<button class="primary" data-itnew>+ Внутренняя задача</button>'}</div>`;
+  const body = items.length ? BUCKETS.map(([k, label]) => { const g = items.filter(i => bucket(i) === k); return g.length ? `<section class="dt-group"><h3>${label} <span>${g.length}</span></h3><div class="dt-list">${g.map(dayCard).join('')}</div></section>` : ''; }).join('')
+    : `<div class="empty">${tab === 'i' ? 'Внутренних задач нет.' : tab === 'p' ? 'По текущим этапам проектов задач нет.' : 'На сегодня задач нет.'}${GUEST ? '' : '<br><button class="primary" data-itnew>+ Внутренняя задача</button>'}</div>`;
+  app.innerHTML = head + `<p class="fn-sum">Проектные — подзадачи только текущего этапа каждого проекта. Внутренние — поручения, HR и офисные дела вне проектов.</p>` + body;
+}
+const dueTxt = d => { if (!d) return ''; const u = urg(d); return `<span class="dt-due ut-${u.k}">${FLAG}${fmt(d)}${u.k === 'over' || u.k === 'hot' ? ` · ${u.txt}` : ''}</span>`; };
+function dayCard(i){
+  const showWho = !GUEST && !(ui.dayWho);
+  if (i.kind === 'p'){
+    const { p, s, x, t } = i; const pr = t ? taskProgress(t) : null; const n = p.stages.length; const at = p.stages.indexOf(s) + 1;
+    const nameOf_ = id => p._ext ? ((p._team || []).find(m => m.id === id)?.name || '') : short(id);
+    return `<article class="dt dt-p${i.done ? ' done' : ''}" ${t ? `data-task="${t.id}"` : `data-dtopen="${p.id}|${s.id}"`} tabindex="0">
+      <div class="dt-badges"><span class="dt-proj">💼 ${esc(p.name)}</span><span class="dt-stage">${at}/${n} ${esc(s.name)}</span></div>
+      <div class="dt-main">${!t || !pr.total ? `<input type="checkbox" class="dt-chk" data-sub="${p.id}|${s.id}|${x?.id || ''}" ${i.done ? 'checked' : ''} aria-label="Выполнено: ${esc(i.title)}" ${x ? '' : 'disabled'}>` : ''}<b>${esc(i.title)}</b></div>
+      <div class="dt-meta">${t && pr.total ? `<span class="dt-ck">${pr.n} из ${pr.total}</span>` : ''}${showWho && i.who ? `<span>${esc(nameOf_(i.who))}</span>` : ''}${dueTxt(i.due)}<span class="dt-st">${i.done ? 'Готово' : esc(health(s).label)}</span></div>
+    </article>`;
+  }
+  const t = i.it;
+  return `<article class="dt dt-i${i.done ? ' done' : ''}" data-itopen="${t.id}" tabindex="0">
+    <div class="dt-badges"><span class="dt-int">🏢 Внутренняя · ${esc(IT_CAT[t.category] || 'Другое')}</span>${t.priority === 'urgent' || t.priority === 'high' ? `<span class="dt-pri pri-${t.priority}">${FLAG}${IT_PRI[t.priority]}</span>` : ''}</div>
+    <div class="dt-main"><b>${esc(t.title)}</b></div>
+    ${t.description ? `<p class="dt-desc">${esc(t.description.slice(0, 140))}${t.description.length > 140 ? '…' : ''}</p>` : ''}
+    <div class="dt-meta">${t.creator_name ? `<span>от ${esc(t.creator_name)}</span>` : ''}${showWho ? `<span>→ ${esc(short(t.assignee_id))}</span>` : ''}${dueTxt(t.due_date)}
+      <select class="dt-status st-${t.status}" data-itstatus="${t.id}" aria-label="Статус задачи «${esc(t.title)}»">${Object.entries(IT_STATUS).map(([k, v]) => `<option value="${k}" ${k === t.status ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+  </article>`;
+}
+function openItask(id){
+  const t = id ? itAll().find(x => x.id === id) : null; const manage = itCanManage(t);
+  const v = t || { title:'', description:'', assignee_id:ui.dayWho || ME, priority:'medium', category:'admin', status:'todo', due_date:'' };
+  const ro = manage ? '' : 'disabled';
+  layer.innerHTML = `<div class="backdrop" data-close></div>
+  <div class="modal it-modal" role="dialog" aria-modal="true" aria-labelledby="itT">
+    <h2 id="itT">${t ? (manage ? 'Внутренняя задача' : esc(t.title)) : 'Новая внутренняя задача'}</h2>
+    <form class="form" id="itForm" data-itid="${t ? t.id : ''}" novalidate>
+      <div class="field"><label for="itTitle">Название</label><input id="itTitle" value="${esc(v.title)}" maxlength="200" ${ro} autocomplete="off"></div>
+      <div class="field"><label for="itDesc">Описание</label><textarea id="itDesc" rows="3" maxlength="4000" ${ro}>${esc(v.description || '')}</textarea></div>
+      <div class="two">
+        <div class="field"><label for="itWho">Исполнитель</label><select id="itWho" ${ro}>${GUEST ? `<option>${esc(ui.meAcc?.name || 'Вы')}</option>` : peopleOpts(v.assignee_id)}</select></div>
+        <div class="field"><label for="itDue">Дедлайн</label><input id="itDue" type="date" value="${esc(v.due_date || '')}" ${ro}></div>
+      </div>
+      <div class="two">
+        <div class="field"><label for="itPri">Приоритет</label><select id="itPri" ${ro}>${Object.entries(IT_PRI).map(([k, x]) => `<option value="${k}" ${k === v.priority ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+        <div class="field"><label for="itCat">Категория</label><select id="itCat" ${ro}>${Object.entries(IT_CAT).map(([k, x]) => `<option value="${k}" ${k === v.category ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+      </div>
+      <div class="field"><label for="itStatus">Статус</label><select id="itStatus">${Object.entries(IT_STATUS).map(([k, x]) => `<option value="${k}" ${k === v.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+      ${t ? `<p class="hint">Поставил(а): ${esc(t.creator_name || '—')}, ${new Date(t.created_at).toLocaleDateString('ru-RU')}</p>` : ''}
+      <div class="err" id="itErr" aria-live="polite"></div>
+      <div class="actions">${t && manage ? '<button type="button" class="ghost danger m-out" id="itDel">Удалить</button>' : ''}<button type="button" class="ghost" data-close>Отмена</button><button class="primary">${t ? 'Сохранить' : 'Поставить задачу'}</button></div>
+    </form></div>`;
+  (t ? $('#itStatus') : $('#itTitle')).focus();
+}
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'itForm') return; e.preventDefault();
+  const id = e.target.dataset.itid; const old = id ? itAll().find(x => x.id === id) : null;
+  if (old && !itCanManage(old)){ itSave({ ...old, status:$('#itStatus').value }); layer.innerHTML = ''; render(); toast('Статус обновлён'); return; }
+  const title = $('#itTitle').value.trim(); if (!title){ $('#itErr').textContent = 'Укажите название задачи'; return; }
+  const who = $('#itWho').value; if (!who){ $('#itErr').textContent = 'Выберите исполнителя'; return; }
+  const now = new Date().toISOString();
+  const t = { ...(old || { id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Руководитель', created_at:now }),
+    title, description:$('#itDesc').value.trim(), assignee_id:who, priority:$('#itPri').value, category:$('#itCat').value, status:$('#itStatus').value, due_date:$('#itDue').value || '' };
+  if (old && old.assignee_id !== who) delete t._members;                    // сменили исполнителя — пересобираем доступ
+  itSave(t); layer.innerHTML = ''; render();
+  const u = userById(who);
+  toast(old ? 'Задача сохранена' : u && who !== ME && !accOf(u) ? `Задача поставлена. ${u.name} увидит её после входа в приложение` : 'Задача поставлена');
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'dayWho'){ ui.dayWho = e.target.value; render(); return; }
+  if (e.target.id === 'dayDone'){ ui.dayDone = e.target.checked; render(); return; }
+  const st = e.target.dataset?.itstatus; if (!st) return;
+  const t = itAll().find(x => x.id === st); if (!t) return;
+  itSave({ ...t, status:e.target.value }); render();
+  if (e.target.value === 'done') toast(`«${t.title}» — готово`);
+});
+document.addEventListener('click', e => {
+  const dt = e.target.closest?.('[data-daytab]'); if (dt){ ui.dayTab = dt.dataset.daytab; render(); return; }
+  const mm = e.target.closest?.('[data-minemode]'); if (mm){ ui.mineMode = mm.dataset.minemode; render(); return; }
+  if (e.target.closest?.('[data-itnew]')){ openItask(null); return; }
+  if (e.target.id === 'itDel'){ const t = itAll().find(x => x.id === $('#itForm').dataset.itid);
+    askConfirm({ title:`Удалить задачу «${t.title}»?`, text:'Задача исчезнет у исполнителя. Восстановить её будет нельзя.', ok:'Удалить' }).then(y => { if (y){ itDelete(t); layer.innerHTML = ''; render(); toast('Задача удалена'); } }); return; }
+  if (e.target.closest?.('select, input, a, button:not(.dt)')) return;
+  const io = e.target.closest?.('[data-itopen]'); if (io){ openItask(io.dataset.itopen); return; }
+  const po = e.target.closest?.('[data-dtopen]'); if (po){ const [pid, sid] = po.dataset.dtopen.split('|'); const q = projById(pid);
+    if (q && !q._ext) openProject(pid, sid); else { ui.mineMode = 'projects'; ui.myProject = pid; ui.view = 'mine'; render(); } }
+});
+// экран исполнителя: «Проекты | Задачи»
+const mineSwitch = () => `<div class="seg-toggle" role="group" aria-label="Мои проекты или задачи"><button data-minemode="projects" aria-pressed="${ui.mineMode !== 'tasks'}">Проекты</button><button data-minemode="tasks" aria-pressed="${ui.mineMode === 'tasks'}">Задачи</button></div>`;
+function renderMine(){
+  if (ui.mineMode === 'tasks') return renderMyDay();
+  renderProjectFocus(true);
+  app.insertAdjacentHTML('afterbegin', `<div class="mine-switch">${mineSwitch()}</div>`);
+}
+
 // ---------- модальное окно задачи: режим просмотра и режим редактирования ----------
 const taskLayer = () => document.getElementById('taskLayer');
 const ROLE_RU = { owner:'Владелец', lead:'Руководитель', worker:'Исполнитель' };
@@ -4419,9 +4629,9 @@ function moveDraftItem(from, to){ const a = ui.taskDraft.items; if (to < 0 || to
 document.addEventListener('click', e => {
   const tg = e.target;
   const pm = tg.closest('[data-pmode]'); if (pm){ ui.prodMode = pm.dataset.pmode; render(); return; }
-  const card = tg.closest('[data-task]'); if (card && !tg.closest('#taskLayer')){ e.preventDefault(); openTask(card.dataset.task); return; }
+  const card = tg.closest('[data-task]'); if (card && !tg.closest('#taskLayer') && !tg.closest('.dt-chk, .dt-status')){ e.preventDefault(); openTask(card.dataset.task); return; }
   if (tg.closest('[data-tnew]')){ openNewTask({ project_id: ui.tf?.project }); return; }
-  const fs = tg.closest('[data-fn-tasks]'); if (fs){ ui.prodMode = 'tasks'; ui.tf = { tpl:ui.prodTpl, project:'', assignee:'', stage:fs.dataset.fnTasks, hideDone:false }; render(); return; }
+  const fs = tg.closest('[data-fn-tasks]'); if (fs){ ui.prodMode = 'tasks'; ui.dayTab = 'p'; render(); return; }
   const ts = tg.closest('[data-tsubs]'); if (ts){ const [pid, sid] = ts.dataset.tsubs.split('|'); const p = projById(pid); const n = tasksFromSubs(p, p.stages.find(s => s.id === sid)); commit(); toast(`Создано задач: ${n}`); return; }
   if (!tg.closest('#taskLayer')) return;
   if (tg.closest('[data-open]')){ closeTask(); return; }
@@ -4824,6 +5034,8 @@ function mergeRemote(remote, base, baseMeta){
 const metaBase = m => Object.fromEntries(META_FIELDS.map(f => [f, m?.[f]]));
 // владелец данных: я сам или владелец команды, в которой я руководитель
 const OWNER = () => cloud.owner || cloud.uid;
+// аккаунт сотрудника команды: вошедший — свой; запись владельца ('me') — аккаунт владельца
+const accOf = u => u ? (u.account_id || (u.id === 'me' ? OWNER() : null)) : null;
 // руководитель в пространстве владельца: находим (или заводим) свою запись в команде — она и есть «Вы»
 function adoptOrgMe(){
   if (!ORG || !cloud.uid) return false;
@@ -5061,9 +5273,11 @@ const shareCount = p => (p?.share?.members?.length || 0) + (p?.share?.guests?.le
 const ownShared = () => db.projects.filter(p => (shareCount(p) || p.share?.links?.length) && p.state !== 'archived');
 function sharedBodies(){
   const out = new Map();
+  const team = db.users.map(u => ({ id:u.id, acc:accOf(u), name:u.name || '' })).filter(x => x.acc);
   const add = (p, ownerId, members) => {
-    let json = JSON.stringify(trimLog(p));
-    if (json.length > 200000) json = JSON.stringify({ ...trimLog(p), log:(p.log || []).slice(0, 20) });
+    const body = { ...trimLog(p), _team:p._ext ? (p._team || []) : team };
+    let json = JSON.stringify(body);
+    if (json.length > 200000) json = JSON.stringify({ ...body, log:(p.log || []).slice(0, 20) });
     out.set(`sp/${p.id}`, { ownerId, members, memberIds:members.map(m => m.id), json });
     const tasks = (p._ext ? ext.tasks : db.tasks).filter(t => t.project_id === p.id);
     tasks.forEach(t => out.set(`sp/${p.id}/tasks/${t.id}`, { json:JSON.stringify(t) }));
@@ -5331,6 +5545,7 @@ function setMode(m){
 }
 function initShared(){
   if (!cloud.store || !cloud.uid) return;
+  try { watchIT(); } catch(e) { /* задачи не критичны */ }
   watchMine(); syncSharedSubs(); watchTeam();
   if (ownShared().length) scheduleShared();
   if (GUEST) cloud.user.me().then(m => { ui.meAcc = m; paintMeBtn(); }, () => {}); else refreshProfiles(true);
