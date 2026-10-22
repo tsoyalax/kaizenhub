@@ -449,7 +449,10 @@ body.selecting #app{padding-bottom:90px}
 .st-lead{display:inline-block;font-size:12px;font-weight:600;color:var(--b);background:var(--b-bg);border-radius:6px;padding:1px 7px;margin-bottom:3px}
 .lead-check{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
 .lead-check input{margin-top:3px}.lead-check span{display:grid;gap:2px}.lead-check small{color:var(--muted);font-size:12.5px}
-.mine-switch{margin:0 0 12px}
+.as-note{margin:-4px 0 12px;padding:9px 12px;border:1px dashed var(--line-strong);border-radius:10px;font-size:13.5px;color:var(--muted)}
+.as-note b{color:var(--ink)}
+.dt-person h3{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:14px}
+.dt-person h3 span{color:var(--muted);font-weight:500;font-size:12.5px}
 .dt-group{margin:18px 0 6px}
 .dt-group h3{font-size:13px;font-weight:600;color:var(--muted);margin:0 0 8px;text-transform:none}
 .dt-group h3 span{font-weight:500;margin-left:4px}
@@ -853,7 +856,7 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .sh-mem select{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 6px;font-size:13px}
 .sh-h{font-size:14px;font-weight:600;margin:14px 0 2px}
 .mine-h{margin:0;font-size:18px;font-weight:600}
-body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #newBtn,body.guest #cloudBtn{display:none!important}
+body.guest .tabs button:not([data-view="mine"]):not([data-view="mytasks"]),body.guest #filters,body.guest #newBtn,body.guest #cloudBtn{display:none!important}
 .sh-link{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .sh-link input{flex:1;min-width:180px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);padding:0 8px;font-size:13px}
 .sh-link small{color:var(--muted);font-size:12.5px;flex-basis:100%}
@@ -890,11 +893,11 @@ body.guest .tabs button:not([data-view="mine"]),body.guest #filters,body.guest #
   .mnav button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mnav button[aria-current="page"]{color:var(--ink)}
   .mnav button[aria-current="page"] svg{stroke-width:2.4}
-  body.guest .mnav{display:none}
+  body.guest .mnav{display:flex}
   main{padding:12px 12px calc(env(safe-area-inset-bottom,0px) + 150px)}
-  body.guest main{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 32px)}
+  body.guest main{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 90px)}
   .toast{bottom:calc(env(safe-area-inset-bottom,0px) + 140px)}
-  body.guest .toast{bottom:calc(env(safe-area-inset-bottom,0px) + 20px)}
+  body.guest .toast{bottom:calc(env(safe-area-inset-bottom,0px) + 76px)}
   /* фильтры: одна строка статусов + поиск, остальное по кнопке */
   .filters{padding:12px 12px 0;gap:10px}
   #chips{flex-wrap:nowrap;overflow-x:auto;margin:0 -12px;padding:0 12px 2px;scrollbar-width:none}
@@ -1228,6 +1231,7 @@ table.cx{border-collapse:collapse}
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
     <button data-view="mine" id="mineTab" hidden>Мои проекты</button>
+    <button data-view="mytasks" id="myTasksTab" hidden>Задачи</button>
     <button data-view="reports">AI-отчёты</button>
     <button data-view="load">Загрузка</button>
     <button data-view="team">Команда</button>
@@ -1876,20 +1880,22 @@ function rememberView(){ try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({
 function restoreView(){
   try {
     const v = JSON.parse(sessionStorage.getItem(VIEW_KEY) || 'null'); if (!v) return;
-    const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine');
+    const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine', 'mytasks');
     if (ok.includes(v.view)) ui.view = v.view;
     if (['deadlines','templates','categories','spaces'].includes(v.setTab)) ui.setTab = v.setTab;
-    if (['project','funnel','tasks'].includes(v.prodMode)) ui.prodMode = v.prodMode;
+    if (['project','funnel','tasks','assign'].includes(v.prodMode)) ui.prodMode = v.prodMode;
   } catch(e) {}
 }
 function render(){
-  if (GUEST) ui.view = 'mine';
+  if (GUEST && ui.view !== 'mytasks') ui.view = 'mine';
+  if (!GUEST && ui.view === 'mytasks'){ ui.view = 'production'; ui.prodMode = 'tasks'; }
   paintSpace(); rememberView();
   document.body.dataset.view = ui.view;
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
+  $('#myTasksTab').hidden = !GUEST;
   renderFilters();
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.open) renderDrawer();
   try { paintPage(); } catch(e) {}
   paintSelect();
@@ -2321,7 +2327,8 @@ function openSubsModal(t, i){
 // ---------- Производство: воронка процесса с подэтапами ----------
 function renderProduction(){
   const t = tplById(ui.prodTpl) || db.templates[0];
-  if (ui.prodMode === 'tasks') return renderMyDay();
+  if (ui.prodMode === 'tasks') return renderMyDay('exec');
+  if (ui.prodMode === 'assign') return renderMyDay('admin');
   if (ui.prodMode === 'project') return renderProjectFocus();
   if (!t){ app.innerHTML = `<div class="empty">Создайте шаблон процесса, чтобы увидеть воронку</div>`; return; }
   ui.prodTpl = t.id;
@@ -2732,7 +2739,7 @@ function paintBell(){
   const b = $('#bellCount'); if (b) b.innerHTML = n ? `<span class="badge">${n}</span>` : '';
 }
 document.addEventListener('click', e => {
-  if (e.target.closest?.('[data-ntfday]')){ layer.innerHTML = ''; if (GUEST || ui.view === 'mine'){ ui.view = 'mine'; ui.mineMode = 'tasks'; } else { ui.view = 'production'; ui.prodMode = 'tasks'; } ui.dayWho = GUEST ? '' : ME; render(); return; }
+  if (e.target.closest?.('[data-ntfday]')){ layer.innerHTML = ''; if (GUEST) ui.view = 'mytasks'; else { ui.view = 'production'; ui.prodMode = 'tasks'; ui.dayAs = ''; } render(); return; }
   if (e.target.id === 'ntfPerm'){ Notification.requestPermission().then(p => { if (p === 'granted'){ toast('Уведомления включены'); pushNotify(); } openBell(); }); }
 });
 
@@ -3196,7 +3203,7 @@ const toggle = (arr, v) => arr.includes(v) ? arr.filter(x => x !== v) : [...arr,
 function resetFilters(){ ui.q=''; ui.pms=[]; ui.clients=[]; ui.risk=''; render(); }
 
 document.querySelector('.tabs').onclick = e => {
-  const b = e.target.closest('[data-view]'); if (!b || (GUEST && b.dataset.view !== 'mine')) return;
+  const b = e.target.closest('[data-view]'); if (!b || (GUEST && !['mine', 'mytasks'].includes(b.dataset.view))) return;
   ui.view = b.dataset.view; ui.draft = null; render();
 };
 $('#newBtn').onclick = openCreate;
@@ -4095,7 +4102,7 @@ const linkify = text => esc(text).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1"
 
 // ---------- доска задач ----------
 const prodSwitch = () => `<div class="seg-toggle" role="group" aria-label="Вид производства">
-  <button data-pmode="project" aria-pressed="${ui.prodMode === 'project'}">По проекту</button><button data-pmode="funnel" aria-pressed="${!ui.prodMode || ui.prodMode === 'funnel'}">Воронка</button><button data-pmode="tasks" aria-pressed="${ui.prodMode === 'tasks'}">Задачи</button></div>`;
+  <button data-pmode="project" aria-pressed="${ui.prodMode === 'project'}">По проекту</button><button data-pmode="funnel" aria-pressed="${!ui.prodMode || ui.prodMode === 'funnel'}">Воронка</button><button data-pmode="tasks" aria-pressed="${ui.prodMode === 'tasks'}">Мои задачи</button><button data-pmode="assign" aria-pressed="${ui.prodMode === 'assign'}">Поручения</button></div>`;
 function renderTaskBoard(){
   const f = ui.tf || (ui.tf = { tpl:'', project:'', assignee:'', stage:'', hideDone:false });
   const projects = db.projects.filter(p => p.state !== 'archived' && (!f.tpl || p.template_id === f.tpl));
@@ -4148,7 +4155,7 @@ function watchIT(){
   const on = snap => {
     IT.list = snap.docs.map(d => { try { const b = d.data(); return { ...JSON.parse(b.json), _owner:b.ownerId, _members:b.memberIds || [] }; } catch(e) { return null; } }).filter(t => t && !t.deleted);
     syncItMembers();
-    if ((ui.view === 'production' && ui.prodMode === 'tasks') || (ui.view === 'mine' && ui.mineMode === 'tasks')) render();
+    if ((ui.view === 'production' && ['tasks', 'assign'].includes(ui.prodMode)) || ui.view === 'mytasks') render(); else paintBell();
   };
   IT.subs.push(cloud.store.collection('it').where('memberIds', 'array-contains', GUEST ? cloud.uid : OWNER()).onSnapshot(on, () => {}));
 }
@@ -4213,19 +4220,26 @@ function dayInternalItems(who){
 }
 const PRI_W = { urgent:0, high:1, medium:2, low:3 };
 const byDue = (a, b) => (a.done - b.done) || (a.due || '9999').localeCompare(b.due || '9999') || (PRI_W[a.it?.priority] ?? 2) - (PRI_W[b.it?.priority] ?? 2);
-function renderMyDay(){
-  const tab = ui.dayTab || 'all'; const who = GUEST ? '' : (ui.dayWho ?? '');
+let DAY_MODE = 'exec';
+function renderMyDay(mode = 'exec'){
+  DAY_MODE = mode; const admin = mode === 'admin' && !GUEST;
+  const tab = ui.dayTab || 'all';
+  // исполнитель — свои; «Мои задачи» руководителя — свои или «глазами» выбранного сотрудника; «Поручения» — все или выбранный
+  const who = GUEST ? '' : admin ? (ui.dayWho ?? '') : (ui.dayAs || ME);
   const showDone = !!ui.dayDone; ui.dayFold = ui.dayFold || {};
   const pAll = tab !== 'i' ? dayProjectItems(who) : [], iAll = tab !== 'p' ? dayInternalItems(who) : [];
   const doneN = [...pAll, ...iAll].filter(i => i.done).length;
   const vis = list => (showDone ? list : list.filter(i => !i.done)).sort(byDue);
   const pItems = vis(pAll), iItems = vis(iAll);
-  const head = `<div class="fn-head-row">${GUEST || ui.view === 'mine' ? mineSwitch() : prodSwitch()}
+  const asU = !admin && !GUEST && ui.dayAs ? userById(ui.dayAs) : null;
+  const head = `<div class="fn-head-row">${GUEST ? '' : prodSwitch()}
       <div class="seg-toggle" role="group" aria-label="Какие задачи">
         <button data-daytab="all" aria-pressed="${tab === 'all'}">Все (Мой день)</button><button data-daytab="p" aria-pressed="${tab === 'p'}">Проектные</button><button data-daytab="i" aria-pressed="${tab === 'i'}">Внутренние</button></div>
-      ${GUEST ? '' : `<select id="dayWho" aria-label="Исполнитель"><option value="">Исполнитель: все</option>${db.users.map(u => `<option value="${u.id}" ${u.id === who ? 'selected' : ''}>${esc(u.id === ME ? `${u.name || 'Вы'} (вы)` : u.name || 'Без имени')}</option>`).join('')}</select>`}
+      ${admin ? `<select id="dayWho" aria-label="Исполнитель"><option value="">Исполнитель: все</option>${db.users.map(u => `<option value="${u.id}" ${u.id === who ? 'selected' : ''}>${esc(u.id === ME ? `${u.name || 'Вы'} (вы)` : u.name || 'Без имени')}</option>`).join('')}</select>`
+        : GUEST ? '' : `<select id="dayAs" aria-label="Смотреть как"><option value="">Смотреть как: я</option>${db.users.filter(u => u.id !== ME).map(u => `<option value="${u.id}" ${u.id === ui.dayAs ? 'selected' : ''}>Как видит: ${esc(u.name || 'Без имени')}</option>`).join('')}</select>`}
       <label class="inl hint"><input type="checkbox" id="dayDone" ${showDone ? 'checked' : ''}> Выполненные${doneN ? ` (${doneN})` : ''}</label>
-      ${GUEST ? '' : '<button class="primary" data-itnew>+ Внутренняя задача</button>'}</div>`;
+      ${admin ? '<button class="primary" data-itnew>+ Поставить задачу</button>' : ''}</div>
+    ${asU ? `<div class="as-note">Так видит свои задачи <b>${esc(asU.name || 'сотрудник')}</b>${asU.account_id ? '' : ' (ещё не вошёл в приложение)'}. <button class="link" data-dayas="">Вернуться к моим</button></div>` : ''}`;
   // проекты: блок на проект, сначала те, где срок ближе
   const groups = [];
   pItems.forEach(i => { let g = groups.find(x => x.p.id === i.p.id); if (!g){ g = { p:i.p, s:i.s, items:[] }; groups.push(g); } g.items.push(i); });
@@ -4239,19 +4253,26 @@ function renderMyDay(){
         <button class="link" data-dtopen="${p.id}|${s.id}">Открыть проект</button></header>
       ${open ? `<div class="dt-list">${items.map(dayCard).join('')}</div>` : ''}</section>`;
   }).join('');
-  const intHtml = iItems.length ? `<section class="dt-group"><h3>Внутренние задачи <span>${iItems.filter(i => !i.done).length}</span></h3><div class="dt-list">${iItems.map(dayCard).join('')}</div></section>` : '';
+  let intHtml = '';
+  if (iItems.length && admin && !who){
+    const people = [...new Set(iItems.map(i => i.who))];
+    intHtml = `<h3 class="dt-h">Внутренние задачи по исполнителям</h3>` + people.map(id => { const g = iItems.filter(i => i.who === id); const left = g.filter(i => !i.done).length;
+      return `<section class="dt-group dt-person"><h3>${avHtml(userById(id) || {}, 'av av-sm')} ${esc(userById(id)?.name || 'Без исполнителя')} <span>${left ? `${left} в работе` : 'всё готово'}</span></h3><div class="dt-list">${g.map(dayCard).join('')}</div></section>`; }).join('');
+  } else if (iItems.length) intHtml = `<section class="dt-group"><h3>Внутренние задачи <span>${iItems.filter(i => !i.done).length}</span></h3><div class="dt-list">${iItems.map(dayCard).join('')}</div></section>`;
   const empty = !pItems.length && !iItems.length;
-  app.innerHTML = head + `<p class="fn-sum">Проектные — подзадачи только текущего этапа, по проектам. Внутренние — поручения, HR и офисные дела вне проектов.${GUEST ? '' : ' Срок подзадачи можно поставить прямо в карточке.'}</p>`
-    + (empty ? `<div class="empty">${tab === 'i' ? 'Внутренних задач нет.' : tab === 'p' ? 'По текущим этапам проектов задач нет.' : 'На сегодня задач нет.'}${GUEST ? '' : '<br><button class="primary" data-itnew>+ Внутренняя задача</button>'}</div>`
+  const sum = admin ? 'Постановка и контроль: внутренние задачи по людям, проектные подзадачи текущих этапов. Срок подзадачи ставится прямо в карточке.'
+    : 'Что нужно сделать: подзадачи текущего этапа ваших проектов и внутренние задачи.';
+  app.innerHTML = head + `<p class="fn-sum">${sum}</p>`
+    + (empty ? `<div class="empty">${tab === 'i' ? 'Внутренних задач нет.' : tab === 'p' ? 'По текущим этапам проектов задач нет.' : 'Задач нет.'}${admin ? '<br><button class="primary" data-itnew>+ Поставить задачу</button>' : ''}</div>`
       : intHtml + (groups.length ? `<h3 class="dt-h">Задачи по проектам</h3>${projHtml}` : ''));
 }
 const dueTxt = d => { if (!d) return ''; const u = urg(d); return `<span class="dt-due ut-${u.k}">${FLAG}${fmt(d)}${u.k === 'over' || u.k === 'hot' ? ` · ${u.txt}` : ''}</span>`; };
 function dayCard(i){
-  const showWho = !GUEST && !(ui.dayWho);
+  const showWho = DAY_MODE === 'admin' && !GUEST && !(ui.dayWho);
   if (i.kind === 'p'){
     const { p, s, x, t } = i; const pr = t ? taskProgress(t) : null;
     const nameOf_ = id => p._ext ? ((p._team || []).find(m => m.id === id)?.name || '') : short(id);
-    const canDue = !GUEST && !p._ext;
+    const canDue = DAY_MODE === 'admin' && !GUEST && !p._ext;
     const dueKey = t ? `t|${t.id}` : `x|${p.id}|${s.id}|${x?.id || ''}`;
     return `<article class="dt dt-p${i.done ? ' done' : ''}" ${t ? `data-task="${t.id}"` : `data-dtopen="${p.id}|${s.id}"`} tabindex="0">
       <div class="dt-main">${!t || !pr.total ? `<input type="checkbox" class="dt-chk" data-sub="${p.id}|${s.id}|${x?.id || ''}" ${i.done ? 'checked' : ''} aria-label="Выполнено: ${esc(i.title)}" ${x ? '' : 'disabled'}>` : ''}<b>${esc(i.title)}</b></div>
@@ -4310,7 +4331,7 @@ const ntfItem = i => i.kind === 'i'
   : `<button class="ntf" ${i.t ? `data-task="${i.t.id}"` : `data-ntfday="1"`}><span class="sw ${i.due && i.due < today() ? 'red' : 'yellow'}"></span><span><b>${esc(i.title)}</b><small>${esc(i.p.name)} · ${esc(i.s.name)}${i.due ? ` · срок ${fmt(i.due)}` : ''}</small></span></button>`;
 function openItask(id){
   const t = id ? itAll().find(x => x.id === id) : null; const manage = itCanManage(t);
-  const v = t || { title:'', description:'', assignee_id:ui.dayWho || ME, priority:'medium', category:'admin', status:'todo', due_date:'' };
+  const v = t || { title:'', description:'', assignee_id:ui.dayWho || ui.dayAs || ME, priority:'medium', category:'admin', status:'todo', due_date:'' };
   const ro = manage ? '' : 'disabled';
   layer.innerHTML = `<div class="backdrop" data-close></div>
   <div class="modal it-modal" role="dialog" aria-modal="true" aria-labelledby="itT">
@@ -4349,6 +4370,7 @@ document.addEventListener('submit', e => {
 });
 document.addEventListener('change', e => {
   if (e.target.id === 'dayWho'){ ui.dayWho = e.target.value; render(); return; }
+  if (e.target.id === 'dayAs'){ ui.dayAs = e.target.value; render(); return; }
   if (e.target.id === 'dayDone'){ ui.dayDone = e.target.checked; render(); return; }
   const st = e.target.dataset?.itstatus; if (!st) return;
   const t = itAll().find(x => x.id === st); if (!t) return;
@@ -4358,22 +4380,17 @@ document.addEventListener('change', e => {
 document.addEventListener('click', e => {
   const dt = e.target.closest?.('[data-daytab]'); if (dt){ ui.dayTab = dt.dataset.daytab; render(); return; }
   const fd = e.target.closest?.('[data-dtfold]'); if (fd){ ui.dayFold = ui.dayFold || {}; ui.dayFold[fd.dataset.dtfold] = ui.dayFold[fd.dataset.dtfold] === false; render(); return; }
-  const mm = e.target.closest?.('[data-minemode]'); if (mm){ ui.mineMode = mm.dataset.minemode; render(); return; }
+  const da = e.target.closest?.('[data-dayas]'); if (da){ ui.dayAs = da.dataset.dayas; render(); return; }
   if (e.target.closest?.('[data-itnew]')){ openItask(null); return; }
   if (e.target.id === 'itDel'){ const t = itAll().find(x => x.id === $('#itForm').dataset.itid);
     askConfirm({ title:`Удалить задачу «${t.title}»?`, text:'Задача исчезнет у исполнителя. Восстановить её будет нельзя.', ok:'Удалить' }).then(y => { if (y){ itDelete(t); layer.innerHTML = ''; render(); toast('Задача удалена'); } }); return; }
   if (e.target.closest?.('select, input, a, label.dt-date, button:not(.dt):not([data-dtopen]):not(.ntf)')) return;
   const io = e.target.closest?.('[data-itopen]'); if (io){ openItask(io.dataset.itopen); return; }
   const po = e.target.closest?.('[data-dtopen]'); if (po){ const [pid, sid] = po.dataset.dtopen.split('|'); const q = projById(pid);
-    if (q && !q._ext) openProject(pid, sid); else { ui.mineMode = 'projects'; ui.myProject = pid; ui.view = 'mine'; render(); } }
+    if (q && !q._ext) openProject(pid, sid); else { ui.myProject = pid; ui.view = 'mine'; render(); } }
 });
 // экран исполнителя: «Проекты | Задачи»
-const mineSwitch = () => `<div class="seg-toggle" role="group" aria-label="Мои проекты или задачи"><button data-minemode="projects" aria-pressed="${ui.mineMode !== 'tasks'}">Проекты</button><button data-minemode="tasks" aria-pressed="${ui.mineMode === 'tasks'}">Задачи</button></div>`;
-function renderMine(){
-  if (ui.mineMode === 'tasks') return renderMyDay();
-  renderProjectFocus(true);
-  app.insertAdjacentHTML('afterbegin', `<div class="mine-switch">${mineSwitch()}</div>`);
-}
+function renderMine(){ renderProjectFocus(true); }
 
 // ---------- модальное окно задачи: режим просмотра и режим редактирования ----------
 const taskLayer = () => document.getElementById('taskLayer');
@@ -4723,7 +4740,7 @@ document.addEventListener('click', e => {
   const pm = tg.closest('[data-pmode]'); if (pm){ ui.prodMode = pm.dataset.pmode; render(); return; }
   const card = tg.closest('[data-task]'); if (card && !tg.closest('#taskLayer') && !tg.closest('.dt-chk, .dt-status, .dt-date')){ e.preventDefault(); openTask(card.dataset.task); return; }
   if (tg.closest('[data-tnew]')){ openNewTask({ project_id: ui.tf?.project }); return; }
-  const fs = tg.closest('[data-fn-tasks]'); if (fs){ ui.prodMode = 'tasks'; ui.dayTab = 'p'; render(); return; }
+  const fs = tg.closest('[data-fn-tasks]'); if (fs){ ui.prodMode = 'assign'; ui.dayTab = 'p'; render(); return; }
   const ts = tg.closest('[data-tsubs]'); if (ts){ const [pid, sid] = ts.dataset.tsubs.split('|'); const p = projById(pid); const n = tasksFromSubs(p, p.stages.find(s => s.id === sid)); commit(); toast(`Создано задач: ${n}`); return; }
   if (!tg.closest('#taskLayer')) return;
   if (tg.closest('[data-open]')){ closeTask(); return; }
@@ -5970,6 +5987,7 @@ const MNAV = {
   production:['Произв.', MI('<path d="M3 12h4l3-8 4 16 3-8h4"/>')],
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
+  mytasks:['Задачи', MI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5 2.5-2.5"/>')],
   reports:['AI-отчёты', MI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')],
   team:['Команда', MI('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>')],
   templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
@@ -6014,6 +6032,7 @@ const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r=
 const moreViews = () => ['mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
 function renderMobileNav(){
   const nav = $('#mnav'); if (!nav) return;
+  if (GUEST){ nav.innerHTML = ['mine', 'mytasks'].map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
   const inMore = !MNAV_MAIN.includes(ui.view);
   nav.innerHTML = MNAV_MAIN.map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')
     + `<button data-mmore aria-current="${inMore ? 'page' : 'false'}" aria-haspopup="dialog">${inMore ? MNAV[ui.view][1] : MORE_ICON}<span>${inMore ? MNAV[ui.view][0] : 'Ещё'}</span></button>`;

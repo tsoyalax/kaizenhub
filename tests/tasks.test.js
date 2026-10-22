@@ -50,7 +50,12 @@ const getComputedStyle_ok = w => w.getComputedStyle(w.document.getElementById('b
   const pid = own.w.eval(`db.projects.find(p => p.state === 'active' && currentStage(p) && (currentStage(p).subs || []).length && p.stages.indexOf(currentStage(p)) > 0).id`);
   own.w.eval(`(() => { const p = projById('${pid}'); currentStage(p).assignee_id = '${tu.id}'; commit(); })()`); await wait(2500);
   // 1) вкладка «Задачи» в «Производстве»
-  D.querySelector('[data-view="production"]').click(); await wait(100); $('[data-pmode="tasks"]').click(); await wait(150);
+  D.querySelector('[data-view="production"]').click(); await wait(100);
+  assert.ok($('[data-pmode="tasks"]') && $('[data-pmode="assign"]') && /Мои задачи/.test($('[data-pmode="tasks"]').textContent) && /Поручения/.test($('[data-pmode="assign"]').textContent)); ok('у руководства «Мои задачи» и «Поручения» — разные разделы');
+  $('[data-pmode="tasks"]').click(); await wait(150);
+  assert.ok(!$('#dayWho') && !$('[data-itnew]') && !$('[data-dtdue]') && $('#dayAs')); ok('«Мои задачи»: как у исполнителя — без постановки и сроков, с выбором «Смотреть как»');
+  assert.ok(!$('#myTasksTab') || $('#myTasksTab').hidden); ok('у руководства нет отдельной вкладки исполнителя');
+  $('[data-pmode="assign"]').click(); await wait(150);
   assert.ok($('[data-daytab="all"]') && $('[data-daytab="p"]') && $('[data-daytab="i"]')); ok('«Задачи»: подфильтры «Все (Мой день)», «Проектные», «Внутренние»');
   assert.ok(!/[\u{1F300}-\u{1FAFF}]/u.test(D.getElementById('app').textContent)); ok('без эмодзи');
   assert.equal($('[data-daytab="all"]').getAttribute('aria-pressed'), 'true'); ok('по умолчанию — «Все (Мой день)»');
@@ -97,7 +102,9 @@ const getComputedStyle_ok = w => w.getComputedStyle(w.document.getElementById('b
   assert.ok($$('.dt').length && $$('[data-dtproj]').every(sc => sc.dataset.dtproj === pid)); ok('выбор исполнителя: видны только его задачи');
   // 3) исполнитель видит свои задачи
   await wait(1500);
-  wk.w.document.querySelector('[data-minemode="tasks"]').click(); await wait(200);
+  assert.ok(!wk.w.document.getElementById('myTasksTab').hidden && wk.w.getComputedStyle(wk.w.document.getElementById('myTasksTab')).display !== 'none'); ok('у исполнителя отдельная вкладка «Задачи»');
+  assert.deepEqual([...wk.w.document.querySelectorAll('#mnav [data-mview]')].map(b => b.dataset.mview), ['mine', 'mytasks']); ok('на телефоне у исполнителя в нижнем меню «Мои проекты» и «Задачи»');
+  wk.w.document.getElementById('myTasksTab').click(); await wait(200);
   const wD = wk.w.document;
   const wTxt = wD.getElementById('app').textContent;
   assert.ok(wTxt.includes('Подготовить договор')); ok('исполнитель видит поставленную ему внутреннюю задачу');
@@ -127,6 +134,14 @@ const getComputedStyle_ok = w => w.getComputedStyle(w.document.getElementById('b
   assert.ok(chk, 'нет подзадачи без чек-листа для проверки');
   { const [p0, s0, x0] = chk.dataset.sub.split('|'); chk.checked = true; fire(chk, 'change'); await wait(200);
     assert.ok(own.w.eval(`projById('${p0}').stages.find(s => s.id === '${s0}').subs.find(x => x.id === '${x0}').done`)); ok('отметка подзадачи во «Задачах» сразу отмечена в проекте и воронке'); }
+  // «Мои задачи» глазами исполнителя
+  $('[data-pmode="tasks"]').click(); await wait(150);
+  const as = $('#dayAs'); as.value = tu.id; fire(as, 'change'); await wait(150);
+  assert.ok($('.as-note') && /Тимур/.test($('.as-note').textContent)); ok('«Смотреть как»: видно, чьими глазами');
+  assert.ok($$('[data-dtproj]').length && $$('[data-dtproj]').every(sc => sc.dataset.dtproj === pid) && D.getElementById('app').textContent.includes('Подготовить договор')); ok('«Смотреть как»: ровно то, что видит исполнитель');
+  $('[data-dayas=""]').click(); await wait(100);
+  assert.ok(!$('.as-note')); ok('«Вернуться к моим»');
+  $('[data-pmode="assign"]').click(); await wait(150);
   // 5) удаление
   $$('.dt-i')[0].click(); await wait(100); $('#itDel').click(); await wait(50); $('#cfmOk').click(); await wait(800);
   assert.ok(![...be.rows.keys()].some(k => k.startsWith('it/'))); ok('руководитель удаляет задачу');
