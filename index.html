@@ -2228,7 +2228,7 @@ function renderPhoneList(list){
   const week = pool.filter(p => { const c = currentStage(p); return c && c.status !== 'not_started' && urg(c.due_date).k !== 'ok'; }).length;
   const tiles = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике'],['maint','На ведении']].map(([k, l]) =>
     `<button class="tile t-${k}" data-htile="${k}" aria-pressed="${ui.risk === k}"><b>${cnt(k)}</b><span>${l}</span></button>`).join('');
-  const chips = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике'],['maint','На ведении']].map(([k, l]) =>
+  const chips = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике'],['maint','На ведении']].filter(([k]) => k !== 'maint' || cnt(k)).map(([k, l]) =>
     `<button class="chip" data-htile="${k}" aria-pressed="${ui.risk === k}"><span class="sw ${k}"></span>${l} <b>${cnt(k)}</b></button>`).join('');
   const hero = `<section class="mh"><h2>${pool.length} ${plural(pool.length, 'проект', 'проекта', 'проектов')} в работе${week ? `<small>${week} ${plural(week, 'срок', 'срока', 'сроков')} на неделе</small>` : ''}</h2>
     <div class="mh-chips">${chips}${ui.risk ? `<button class="chip" data-htile="">Все</button>` : ''}</div></section>`;
