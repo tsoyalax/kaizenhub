@@ -39,18 +39,26 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(D.querySelectorAll('.mc').length > 3); ok('телефон: карточки проектов в новом виде');
   assert.ok(!$('.hero') && !$('.ring') && !$('.dchip') && !$('.pc-stagebox')); ok('телефон: нет цветной шапки, колец, цветных плашек и серых блоков');
   const c = $('.mc');
-  assert.ok(c.querySelector('.st-pill .pi') && c.querySelector('.tprog .ticks i') && /\d+\/\d+/.test(c.querySelector('.tprog').textContent) && c.querySelector('.mc-stage')); ok('телефон: статус в рамке со значком, прогресс штрихами по этапам и текущий этап — как на компьютере');
-  const chips = D.querySelectorAll('.mh-chips .chip[data-htile]');
-  assert.equal(chips.length, 4); ok('телефон: фильтры по статусу чипами');
-  const before = D.querySelectorAll('.mc').length; chips[0].click(); await wait(150);
+  assert.ok(c.querySelector('.mc-top .pava.m36') && c.querySelector('.mc-top .st-pill .pi') && c.querySelector('.mc-mid .tprog .ticks i') && /\d+\/\d+/.test(c.querySelector('.tprog').textContent)); ok('телефон: карточка — фото 36, название, статус справа, этапы штрихами');
+  assert.ok($('.mc .mc-bot svg') && /окт|нояб|дек|сент|Бессрочно|Завершён/.test($('.mc .mc-bot').textContent)); ok('телефон: внизу флажок и срок');
+  assert.ok(!$('.mh') && !$('.mh-chips') && $('.m-grp > h2')); ok('телефон: на экране только категории и карточки');
+  // фильтры — в шторке по иконке в шапке
+  const before = D.querySelectorAll('.mc').length;
+  $('#mFilt').click(); await wait(30);
+  assert.ok($('.fs-sheet [data-fsrisk]') && $('.fs-sheet [data-fssort]') && $('.fs-sheet [data-fsgroup]')); ok('шторка фильтров: статус, сортировка, группировка');
+  $('.fs-sheet [data-fsrisk="red"]').click(); await wait(80);
   const after = D.querySelectorAll('.mc').length;
-  assert.ok(after < before && $('.mh-chips .chip[aria-pressed="true"]')); ok('телефон: чип фильтрует проекты');
-  $('.mh-chips .chip[data-htile=""]').click(); await wait(150);
-  assert.equal(D.querySelectorAll('.mc').length, before); ok('телефон: «Все» сбрасывает фильтр');
-  assert.ok(!$('.mc [data-mxtoggle]') && $('.mc .mc-dl svg') && !/·/.test($('.mc .mc-sub').textContent)); ok('телефон: карточка без лишних строк, дедлайн с флажком справа внизу, без точек');
+  assert.ok(after < before && $('#mFilt .m-badge').textContent === '1' && $('.fs-sheet [data-fsrisk="red"][aria-pressed="true"]')); ok('шторка фильтров: статус фильтрует, на иконке бейдж');
+  $('.fs-sheet [data-fsreset]').click(); await wait(80); $('.fs-sheet [data-close]').click(); await wait(30);
+  assert.equal(D.querySelectorAll('.mc').length, before); ok('шторка фильтров: «Сбросить» возвращает все проекты');
+  // поиск — по иконке
+  $('#mSearch').click(); await wait(50);
+  const mq = $('#mQ'); assert.ok(mq); mq.value = c.querySelector('.mc-tt b').textContent.slice(0, 6); mq.dispatchEvent(new o.w.Event('input', { bubbles:true })); await wait(80);
+  assert.ok(D.querySelectorAll('.mc').length >= 1 && D.querySelectorAll('.mc').length < before); ok('поиск по иконке находит проект');
+  $('[data-msearchclose]').click(); await wait(50);
+  assert.ok(!$('#mQ') && D.querySelectorAll('.mc').length === before); ok('поиск закрывается и сбрасывается');
   $('.mc .mc-main').click(); await wait(150);
   assert.ok($('.drawer')); ok('телефон: нажатие на карточку открывает проект');
-  assert.ok($('.mc .mc-hd .pava.md') && $('.mc .mc-badges .st-pill')); ok('телефон: в карточке крупное фото, статус и срок под названием');
   // Производство: текущий проект + выдвижная панель со всеми проектами
   o.w.document.querySelector('.drawer [data-close], .drawer .close')?.click(); await wait(30); $('[data-mview="production"]').click(); await wait(100);
   if (!$('[data-pmpick]')){ [...D.querySelectorAll('button')].find(b => b.textContent.trim() === 'По проекту')?.click(); await wait(100); }

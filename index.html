@@ -1529,6 +1529,108 @@ table.cx{border-collapse:collapse}
 .fn-head-row.pf-top{margin:0}
 @media (min-width:861px){.fn-head-row.pf-top{display:none}}
 .pf{margin-top:6px}
+
+/* ---------- Телефон: чистый вид (шапка с иконками, фильтры в шторке, карточки) ---------- */
+.pava.m36{width:36px;height:36px;font-size:12.5px;border-radius:11px}
+.m-only{display:none}
+:root{--card-bd:#EEF0F2}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--card-bd:initial}}
+:root[data-theme="dark"]{--card-bd:initial}
+@media (max-width:640px){
+  .top{min-height:56px;padding:0 6px 0 16px;gap:0 4px}
+  .top .brand{display:none}
+  .view-name{order:-1;margin-right:auto;padding:0;font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+  .top-actions{gap:0;padding:6px 0}
+  .top .icon-btn{width:40px;height:40px;position:relative}
+  .top .icon-btn svg{width:20px;height:20px}
+  body[data-view="matrix"] .m-list,body[data-view="kanban"] .m-list{display:grid;place-items:center}
+  #mSearch[aria-pressed="true"]{color:var(--brand)}
+  .m-badge{position:absolute;top:4px;right:3px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--brand);color:#fff;font-size:10px;font-weight:700;line-height:16px;text-align:center}
+  /* «+» в шапке вместо круглой кнопки */
+  #newBtn{position:static;width:40px;height:40px;padding:0;border:0;border-radius:10px;background:transparent;color:var(--ink);box-shadow:none;font-size:0;display:grid;place-items:center}
+  #newBtn::before{content:"";width:20px;height:20px;background:currentColor;
+    -webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>') center/contain no-repeat;
+            mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>') center/contain no-repeat}
+  #filters{display:none!important}
+  main{padding:4px 16px calc(env(safe-area-inset-bottom,0px) + 92px)}
+  .toast{bottom:calc(env(safe-area-inset-bottom,0px) + 80px)}
+  .m-search{display:flex;gap:4px;align-items:center;margin:4px 0 4px}
+  .m-search input{flex:1;height:44px;border:1px solid var(--fbd,var(--line));border-radius:12px;background:var(--surface);color:var(--ink);padding:0 14px}
+  /* заголовки категорий */
+  .grp > h2{font-size:12.5px!important;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 12px;padding:0 2px;display:flex;align-items:center;gap:6px}
+  .grp > h2 span{font-weight:600;opacity:.75}
+  .grp > h2 .cat-dot,.grp > h2 .catd{display:none}
+  .grp{margin-top:24px}
+  main > .grp:first-child,.m-search + .grp{margin-top:8px}
+  /* карточки проектов */
+  .pc-list:has(.mc){background:none;border:0;border-radius:0;padding:0;gap:10px}
+  .pc-list .mc,.pc-list .mc:last-child{background:var(--surface);border:1px solid var(--card-bd,var(--line));border-radius:16px;box-shadow:none}
+  .mc .mc-main{padding:14px 14px 13px;gap:10px}
+  .mc-top{display:flex;align-items:center;gap:12px;min-width:0}
+  .mc-top .pill{flex:none;align-self:flex-start;margin-top:1px}
+  .mc-top .mc-tt{flex:1;min-width:0;display:grid;gap:2px}
+  .mc-top .mc-tt b{font-size:16px;font-weight:700;line-height:1.3;letter-spacing:-.01em}
+  .mc-top .mc-tt small{font-size:12px;color:var(--muted);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mc-hp{font-style:normal;color:var(--r)}
+  .mc-mid{display:flex;align-items:center;gap:6px;min-width:0}
+  .mc-mid .tprog{margin:0;min-width:0;flex:0 1 auto;overflow:hidden}
+  .mc-mid .tp-n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .mc-age{flex:none;font-size:12px;color:var(--muted);white-space:nowrap}.mc-age.slow{color:var(--y)}
+  .top #bell{border:0;background:transparent;box-shadow:none}
+  .mc-bot{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;color:var(--muted)}
+  .mc-bot svg{width:13px;height:13px;flex:none}
+  .mc-bot.dl-over{color:var(--r)}.mc-bot.dl-warn{color:var(--y)}.mc-bot.dl-client{color:var(--b)}.mc-bot.dl-m{color:var(--m)}.mc-bot.dl-done{color:var(--g)}
+}
+/* шторка фильтров */
+.fs-sheet{display:flex;flex-direction:column;padding:14px 0 0}
+.fs-head{display:flex;justify-content:space-between;align-items:center;padding:0 18px 10px}
+.fs-head b{font-size:18px;font-weight:700}
+.fs-body{overflow-y:auto;padding:0 18px;display:grid;gap:20px;min-height:0}
+.fs-body h3{margin:0 0 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.fs-chips{display:flex;flex-wrap:wrap;gap:8px}
+.fs-chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--fbd,var(--line));background:var(--surface);color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
+.fs-chip small{color:var(--muted);font-size:12.5px}
+.fs-chip[aria-pressed="true"]{border-color:var(--ink);background:var(--surface-2);font-weight:600}
+.fs-seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:2px;padding:3px;border-radius:12px;background:var(--surface-2)}
+.fs-seg button{height:36px;border:0;border-radius:9px;background:none;font:inherit;font-size:13.5px;color:var(--muted);cursor:pointer}
+.fs-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.fs-foot{padding:14px 18px calc(env(safe-area-inset-bottom,0px) + 14px);border-top:1px solid var(--line);margin-top:14px}
+.fs-foot .primary{width:100%;height:48px;border-radius:12px;font-size:15px}
+
+/* ---------- Телефон: тот же чистый стиль на остальных экранах ---------- */
+@media (max-width:640px){
+  :root{--radius:16px}
+  /* заголовок раздела уже в шапке — не повторяем; пояснения прячем */
+  .fn-head-row{margin:4px 0 14px;gap:8px}
+  .fn-head-row > .td-title,.fn-head-row > .mine-h,.fn-sum,.kb-tip{display:none}
+  .seg-toggle{max-width:100%;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+  .seg-toggle::-webkit-scrollbar{display:none}
+  .seg-toggle button{flex:none;white-space:nowrap}
+  .fn-head-row select,.kb-head select{height:42px;border-radius:12px;flex:1 1 180px;min-width:0;background:var(--surface);border:1px solid var(--fbd,var(--line))}
+  /* подзаголовки блоков — как заголовки категорий */
+  .dt-h,.kb .col > h3,.panel > h3,.panel > h2{font-size:12.5px!important;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+  .dt-h{margin:20px 2px 12px}
+  /* карточки: белые, скругление 16, мягкая рамка, без теней */
+  .panel,.stat,.dt-proj-sec,.member,.pm-head,.pf-col{border-radius:16px;border:1px solid var(--card-bd,var(--line));box-shadow:none}
+  .panel,.stat{background:var(--surface)}
+  .dt-proj-sec{background:var(--surface);padding:12px 14px;margin:0 0 10px;border-top:1px solid var(--card-bd,var(--line))}
+  /* канбан: колонка почти на всю ширину, листаются свайпом */
+  .kb{gap:12px;margin:0 -16px;padding:0 16px 12px;scroll-snap-type:x mandatory;scroll-padding:0 16px;scrollbar-width:none}
+  .kb::-webkit-scrollbar{display:none}
+  .kb .col{flex:0 0 calc(100vw - 48px);width:calc(100vw - 48px);background:transparent;border:0;padding:0;scroll-snap-align:start;min-height:0}
+  .kb .col > h3{display:flex;align-items:center;gap:8px;margin:0 2px 12px}
+  .kb .card{background:var(--surface);border:1px solid var(--card-bd,var(--line));border-radius:16px;padding:14px;box-shadow:none;margin-bottom:10px}
+  .kb .card .t{font-size:16px;font-weight:700;line-height:1.3}
+  .kb .card .t .pava{width:36px;height:36px;font-size:12.5px;border-radius:11px;margin-right:10px}
+  .kb .card .meta{font-size:12.5px}
+  .kb .card .meta.subnow + .meta{display:none}
+  .kb .col-add{flex:0 0 auto;align-self:flex-start}
+  .dt-proj-sec .dt-fold{flex-wrap:wrap;align-items:center;row-gap:2px;text-align:left}
+  .dt-proj-sec .dt-fold b{font-size:16px;font-weight:700;flex:1;min-width:0}
+  .dt-proj-sec .dt-fold small{flex-basis:100%;padding-left:52px;font-size:12px;color:var(--muted)}
+  .dt-proj-sec .dt-fold .pava{width:30px;height:30px;font-size:11px;border-radius:9px}
+  .dt-proj-sec .dt-due{font-size:12.5px}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2352,6 +2454,7 @@ function restoreView(){
 function render(){
   if (GUEST && ui.view !== 'mytasks') ui.view = 'mine';
   try { renderSide(); } catch(e) {}
+  try { paintPhoneHead(); } catch(e) {}
   try { const vn = $('#viewName'); if (vn) vn.textContent = ({ production:'Производство', templates:'Настройки' })[ui.view] || MNAV[ui.view]?.[0] || ''; } catch(e) {}
   paintSpace(); rememberView();
   document.body.dataset.view = ui.view;
@@ -2519,52 +2622,82 @@ function ring(pct, key){
   return `<svg class="ring rk-${key}" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="${r}" class="ring-bg"/><circle cx="24" cy="24" r="${r}" class="ring-fg" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct / 100)}" transform="rotate(-90 24 24)"/><text x="24" y="28.5" text-anchor="middle">${pct}%</text></svg>`;
 }
 function renderPhoneList(list){
-  ui.mxOpen = ui.mxOpen || {};
-  // шапка: сводка по статусам, плитки работают как фильтр
-  const pool = db.projects.filter(baseOk).filter(p => p.state === 'active');
-  const cnt = k => pool.filter(p => projectRisk(p) === k).length;
-  const week = pool.filter(p => { const c = currentStage(p); return c && c.status !== 'not_started' && urg(c.due_date).k !== 'ok'; }).length;
-  const tiles = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике'],['maint','На ведении']].map(([k, l]) =>
-    `<button class="tile t-${k}" data-htile="${k}" aria-pressed="${ui.risk === k}"><b>${cnt(k)}</b><span>${l}</span></button>`).join('');
-  const chips = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике'],['maint','На ведении']].filter(([k]) => k !== 'maint' || cnt(k)).map(([k, l]) =>
-    `<button class="chip" data-htile="${k}" data-risk-k="${k}" aria-pressed="${ui.risk === k}">${chipIco(k)}${l} <b>${cnt(k)}</b></button>`).join('');
-  const hero = `<section class="mh"><h2>${pool.length} ${plural(pool.length, 'проект', 'проекта', 'проектов')} в работе${week ? `<small>${week} ${plural(week, 'срок', 'срока', 'сроков')} на неделе</small>` : ''}</h2>
-    <div class="mh-chips">${chips}${ui.risk ? `<button class="chip" data-htile="">Все</button>` : ''}</div></section>`;
+  // телефон: только контент — заголовки категорий и карточки; поиск и фильтры — иконками в шапке
   const card = p => {
-    const c = currentStage(p); const h = c ? health(c) : { key:'done', label:'Завершён', note:'' };
-    const risk = projectRisk(p); const n = p.stages.length; const doneN = p.stages.filter(s => s.status === 'done').length;
-    const end = plannedEnd(p); const late = p.deadline && end > p.deadline; const open = !!ui.mxOpen[p.id];
-    const pg = projectProgress(p); const pct = pg.total ? pg.pct : Math.round(doneN / n * 100);
-    const worst = risk !== h.key && risk !== 'done' && risk !== 'gray' ? p.stages.find(s => health(s).key === risk) : null;
-    const segs = p.stages.map(s => { const k = s.status === 'done' ? 'done' : health(s).key; return `<i class="pseg p-${k === 'done' ? 'done' : (c && s.id === c.id) || k === 'red' ? k : 'todo'}"></i>`; }).join('');
-    // срок этапа
-    let stageChip = '';
-    if (c && c.status === 'not_started'){ const u = urg(c.planned_start); stageChip = `<span class="dchip u-plan">${CLOCK}старт ${u.d <= 0 ? 'сегодня' : u.txt}</span>`; }
-    else if (c){ const u = urg(c.due_date); stageChip = `<span class="dchip u-${u.k}">${CLOCK}${u.k === 'over' ? u.txt : `сдать ${u.txt}`}</span>`; }
-    // срок проекта: дедлайн, если задан, иначе расчётный финиш
-    const target = p.state === 'completed' ? null : (p.deadline || end); const tu = urg(target);
-    const due = target ? `<span class="dchip big u-${late ? 'over' : tu.k}">${FLAG}${p.deadline ? 'Дедлайн' : 'Финиш'} ${fmt(target)} · ${tu.txt}</span>` : '<span class="dchip u-ok">Проект завершён</span>';
-    const stages = open ? `<ol class="pc-stages">${p.stages.map((s, i) => { const sh = health(s); const isCur = c && s.id === c.id; const su = s.status === 'done' || s.status === 'not_started' ? null : urg(s.due_date);
-        return `<li><button class="pc-st${isCur ? ' cur' : ''}" data-open="${p.id}" data-stage="${s.id}"><i class="sw ${sh.key}"></i>
-          <span class="pc-sn"><b>${i + 1}. ${esc(s.name)}</b><small>${esc(short(whoId(p, s)))}</small></span>
-          <span class="pc-ss s-${sh.key}t">${sh.label}<small class="${su ? 'ut-' + su.k : ''}">${sh.note}</small></span></button></li>`; }).join('')}</ol>` : '';
-    const sub = curSubTxt(p);
-    let stageDue = '';
-    if (c && c.status === 'not_started'){ const u = urg(c.planned_start); stageDue = `старт ${u.d <= 0 ? 'сегодня' : u.txt}`; }
-    else if (c){ const u = urg(c.due_date); stageDue = `<span class="ut-${u.k}">${u.k === 'over' ? u.txt : `сдать ${u.txt}`}</span>`; }
-    const dlTxt = p.state === 'completed' ? 'Проект завершён' : target ? `${p.deadline ? 'Дедлайн' : 'Финиш'} ${fmt(target)}${late ? ` · <span class="ut-over">план позже на ${days(diffDays(end, p.deadline))}</span>` : ''}` : '';
+    const c = currentStage(p); const risk = projectRisk(p); const m = getProjectTimeMetrics(p);
+    const dl = phoneDue(p, m);
+    const onStage = m.daysAtCurrentStage && !m.maint ? `<small class="mc-age${m.plannedStage && m.daysAtCurrentStage > m.plannedStage ? ' slow' : ''}">(${m.daysAtCurrentStage}-й день на этапе)</small>` : '';
     return `<article class="pc mc">
       <button class="mc-main" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''}>
-        <span class="mc-hd">${projAva(p, 'md')}<span class="mc-tt"><b>${esc(p.name)}</b>
-          <small class="mc-sub"><span>${esc(p.client)}</span><span>PM ${esc(short(p.pm_id))}</span>${p.priority === 'high' ? '<span class="hp">Высокий</span>' : ''}</small>
-          <span class="mc-badges">${stPill(risk, risk === 'green' ? 'В работе' : RISK_RU[risk])}${target || p.state === 'completed' ? `<span class="mc-dl dl-${p.state === 'completed' ? 'ok' : late ? 'over' : tu.k}">${FLAG}${p.state === 'completed' ? 'Завершён' : fmt(target)}</span>` : ''}</span></span></span>
-        <span class="mc-stage">${ticksHtml(p, risk)}</span>
-        ${sub ? `<small class="mc-subnow">${esc(sub)}</small>` : ''}
+        <span class="mc-top">${projAva(p, 'm36')}<span class="mc-tt"><b>${esc(p.name)}</b><small>PM ${esc(short(p.pm_id))} · ${esc(p.client)}${p.priority === 'high' ? ' · <em class="mc-hp">высокий</em>' : ''}</small></span>${stPill(risk, risk === 'green' ? 'В работе' : risk === 'red' ? 'Просрочен' : RISK_RU[risk])}</span>
+        <span class="mc-mid">${ticksHtml(p, risk)}${onStage}</span>
+        ${dl ? `<span class="mc-bot ${dl.cls}">${FLAG}${dl.html}</span>` : ''}
       </button>
     </article>`;
   };
-  app.innerHTML = hero + (list.length ? '' : `<div class="empty">Под фильтры не попал ни один проект.<br><button class="primary" id="emptyReset">Сбросить фильтры</button></div>`) + groupsFor(list).map(g => `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2><div class="pc-list">${g.items.map(card).join('')}</div></section>`).join('');
+  const search = ui.mSearch || ui.q ? `<div class="m-search"><input type="search" id="mQ" placeholder="Проект, клиент, PM" value="${esc(ui.q || '')}" aria-label="Поиск проектов">
+    <button class="icon-btn" data-msearchclose aria-label="Закрыть поиск">×</button></div>` : '';
+  app.innerHTML = search + (list.length ? '' : `<div class="empty">Под фильтры не попал ни один проект.<br><button class="primary" id="emptyReset">Сбросить фильтры</button></div>`)
+    + groupsFor(list).map(g => `<section class="grp m-grp"><h2>${esc(g.title)} <span>${g.items.length}</span></h2><div class="pc-list">${g.items.map(card).join('')}</div></section>`).join('');
+  if (ui.mSearchFocus){ ui.mSearchFocus = false; const q = $('#mQ'); q?.focus(); }
 }
+// нижняя строка карточки: срок и что с ним
+function phoneDue(p, m){
+  if (m.done) return { cls:'dl-done', html:'Завершён' };
+  if (m.maint) return { cls:'dl-m', html:`Бессрочно · месяц ${m.maintenanceCycle.month} (день ${m.maintenanceCycle.dayInCycle}/30)` };
+  if (!m.deadline) return null;
+  const d = fmt(m.deadline);
+  if (m.clientDays) return { cls:m.clientDays > 3 ? 'dl-warn' : 'dl-client', html:`${d} · У клиента: ${m.clientDays}-й день` };
+  if (m.daysLeft < 0) return { cls:'dl-over', html:`${d} · Просрочено на ${days(-m.daysLeft)}` };
+  if (m.daysLeft === 0) return { cls:'dl-warn', html:`${d} · Сегодня` };
+  return { cls:m.daysLeft <= 2 ? 'dl-warn' : '', html:`${d} · Осталось ${days(m.daysLeft)}` };
+}
+document.addEventListener('input', e => { if (e.target.id !== 'mQ') return; ui.q = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#mQ'); q?.focus(); q?.setSelectionRange(pos, pos); });
+document.addEventListener('click', e => { if (!e.target.closest('[data-msearchclose]')) return; ui.q = ''; ui.mSearch = false; render(); });
+
+// ---------- телефон: шапка (поиск, фильтры, +) и шторка фильтров ----------
+const FILT_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>';
+$('#bell').insertAdjacentHTML('beforebegin', `<button class="icon-btn m-only m-list" id="mSearch" aria-label="Поиск"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+  <button class="icon-btn m-only m-list" id="mFilt" aria-label="Фильтры" aria-haspopup="dialog">${FILT_ICO}<b class="m-badge" hidden></b></button>`);
+const mFilterCount = () => (ui.risk ? 1 : 0) + ui.pms.length + ui.clients.length;
+function paintPhoneHead(){
+  const b = $('#mFilt .m-badge'); if (!b) return; const n = mFilterCount(); b.hidden = !n; b.textContent = n || '';
+  $('#mSearch')?.setAttribute('aria-pressed', String(!!(ui.mSearch || ui.q)));
+}
+function openFilterSheet(){
+  const pool = db.projects.filter(baseOk);
+  const live = db.projects.filter(p => p.state !== 'archived');
+  const pmIds = [...new Set(live.map(p => p.pm_id))].filter(userById);
+  const cc = live.reduce((m, p) => (m[p.client] = (m[p.client] || 0) + 1, m), {});
+  const clients = Object.keys(cc).sort((a, b) => cc[b] - cc[a]);
+  const seg = (attr, cur, opts) => `<div class="fs-seg">${opts.map(([v, l]) => `<button data-${attr}="${v}" aria-pressed="${cur === v}">${l}</button>`).join('')}</div>`;
+  const chip = (attrs, on, inner) => `<button class="fs-chip" ${attrs} aria-pressed="${on}">${inner}</button>`;
+  const scroll = layer.querySelector('.fs-body')?.scrollTop || 0;
+  layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal fs-sheet" role="dialog" aria-modal="true" aria-label="Фильтры">
+    <div class="fs-head"><b>Фильтры</b><button class="link" data-fsreset ${mFilterCount() ? '' : 'hidden'}>Сбросить</button></div>
+    <div class="fs-body">
+      <section><h3>Статус</h3><div class="fs-chips">${chip('data-fsrisk=""', !ui.risk, `${chipIco('')}Все активные`)}${RISK.map(([k, l]) => { const n = pool.filter(p => projectRisk(p) === k).length; return n || ui.risk === k ? chip(`data-fsrisk="${k}"`, ui.risk === k, `${chipIco(k)}${l} <small>${n}</small>`) : ''; }).join('')}</div></section>
+      <section><h3>Сортировка</h3>${seg('fssort', ui.sort, [['risk', 'Срочность'], ['deadline', 'Дедлайн'], ['name', 'Название']])}</section>
+      ${ui.view === 'matrix' ? `<section><h3>Группировка</h3>${seg('fsgroup', groupMode(), [['category', 'Категории'], ['template', 'Процесс'], ['pm', 'PM'], ['none', 'Без групп']])}</section>` : ''}
+      ${pmIds.length ? `<section><h3>PM</h3><div class="fs-chips">${pmIds.map(id => chip(`data-fspm="${id}"`, ui.pms.includes(id), `${esc(short(id))} <small>${live.filter(p => p.pm_id === id).length}</small>`)).join('')}</div></section>` : ''}
+      ${clients.length ? `<section><h3>Клиенты</h3><div class="fs-chips">${clients.map(c => chip(`data-fsclient="${esc(c)}"`, ui.clients.includes(c), `${esc(c)} <small>${cc[c]}</small>`)).join('')}</div></section>` : ''}
+    </div>
+    <div class="fs-foot"><button class="primary" data-close>Показать ${visible().length} ${plural(visible().length, 'проект', 'проекта', 'проектов')}</button></div></div>`;
+  const body = layer.querySelector('.fs-body'); if (body) body.scrollTop = scroll;
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('#mSearch')){ ui.mSearch = !(ui.mSearch || ui.q); if (!ui.mSearch) ui.q = ''; else ui.mSearchFocus = true; render(); scrollTo(0, 0); return; }
+  if (e.target.closest('#mFilt')){ openFilterSheet(); return; }
+  const t = e.target.closest('[data-fsrisk],[data-fssort],[data-fsgroup],[data-fspm],[data-fsclient],[data-fsreset]'); if (!t || !t.closest('.fs-sheet')) return;
+  const d = t.dataset;
+  if (d.fsrisk !== undefined) ui.risk = ui.risk === d.fsrisk ? '' : d.fsrisk;
+  if (d.fssort) ui.sort = d.fssort;
+  if (d.fsgroup) ui.group = d.fsgroup;
+  if (d.fspm) ui.pms = toggle(ui.pms, d.fspm);
+  if (d.fsclient !== undefined) ui.clients = toggle(ui.clients, d.fsclient);
+  if (d.fsreset !== undefined){ ui.risk = ''; ui.pms = []; ui.clients = []; }
+  render(); openFilterSheet();
+});
 document.addEventListener('click', e => { const t = e.target.closest('[data-htile]'); if (!t) return; const k = t.dataset.htile; ui.risk = ui.risk === k ? '' : k; render(); });
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-mxtoggle]'); if (!t) return;
