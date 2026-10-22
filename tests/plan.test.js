@@ -322,6 +322,20 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     $q('[data-seldone]').click(); await wait(100);
     assert.ok(!$q('#selBar')); ok('выбор: «Готово» выходит из режима, ничего не удаляя');
   }
+  // фото проекта: заглушка с буквами, фото в списке и карточке, удаление
+  {
+    Dc.querySelector('[data-view="matrix"]').click(); await wait(80); Dc.querySelector('[data-density="compact"]').click(); await wait(100);
+    const pr = LS().projects.find(p => p.state === 'active');
+    const row = () => Dc.querySelector(`.cx tr[data-open="${pr.id}"] .pava`);
+    assert.ok(row() && row().classList.contains('none') && row().textContent.trim().length >= 1); ok('фото проекта: без фото — буквы названия в цветном квадрате');
+    w.eval(`projById('${pr.id}').image = 'data:image/jpeg;base64,/9j/4AAQ'; commit();`); await wait(100);
+    assert.ok(row().querySelector('img')); ok('фото проекта: показано в списке проектов');
+    w.openProject(pr.id); await wait(150);
+    assert.ok($q('.d-head .pava-edit img') && $q('#pImg') && $q('#pImgDel')); ok('карточка проекта: фото, замена и «Убрать фото»');
+    $q('#pImgDel').click(); await wait(150);
+    assert.ok(!LS().projects.find(p => p.id === pr.id).image && $q('.d-head .pava.none')); ok('«Убрать фото» возвращает буквы');
+    w.closeLayer(); await wait(50);
+  }
   // 14) фильтры: аккуратная панель
   Dc.querySelector('[data-view="matrix"]').click(); await wait(100);
   const ownText = el => [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim();
