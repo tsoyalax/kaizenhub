@@ -12,10 +12,11 @@
 :root{
   color-scheme: light;
   --bg:#F7F7F8; --surface:#FFFFFF; --surface-2:#F3F3F5; --row:#FFFFFF; --ink:#17171C; --muted:#71717A; --line:#E8E8EB; --line-strong:#D4D4D8;
-  --accent:#17171C; --accent-ink:#FFFFFF; --brand:#6A5AE0; --link:#3B5BDB; --focus:#3B5BDB; --soft:#EEF1FB;
+  --accent:#17171C; --accent-ink:#FFFFFF; --brand:#6A5AE0; --link:#2F6BFF; --focus:#2F6BFF; --soft:#EAF1FF;
   --card-hi:transparent; --shadow:none;
-  --g:#15803D; --g-bg:#EFF8F2; --y:#B45309; --y-bg:#FEF6E7; --r:#DC2626; --r-bg:#FDF0F0;
-  --b:#2563EB; --b-bg:#EEF3FE; --w:#15803D; --m:#7C3AED; --m-bg:#F3EEFF; --n:#A1A1AA; --n-bg:#F4F4F5; --d:#71717A; --d-bg:#F7F7F8;
+  --g:#16A34A; --g-bg:#E7F8EE; --y:#E07800; --y-bg:#FFF3E0; --r:#E5383B; --r-bg:#FFECEC;
+  --tick-on:#A1A1AA; --tick-off:#E7E7EA;
+  --b:#2F6BFF; --b-bg:#EAF1FF; --w:#16A34A; --m:#7C3AED; --m-bg:#F1EAFF; --n:#A1A1AA; --n-bg:#F4F4F5; --d:#71717A; --d-bg:#F7F7F8;
   --radius:12px; --cell-w:140px;
   font-family:"Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   box-sizing:border-box;
@@ -27,7 +28,7 @@
     --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --row:#16161A; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-strong:#3A3A42;
     --accent:#EDEDEF; --accent-ink:#0F0F12; --brand:#7C6CF6; --link:#8DA2F7; --focus:#8DA2F7; --soft:#1C2033;
     --card-hi:transparent; --shadow:none;
-    --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80; --m:#B197FC; --m-bg:#231D3B;
+    --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --tick-on:#EDEDEF; --tick-off:color-mix(in srgb,#EDEDEF 16%,transparent); --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80; --m:#B197FC; --m-bg:#231D3B;
     --n:#71717A; --n-bg:#1F1F24; --d:#8A8A93; --d-bg:#18181C;
   }
 }
@@ -36,7 +37,7 @@
   --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --row:#16161A; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-strong:#3A3A42;
   --accent:#EDEDEF; --accent-ink:#0F0F12; --brand:#7C6CF6; --link:#8DA2F7; --focus:#8DA2F7; --soft:#1C2033;
   --card-hi:transparent; --shadow:none;
-  --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80; --m:#B197FC; --m-bg:#231D3B;
+  --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --tick-on:#EDEDEF; --tick-off:color-mix(in srgb,#EDEDEF 16%,transparent); --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80; --m:#B197FC; --m-bg:#231D3B;
   --n:#71717A; --n-bg:#1F1F24; --d:#8A8A93; --d-bg:#18181C;
 }
 *,*::before,*::after{box-sizing:inherit}
@@ -191,7 +192,7 @@ table.cx{width:100%;border-collapse:collapse;min-width:800px;table-layout:fixed}
 .cx tr.r-yellow .due small{color:var(--y)}
 .pbar{display:flex;gap:2px;height:6px;margin:4px 0 5px}
 .pseg{flex:1;min-width:4px;border-radius:2px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line)}
-.pseg.p-done{background:var(--ink);box-shadow:none}
+.pseg.p-done{background:var(--tick-on);box-shadow:none}
 .pseg.p-green{background:var(--g);box-shadow:none}.pseg.p-yellow{background:var(--y);box-shadow:none}.pseg.p-red{background:var(--r);box-shadow:none}.pseg.p-blue{background:var(--b);box-shadow:none}.pseg.p-gray{background:var(--n);box-shadow:none}
 
 /* ---------- Канбан ---------- */
@@ -417,8 +418,19 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .space-name{margin-left:10px;border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:2px 10px;font:inherit;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .space-name:hover{color:var(--ink);border-color:var(--line-strong)}
 .sp-list{list-style:none;margin:12px 0;padding:0;display:grid;gap:4px}
-.sp-row{display:grid;grid-template-columns:minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line)}
+.sp-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto 28px;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line)}
 .sp-row b{padding:0 8px}
+.sp-name{display:flex;align-items:center;gap:4px;min-width:0}.sp-name input{flex:1}
+.sp-dot{width:26px;height:26px;border-radius:8px;flex:none;margin-left:2px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
+.sp-dot svg{width:15px;height:15px}
+.sp-icons{display:flex;flex-wrap:wrap;gap:2px;grid-column:1/-1;order:5;padding:2px 0 4px 32px}
+.sp-i{width:28px;height:28px;border-radius:8px;border:1px solid transparent;background:none;display:grid;place-items:center;cursor:pointer;color:var(--muted);padding:0}
+.sp-i svg{width:15px;height:15px}.sp-i:hover{background:var(--surface-2);color:var(--ink)}
+.sp-i.on{color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent);border-color:color-mix(in srgb,var(--c) 45%,transparent)}
+.sp-colors{display:flex;gap:4px;flex-wrap:wrap}
+.sp-c{width:18px;height:18px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.sp-c.on{border-color:var(--ink)}
+@media (max-width:640px){.sp-row{grid-template-columns:1fr auto 28px}.sp-colors{grid-column:1/-1;order:3}}
 .sp-row:hover .tx{opacity:1}
 .sp-row input{height:34px;border:1px solid transparent;border-radius:8px;background:transparent;padding:0 8px;font-weight:600;font-size:14.5px;min-width:0}
 .sp-row input:hover{border-color:var(--line)}.sp-row input:focus{border-color:var(--line-strong);outline:0;background:var(--surface)}
@@ -575,6 +587,53 @@ body.selecting #app{padding-bottom:90px}
 .msg-copy{display:inline-flex;align-items:center;gap:6px;justify-self:end;font-size:12.5px;font-weight:500;color:var(--link)}
 .msg-copy svg{width:14px;height:14px}
 .msg-box.copied{border-color:var(--g)}.msg-box.copied .msg-copy{color:var(--g)}
+/* меню-панель в стиле Arc */
+.side-btn{flex:none;margin-right:-14px}
+/* верхнее меню больше не нужно: разделы — в панели слева (на телефоне — нижнее меню) */
+.top .tabs,.top .space-name{display:none!important}
+.view-name{font-size:14.5px;font-weight:500;color:var(--muted);padding-left:14px;border-left:1px solid var(--line);white-space:nowrap}
+@media (max-width:640px){.view-name{display:none}}
+body.side-pinned .side-btn{color:var(--ink)}
+.side{position:fixed;z-index:40;top:8px;left:8px;bottom:8px;width:264px;display:flex;flex-direction:column;gap:14px;padding:12px;border-radius:16px;
+  border:1px solid color-mix(in srgb,var(--space,var(--brand)) 30%,var(--line));
+  background:linear-gradient(180deg,color-mix(in srgb,var(--space,var(--brand)) 14%,var(--surface)),color-mix(in srgb,var(--space,var(--brand)) 6%,var(--surface)));
+  box-shadow:0 24px 60px rgba(0,0,0,.35);overflow-y:auto;animation:sideIn .16s ease-out}
+@keyframes sideIn{from{transform:translateX(-12px);opacity:0}}
+.side-back{position:fixed;inset:0;z-index:39;background:rgba(0,0,0,.25)}
+.side-edge{position:fixed;left:0;top:0;bottom:0;width:4px;z-index:5}
+.side-head{display:flex;align-items:center;gap:6px}
+.side-sp{display:flex;align-items:center;gap:9px;flex:1;min-width:0;padding:4px 6px}
+.side-sp-ico{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;flex:none;color:var(--c);background:color-mix(in srgb,var(--c) 20%,transparent)}
+.side-sp-ico svg{width:16px;height:16px}
+.side-sp b{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.side-nav{display:grid;gap:2px}
+.side-nav button{display:flex;align-items:center;gap:11px;height:38px;padding:0 11px;border:0;border-radius:10px;background:none;color:var(--muted);font:inherit;font-size:14px;cursor:pointer;text-align:left}
+.side-nav button svg{width:18px;height:18px;flex:none}
+.side-nav button:hover{background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink)}
+.side-nav button[aria-current="page"]{background:color-mix(in srgb,var(--surface) 80%,transparent);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12);font-weight:500}
+.side-spaces{margin-top:auto;display:grid;gap:8px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--ink) 10%,transparent)}
+.side-spl{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);padding:0 4px}.side-spl .link{font-size:12px}
+.side-dots{display:flex;flex-wrap:wrap;gap:8px;padding:0 4px}
+.side-dot{width:34px;height:34px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;padding:0;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);transition:transform .12s,background .12s}
+.side-dot svg{width:16px;height:16px}
+.side-dot:hover{transform:scale(1.08);background:color-mix(in srgb,var(--c) 24%,transparent)}
+.side-dot.cur{background:var(--c);color:#fff;box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 30%,transparent)}
+.side-dot.add{color:var(--muted);font-size:18px;border:1px dashed color-mix(in srgb,var(--ink) 25%,transparent)}
+.side-spnames{display:none}
+.side-spnames button{display:flex;align-items:center;gap:9px;height:32px;padding:0 10px;border:0;border-radius:8px;background:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.side-spnames button i{width:9px;height:9px;border-radius:50%;flex:none}
+.side-spnames button:hover{background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink)}
+.side-spnames button.cur{color:var(--ink);font-weight:500}
+/* закреплённая панель: сдвигает страницу, верхние вкладки не дублируются */
+@media (min-width:1101px){
+  body.side-pinned{padding-left:280px}
+  body.side-pinned .side{animation:none;box-shadow:none;z-index:6}
+  body.side-pinned .top .tabs{display:none}
+  body.side-pinned .top{justify-content:space-between}
+}
+.space-name{border-color:color-mix(in srgb,var(--space,var(--brand)) 45%,var(--line))}
+.chip-i{display:inline-grid;place-items:center;flex:none}.chip-i .pi{width:14px;height:14px}
+.ci-red{color:var(--r)}.ci-yellow{color:var(--y)}.ci-blue{color:var(--b)}.ci-green{color:var(--w)}.ci-maint{color:var(--m)}.ci-gray,.ci-all{color:var(--muted)}.ci-done{color:var(--g)}
 .team-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
 .cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
@@ -1281,14 +1340,14 @@ table.cx{border-collapse:collapse}
 /* прогресс штрихами */
 .tprog{display:flex;align-items:center;gap:10px}
 .ticks{display:inline-flex;gap:2px;height:16px;align-items:stretch}
-.ticks i{width:4px;border-radius:1.5px;background:color-mix(in srgb,var(--ink) 16%,transparent);align-self:center;height:12px}
+.ticks i{width:4px;border-radius:1.5px;background:var(--tick-off);align-self:center;height:12px}
 .ticks{gap:3px;align-items:center;flex:none;height:18px}
 .ticks i.cur{background:var(--fc);height:18px;box-shadow:0 0 8px color-mix(in srgb,var(--fc) 45%,transparent)}
 .tprog{min-width:0}
 .tp-n{font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .tp-n b{color:var(--muted);font-weight:500;margin-right:4px}
 .mc-stage{display:grid;gap:2px}.mc-subnow{color:var(--muted);font-size:12.5px}
-.ticks i.on{background:var(--ink)}
+.ticks i.on{background:var(--tick-on)}
 .tprog b{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums}
 .cx .tprog + small{margin-top:2px}
 /* статус в цветной рамке */
@@ -1306,6 +1365,8 @@ table.cx{border-collapse:collapse}
 </head>
 <body>
 <header class="top">
+  <button class="icon-btn side-btn" id="sideBtn" aria-label="Открыть меню" aria-expanded="false" aria-controls="side" title="Меню и пространства">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
   <div class="brand"><span class="logo" aria-hidden="true"><i></i><i></i><i></i></span><span class="brand-t">KaizenHub</span><button class="space-name" id="spaceName" hidden title="Пространство — сменить в настройках"></button></div>
   <nav class="tabs" aria-label="Разделы">
     <button data-view="matrix">Матрица</button>
@@ -1319,6 +1380,7 @@ table.cx{border-collapse:collapse}
     <button data-view="team">Команда</button>
     <button data-view="templates">Настройки</button>
   </nav>
+  <span class="view-name" id="viewName"></span>
   <div class="top-actions">
     <button class="icon-btn" id="cloudBtn" aria-label="Сохранение данных"></button>
     <button class="icon-btn" id="themeBtn" aria-label="Переключить тему"></button>
@@ -1362,6 +1424,9 @@ table.cx{border-collapse:collapse}
   <div class="tags" id="tags"></div>
   <div class="tags" id="activeF"></div>
 </section>
+<div class="side-edge" id="sideEdge" aria-hidden="true"></div>
+<aside class="side" id="side" aria-label="Меню и пространства" hidden></aside>
+<div class="side-back" id="sideBack" hidden></div>
 <main id="app"></main>
 <nav class="mnav" id="mnav" aria-label="Разделы"></nav>
 <div id="layer"></div>
@@ -2055,11 +2120,11 @@ function renderFilters(){
 
   const pool = db.projects.filter(baseOk);
   const activeCount = pool.filter(p => p.state === 'active').length;
-  $('#chips').innerHTML = `<button class="chip" data-risk="" aria-pressed="${!ui.risk}"><span class="sw all"></span>Все активные <b>${activeCount}</b></button>` +
+  $('#chips').innerHTML = `<button class="chip" data-risk="" aria-pressed="${!ui.risk}">${chipIco('')}Все активные <b>${activeCount}</b></button>` +
     RISK.map(([k,label]) => {
       const n = pool.filter(p => projectRisk(p) === k).length;
       if (!n && ui.risk !== k) return '';   // пустые статусы не показываем
-      return `<button class="chip" data-risk="${k}" aria-pressed="${ui.risk===k}" title="Показать только: ${label.toLowerCase()}"><span class="sw ${k}"></span>${label} <b>${n}</b></button>`;
+      return `<button class="chip" data-risk="${k}" aria-pressed="${ui.risk===k}" title="Показать только: ${label.toLowerCase()}">${chipIco(k)}${label} <b>${n}</b></button>`;
     }).join('');
 
   const live = db.projects.filter(p => p.state !== 'archived');
@@ -2087,6 +2152,8 @@ function restoreView(){
 }
 function render(){
   if (GUEST && ui.view !== 'mytasks') ui.view = 'mine';
+  try { renderSide(); } catch(e) {}
+  try { const vn = $('#viewName'); if (vn) vn.textContent = ({ production:'Производство', templates:'Настройки' })[ui.view] || MNAV[ui.view]?.[0] || ''; } catch(e) {}
   if (!GUEST && ui.view === 'mytasks'){ ui.view = 'production'; ui.prodMode = 'tasks'; }
   paintSpace(); rememberView();
   document.body.dataset.view = ui.view;
@@ -2262,7 +2329,7 @@ function renderPhoneList(list){
   const tiles = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике'],['maint','На ведении']].map(([k, l]) =>
     `<button class="tile t-${k}" data-htile="${k}" aria-pressed="${ui.risk === k}"><b>${cnt(k)}</b><span>${l}</span></button>`).join('');
   const chips = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике'],['maint','На ведении']].filter(([k]) => k !== 'maint' || cnt(k)).map(([k, l]) =>
-    `<button class="chip" data-htile="${k}" aria-pressed="${ui.risk === k}"><span class="sw ${k}"></span>${l} <b>${cnt(k)}</b></button>`).join('');
+    `<button class="chip" data-htile="${k}" data-risk-k="${k}" aria-pressed="${ui.risk === k}">${chipIco(k)}${l} <b>${cnt(k)}</b></button>`).join('');
   const hero = `<section class="mh"><h2>${pool.length} ${plural(pool.length, 'проект', 'проекта', 'проектов')} в работе${week ? `<small>${week} ${plural(week, 'срок', 'срока', 'сроков')} на неделе</small>` : ''}</h2>
     <div class="mh-chips">${chips}${ui.risk ? `<button class="chip" data-htile="">Все</button>` : ''}</div></section>`;
   const card = p => {
@@ -2385,6 +2452,9 @@ document.addEventListener('click', e => {
 const density = () => db.prefs?.density || 'detailed';
 // значки статусов в плашках списка
 const sico = path => `<svg class="pi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+// иконка статуса в фильтрах — та же, что в плашке статуса проекта
+const chipIco = k => k ? `<span class="chip-i ci-${k}">${STATUS_ICO[k] || STATUS_ICO.gray}</span>`
+  : `<span class="chip-i ci-all"><svg class="pi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>`;
 const STATUS_ICO = {
   maint:sico('<path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/>'),
   green:sico('<path d="M12 3a9 9 0 1 1-9 9" stroke-dasharray="3 3.2"/><path d="M12 3a9 9 0 0 0-9 9"/>'),
@@ -3318,7 +3388,50 @@ document.addEventListener('input', e => {
   const row = el.closest('.tsub'); const x = ui.draft.stages[+row.dataset.i].subs[+row.dataset.j]; x.name = el.value; ui.draftDirty = true;
 });
 // ---------- Пространства ----------
-const spaces = { list:[], orgs:[], ready:false };
+const spaces = { list:[], orgs:[], ready:false, mainColor:'', mainIcon:'' };
+// Пространства как в Arc: у каждого свой цвет — им окрашены логотип, панель и акценты
+const SP_COLORS = ['#7C6CF6', '#3B82F6', '#06B6D4', '#10B981', '#84CC16', '#F59E0B', '#F97316', '#EF4444', '#EC4899', '#A855F7'];
+const SPC_KEY = 'kz-space-colors';
+// иконки пространств (линии 24×24)
+const SP_ICONS = {
+  home:'<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+  briefcase:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>',
+  star:'<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9Z"/>',
+  rocket:'<path d="M5 15c-1.5 1.5-2 5-2 5s3.5-.5 5-2"/><path d="M9 12a13 13 0 0 1 11-9 13 13 0 0 1-9 11l-2-2Z"/><path d="M9 12H5l2-4h4M12 15v4l4-2v-4"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>',
+  chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  camera:'<path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/>',
+  megaphone:'<path d="M3 11v2a2 2 0 0 0 2 2h1l4 4V5L6 9H5a2 2 0 0 0-2 2Z"/><path d="M14 8a5 5 0 0 1 0 8M17 5a9 9 0 0 1 0 14"/>',
+  heart:'<path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1Z"/>',
+  leaf:'<path d="M5 19c0-9 6-14 15-14 0 9-5 15-14 15"/><path d="M5 19c4-4 7-6 10-8"/>',
+  code:'<path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',
+  book:'<path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4ZM20 4h-6a3 3 0 0 0-3 3"/><path d="M20 4v14h-7"/>',
+  coffee:'<path d="M4 8h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5Z"/><path d="M16 9h2a3 3 0 0 1 0 6h-2M8 2v3M12 2v3"/>',
+  flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7Z"/>',
+};
+const SP_ICON_KEYS = Object.keys(SP_ICONS);
+const spIco = (k, cls = '') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SP_ICONS[k] || SP_ICONS.home}</svg>`;
+const hashIcon = id => SP_ICON_KEYS[1 + ([...String(id)].reduce((a, c) => (a * 17 + c.charCodeAt(0)) >>> 0, 3) % (SP_ICON_KEYS.length - 1))];
+function spIcon(id){
+  if (!id) return spaces.mainIcon || 'home';
+  const x = spaces.list.find(v => v.id === id); return x?.icon || hashIcon(id);
+}
+const spColorsCache = () => { try { return JSON.parse(localStorage.getItem(SPC_KEY) || '{}'); } catch(e) { return {}; } };
+const hashColor = id => SP_COLORS[[...String(id)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % SP_COLORS.length];
+function spColor(id){
+  if (!id) return spaces.mainColor || spColorsCache()[''] || SP_COLORS[0];
+  const x = spaces.list.find(v => v.id === id); return x?.color || spColorsCache()[id] || hashColor(id);
+}
+const curSpaceKey = () => ORG ? 'o:' + ORG : SPACE || '';
+function applySpaceColor(){
+  const c = ORG ? (spColorsCache()['o:' + ORG] || hashColor(ORG)) : spColor(SPACE);
+  document.documentElement.style.setProperty('--brand', c);
+  document.documentElement.style.setProperty('--space', c);
+  try { const m = spColorsCache(); m[curSpaceKey()] = c; if (!ORG) { m[''] = spColor(''); spaces.list.forEach(x => { m[x.id] = spColor(x.id); }); } localStorage.setItem(SPC_KEY, JSON.stringify(m)); } catch(e) {}
+}
+try { applySpaceColor(); } catch(e) {}
 const spaceName = () => ORG ? `Проекты: ${spaces.orgs.find(x => x.id === ORG)?.name || 'руководителя'}` : SPACE ? (spaces.list.find(x => x.id === SPACE)?.name || 'Пространство') : 'Основное';
 function emptySpace(){
   return { users:[{ id:ME, name:'', email:'', role:'admin', dept:'Руководство', capacity:4, status:'active' }], templates:[], categories:[], projects:[], tasks:[], reports:[],
@@ -3330,13 +3443,70 @@ function watchSpaces(){
   shared.subs.set('__orgs', [cloud.store.collection(`data/users/${cloud.uid}/links/lead`).onSnapshot(async snap => {
     const ids = snap.docs.map(d => d.id); const prof = ids.length ? await cloud.user.profiles(ids).catch(() => ({})) : {};
     spaces.orgs = ids.map(id => ({ id, name:prof[id]?.name || prof[id]?.email || 'Руководитель' }));
-    paintSpace(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
+    paintSpace(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
   }, () => {})]);
   shared.subs.set('__spaces', [cloud.store.collection(`data/users/${cloud.uid}/spaces/list`).onSnapshot(snap => {
-    spaces.list = snap.docs.map(d => ({ id:d.id, name:d.data().name || 'Пространство', at:d.data().at || '' })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
-    spaces.ready = true; paintSpace(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
+    spaces.list = snap.docs.map(d => ({ id:d.id, name:d.data().name || 'Пространство', at:d.data().at || '', color:d.data().color || '', icon:d.data().icon || '' })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    spaces.ready = true; applySpaceColor(); paintSpace(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
+  }, () => {})]);
+  shared.subs.set('__spmain', [cloud.store.doc(`data/users/${cloud.uid}/spaces/main`).onSnapshot(x => {
+    spaces.mainColor = x.exists ? (x.data().color || '') : ''; spaces.mainIcon = x.exists ? (x.data().icon || '') : ''; applySpaceColor(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
   }, () => {})]);
 }
+// =====================================================================
+//  МЕНЮ-ПАНЕЛЬ как в Arc: выдвигается кнопкой или от левого края, можно закрепить.
+//  Сверху — текущее пространство, ниже разделы, внизу — пространства цветными кружками.
+// =====================================================================
+const SIDE_PIN = 'kz-side-pin';
+let sideOpen = false;
+const sidePinned = () => { if (innerWidth <= 1100) return false; try { const v = localStorage.getItem(SIDE_PIN); return v === null ? true : v === '1'; } catch(e) { return true; } };
+const setPin = on => { try { localStorage.setItem(SIDE_PIN, on ? '1' : '0'); } catch(e) {} };
+function sideViews(){
+  if (GUEST) return ['mine', 'mytasks'];
+  return [...document.querySelectorAll('.tabs [data-view]')].filter(b => !b.hidden).map(b => b.dataset.view);
+}
+function renderSide(){
+  const el = $('#side'); if (!el) return;
+  const pinned = sidePinned(); document.body.classList.toggle('side-pinned', pinned);
+  el.hidden = !(pinned || sideOpen); $('#sideBack').hidden = pinned || !sideOpen;
+  $('#sideBtn')?.setAttribute('aria-expanded', String(pinned || sideOpen));
+  if (el.hidden) return;
+  const label = v => v === 'production' ? 'Производство' : v === 'templates' ? 'Настройки' : (MNAV[v]?.[0] || v);
+  const all = GUEST ? [] : [{ id:'', name:'Основное', color:spColor(''), icon:spIcon(''), cur:!SPACE && !ORG },
+    ...spaces.list.map(x => ({ id:x.id, name:x.name, color:spColor(x.id), icon:spIcon(x.id), cur:x.id === SPACE })),
+    ...spaces.orgs.map(o => ({ id:'o:' + o.id, name:`Проекты: ${o.name}`, color:spColorsCache()['o:' + o.id] || hashColor(o.id), icon:'users', cur:ORG === o.id }))];
+  const cur = all.find(x => x.cur) || { name:'Основное', color:spColor(''), icon:spIcon('') };
+  el.innerHTML = `<div class="side-head"><span class="side-sp" style="--c:${cur.color}"><span class="side-sp-ico">${spIco(GUEST ? 'briefcase' : cur.icon)}</span><b>${esc(GUEST ? 'Мои проекты' : cur.name)}</b></span>
+      ${innerWidth > 1100 ? `<button class="icon-btn side-pin" data-sidepin aria-pressed="${pinned}" title="${pinned ? 'Открепить панель' : 'Закрепить панель'}" aria-label="${pinned ? 'Открепить панель' : 'Закрепить панель'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${pinned ? '<path d="M15 6l-6 6 6 6"/>' : '<path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3z"/>'}</svg></button>` : ''}
+      ${pinned ? '' : '<button class="icon-btn" data-sideclose aria-label="Закрыть меню">×</button>'}</div>
+    <nav class="side-nav" aria-label="Разделы">${sideViews().map(v => `<button data-sideview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v]?.[1] || ''}<span>${label(v)}</span></button>`).join('')}</nav>
+    ${all.length ? `<div class="side-spaces"><div class="side-spl"><span>Пространства</span><button class="link" data-sidespset>Настроить</button></div>
+      <div class="side-dots" role="group" aria-label="Пространства">${all.map(x => `<button class="side-dot${x.cur ? ' cur' : ''}" data-sidesp="${x.id}" style="--c:${x.color}" title="${esc(x.name)}" aria-label="Пространство ${esc(x.name)}" aria-pressed="${x.cur}">${spIco(x.icon)}</button>`).join('')}
+        ${cloud.store && cloud.uid ? '<button class="side-dot add" data-sidespnew title="Новое пространство" aria-label="Новое пространство">+</button>' : ''}</div></div>` : ''}`;
+}
+function openSide(){ sideOpen = true; renderSide(); }
+function closeSide(){ if (!sideOpen) return; sideOpen = false; renderSide(); }
+document.addEventListener('click', e => {
+  if (e.target.closest?.('#sideBtn')){ if (sidePinned()){ setPin(false); sideOpen = false; renderSide(); render(); } else { sideOpen = !sideOpen; renderSide(); } return; }
+  if (e.target.closest?.('#sideBack') || e.target.closest?.('[data-sideclose]')){ closeSide(); return; }
+  const pin = e.target.closest?.('[data-sidepin]'); if (pin){ setPin(!sidePinned()); sideOpen = false; renderSide(); render(); return; }
+  const v = e.target.closest?.('[data-sideview]'); if (v){ ui.view = v.dataset.sideview; ui.draft = null; if (!sidePinned()) sideOpen = false; render(); renderSide(); scrollTo(0, 0); return; }
+  const sp = e.target.closest?.('[data-sidesp]'); if (sp){ const id = sp.dataset.sidesp;
+    if (id.startsWith('o:')){ if (ORG !== id.slice(2)) switchOrg(id.slice(2)); }
+    else if (id !== SPACE || ORG){ if (ORG){ try { localStorage.removeItem(ORG_KEY); localStorage.setItem(ORG_OWN_KEY, '1'); } catch(x) {} } switchSpace(id); }
+    return; }
+  if (e.target.closest?.('[data-sidespset]') || e.target.closest?.('[data-sidespnew]')){ ui.view = 'templates'; ui.setTab = 'spaces'; if (!sidePinned()) sideOpen = false; render(); renderSide();
+    if (e.target.closest('[data-sidespnew]')) setTimeout(() => $('#spNewName')?.focus(), 50); return; }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && sideOpen) closeSide(); });
+// как в Arc: подвели мышь к левому краю — панель выглядывает
+document.addEventListener('mousemove', e => {
+  if (sidePinned() || sideOpen || innerWidth <= 1100 || layer.innerHTML || e.clientX > 4 || e.buttons) return;
+  clearTimeout(window.__sideT); window.__sideT = setTimeout(() => { if (!sideOpen) { sideOpen = true; window.__sideHover = true; renderSide(); } }, 180);
+});
+document.addEventListener('mouseleave', () => clearTimeout(window.__sideT));
+document.addEventListener('mousemove', e => { if (window.__sideHover && sideOpen && e.clientX > 320){ window.__sideHover = false; closeSide(); } });
+addEventListener('resize', () => renderSide());
 function paintSpace(){
   const b = $('#spaceName'); if (!b) return;
   b.textContent = spaceName(); b.hidden = GUEST || (!SPACE && !ORG && !spaces.list.length && !spaces.orgs.length);
@@ -3350,12 +3520,14 @@ function switchSpace(id){
 function renderSpaces(){
   const online = !!(cloud.store && cloud.uid);
   const row = (id, name, cur, extra) => `<li class="sp-row${cur ? ' cur' : ''}">
-      ${id ? `<input data-spname="${id}" value="${esc(name)}" maxlength="60" aria-label="Название пространства">` : `<b>${esc(name)}</b>`}
+      <span class="sp-name"><i class="sp-dot" style="--c:${spColor(id)}">${spIco(spIcon(id))}</i>${id ? `<input data-spname="${id}" value="${esc(name)}" maxlength="60" aria-label="Название пространства">` : `<b>${esc(name)}</b>`}</span>
+      ${online ? `<span class="sp-icons" role="group" aria-label="Иконка пространства «${esc(name)}»" style="--c:${spColor(id)}">${SP_ICON_KEYS.map(k => `<button type="button" class="sp-i${k === spIcon(id) ? ' on' : ''}" data-spicon="${id}|${k}" title="${k}" aria-pressed="${k === spIcon(id)}">${spIco(k)}</button>`).join('')}</span>` : ''}
+      ${online ? `<span class="sp-colors" role="group" aria-label="Цвет пространства «${esc(name)}»">${SP_COLORS.map(c => `<button type="button" class="sp-c${c === spColor(id) ? ' on' : ''}" data-spcolor="${id}|${c}" style="background:${c}" aria-label="Цвет ${c}" aria-pressed="${c === spColor(id)}"></button>`).join('')}</span>` : ''}
       ${cur ? '<span class="pill s-green"><i class="sw green"></i>Открыто</span>' : `<button class="ghost" data-spopen="${id}">Открыть</button>`}
       ${extra || ''}</li>`;
   app.innerHTML = `${setNav()}<div class="panel set-panel">
     <h2>Пространства</h2>
-    <p class="hint">Отдельное пустое поле для проектов в этом же аккаунте: свои проекты, задачи, команда, шаблоны, категории и настройки. Удобно, чтобы развести, например, агентство и личные проекты. Переключаются здесь, текущее показано в шапке рядом с названием.</p>
+    <p class="hint">Отдельное пустое поле для проектов в этом же аккаунте: свои проекты, задачи, команда, шаблоны, категории и настройки. Удобно, чтобы развести, например, агентство и личные проекты. Переключаются кружками внизу панели слева; у каждого — своя иконка и цвет.</p>
     ${online ? '' : '<p class="warn">Пространства работают, когда вы вошли в аккаунт.</p>'}
     ${spaces.orgs.length ? `<h3 class="sh-h">Проекты руководителей</h3><p class="hint">Команды, где вы руководитель: открываются их проекты, шаблоны и команда.</p>
       <ol class="sp-list">${spaces.orgs.map(o => `<li class="sp-row${ORG === o.id ? ' cur' : ''}"><b>${esc(o.name)}</b>${ORG === o.id ? '<span class="pill s-green"><i class="sw green"></i>Открыто</span>' : `<button class="ghost" data-orgopen="${o.id}">Открыть</button>`}<span></span></li>`).join('')}</ol>
@@ -3377,7 +3549,9 @@ document.addEventListener('submit', async e => {
   else { const me = userById(ME); if (me) fresh.users = [clone(me)]; }
   fresh.savedAt = Date.now();
   try {
-    await cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).set({ name, at:new Date().toISOString() });
+    const used = new Set([spColor(''), ...spaces.list.map(x => spColor(x.id))]); const color = SP_COLORS.find(c => !used.has(c)) || hashColor(id);
+    const usedI = new Set([spIcon(''), ...spaces.list.map(x => spIcon(x.id))]); const icon = SP_ICON_KEYS.find(k => !usedI.has(k)) || hashIcon(id);
+    await cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).set({ name, at:new Date().toISOString(), color, icon });
     localStorage.setItem(`agency-pipeline-demo-v2-${id}`, JSON.stringify(fresh));
   } catch(err) { toast('Не удалось создать пространство. Проверьте связь и попробуйте ещё раз.'); return; }
   toast(`Пространство «${name}» создано, открываю`); switchSpace(id);
@@ -3404,7 +3578,25 @@ document.addEventListener('change', e => {
   if (!sp) return; if (!v){ e.target.value = sp.name; return; }
   cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).update({ name:v }).then(() => { sp.name = v; paintSpace(); toast('Название сохранено'); }, () => toast('Не удалось переименовать'));
 });
-document.addEventListener('click', e => { if (e.target.closest?.('#spaceName')){ ui.view = 'templates'; ui.setTab = 'spaces'; render(); } });
+document.addEventListener('click', e => { if (e.target.closest?.('#spaceName')){ openSide(); } });
+// иконка пространства
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-spicon]'); if (!b || !cloud.store || !cloud.uid) return;
+  const [id, k] = b.dataset.spicon.split('|');
+  const done = () => { renderSpaces(); renderSide(); };
+  if (!id){ spaces.mainIcon = k; done(); cloud.store.doc(`data/users/${cloud.uid}/spaces/main`).set({ color:spColor(''), icon:k }).catch(() => toast('Не удалось сохранить иконку')); return; }
+  const x = spaces.list.find(v => v.id === id); if (x) x.icon = k; done();
+  cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).update({ icon:k }).catch(() => toast('Не удалось сохранить иконку'));
+});
+// цвет пространства
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-spcolor]'); if (!b || !cloud.store || !cloud.uid) return;
+  const [id, c] = b.dataset.spcolor.split('|');
+  const done = () => { applySpaceColor(); renderSpaces(); renderSide(); };
+  if (!id){ spaces.mainColor = c; done(); cloud.store.doc(`data/users/${cloud.uid}/spaces/main`).set({ color:c, icon:spIcon('') }).catch(() => toast('Не удалось сохранить цвет')); return; }
+  const x = spaces.list.find(v => v.id === id); if (x) x.color = c; done();
+  cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).update({ color:c }).catch(() => toast('Не удалось сохранить цвет'));
+});
 
 // ---------- Категории проектов ----------
 const catById = id => (db.categories || []).find(c => c.id === id) || null;
