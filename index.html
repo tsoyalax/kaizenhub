@@ -177,7 +177,8 @@ td:has(.cell-as:focus-visible) .cell{outline:2px solid var(--focus);outline-offs
 
 /* ---------- Компактный режим ---------- */
 table.cx{width:100%;border-collapse:collapse;min-width:800px;table-layout:fixed}
-.cx col.c7{width:35%}.cx col.c1{width:26%}.cx col.c6{width:12%}.cx col.c2{width:17%}.cx col.c5{width:18%}.cx col.c3{width:13%}.cx col.c4{width:14%}
+.cx col.c7{width:29%}.cx col.c1{width:25%}.cx col.c6{width:16%}.cx col.c2{width:17%}.cx col.c5{width:18%}.cx col.c3{width:13%}.cx col.c4{width:17%}
+.cx .start small,.cx .due small{white-space:nowrap}
 .cx th{font-size:12.5px;font-weight:500;color:var(--muted);text-align:left;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--line)}
 .cx td{padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle;overflow:hidden;text-overflow:ellipsis}
 .cx tbody tr:last-child td{border-bottom:0}
@@ -188,8 +189,14 @@ table.cx{width:100%;border-collapse:collapse;min-width:800px;table-layout:fixed}
 .cx small{display:block;color:var(--muted);font-size:12.5px;font-weight:400}
 .cx .pill{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .cx .pill .sw{width:6px;height:6px}
-.cx tr.r-red .due small{color:var(--r)}
-.cx tr.r-yellow .due small{color:var(--y)}
+.cx .due small.dl-over{color:var(--r)}
+.cx .due small.dl-warn{color:var(--y)}
+.cx .due small.dl-client{color:var(--b)}
+.cx .due small.dl-m{color:var(--m)}
+.cx .st-age.slow{color:var(--y)}
+/* маркер риска у названия: зелёный — по графику, жёлтый — риск, красный — срок сорван */
+.cx .hc{flex:none;width:3px;align-self:stretch;min-height:34px;border-radius:2px;margin:0 -4px 0 -8px;background:var(--hcc,var(--line))}
+.hc-green{--hcc:var(--g)}.hc-yellow{--hcc:var(--y)}.hc-red{--hcc:var(--r)}.hc-maint{--hcc:var(--m)}.hc-done{--hcc:var(--line-strong)}.hc-gray{--hcc:var(--line)}
 .pbar{display:flex;gap:2px;height:6px;margin:4px 0 5px}
 .pseg{flex:1;min-width:4px;border-radius:2px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line)}
 .pseg.p-done{background:var(--tick-on);box-shadow:none}
@@ -1752,7 +1759,7 @@ function seed(){
     p.log.push({ at: start+'T10:00:00', user:ME, text:`Проект создан по шаблону «${tpl.name}»` });
     if (kind !== 'gray') p.stages.forEach(s => {
       if (s.position < k || kind === 'done'){ s.status='done'; s.started_at=s.planned_start; s.completed_at=addDays(s.due_date, -ri(0,1)); }
-      else if (s.position === k){ s.status = kind === 'blue' ? 'client_review' : 'in_progress'; s.started_at = s.planned_start; }
+      else if (s.position === k){ s.status = kind === 'blue' ? 'client_review' : 'in_progress'; s.started_at = s.planned_start; if (kind === 'blue') s.client_at = addDays(today(), -ri(1, 6)); }
     });
     p.stages.forEach(s => {
       if (s.status === 'done') s.subs.forEach(x => x.done = true);
@@ -1869,6 +1876,7 @@ function setStatus(p, s, status){
     if (n) toast(`Этап закрыт с опозданием на ${days(late)}. Сдвинуто последующих: ${n}`);
   } else {
     s.status = status; s.completed_at = null; s.started_at = status === 'not_started' ? null : (s.started_at || t);
+    s.client_at = status === 'client_review' ? (s.client_at || t) : null;   // с какого дня ждём клиента
     addLog(p, `Этап «${s.name}»: ${STATUS[status]}`);
   }
   syncState(p); commit();
@@ -2642,16 +2650,13 @@ function renderCompact(list){
       const pct = Math.round(doneN / n * 100);
       const segs = p.stages.map(s => `<i class="pseg p-${s.status === 'done' ? 'done' : (c && s.id === c.id ? h.key : 'todo')}" title="${esc(s.name)}"></i>`).join('');
       const progress = ticksHtml(p, !c ? 'done' : h.key);
-      const last = p.stages.at(-1);
-      const nextR = isMaint(c) ? (c.rtasks || []).map(r => r.due_date).filter(Boolean).sort()[0] : null;
-      const due = c && isMaint(c) ? (nextR ? `${fmt(nextR)}<small>ближайшая регулярная задача</small>` : `бессрочно<small>${h.note}</small>`)
-        : c ? `${fmt(c.due_date)}<small>${h.note}</small>` : `${fmt(last.completed_at || last.due_date)}<small>Сдан</small>`;
-      return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
-        <td title="${esc(p.name)}"><span class="cx-name">${projAva(p, 'sm')}<span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
+      const tm = getProjectTimeMetrics(p);
+      return `<tr class="r-${h.key} hc-${tm.risk}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
+        <td title="${esc(p.name)}"><span class="cx-name"><i class="hc" title="${{ red:'Срок сорван', yellow:'Риск задержки', green:'По графику', maint:'Ведение', gray:'Не стартовал', done:'Завершён' }[tm.risk]}" aria-hidden="true"></i>${projAva(p, 'sm')}<span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
         <td>${stPill(h.key, h.label)}</td>
         <td>${progress}</td>
-        <td class="start">${fmt(p.start_date)}<small>${startDay(p)}</small></td>
-        <td class="due">${due}</td></tr>`;
+        <td class="start">${startCell(p, tm)}</td>
+        <td class="due">${deadlineCell(p, tm)}</td></tr>`;
     }).join('');
     return `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2>
       <div class="scroll"><table class="cx"><colgroup><col class="c1"><col class="c3"><col class="c7"><col class="c6"><col class="c4"></colgroup>
@@ -5769,6 +5774,45 @@ const curSubTxt = p => { const r = curSub(p); return r ? (r.all ? r.name : `${r.
 const startDay = p => p.start_date > today() ? `через ${days(diffDays(p.start_date, today()))}` : p.state === 'completed' ? 'завершён' : `${diffDays(today(), p.start_date) + 1}-й день`;
 const startTxt = p => p.start_date > today() ? `Старт ${fmt(p.start_date)}, через ${days(diffDays(p.start_date, today()))}`
   : `Старт ${fmt(p.start_date)}${p.state !== 'completed' ? `, ${diffDays(today(), p.start_date) + 1}-й день` : ''}`;
+// Время проекта: срок, сколько на текущем этапе, сколько ждём клиента, цикл ведения
+function getProjectTimeMetrics(p){
+  const t = today(); const c = currentStage(p);
+  const done = p.state === 'completed' || !c;
+  const maint = !done && isMaint(c) && c.status === 'in_progress';
+  const deadline = done || maint ? null : (p.deadline || plannedEnd(p) || null);
+  const daysLeft = deadline ? diffDays(deadline, t) : null;
+  const isOverdue = daysLeft !== null && daysLeft < 0;
+  const from = c && c.status !== 'not_started' ? (c.started_at || c.planned_start) : null;
+  const daysAtCurrentStage = !done && from && from <= t ? diffDays(t, from) + 1 : 0;
+  const plannedStage = c && !isMaint(c) && c.planned_start && c.due_date ? diffDays(c.due_date, c.planned_start) + 1 : null;
+  const clientDays = c?.status === 'client_review' ? Math.max(1, diffDays(t, c.client_at || c.started_at || t) + 1) : 0;
+  let maintenanceCycle = null;
+  if (maint){ const d = Math.max(0, diffDays(t, c.started_at || t)); maintenanceCycle = { month:Math.floor(d / 30) + 1, dayInCycle:d % 30 + 1 }; }
+  const stageKey = c ? health(c).key : 'done';
+  const risk = done ? 'done' : maint ? (stageKey === 'red' ? 'red' : stageKey === 'yellow' ? 'yellow' : 'maint')
+    : c.status === 'not_started' ? 'gray'
+    : isOverdue || stageKey === 'red' ? 'red'
+    : (daysLeft !== null && daysLeft <= 2) || clientDays > 3 || stageKey === 'yellow' ? 'yellow' : 'green';
+  return { isOverdue, daysLeft, deadline, daysAtCurrentStage, plannedStage, clientDays, maintenanceCycle, risk, done, maint };
+}
+// ячейка «Срок»: дата + остаток / ожидание клиента / цикл ведения
+function deadlineCell(p, m){
+  const last = p.stages.at(-1);
+  if (m.done) return `${fmt(last?.completed_at || last?.due_date || p.deadline)}<small>Сдан</small>`;
+  if (m.maint) return `Бессрочно<small class="dl-m" title="Ведение идёт месяцами по 30 дней">Месяц ${m.maintenanceCycle.month} (день ${m.maintenanceCycle.dayInCycle}/30)</small>`;
+  const top = m.deadline ? fmt(m.deadline) : '—';
+  if (m.clientDays) return `${top}<small class="dl-${m.clientDays > 3 ? 'warn' : 'client'}" title="Сколько дней этап ждёт ответа клиента">У клиента: ${m.clientDays}-й день</small>`;
+  if (m.daysLeft === null) return top;
+  if (m.daysLeft < 0) return `${top}<small class="dl-over">Просрочено на ${days(-m.daysLeft)}</small>`;
+  if (m.daysLeft === 0) return `${top}<small class="dl-warn">Сегодня</small>`;
+  return `${top}<small class="${m.daysLeft <= 2 ? 'dl-warn' : ''}">Осталось ${days(m.daysLeft)}</small>`;
+}
+// ячейка «Старт»: дата запуска, день проекта и сколько на текущем этапе
+function startCell(p, m){
+  const slow = m.plannedStage && m.daysAtCurrentStage > m.plannedStage;
+  const at = m.daysAtCurrentStage && !m.maint ? ` · <span class="st-age${slow ? ' slow' : ''}" title="${slow ? `Этап идёт дольше плана (${days(m.plannedStage)})` : 'Сколько дней проект на текущем этапе'}">на этапе ${m.daysAtCurrentStage} дн.</span>` : '';
+  return `${fmt(p.start_date)}<small>${startDay(p)}${at}</small>`;
+}
 // сколько дней идёт этап (или сколько занял, если закрыт)
 function stageAge(s){
   const from = s.started_at || (s.status !== 'not_started' ? s.planned_start : null);

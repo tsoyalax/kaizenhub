@@ -367,6 +367,22 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok($q('.tk-modal .vthumb') && !$q('.tk-modal iframe')); ok('видео: «Свернуть» возвращает миниатюру');
   assert.ok(/Открыть в YouTube/.test($q('.vmeta').textContent)); ok('видео: есть ссылка «Открыть в YouTube»');
   w.closeTask(); await wait(50);
+  // время проекта: остаток, просрочка, ожидание клиента, цикл ведения
+  { const W = o.w; const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; const A = n => { const d = new Date(); d.setHours(12); d.setDate(d.getDate() + n); return ymd(d); };
+    const st = (o2) => ({ id:'s' + Math.random(), name:'Этап', position:0, status:'in_progress', planned_start:A(-5), due_date:A(5), started_at:A(-5), subs:[], ...o2 });
+    const proj = (stages, extra) => ({ id:'x', name:'X', client:'К', state:'active', start_date:A(-10), deadline:null, stages:stages.map((x, i) => ({ ...x, position:i })), ...extra });
+    let m = W.getProjectTimeMetrics(proj([st({})], { deadline:A(10) }));
+    assert.ok(m.daysLeft === 10 && !m.isOverdue && m.daysAtCurrentStage === 6 && m.risk === 'green' && /Осталось 10 дней/.test(W.deadlineCell(proj([st({})]), m))); ok('время: осталось X дней, дни на этапе, зелёный маркер');
+    m = W.getProjectTimeMetrics(proj([st({})], { deadline:A(2) }));
+    assert.ok(m.risk === 'yellow' && /dl-warn[^>]*>Осталось 2 дня/.test(W.deadlineCell({ stages:[] }, m))); ok('время: 1–2 дня — жёлтым');
+    m = W.getProjectTimeMetrics(proj([st({ due_date:A(-3) })], { deadline:A(-3) }));
+    assert.ok(m.isOverdue && m.risk === 'red' && /dl-over[^>]*>Просрочено на 3 дня/.test(W.deadlineCell({ stages:[] }, m))); ok('время: просрочка — красным');
+    m = W.getProjectTimeMetrics(proj([st({ status:'client_review', client_at:A(-4) })], { deadline:A(10) }));
+    assert.ok(m.clientDays === 5 && m.risk === 'yellow' && /У клиента: 5-й день/.test(W.deadlineCell({ stages:[] }, m))); ok('время: у клиента — X-й день, дольше 3 дней — риск');
+    m = W.getProjectTimeMetrics(proj([st({ status:'done', completed_at:A(-50) }), st({ system:'maint', started_at:A(-41), rtasks:[] })], { is_maintenance:true }));
+    assert.ok(m.maint && m.maintenanceCycle.month === 2 && m.maintenanceCycle.dayInCycle === 12 && /Бессрочно.*Месяц 2 \(день 12\/30\)/.test(W.deadlineCell({ stages:[] }, m))); ok('время: ведение — месяц и день цикла');
+    assert.ok(/на этапе 6 дн\./.test(W.startCell(proj([st({})]), W.getProjectTimeMetrics(proj([st({})]))))); ok('время: в «Старте» — дни на текущем этапе');
+  }
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('ошибок на странице нет');
   o.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
