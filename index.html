@@ -15,6 +15,7 @@
   --accent:#17171C; --accent-ink:#FFFFFF; --brand:#6A5AE0; --link:#2F6BFF; --focus:#2F6BFF; --soft:#EAF1FF;
   --card-hi:transparent; --shadow:none;
   --g:#16A34A; --g-bg:#E7F8EE; --y:#E07800; --y-bg:#FFF3E0; --r:#E5383B; --r-bg:#FFECEC;
+  --tick-on:#A1A1AA; --tick-off:#E7E7EA;
   --b:#2F6BFF; --b-bg:#EAF1FF; --w:#16A34A; --m:#7C3AED; --m-bg:#F1EAFF; --n:#A1A1AA; --n-bg:#F4F4F5; --d:#71717A; --d-bg:#F7F7F8;
   --radius:12px; --cell-w:140px;
   font-family:"Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -27,7 +28,7 @@
     --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --row:#16161A; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-strong:#3A3A42;
     --accent:#EDEDEF; --accent-ink:#0F0F12; --brand:#7C6CF6; --link:#8DA2F7; --focus:#8DA2F7; --soft:#1C2033;
     --card-hi:transparent; --shadow:none;
-    --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80; --m:#B197FC; --m-bg:#231D3B;
+    --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --tick-on:#EDEDEF; --tick-off:color-mix(in srgb,#EDEDEF 16%,transparent); --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80; --m:#B197FC; --m-bg:#231D3B;
     --n:#71717A; --n-bg:#1F1F24; --d:#8A8A93; --d-bg:#18181C;
   }
 }
@@ -36,7 +37,7 @@
   --bg:#0F0F12; --surface:#16161A; --surface-2:#1E1E23; --row:#16161A; --ink:#EDEDEF; --muted:#A1A1AA; --line:#26262C; --line-strong:#3A3A42;
   --accent:#EDEDEF; --accent-ink:#0F0F12; --brand:#7C6CF6; --link:#8DA2F7; --focus:#8DA2F7; --soft:#1C2033;
   --card-hi:transparent; --shadow:none;
-  --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80; --m:#B197FC; --m-bg:#231D3B;
+  --g:#4ADE80; --g-bg:#11241A; --y:#FBBF24; --y-bg:#2A2110; --r:#F87171; --r-bg:#2C1416; --tick-on:#EDEDEF; --tick-off:color-mix(in srgb,#EDEDEF 16%,transparent); --b:#60A5FA; --b-bg:#13203A; --w:#4ADE80; --m:#B197FC; --m-bg:#231D3B;
   --n:#71717A; --n-bg:#1F1F24; --d:#8A8A93; --d-bg:#18181C;
 }
 *,*::before,*::after{box-sizing:inherit}
@@ -191,7 +192,7 @@ table.cx{width:100%;border-collapse:collapse;min-width:800px;table-layout:fixed}
 .cx tr.r-yellow .due small{color:var(--y)}
 .pbar{display:flex;gap:2px;height:6px;margin:4px 0 5px}
 .pseg{flex:1;min-width:4px;border-radius:2px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line)}
-.pseg.p-done{background:var(--ink);box-shadow:none}
+.pseg.p-done{background:var(--tick-on);box-shadow:none}
 .pseg.p-green{background:var(--g);box-shadow:none}.pseg.p-yellow{background:var(--y);box-shadow:none}.pseg.p-red{background:var(--r);box-shadow:none}.pseg.p-blue{background:var(--b);box-shadow:none}.pseg.p-gray{background:var(--n);box-shadow:none}
 
 /* ---------- Канбан ---------- */
@@ -1339,14 +1340,14 @@ table.cx{border-collapse:collapse}
 /* прогресс штрихами */
 .tprog{display:flex;align-items:center;gap:10px}
 .ticks{display:inline-flex;gap:2px;height:16px;align-items:stretch}
-.ticks i{width:4px;border-radius:1.5px;background:color-mix(in srgb,var(--ink) 16%,transparent);align-self:center;height:12px}
+.ticks i{width:4px;border-radius:1.5px;background:var(--tick-off);align-self:center;height:12px}
 .ticks{gap:3px;align-items:center;flex:none;height:18px}
 .ticks i.cur{background:var(--fc);height:18px;box-shadow:0 0 8px color-mix(in srgb,var(--fc) 45%,transparent)}
 .tprog{min-width:0}
 .tp-n{font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .tp-n b{color:var(--muted);font-weight:500;margin-right:4px}
 .mc-stage{display:grid;gap:2px}.mc-subnow{color:var(--muted);font-size:12.5px}
-.ticks i.on{background:var(--ink)}
+.ticks i.on{background:var(--tick-on)}
 .tprog b{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums}
 .cx .tprog + small{margin-top:2px}
 /* статус в цветной рамке */
