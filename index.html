@@ -594,7 +594,8 @@ body.selecting #app{padding-bottom:90px}
 .top-actions{gap:10px;align-items:center}
 .top #bell{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);color:var(--ink);background:var(--surface)}
 .top #bell:hover{border-color:var(--line-strong);background:var(--surface-2)}
-.top #bell svg{width:20px;height:20px}
+.top #bell svg{width:20px;height:20px;grid-area:1/1}
+.top #bell #bellCount{position:absolute;inset:0;pointer-events:none}
 .top #bell .badge{top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;font-size:11px;box-shadow:0 0 0 2px var(--bg)}
 .side-foot{display:flex;align-items:center;gap:4px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--ink) 10%,transparent)}
 .side-foot:not(.with-sp){margin-top:auto}
@@ -655,6 +656,32 @@ body.side-pinned .side-btn{color:var(--ink)}
 :where(#filters) .seg-toggle button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 :where(#filters, .mh) input[type=search]:focus{background-color:var(--surface);border-color:var(--line-strong)}
 :where(#tags){background:transparent;border-color:var(--line)}
+/* фото проекта */
+.pava{display:inline-grid;place-items:center;flex:none;overflow:hidden;border-radius:30%;font-weight:700;letter-spacing:-.02em;color:#fff;vertical-align:middle;
+  background:linear-gradient(135deg,hsl(var(--h,250) 72% 62%),hsl(calc(var(--h,250) + 35) 70% 48%));box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.pava img{width:100%;height:100%;object-fit:cover;display:block}
+.pava:not(.none){background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line)}
+.pava.xs{width:22px;height:22px;font-size:9.5px;border-radius:7px;margin-right:8px}
+.pava.sm{width:34px;height:34px;font-size:12.5px;border-radius:10px}
+.pava.lg{width:64px;height:64px;font-size:22px;border-radius:18px}
+.cx-name{gap:12px}
+.mc-r1 .pava{margin-right:2px}
+.pm-cn,.pf-name{display:flex;align-items:center;min-width:0}
+.dt-fold .pava,.card .t .pava{margin-right:2px}
+.card .t{display:flex;align-items:center;gap:6px}
+.d-head{align-items:center;gap:14px;min-height:64px}
+.d-head .close{align-self:center}
+.d-title input#pName{padding:0;line-height:1.25}
+.d-head .pava-edit input{font-size:0;padding:0;border:0}
+.pava-edit{position:relative;cursor:pointer;flex:none;display:block}
+.pava-edit input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.pava-cam{position:absolute;right:-4px;bottom:-4px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line-strong);color:var(--ink)}
+.pava-cam svg{width:13px;height:13px}
+.pava-edit:hover .pava{filter:brightness(.92)}
+.d-title{flex:1;min-width:0;display:grid;gap:4px;align-content:center}
+.d-img-del,.d-img-hint{justify-self:start;font-size:12px}
+.c-head{display:flex;align-items:center;gap:14px}.c-head .field{flex:1;min-width:0;margin:0}
+.c-head .pava-edit input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
 .team-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .cat-list{list-style:none;margin:12px 0 6px;padding:0;display:grid;gap:4px}
 .cat-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 28px;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)}
@@ -1521,6 +1548,12 @@ const execLabel = p => p?.worker_id ? `Как у проекта: ${esc(short(p.w
 const whoId = (p, s, t) => t?.assignee_id || s?.assignee_id || projWho(p);
 const execTxt = (p, sep = ', ') => p?.worker_id ? `${sep}исп. ${esc(short(p.worker_id))}` : '';
 const currentStage = p => p.stages.find(s => s.status==='in_progress'||s.status==='client_review') || p.stages.find(s => s.status!=='done') || null;
+// Фото проекта: квадрат со скруглением. Нет фото — буквы названия на мягком градиенте (цвет постоянный для проекта)
+const pInitials = n => { const w = String(n || '?').replace(/[«»"'()]/g, ' ').trim().split(/\s+/).filter(Boolean); return ((w[0]?.[0] || '?') + (w[1]?.[0] || '')).toUpperCase(); };
+const pHue = p => [...String(p?.id || p?.name || '')].reduce((a, c) => (a * 33 + c.charCodeAt(0)) >>> 0, 11) % 360;
+const projAva = (p, size = 'sm') => p?.image
+  ? `<span class="pava ${size}"><img src="${esc(p.image)}" alt="" loading="lazy"></span>`
+  : `<span class="pava ${size} none" style="--h:${pHue(p)}" aria-hidden="true">${esc(pInitials(p?.name))}</span>`;
 const plannedEnd = p => p.stages.reduce((m,s) => !isMaint(s) && s.due_date > m ? s.due_date : m, '');
 const isMaint = s => s?.system === 'maint';
 const FREQ = { weekly:['Раз в неделю', 7], biweekly:['Раз в 2 недели', 14], monthly:['Раз в месяц', 0] };
@@ -2059,6 +2092,27 @@ document.addEventListener('click', e => {
   }
 }, true);
 
+// фото проекта: обрезаем по центру в квадрат 160×160 и сжимаем — хранится прямо в проекте и видно всем участникам
+async function squareImage(file, side = 160){
+  const src = await createImageBitmap(file);
+  const k = Math.min(src.width, src.height), c = document.createElement('canvas'); c.width = c.height = side;
+  const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, side, side);
+  g.drawImage(src, (src.width - k) / 2, (src.height - k) / 2, k, k, 0, 0, side, side);
+  let q = 0.86, url = c.toDataURL('image/jpeg', q);
+  while (url.length > 60000 && q > 0.4){ q -= 0.12; url = c.toDataURL('image/jpeg', q); }
+  return url;
+}
+document.addEventListener('change', async e => {
+  if (e.target.id !== 'pImg') return; const p = projById(ui.open); const f = e.target.files?.[0]; e.target.value = '';
+  if (!p || !f || p._ext) return;
+  if (!/^image\//.test(f.type)){ toast('Это не картинка'); return; }
+  try { p.image = await squareImage(f); addLog(p, 'Фото проекта обновлено'); commit(); renderDrawer(); toast('Фото проекта сохранено'); }
+  catch(err) { toast('Не удалось обработать картинку. Попробуйте JPG или PNG.'); }
+});
+document.addEventListener('click', e => {
+  if (e.target.id !== 'pImgDel') return; const p = projById(ui.open); if (!p) return;
+  delete p.image; addLog(p, 'Фото проекта убрано'); commit(); renderDrawer();
+});
 // PATCH /api/projects/:id
 function updateProject(p, field, value, label){
   if (p[field] === value) return; p[field] = value; addLog(p, label); commit();
@@ -2309,7 +2363,7 @@ function renderMatrix(){
           ${cellWho(p, s)}</button>
           <select class="cell-as" data-qassign="${p.id}|${s.id}" aria-label="Ответственный за этап «${esc(s.name)}», проект ${esc(p.name)}" title="Сменить ответственного">${peopleOpts(s.assignee_id, p.worker_id ? `Как у проекта: ${short(p.worker_id)}` : 'Не назначен')}</select></div></td>`;
       }).join('');
-      return `<tr><th class="pcol"><button class="prow" data-open="${p.id}"><b>${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</b>
+      return `<tr><th class="pcol"><button class="prow" data-open="${p.id}"><b>${projAva(p, 'xs')}${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</b>
         <small>${esc(p.client)}</small>
         <small>${startTxt(p)}</small>
         <small class="${late ? 'late' : p.state === 'completed' ? '' : 'ut-' + urg(p.deadline || end).k}">Финиш ${fmt(end)}${late ? `, позже дедлайна ${fmt(p.deadline)}` : p.state === 'completed' ? '' : `, ${urg(p.deadline || end).txt}`}</small></button>
@@ -2378,7 +2432,7 @@ function renderPhoneList(list){
     const dlTxt = p.state === 'completed' ? 'Проект завершён' : target ? `${p.deadline ? 'Дедлайн' : 'Финиш'} ${fmt(target)}${late ? ` · <span class="ut-over">план позже на ${days(diffDays(end, p.deadline))}</span>` : ''}` : '';
     return `<article class="pc mc">
       <button class="mc-main" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''}>
-        <span class="mc-r1"><b>${esc(p.name)}</b>${stPill(risk, risk === 'green' ? 'В работе' : RISK_RU[risk])}</span>
+        <span class="mc-r1">${projAva(p, 'sm')}<b>${esc(p.name)}</b>${stPill(risk, risk === 'green' ? 'В работе' : RISK_RU[risk])}</span>
         <small class="mc-sub"><span>${esc(p.client)}</span><span>PM ${esc(short(p.pm_id))}</span>${p.priority === 'high' ? '<span class="hp">Высокий</span>' : ''}</small>
         <span class="mc-stage">${ticksHtml(p, risk)}</span>
         <span class="mc-foot"><small class="mc-subnow">${sub ? esc(sub) : ''}</small>${target || p.state === 'completed' ? `<span class="mc-dl dl-${p.state === 'completed' ? 'ok' : late ? 'over' : tu.k}">${FLAG}${p.state === 'completed' ? 'Завершён' : fmt(target)}</span>` : ''}</span>
@@ -2401,7 +2455,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
   const chips = list.map(x => {
     const c = currentStage(x); const r = projectRisk(x); const xp = projectProgress(x);
     return `<button class="pm-chip${x.id === p.id ? ' on' : ''}" data-pfsel="${x.id}" aria-current="${x.id === p.id}">
-      <span class="pm-cn"><i class="sw ${r}"></i>${esc(x.name)}</span>
+      <span class="pm-cn">${projAva(x, 'xs')}${esc(x.name)}</span>
       <small>${c ? `${c.position + 1}/${x.stages.length} · ${esc(c.name)}` : 'Все этапы пройдены'}</small>
       <span class="pf-mini" aria-hidden="true"><i style="width:${xp.pct}%"></i></span></button>`;
   }).join('');
@@ -2511,7 +2565,7 @@ function renderCompact(list){
       const due = c && isMaint(c) ? (nextR ? `${fmt(nextR)}<small>ближайшая регулярная задача</small>` : `бессрочно<small>${h.note}</small>`)
         : c ? `${fmt(c.due_date)}<small>${h.note}</small>` : `${fmt(last.completed_at || last.due_date)}<small>Сдан</small>`;
       return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
-        <td title="${esc(p.name)}"><span class="cx-name"><span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
+        <td title="${esc(p.name)}"><span class="cx-name">${projAva(p, 'sm')}<span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
         <td>${stPill(h.key, h.label)}</td>
         <td>${progress}</td>
         <td class="start">${fmt(p.start_date)}<small>${startDay(p)}</small></td>
@@ -2541,13 +2595,13 @@ function renderKanban(){
     const statusSel = c ? `<select data-kstatus="${p.id}" aria-label="Статус этапа">${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${c.status===k?'selected':''}>${v}</option>`).join('')}</select>` : '';
     const moveSel = `<select data-kmove="${p.id}" aria-label="Перенести на этап"><option value="">Перенести…</option>${t.stages.map((s,i) => `<option value="${i}">${i+1}. ${esc(s.name)}</option>`).join('')}<option value="maint">Ведение</option>${p.is_maintenance ? '' : '<option value="done">Завершить проект</option>'}</select>`;
     if (c && isMaint(c)) return `<article class="card card-maint" draggable="true" data-card="${p.id}">
-      <button class="t" data-open="${p.id}">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</button>
+      <button class="t" data-open="${p.id}">${projAva(p, 'xs')}${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</button>
       <div class="meta">${esc(p.client)}, PM ${esc(short(p.pm_id))}</div>
       <div class="stline"><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span><span>${h.note}</span></div>
       ${rtaskBlock(p, c, true)}</article>`;
     const subsDone = c?.subs?.filter(x => x.done).length ?? 0;
     return `<article class="card" draggable="true" data-card="${p.id}">
-      <button class="t" data-open="${p.id}">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</button>
+      <button class="t" data-open="${p.id}">${projAva(p, 'xs')}${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</button>
       <div class="meta">${esc(p.client)}, PM ${esc(short(p.pm_id))}${execTxt(p)}</div>
       <div class="stline"><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span><span>${h.note}</span></div>
       ${c ? `<div class="meta">${esc(c.name)}${c.subs?.length ? `, подэтапы ${subsDone} из ${c.subs.length}` : ''}. ${esc(short(whoId(p, c)))}</div>` : ''}
@@ -2919,7 +2973,9 @@ function renderDrawer(){
   const log = p.log.slice(0, 60).map(l => `<li><time>${new Date(l.at).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time><span>${esc(l.text)} <span class="hint">${esc(short(l.user))}</span></span></li>`).join('');
   const html = `<div class="backdrop" data-close></div>
   <aside class="drawer" role="dialog" aria-modal="true" aria-label="Карточка проекта">
-    <div class="d-head"><input id="pName" value="${esc(p.name)}" aria-label="Название проекта"><button class="close" data-close aria-label="Закрыть">×</button></div>
+    <div class="d-head"><label class="pava-edit" title="${p.image ? 'Изменить фото проекта' : 'Добавить фото проекта'}">${projAva(p, 'lg')}<span class="pava-cam" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></span><input type="file" id="pImg" accept="image/*" aria-label="Фото проекта"></label>
+      <div class="d-title"><input id="pName" value="${esc(p.name)}" aria-label="Название проекта">${p.image ? '<button class="link danger d-img-del" id="pImgDel">Убрать фото</button>' : '<span class="hint d-img-hint">Нажмите на квадрат, чтобы добавить фото</span>'}</div>
+      <button class="close" data-close aria-label="Закрыть">×</button></div>
     <div class="d-boxes">
       <section class="d-box"><h3>Проект</h3><div class="d-g">
         <div class="field"><label>Клиент</label><div class="val">${esc(p.client)}</div></div>
@@ -2971,7 +3027,8 @@ function openCreate(){
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cTitle">
     <h2 id="cTitle">Новый проект</h2>
     <form class="form" id="cForm" novalidate>
-      <div class="field"><label for="cName">Название</label><input id="cName" autocomplete="off"></div>
+      <div class="c-head"><label class="pava-edit" title="Фото проекта (необязательно)"><span id="cImgPrev">${projAva({ id:'new', name:'' }, 'lg')}</span><span class="pava-cam" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></span><input type="file" id="cImg" accept="image/*" aria-label="Фото проекта"></label>
+        <div class="field"><label for="cName">Название</label><input id="cName" autocomplete="off"><small class="hint">Фото — нажмите на квадрат слева (необязательно)</small></div></div>
       <div class="field"><label for="cClient">Клиент</label><input id="cClient" list="cClients" autocomplete="off">
         <datalist id="cClients">${[...new Set(db.projects.map(p => p.client))].map(c => `<option value="${esc(c)}">`).join('')}</datalist></div>
       ${(db.categories || []).length ? `<div class="field"><label for="cCat">Категория</label><select id="cCat">${catOpts('')}</select></div>` : ''}
@@ -2998,6 +3055,12 @@ function openCreate(){
       ${over ? `<label class="check" style="margin-top:6px"><input type="checkbox" id="cFit" checked> Уместить этапы в дедлайн</label>` : ''}`;
   };
   $('#cTpl').onchange = prev; $('#cStart').oninput = prev; $('#cDl').oninput = prev; prev();
+  ui.cImg = null;
+  const paintC = () => { const pv = $('#cImgPrev'); if (pv) pv.innerHTML = projAva({ id:'new', name:$('#cName').value || '', image:ui.cImg }, 'lg'); };
+  $('#cName').addEventListener('input', () => { if (!ui.cImg) paintC(); });
+  $('#cImg').onchange = async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return;
+    if (!/^image\//.test(f.type)){ toast('Это не картинка'); return; }
+    try { ui.cImg = await squareImage(f); paintC(); } catch(err) { toast('Не удалось обработать картинку. Попробуйте JPG или PNG.'); } };
   $('#cName').focus();
   $('#cForm').onsubmit = e => {
     e.preventDefault();
@@ -3009,6 +3072,7 @@ function openCreate(){
     const p = createProject({ name, client, template_id:$('#cTpl').value, start_date:start, pm_id:$('#cPm').value, worker_id:$('#cWorker').value || null,
       priority:$('#cPri').value });
     const cat = $('#cCat')?.value; if (cat){ p.category_id = cat; save(); }
+    if (ui.cImg){ p.image = ui.cImg; ui.cImg = null; save(); }
     if ($('#cMaint')?.checked){ p.is_maintenance = true; syncState(p); addLog(p, 'Проект на ведении: после воронки — этап «Ведение / Поддержка»'); save(); }
     if (dl){ p.deadline = dl; if (fit) fitToDeadline(p); else commit(); }
     layer.innerHTML = ''; toast(`Проект «${p.name}» создан: ${p.stages.length} этапов, финиш ${fmt(plannedEnd(p))}`);
@@ -4825,7 +4889,7 @@ function renderMyDay(mode = 'exec'){
     const open = ui.dayFold[p.id] === true; const left = items.filter(i => !i.done).length;   // по умолчанию свёрнуто
     const n = p.stages.length, at = p.stages.indexOf(s) + 1;
     return `<section class="dt-proj-sec${open ? '' : ' folded'}" data-dtproj="${p.id}">
-      <header class="dt-ph"><button class="dt-fold" data-dtfold="${p.id}" aria-expanded="${open}"><i aria-hidden="true"></i><b>${esc(p.name)}</b><small>${esc(p.client || '')}</small></button>
+      <header class="dt-ph"><button class="dt-fold" data-dtfold="${p.id}" aria-expanded="${open}"><i aria-hidden="true"></i>${projAva(p, 'xs')}<b>${esc(p.name)}</b><small>${esc(p.client || '')}</small></button>
         <span class="dt-stage">${at}/${n} ${esc(s.name)}</span>${dueTxt(s.due_date)}<span class="dt-cnt">${left ? `${left} ${plural(left, 'задача', 'задачи', 'задач')}` : 'всё готово'}</span>
         <button class="link" data-dtopen="${p.id}|${s.id}">Открыть проект</button></header>
       ${open ? `<div class="dt-list">${items.map(dayCard).join('')}</div>` : ''}</section>`;
@@ -4904,7 +4968,7 @@ function renderAssignMaint(who){
     <select id="dayWho" aria-label="Исполнитель"><option value="">Исполнитель: все</option>${db.users.map(u => `<option value="${u.id}" ${u.id === who ? 'selected' : ''}>${esc(u.id === ME ? `${u.name || 'Вы'} (вы)` : u.name || 'Без имени')}</option>`).join('')}</select></div>`;
   app.innerHTML = head + `<p class="fn-sum">Проекты на абонентском ведении и их регулярные задачи. Задача по проекту ставится кнопкой «+ Добавить регулярную задачу».</p>`
     + (list.length ? list.map(p => { const ms = p.stages.find(isMaint); const h = health(ms); const n = (ms.rtasks || []).filter(r => !who || r.assignee_id === who).length;
-        return `<section class="dt-proj-sec m-sec" data-mproj="${p.id}"><header class="dt-ph"><span class="dt-fold"><b>${esc(p.name)}</b><small>${esc(p.client || '')}</small></span>
+        return `<section class="dt-proj-sec m-sec" data-mproj="${p.id}"><header class="dt-ph"><span class="dt-fold">${projAva(p, 'xs')}<b>${esc(p.name)}</b><small>${esc(p.client || '')}</small></span>
           <span class="pill st-pill s-${h.key}">${STATUS_ICO[h.key] || STATUS_ICO.maint}${ms.status === 'in_progress' ? h.label : 'Ещё в воронке'}</span><span class="dt-cnt">${n} ${plural(n, 'регулярная задача', 'регулярные задачи', 'регулярных задач')}</span>
           <button class="link" data-open="${p.id}" data-stage="${ms.id}">Открыть проект</button></header>${rtaskBlock(p, ms, false, who)}</section>`; }).join('')
       : '<div class="empty">Проектов на ведении нет. Включите «На ведении после воронки» в карточке проекта или при создании.</div>');
@@ -5691,7 +5755,7 @@ function renderProjectFocus(mine = false){
     const c = currentStage(x); const h = c ? health(c) : { key:'done', label:'Завершён' }; const xp = projectProgress(x);
     const nShare = shareCount(x);
     return `<div class="pf-row">${!mine ? `<button class="pf-share${nShare ? ' on' : ''}" data-share="${x.id}" aria-label="Поделиться проектом ${esc(x.name)}" title="Поделиться">${SHARE_ICON}${nShare ? `<span>${nShare}</span>` : ''}</button>` : ''}<button class="pf-item${x.id === p.id ? ' on' : ''}" data-pfsel="${x.id}" aria-current="${x.id === p.id}">
-      <span class="pf-name"><i class="sw ${h.key}"></i>${esc(x.name)}</span>
+      <span class="pf-name">${projAva(x, 'xs')}${esc(x.name)}</span>
       <small>${c ? `${c.position + 1}. ${esc(c.name)}` : 'Все этапы пройдены'}, ${xp.pct}%</small>
       <span class="pf-mini" aria-hidden="true"><i style="width:${xp.pct}%"></i></span></button></div>`;
   }).join('');
