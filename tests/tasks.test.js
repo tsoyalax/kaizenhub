@@ -51,11 +51,14 @@ const getComputedStyle_ok = w => w.getComputedStyle(w.document.getElementById('b
   own.w.eval(`(() => { const p = projById('${pid}'); currentStage(p).assignee_id = '${tu.id}'; commit(); })()`); await wait(2500);
   // 1) вкладка «Задачи» в «Производстве»
   D.querySelector('[data-view="production"]').click(); await wait(100);
-  assert.ok($('[data-pmode="tasks"]') && $('[data-pmode="assign"]') && /Мои задачи/.test($('[data-pmode="tasks"]').textContent) && /Поручения/.test($('[data-pmode="assign"]').textContent)); ok('у руководства «Мои задачи» и «Поручения» — разные разделы');
+  assert.ok($('[data-pmode="tasks"]') && !$('[data-pmode="assign"]') && $('.tabs [data-view="assign"]') && /Поручения/.test($('.tabs [data-view="assign"]').textContent)); ok('«Поручения» — отдельная вкладка главного меню, «Мои задачи» — в «Производстве»');
   $('[data-pmode="tasks"]').click(); await wait(150);
   assert.ok(!$('#dayWho') && !$('[data-itnew]') && !$('[data-dtdue]') && $('#dayAs')); ok('«Мои задачи»: как у исполнителя — без постановки и сроков, с выбором «Смотреть как»');
   assert.ok(!$('#myTasksTab') || $('#myTasksTab').hidden); ok('у руководства нет отдельной вкладки исполнителя');
-  $('[data-pmode="assign"]').click(); await wait(150);
+  $('.tabs [data-view="assign"]').click(); await wait(150);
+  assert.ok($$('[data-dtproj]').length && $$('[data-dtproj]').every(sc => sc.classList.contains('folded') && !sc.querySelector('.dt-p'))); ok('«Поручения»: проекты по умолчанию свёрнуты');
+  $('[data-dtall="1"]').click(); await wait(100);
+  assert.ok($$('[data-dtproj]').every(sc => !sc.classList.contains('folded')) && $('[data-dtall="0"]')); ok('«Развернуть все» раскрывает проекты');
   assert.ok($('[data-daytab="all"]') && $('[data-daytab="p"]') && $('[data-daytab="i"]')); ok('«Задачи»: подфильтры «Все (Мой день)», «Проектные», «Внутренние»');
   assert.ok(!/[\u{1F300}-\u{1FAFF}]/u.test(D.getElementById('app').textContent)); ok('без эмодзи');
   assert.equal($('[data-daytab="all"]').getAttribute('aria-pressed'), 'true'); ok('по умолчанию — «Все (Мой день)»');
@@ -72,7 +75,7 @@ const getComputedStyle_ok = w => w.getComputedStyle(w.document.getElementById('b
   assert.equal(new Set(secs.map(sc => sc.dataset.dtproj)).size, secs.length); ok('каждый проект — один блок');
   // свернуть / развернуть проект
   secs[0].querySelector('[data-dtfold]').click(); await wait(100);
-  assert.ok($(`[data-dtproj="${secs[0].dataset.dtproj}"]`).classList.contains('folded') && !$(`[data-dtproj="${secs[0].dataset.dtproj}"] .dt-p`)); ok('блок проекта сворачивается');
+  assert.ok($(`[data-dtproj="${secs[0].dataset.dtproj}"]`).classList.contains('folded') && !$(`[data-dtproj="${secs[0].dataset.dtproj}"] .dt-p`)); ok('блок проекта сворачивается по клику');
   $(`[data-dtproj="${secs[0].dataset.dtproj}"] [data-dtfold]`).click(); await wait(100);
   // срок подзадачи ставит руководитель прямо в карточке
   const dIn = $(`[data-dtproj="${pid}"] [data-dtdue]`); const dk = dIn.dataset.dtdue;
@@ -140,7 +143,7 @@ const getComputedStyle_ok = w => w.getComputedStyle(w.document.getElementById('b
   { const [p0, s0, x0] = chk.dataset.sub.split('|'); chk.checked = true; fire(chk, 'change'); await wait(200);
     assert.ok(own.w.eval(`projById('${p0}').stages.find(s => s.id === '${s0}').subs.find(x => x.id === '${x0}').done`)); ok('отметка подзадачи во «Задачах» сразу отмечена в проекте и воронке'); }
   // «Мои задачи» глазами исполнителя
-  $('[data-pmode="tasks"]').click(); await wait(150);
+  D.querySelector('.tabs [data-view="production"]').click(); await wait(100); $('[data-pmode="tasks"]').click(); await wait(150);
   const as = $('#dayAs'); as.value = tu.id; fire(as, 'change'); await wait(150);
   assert.ok($('.as-note') && /Тимур/.test($('.as-note').textContent)); ok('«Смотреть как»: видно, чьими глазами');
   assert.ok($$('.td-row[data-kind="p"]').length && $$('.td-row[data-kind="p"]').every(r => r.dataset.pid === pid) && D.getElementById('app').textContent.includes('Подготовить договор')); ok('«Смотреть как»: ровно то, что видит исполнитель');
@@ -150,7 +153,7 @@ const getComputedStyle_ok = w => w.getComputedStyle(w.document.getElementById('b
     assert.ok(own.w.eval(`taskById('${tid}').checklist.every(i => i.done)`) && own.w.eval(`(() => { const t = taskById('${tid}'); return projById(t.project_id).stages.find(s => s.id === t.stage_id).subs.find(x => x.id === t.substage_id)?.done !== false; })()`)); ok('галочка у подзадачи с чек-листом закрывает весь чек-лист и подэтап'); }
   $('[data-dayas=""]').click(); await wait(100);
   assert.ok(!$('.as-note')); ok('«Вернуться к моим»');
-  $('[data-pmode="assign"]').click(); await wait(150);
+  $('.tabs [data-view="assign"]').click(); await wait(150);
   // 5) удаление
   $$('.dt-i')[0].click(); await wait(100); $('#itDel').click(); await wait(50); $('#cfmOk').click(); await wait(800);
   assert.ok(![...be.rows.keys()].some(k => k.startsWith('it/'))); ok('руководитель удаляет задачу');

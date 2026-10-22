@@ -474,7 +474,8 @@ body.selecting #app{padding-bottom:90px}
 .dt.done{opacity:.55}.dt.done .dt-main b{text-decoration:line-through}
 .dt-badges{display:flex;flex-wrap:wrap;gap:6px}
 .dt-badges span{font-size:12px;font-weight:500;border-radius:6px;padding:1px 8px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
-.dt-h{font-size:13px;font-weight:600;color:var(--muted);margin:22px 0 8px}
+.dt-h{font-size:13px;font-weight:600;color:var(--muted);margin:22px 0 8px;display:flex;align-items:center;gap:12px}
+.dt-all{font-size:12.5px;font-weight:500}
 .dt-proj-sec{border-top:1px solid var(--line);padding:10px 0 12px}
 .dt-ph{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-bottom:10px}
 .dt-fold{display:flex;align-items:baseline;gap:8px;border:0;background:none;padding:0;cursor:pointer;color:var(--ink);font:inherit;text-align:left;min-width:0}
@@ -1187,6 +1188,8 @@ body{letter-spacing:-.005em}
   .tabs button[aria-current="page"]{background:var(--surface);border-color:var(--line);box-shadow:var(--shadow)}
   .tabs button[aria-current="page"]::after{display:none}
 }
+@media (min-width:1100px) and (max-width:1440px){.tabs{gap:1px}.tabs button{padding:0 8px;font-size:13.5px}.top{gap:0 12px}.top-actions{gap:2px}}
+@media (min-width:1100px) and (max-width:1240px){.tabs button{padding:0 6px;font-size:13px}.brand-t{display:none}}
 @media (min-width:1100px){.top{flex-wrap:nowrap;gap:0 18px}.tabs{flex:0 1 auto;min-width:0;scrollbar-width:none}.top-actions{flex:none}}
 @media (min-width:1480px){.tabs button svg{display:block;width:16px;height:16px;flex:none;stroke-width:1.9}}
 
@@ -1242,6 +1245,7 @@ table.cx{border-collapse:collapse}
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
+    <button data-view="assign">Поручения</button>
     <button data-view="mine" id="mineTab" hidden>Мои проекты</button>
     <button data-view="mytasks" id="myTasksTab" hidden>Задачи</button>
     <button data-view="reports">AI-отчёты</button>
@@ -1908,7 +1912,7 @@ function render(){
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
   $('#myTasksTab').hidden = !GUEST;
   renderFilters();
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.open) renderDrawer();
   try { paintPage(); } catch(e) {}
   paintSelect();
@@ -2341,7 +2345,7 @@ function openSubsModal(t, i){
 function renderProduction(){
   const t = tplById(ui.prodTpl) || db.templates[0];
   if (ui.prodMode === 'tasks') return renderMyDay('exec');
-  if (ui.prodMode === 'assign') return renderMyDay('admin');
+  if (ui.prodMode === 'assign'){ ui.prodMode = 'tasks'; ui.view = 'assign'; return renderMyDay('admin'); }
   if (ui.prodMode === 'project') return renderProjectFocus();
   if (!t){ app.innerHTML = `<div class="empty">Создайте шаблон процесса, чтобы увидеть воронку</div>`; return; }
   ui.prodTpl = t.id;
@@ -4236,7 +4240,7 @@ const linkify = text => esc(text).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1"
 
 // ---------- доска задач ----------
 const prodSwitch = () => `<div class="seg-toggle" role="group" aria-label="Вид производства">
-  <button data-pmode="project" aria-pressed="${ui.prodMode === 'project'}">По проекту</button><button data-pmode="funnel" aria-pressed="${!ui.prodMode || ui.prodMode === 'funnel'}">Воронка</button><button data-pmode="tasks" aria-pressed="${ui.prodMode === 'tasks'}">Мои задачи</button><button data-pmode="assign" aria-pressed="${ui.prodMode === 'assign'}">Поручения</button></div>`;
+  <button data-pmode="project" aria-pressed="${ui.prodMode === 'project'}">По проекту</button><button data-pmode="funnel" aria-pressed="${!ui.prodMode || ui.prodMode === 'funnel'}">Воронка</button><button data-pmode="tasks" aria-pressed="${ui.prodMode === 'tasks'}">Мои задачи</button></div>`;
 function renderTaskBoard(){
   const f = ui.tf || (ui.tf = { tpl:'', project:'', assignee:'', stage:'', hideDone:false });
   const projects = db.projects.filter(p => p.state !== 'archived' && (!f.tpl || p.template_id === f.tpl));
@@ -4289,7 +4293,7 @@ function watchIT(){
   const on = snap => {
     IT.list = snap.docs.map(d => { try { const b = d.data(); return { ...JSON.parse(b.json), _owner:b.ownerId, _members:b.memberIds || [] }; } catch(e) { return null; } }).filter(t => t && !t.deleted);
     syncItMembers();
-    if ((ui.view === 'production' && ['tasks', 'assign'].includes(ui.prodMode)) || ui.view === 'mytasks') render(); else paintBell();
+    if ((ui.view === 'production' && ui.prodMode === 'tasks') || ui.view === 'mytasks' || ui.view === 'assign') render(); else paintBell();
   };
   IT.subs.push(cloud.store.collection('it').where('memberIds', 'array-contains', GUEST ? cloud.uid : OWNER()).onSnapshot(on, () => {}));
 }
@@ -4367,7 +4371,7 @@ function renderMyDay(mode = 'exec'){
   const vis = list => (showDone ? list : list.filter(i => !i.done)).sort(byDue);
   const pItems = vis(pAll), iItems = vis(iAll);
   const asU = !admin && !GUEST && ui.dayAs ? userById(ui.dayAs) : null;
-  const head = `<div class="fn-head-row">${GUEST ? '' : prodSwitch()}
+  const head = `<div class="fn-head-row">${GUEST || admin ? '' : prodSwitch()}
       <div class="seg-toggle" role="group" aria-label="Какие задачи">
         <button data-daytab="all" aria-pressed="${tab === 'all'}">Все (Мой день)</button><button data-daytab="p" aria-pressed="${tab === 'p'}">Проектные</button><button data-daytab="i" aria-pressed="${tab === 'i'}">Внутренние</button></div>
       ${admin ? `<select id="dayWho" aria-label="Исполнитель"><option value="">Исполнитель: все</option>${db.users.map(u => `<option value="${u.id}" ${u.id === who ? 'selected' : ''}>${esc(u.id === ME ? `${u.name || 'Вы'} (вы)` : u.name || 'Без имени')}</option>`).join('')}</select>`
@@ -4380,7 +4384,7 @@ function renderMyDay(mode = 'exec'){
   pItems.forEach(i => { let g = groups.find(x => x.p.id === i.p.id); if (!g){ g = { p:i.p, s:i.s, items:[] }; groups.push(g); } g.items.push(i); });
   groups.sort((a, b) => (a.items[0].due || '9999').localeCompare(b.items[0].due || '9999'));
   const projHtml = groups.map(({ p, s, items }) => {
-    const open = ui.dayFold[p.id] !== false; const left = items.filter(i => !i.done).length;
+    const open = ui.dayFold[p.id] === true; const left = items.filter(i => !i.done).length;   // по умолчанию свёрнуто
     const n = p.stages.length, at = p.stages.indexOf(s) + 1;
     return `<section class="dt-proj-sec${open ? '' : ' folded'}" data-dtproj="${p.id}">
       <header class="dt-ph"><button class="dt-fold" data-dtfold="${p.id}" aria-expanded="${open}"><i aria-hidden="true"></i><b>${esc(p.name)}</b><small>${esc(p.client || '')}</small></button>
@@ -4399,7 +4403,7 @@ function renderMyDay(mode = 'exec'){
     : 'Что нужно сделать: подзадачи текущего этапа ваших проектов и внутренние задачи.';
   app.innerHTML = head + `<p class="fn-sum">${sum}</p>`
     + (empty ? `<div class="empty">${tab === 'i' ? 'Внутренних задач нет.' : tab === 'p' ? 'По текущим этапам проектов задач нет.' : 'Задач нет.'}${admin ? '<br><button class="primary" data-itnew>+ Поставить задачу</button>' : ''}</div>`
-      : intHtml + (groups.length ? `<h3 class="dt-h">Задачи по проектам</h3>${projHtml}` : ''));
+      : intHtml + (groups.length ? `<h3 class="dt-h">Задачи по проектам <button class="link dt-all" data-dtall="${groups.every(g => ui.dayFold[g.p.id] === true) ? '0' : '1'}">${groups.every(g => ui.dayFold[g.p.id] === true) ? 'Свернуть все' : 'Развернуть все'}</button></h3>${projHtml}` : ''));
 }
 // «Мои задачи» / вкладка исполнителя: простой список с галочкой «выполнено»
 function renderTodo(who){
@@ -4560,7 +4564,9 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('click', e => {
   const dt = e.target.closest?.('[data-daytab]'); if (dt){ ui.dayTab = dt.dataset.daytab; render(); return; }
-  const fd = e.target.closest?.('[data-dtfold]'); if (fd){ ui.dayFold = ui.dayFold || {}; ui.dayFold[fd.dataset.dtfold] = ui.dayFold[fd.dataset.dtfold] === false; render(); return; }
+  const fd = e.target.closest?.('[data-dtfold]'); if (fd){ ui.dayFold = ui.dayFold || {}; ui.dayFold[fd.dataset.dtfold] = ui.dayFold[fd.dataset.dtfold] !== true; render(); return; }
+  const fa = e.target.closest?.('[data-dtall]'); if (fa){ ui.dayFold = ui.dayFold || {}; const on = fa.dataset.dtall === '1';
+    app.querySelectorAll('[data-dtproj]').forEach(sc => { ui.dayFold[sc.dataset.dtproj] = on; }); render(); return; }
   const da = e.target.closest?.('[data-dayas]'); if (da){ ui.dayAs = da.dataset.dayas; render(); return; }
   if (e.target.closest?.('[data-itnew]')){ openItask(null); return; }
   if (e.target.id === 'itDel'){ const t = itAll().find(x => x.id === $('#itForm').dataset.itid);
@@ -4921,7 +4927,7 @@ document.addEventListener('click', e => {
   const pm = tg.closest('[data-pmode]'); if (pm){ ui.prodMode = pm.dataset.pmode; render(); return; }
   const card = tg.closest('[data-task]'); if (card && !tg.closest('#taskLayer') && !tg.closest('.dt-chk, .dt-status, .dt-date')){ e.preventDefault(); openTask(card.dataset.task); return; }
   if (tg.closest('[data-tnew]')){ openNewTask({ project_id: ui.tf?.project }); return; }
-  const fs = tg.closest('[data-fn-tasks]'); if (fs){ ui.prodMode = 'assign'; ui.dayTab = 'p'; render(); return; }
+  const fs = tg.closest('[data-fn-tasks]'); if (fs){ ui.view = 'assign'; ui.dayTab = 'p'; render(); return; }
   const ts = tg.closest('[data-tsubs]'); if (ts){ const [pid, sid] = ts.dataset.tsubs.split('|'); const p = projById(pid); const n = tasksFromSubs(p, p.stages.find(s => s.id === sid)); commit(); toast(`Создано задач: ${n}`); return; }
   if (!tg.closest('#taskLayer')) return;
   if (tg.closest('[data-open]')){ closeTask(); return; }
@@ -6168,6 +6174,7 @@ const MNAV = {
   production:['Произв.', MI('<path d="M3 12h4l3-8 4 16 3-8h4"/>')],
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
+  assign:['Поручения', MI('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2 2 4-4M8.5 17h7"/>')],
   mytasks:['Задачи', MI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5 2.5-2.5"/>')],
   reports:['AI-отчёты', MI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')],
   team:['Команда', MI('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>')],
@@ -6210,7 +6217,7 @@ document.addEventListener('click', e => {
   const k = c.dataset.kdrisk; ui.risk = ui.risk === k ? '' : k; render();
 });
 const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>');
-const moreViews = () => ['mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
+const moreViews = () => ['assign', 'mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
 function renderMobileNav(){
   const nav = $('#mnav'); if (!nav) return;
   if (GUEST){ nav.innerHTML = ['mine', 'mytasks'].map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
