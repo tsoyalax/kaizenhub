@@ -50,6 +50,23 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(!$('.mc [data-mxtoggle]') && $('.mc .mc-dl svg') && !/·/.test($('.mc .mc-sub').textContent)); ok('телефон: карточка без лишних строк, дедлайн с флажком справа внизу, без точек');
   $('.mc .mc-main').click(); await wait(150);
   assert.ok($('.drawer')); ok('телефон: нажатие на карточку открывает проект');
+  assert.ok($('.mc .mc-hd .pava.md') && $('.mc .mc-badges .st-pill')); ok('телефон: в карточке крупное фото, статус и срок под названием');
+  // Производство: текущий проект + выдвижная панель со всеми проектами
+  o.w.document.querySelector('.drawer [data-close], .drawer .close')?.click(); await wait(30); $('[data-mview="production"]').click(); await wait(100);
+  if (!$('[data-pmpick]')){ [...D.querySelectorAll('button')].find(b => b.textContent.trim() === 'По проекту')?.click(); await wait(100); }
+  assert.ok($('[data-pmpick] .pava.md')); ok('производство: кнопка текущего проекта с фото');
+  $('[data-pmpick]').click(); await wait(50);
+  const rows = D.querySelectorAll('.pk-sheet .pk-row'); assert.ok(rows.length > 3 && $('.pk-row.on')); ok('производство: панель со всеми проектами, текущий отмечен');
+  const q = $('#pkQ'); const target = rows[2]; const nm = target.querySelector('b').textContent;
+  q.value = nm.slice(0, 5); q.dispatchEvent(new o.w.Event('input', { bubbles:true }));
+  assert.ok(!target.hidden && [...rows].some(r => r.hidden)); ok('производство: поиск в панели фильтрует проекты');
+  target.click(); await wait(80);
+  assert.ok(!$('.pk-sheet') && $('.pm-ct b').textContent === nm); ok('производство: выбор в панели переключает проект');
+  // меню «Ещё»: профиль и разделы плитками
+  $('[data-mmore]').click(); await wait(30);
+  assert.ok($('.more-sheet .side-me') && $('.more-sheet .mlist [data-mview="team"]')); ok('меню «Ещё»: профиль, тема и разделы');
+  $('.more-sheet [data-mview="team"]').click(); await wait(80);
+  assert.ok(!$('.more-sheet') && $('[data-mmore][aria-current="page"]')); ok('меню «Ещё»: переход в раздел закрывает лист');
   assert.equal(o.errors.length, 0, o.errors.join('\n')); ok('телефон: ошибок нет');
   o.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
