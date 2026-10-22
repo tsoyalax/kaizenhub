@@ -1396,8 +1396,8 @@ const subsFor = (tid, name) => (DEFAULT_SUBS[tid]?.[name] || []).map(n => ({ id:
 // Подэтапы проекта по списку шаблона: отметки о выполнении сохраняются по названию
 const mergeSubs = (old = [], tpl = [], allDone = false, keepExtra = false) => {
   const out = tpl.map(t => {
-    const o = old.find(x => norm(x.name) === norm(t.name));
-    return { id: o ? o.id : uid(), name: t.name, done: allDone || !!o?.done };
+    const o = old.find(x => (t.id && x.tsub === t.id) || norm(x.name) === norm(t.name));
+    return { ...(o || {}), id: o ? o.id : uid(), name: t.name, done: allDone || !!o?.done, ...(t.id ? { tsub:t.id } : {}) };
   });
   // подэтапы, добавленные только в этом проекте, при обновлении по шаблону не теряются
   if (keepExtra) old.forEach((x, i) => { if (!tpl.some(t => norm(t.name) === norm(x.name))) out.splice(Math.min(i, out.length), 0, x); });
@@ -1433,7 +1433,7 @@ function makeProject({ name, client, template_id, start_date, pm_id, worker_id=n
   const stages = tpl.stages.map((ts,i) => {
     const n = stageDaysFor(ts);
     const s = { id:uid(), position:i, name:ts.name, days:n, approval:!!ts.approval, assignee_id:null, subs:mergeSubs([], ts.subs || []),
-      status:'not_started', planned_start:cur, due_date:addDays(cur, n), started_at:null, completed_at:null };
+      status:'not_started', planned_start:cur, due_date:addDays(cur, n), started_at:null, completed_at:null, tsid:ts.id };
     cur = s.due_date; return s;
   });
   return { id:uid(), name, client, template_id, pm_id, start_date, deadline:stages.at(-1).due_date,
@@ -1629,11 +1629,11 @@ function changeTemplate(p, tplId){
   let added = 0, kept = 0;
   tpl.stages.forEach(t => {
     const o = old.find(x => !used.has(x.id) && norm(x.name) === norm(t.name));
-    if (o){ used.add(o.id); o.approval = !!t.approval; o.subs = mergeSubs(o.subs, t.subs || [], o.status === 'done'); next.push(o); cursor = o.due_date; kept++; }
+    if (o){ used.add(o.id); o.approval = !!t.approval; o.tsid = t.id; o.subs = mergeSubs(o.subs, t.subs || [], o.status === 'done'); next.push(o); cursor = o.due_date; kept++; }
     else {
       const n = stageDaysFor(t);
       const s = { id:uid(), position:0, name:t.name, days:n, approval:!!t.approval, assignee_id:null, status:'not_started', subs:mergeSubs([], t.subs || []),
-        planned_start:cursor, due_date:addDays(cursor, n), started_at:null, completed_at:null };
+        planned_start:cursor, due_date:addDays(cursor, n), started_at:null, completed_at:null, tsid:t.id };
       next.push(s); cursor = s.due_date; added++;
     }
   });
@@ -1696,12 +1696,13 @@ function addStage(p){
   const last = p.stages.at(-1); const start = last ? last.due_date : p.start_date;
   const n = defDays();
   const s = { id:uid(), position:p.stages.length, name:'Новый этап', days:n, approval:false, assignee_id:null, status:'not_started', subs:[],
-    planned_start:start, due_date:addDays(start, n), started_at:null, completed_at:null };
+    planned_start:start, due_date:addDays(start, n), started_at:null, completed_at:null, custom:true };
   p.stages.push(s); ensureActive(p); syncState(p); addLog(p, 'Добавлен этап «Новый этап»'); commit();
   return s;
 }
 // DELETE /api/stages/:id — следующие этапы подтягиваются на его длительность
 function removeStage(p, s){
+  if (s.tsid) p.tplSkip = [...new Set([...(p.tplSkip || []), s.tsid])];
   shiftFrom(p, s.position, -stageDur(s));
   p.stages = p.stages.filter(x => x.id !== s.id);
   normalizeChain(p); ensureActive(p); syncState(p);
@@ -2918,6 +2919,127 @@ function syncCardToProjects(tplId, subName, c, skipTaskId){
   return n;
 }
 // обновить активные проекты шаблона: недостающие подэтапы и карточки (уже заполненные карточки не трогаем)
+// =====================================================================
+//  СИНХРОНИЗАЦИЯ ШАБЛОНА С ПРОЕКТАМИ
+//  Этап проекта помнит этап шаблона (s.tsid), подэтап — подэтап шаблона (x.tsub). По этой связи в идущих проектах:
+//  • переименование этапа/подэтапа в шаблоне переименовывает его (отметки и карточки сохраняются);
+//  • новый этап шаблона встаёт на своё место, если проект ещё не прошёл это место; новые подэтапы добавляются;
+//  • удалённый из шаблона этап/подэтап убирается, если в нём ничего не начато и не отмечено, иначе остаётся «своим»;
+//  • пустые не начатые этапы вне шаблона (без подэтапов и карточек) убираются;
+//  • этап шаблона, который удалили в проекте вручную, обратно не добавляется (p.tplSkip).
+//  Завершённые и архивные проекты не меняются.
+// =====================================================================
+function ensureTplIds(){
+  let n = 0;
+  (db.templates || []).forEach(t => t.stages.forEach(st => { if (!st.id){ st.id = uid(); n++; } (st.subs || []).forEach(x => { if (!x.id){ x.id = uid(); n++; } }); }));
+  return n;
+}
+const ptasks = p => (p._ext ? ext.tasks : (db.tasks || [])).filter(t => t.project_id === p.id);
+const taskBusy = t => !!t && (t.checklist.some(i => i.done) || !!t.result_link);
+function linkToTemplate(p, tpl){
+  // этапы: живая связь, иначе — по названию (первый свободный этап шаблона)
+  const used = new Set();
+  p.stages.forEach(s => { if (s.tsid && tpl.stages.some(t => t.id === s.tsid) && !used.has(s.tsid)) used.add(s.tsid); else if (s.tsid) s._lost = true; });
+  p.stages.forEach(s => {
+    if (s.tsid && !s._lost) return;
+    if (s.custom && !s.tsid) return;
+    const t = tpl.stages.find(x => !used.has(x.id) && norm(x.name) === norm(s.name));
+    if (t){ s.tsid = t.id; used.add(t.id); delete s._lost; }
+  });
+  // этап шаблона без пары — связываем по месту: несвязанный этап проекта между теми же соседями (переименовали вручную)
+  tpl.stages.forEach((t, ti) => {
+    if (used.has(t.id)) return;
+    let lo = -1, hi = p.stages.length;
+    for (let k = ti - 1; k >= 0; k--){ const j = p.stages.findIndex(st => st.tsid === tpl.stages[k].id && !st._lost); if (j >= 0){ lo = j; break; } }
+    for (let k = ti + 1; k < tpl.stages.length; k++){ const j = p.stages.findIndex(st => st.tsid === tpl.stages[k].id && !st._lost); if (j >= 0){ hi = j; break; } }
+    const c = p.stages.slice(lo + 1, hi).find(st => (!st.tsid || st._lost) && !st.custom && (st.subs || []).length);
+    if (c){ c.tsid = t.id; used.add(t.id); delete c._lost; }
+  });
+  // подэтапы внутри связанных этапов
+  p.stages.forEach(s => {
+    const t = tpl.stages.find(x => x.id === s.tsid); if (!t || s._lost) return;
+    const u = new Set();
+    (s.subs || []).forEach(x => { if (x.tsub && (t.subs || []).some(y => y.id === x.tsub) && !u.has(x.tsub)) u.add(x.tsub); else if (x.tsub) x._lost = true; });
+    (s.subs || []).forEach(x => {
+      if (x.tsub && !x._lost) return;
+      const ts = (t.subs || []).find(y => !u.has(y.id) && norm(y.name) === norm(x.name));
+      if (ts){ x.tsub = ts.id; u.add(ts.id); delete x._lost; }
+    });
+  });
+}
+function syncProjectWithTemplate(p, tpl){
+  if (!p || !tpl || p._ext || p.state !== 'active') return 0;
+  const before = JSON.stringify([p.stages, ptasks(p).map(t => [t.id, t.title])]);
+  linkToTemplate(p, tpl);
+  const T = id => tpl.stages.find(t => t.id === id);
+  const skip = new Set(p.tplSkip || []);
+  const removeTasks = (pred) => { const ids = new Set(ptasks(p).filter(pred).map(t => t.id)); if (ids.size) db.tasks = db.tasks.filter(t => !ids.has(t.id)); };
+  // 1) этапы: переименование, согласование, подэтапы
+  p.stages.forEach(s => {
+    const t = T(s.tsid); if (!t || s._lost) return;
+    if (s.name !== t.name){ addLog(p, `Этап «${s.name}» переименован в «${t.name}» по шаблону`); s.name = t.name; }
+    s.approval = !!t.approval;
+    const old = s.subs || []; const next = [];
+    (t.subs || []).forEach(ts => {
+      let x = old.find(y => y.tsub === ts.id && !y._lost);
+      if (x){
+        if (x.name !== ts.name){ const tk = ptasks(p).find(k => k.stage_id === s.id && k.substage_id === x.id); if (tk && norm(tk.title) === norm(x.name)) tk.title = ts.name; x.name = ts.name; }
+        next.push(x);
+      } else next.push({ id:uid(), name:ts.name, done:s.status === 'done', tsub:ts.id });
+    });
+    old.forEach((x, i) => {
+      if (next.includes(x)) return;
+      if (x.tsub){                                                 // подэтап убрали из шаблона
+        const tk = ptasks(p).find(k => k.stage_id === s.id && k.substage_id === x.id);
+        if (!x.done && !taskBusy(tk)){ if (tk) removeTasks(k => k.id === tk.id); addLog(p, `Подэтап «${x.name}» убран по шаблону`); return; }
+        delete x.tsub;                                              // в нём уже есть работа — остаётся своим
+      }
+      next.splice(Math.min(i, next.length), 0, x);
+    });
+    old.forEach(x => delete x._lost);
+    s.subs = next;
+  });
+  // 2) этапы, которых больше нет в шаблоне, и пустые этапы вне шаблона
+  const busy = st => st.status !== 'not_started' || (st.subs || []).some(x => x.done) || ptasks(p).some(k => k.stage_id === st.id && taskBusy(k));
+  const keep = p.stages.filter(st => {
+    if (p.stages.length < 2) return true;
+    if (st.tsid && (st._lost || !T(st.tsid))){
+      if (!busy(st)){ removeTasks(k => k.stage_id === st.id); addLog(p, `Этап «${st.name}» убран по шаблону`); return false; }
+      delete st.tsid; delete st._lost; st.custom = true; return true;
+    }
+    if (!st.tsid && !st.custom && st.status === 'not_started' && !(st.subs || []).length && !ptasks(p).some(k => k.stage_id === st.id)){
+      addLog(p, `Пустой этап «${st.name}» вне шаблона убран`); return false;
+    }
+    return true;
+  });
+  if (keep.length) p.stages = keep;
+  // 3) новые этапы шаблона — на своё место, если проект ещё не прошёл его
+  tpl.stages.forEach((t, ti) => {
+    if (p.stages.some(st => st.tsid === t.id) || skip.has(t.id)) return;
+    let idx = 0;
+    for (let k = ti - 1; k >= 0; k--){ const j = p.stages.findIndex(st => st.tsid === tpl.stages[k].id); if (j >= 0){ idx = j + 1; break; } }
+    if (p.stages.slice(idx).some(st => st.status !== 'not_started') && idx < p.stages.length) return;
+    if (idx >= p.stages.length && p.state !== 'active') return;
+    const prev = p.stages[idx - 1]; const start = prev ? prev.due_date : p.start_date; const n = stageDaysFor(t);
+    p.stages.splice(idx, 0, { id:uid(), position:idx, name:t.name, days:n, approval:!!t.approval, assignee_id:null, status:'not_started',
+      planned_start:start, due_date:addDays(start, n), started_at:null, completed_at:null, tsid:t.id,
+      subs:(t.subs || []).map(ts => ({ id:uid(), name:ts.name, done:false, tsub:ts.id })) });
+    addLog(p, `Добавлен этап «${t.name}» по шаблону`);
+  });
+  p.stages.forEach(st => delete st._lost);
+  const changed = JSON.stringify([p.stages, ptasks(p).map(t => [t.id, t.title])]) !== before;
+  if (changed){ normalizeChain(p); ensureActive(p); syncState(p); }
+  const cards = copyCards(p);
+  return changed || cards ? 1 : 0;
+}
+// все свои проекты по всем шаблонам; вызывается при загрузке и при сохранении шаблона
+function syncAllTemplates(tplId){
+  if (GUEST) return 0;
+  ensureTplIds();
+  let n = 0;
+  db.projects.forEach(p => { if (!tplId || p.template_id === tplId) n += syncProjectWithTemplate(p, tplById(p.template_id)); });
+  return n;
+}
 function applyTplToProjects(t){
   let subs = 0, cards = 0, projs = 0;
   activeOf(t.id).forEach(p => {
@@ -3331,11 +3453,11 @@ document.addEventListener('click', e => {
     const clean = JSON.parse(JSON.stringify(d)); clean.stages.forEach(s => s.subs.forEach(x => delete x.card));
     const at = db.templates.findIndex(t => t.id === d.id); if (at >= 0) db.templates[at] = clean; else db.templates.push(clean);
     // активные проекты процесса сразу получают новые подэтапы, новые и изменённые карточки
-    const r = applyTplToProjects(clean); let upd = 0;
+    const projN = syncAllTemplates(clean.id); let upd = 0;
     changed.forEach(c => { upd += syncCardToProjects(clean.id, c.sub, c.card); });
     ui.tplSel = d.id; ui.draft = null; ui.draftDirty = false; commit();
-    const bits = [r.subs && `подэтапов добавлено: ${r.subs}`, (r.cards + upd) && `карточек обновлено: ${r.cards + upd}`].filter(Boolean);
-    toast(bits.length ? `Шаблон сохранён. В активных проектах ${bits.join(', ')}` : 'Шаблон сохранён'); return;
+    const bits = [projN && `обновлено проектов: ${projN}`, upd && `карточек: ${upd}`].filter(Boolean);
+    toast(bits.length ? `Шаблон сохранён. ${bits.join(', ')}` : 'Шаблон сохранён'); return;
   }
   if (e.target.id === 'tDel'){ db.templates = db.templates.filter(t => t.id !== ui.draft.id); ui.draft = null; ui.tplSel = null; commit(); toast('Шаблон удалён'); }
 });
@@ -4736,7 +4858,7 @@ function saveTaskDraft(){
     const tpl = tplById(p.template_id); const st = p.stages.find(x => x.id === t.stage_id); const ts = tpl && st && tpl.stages.find(x => norm(x.name) === norm(st.name));
     if (ts && !(ts.subs || []).some(x => norm(x.name) === norm(subX.name))){
       const at = (st.subs || []).findIndex(x => x.id === subX.id); (ts.subs = ts.subs || []).splice(Math.min(at < 0 ? ts.subs.length : at, ts.subs.length), 0, { id:uid(), name:subX.name });
-      synced += applyTplToProjects(tpl).cards;
+      synced += syncAllTemplates(tpl.id);
     } }
   if (d.asTpl && subX && !filled) d.asTpl = false;
   addLog(p, `Подэтап «${t.title}» отредактирован${d.asTpl && subX ? ' и сохранён как шаблон' : ''}`);
@@ -5170,7 +5292,7 @@ function cloudApply(r){
   migrate(); if (!db.cardTplsInit){ migrateCardTpls(); scheduleCloud(); }
   (db.reports || []).forEach(fixReport);
   if (ORG && adoptOrgMe()) scheduleCloud();
-  if (migrateLinks() + repairStageOrder() + syncDoneStages() + replanAll()) scheduleCloud();
+  if (migrateLinks() + repairStageOrder() + syncAllTemplates() + syncDoneStages() + replanAll()) scheduleCloud();
   if (ui.open && !projById(ui.open)) closeLayer();
   if (db.onboarded && layer.querySelector('#mForm')) layer.innerHTML = '';
   if (ui.taskId){ if (taskById(ui.taskId)) renderTaskModal(); else closeTask(); }
