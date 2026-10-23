@@ -106,7 +106,7 @@ const getComputedStyle_ok = w => w.getComputedStyle(w.document.getElementById('b
   // 3) исполнитель видит свои задачи
   await wait(1500);
   assert.ok(!wk.w.document.getElementById('myTasksTab').hidden && wk.w.getComputedStyle(wk.w.document.getElementById('myTasksTab')).display !== 'none'); ok('у исполнителя отдельная вкладка «Задачи»');
-  assert.deepEqual([...wk.w.document.querySelectorAll('#mnav [data-mview]')].map(b => b.dataset.mview), ['mine', 'mytasks']); ok('на телефоне у исполнителя в нижнем меню «Мои проекты» и «Задачи»');
+  assert.deepEqual([...wk.w.document.querySelectorAll('#mnav [data-mview]')].map(b => b.dataset.mview), ['mine', 'mytasks', 'feed']); ok('на телефоне у исполнителя в нижнем меню «Мои проекты» и «Задачи»');
   wk.w.document.getElementById('myTasksTab').click(); await wait(200);
   const wD = wk.w.document;
   const wTxt = wD.getElementById('app').textContent;

@@ -45,7 +45,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(P().is_maintenance); ok('флаг «на ведении» сохранён в проекте');
   assert.ok(isLastMaint(P()) && P().stages.at(-1).status === 'not_started'); ok('в конце цепочки — этап «Ведение / Поддержка», пока не начат');
   // 2) регулярные задачи можно подготовить заранее, руководителем
-  w.openProject(pid); await wait(150);
+  w.openProject(pid); await wait(150); $('[data-dtab="stages"]').click(); await wait(50);
   assert.ok($('.stg-maint .rt-block') && $('.stg-maint [data-radd]')); ok('в карточке проекта блок «Регулярные задачи (абонентка)» и «+ Добавить регулярную задачу»');
   $('.stg-maint [data-radd]').click(); await wait(100);
   $('#rtTitle').value = 'Еженедельный отчёт по ROMI'; $('#rtFreq').value = 'weekly'; const due0 = E('addDays(today(), 2)'); $('#rtDue').value = due0;

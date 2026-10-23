@@ -182,7 +182,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(endOf(sp) <= dlD); ok('создание: этапы уместились в дедлайн');
   assert.ok(sp.stages.every(st => w.diffDays ? true : true) && sp.stages.every(st => st.due_date > st.planned_start)); ok('создание: у каждого этапа минимум 1 день');
   // карточка проекта: старт и ввод даты с клавиатуры
-  w.openProject(sp.id); await wait(100);
+  w.openProject(sp.id); await wait(100); $q('[data-dedit="1"]').click(); await wait(50);
   assert.ok($q('.d-box') && /Сроки/.test($q('.drawer').textContent) && $q('#pStart')); ok('карточка: блоки «Проект», «Команда», «Сроки», дату старта можно менять');
   const ps = $q('#pStart'); ps.focus(); ps.value = '0002-10-25'; fire(ps, 'change'); await wait(100);
   assert.equal(LS().projects.find(x => x.id === sp.id).start_date, startD); ok('карточка: пока набираете дату, ничего не сохраняется и поле не сбрасывается');
@@ -251,7 +251,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   {
     const Lx = LS(); const pr = Lx.projects.find(p => p.state === 'active' && p.stages.some(s => s.status !== 'done' && Lx.tasks.some(t => t.project_id === p.id && t.stage_id === s.id && t.checklist.some(i => !i.done))));
     const st = pr.stages.find(s => s.status !== 'done' && Lx.tasks.some(t => t.project_id === pr.id && t.stage_id === s.id && t.checklist.some(i => !i.done)));
-    w.openProject(pr.id); await wait(100);
+    w.openProject(pr.id); await wait(100); $q('[data-dtab="stages"]').click(); await wait(50);
     const ss = $q(`[data-sstatus="${st.id}"]`); ss.value = 'done'; fire(ss, 'change'); await wait(150);
     const Ly = LS(); const py = Ly.projects.find(p => p.id === pr.id); const sy = py.stages.find(s => s.id === st.id);
     const tks = Ly.tasks.filter(t => t.project_id === pr.id && t.stage_id === st.id);
@@ -270,7 +270,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   {
     const Lx = LS(); const pr = Lx.projects.find(p => p.state === 'active' && p.stages.length >= 4 && p.stages.slice(0, -1).some(s => s.status !== 'done'));
     const at = pr.stages.length - 1; const st = pr.stages[at];
-    w.openProject(pr.id); await wait(100);
+    w.openProject(pr.id); await wait(100); $q('[data-dtab="stages"]').click(); await wait(50);
     const ss = $q(`[data-sstatus="${st.id}"]`); ss.value = 'in_progress'; fire(ss, 'change'); await wait(150);
     const py = LS().projects.find(p => p.id === pr.id);
     assert.ok(py.stages.slice(0, at).every(s => s.status === 'done' && s.completed_at && (s.subs || []).every(x => x.done))); ok('этап в работу: все предыдущие этапы завершены с подэтапами');
@@ -287,7 +287,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     const old = Lx.tasks.find(t => t.project_id === pr.id && t.stage_id === st.id && t.substage_id === x.id);
     const t0 = { ...(old || {}), id: old?.id || 'tkEmpty', project_id: pr.id, stage_id: st.id, substage_id: x.id, title: x.name, checklist: [], blocks: [], description: '', completed_at: null };
     w.mergeSnapshot({ meta: {}, projects: [], tasks: [t0] }, { keepDemo: true }); w.commit(); await wait(50);
-    w.openProject(pr.id); await wait(100);
+    w.openProject(pr.id); await wait(100); $q('[data-dtab="stages"]').click(); await wait(50);
     const ss = $q(`[data-sstatus="${st.id}"]`); if (ss.value !== 'done'){ ss.value = 'done'; fire(ss, 'change'); await wait(150); }
     const b = $q(`.sub-task[data-task="${t0.id}"]`);
     assert.ok(b && b.classList.contains('done')); ok('карточка без чек-листа в завершённом этапе показана выполненной');
@@ -331,7 +331,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     assert.ok(row() && row().classList.contains('none') && row().textContent.trim().length >= 1); ok('фото проекта: без фото — буквы названия в цветном квадрате');
     w.eval(`projById('${pr.id}').image = 'data:image/jpeg;base64,/9j/4AAQ'; commit();`); await wait(100);
     assert.ok(row().querySelector('img')); ok('фото проекта: показано в списке проектов');
-    w.openProject(pr.id); await wait(150);
+    w.openProject(pr.id); await wait(150); $q('[data-dedit="1"]').click(); await wait(50);
     assert.ok($q('.d-head .pava-edit img') && $q('#pImg') && $q('#pImgDel')); ok('карточка проекта: фото, замена и «Убрать фото»');
     $q('#pImgDel').click(); await wait(150);
     assert.ok(!LS().projects.find(p => p.id === pr.id).image && $q('.d-head .pava.none')); ok('«Убрать фото» возвращает буквы');

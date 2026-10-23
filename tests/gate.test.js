@@ -101,6 +101,33 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   for (const sel of [`[data-sgate="${s2}"]`, `[data-sfilesp="${s2}|${x2}"]`]){ const el = $(own, sel); el.checked = true; el.dispatchEvent(new own.w.Event('change', { bubbles: true })); await wait(100); }
   E(own, `syncAllTemplates(projById('${p2}').template_id)`);
   assert.ok(E(own, `(() => { const s = projById('${p2}').stages.find(x => x.id === '${s2}'); return s.gate && s.subs.find(x => x.id === '${x2}').files; })()`)); ok('галочки из карточки проекта не сбрасываются шаблоном');
+  // карточка проекта: обзор без полей, карандаш — редактирование, этапы — отдельная вкладка
+  E(own, 'closeLayer()'); E(own, `ui.view = 'matrix'; render()`); await wait(100);
+  own.w.document.querySelector(`[data-open="${pid}"]`)?.click() || E(own, `openProject('${pid}')`); await wait(150);
+  assert.ok($(own, '.drawer .d-facts') && !$(own, '.drawer #pName') && !$(own, '.drawer select')); ok('тап по проекту: обзор только для чтения');
+  $(own, '[data-dedit="1"]').click(); await wait(50);
+  assert.ok($(own, '.drawer #pName') && $(own, '.drawer #pPm')); ok('карандаш включает редактирование');
+  $(own, '[data-dtab="stages"]').click(); await wait(50);
+  assert.ok($(own, '.drawer .timeline [data-sstatus]')); ok('этапы — отдельная вкладка');
+  assert.ok($(own, '.drawer [data-feed]') && !$(own, '.drawer .log')); ok('история и комментарии вынесены из карточки (ссылка на «Ленту»)');
+
+  // лента: исполнитель пишет, руководитель видит в колокольчике и отвечает
+  E(own, 'closeLayer()');
+  E(gw, `ui.view = 'feed'; ui.feedP = '${pid}'; render()`); await wait(100);
+  assert.ok($(gw, '#feedForm')); ok('исполнитель: в «Ленте» есть поле комментария');
+  $(gw, '#feedTx').value = 'Вопрос по сценарию: какой хронометраж?';
+  $(gw, '#feedForm').dispatchEvent(new gw.w.Event('submit', { bubbles: true, cancelable: true })); await wait(3000);
+  assert.ok(/хронометраж/.test($(gw, '.feed').textContent)); ok('комментарий исполнителя появился в ленте');
+  assert.ok(E(own, `unreadComments().some(x => x.p.id === '${pid}' && /хронометраж/.test(x.c.text))`)); ok('руководитель получил комментарий как непрочитанный');
+  $(own, '#bell').click(); await wait(50);
+  assert.ok($(own, `.pop [data-feed="${pid}"]`)); ok('новый комментарий — в колокольчике');
+  $(own, `.pop [data-feed="${pid}"]`).click(); await wait(100);
+  assert.ok(E(own, `ui.view === 'feed'`) && /хронометраж/.test($(own, '.feed').textContent) && E(own, 'unreadComments().length') === 0); ok('руководитель открыл ленту проекта — комментарий прочитан');
+  $(own, '#feedTx').value = '30 секунд';
+  $(own, '#feedForm').dispatchEvent(new own.w.Event('submit', { bubbles: true, cancelable: true })); await wait(3000);
+  E(gw, 'render()'); await wait(100);
+  assert.ok(/30 секунд/.test($(gw, '.feed').textContent) && /хронометраж/.test($(gw, '.feed').textContent)); ok('исполнитель видит ответ, его комментарий не затёрт');
+  assert.equal(E(own, `projById('${pid}').comments.filter(c => !c.deleted).length`), 2); ok('у руководителя оба комментария');
   assert.equal(own.errors.length, 0, own.errors.join('\n')); assert.equal(gw.errors.length, 0, gw.errors.join('\n')); ok('ошибок на страницах нет');
   own.w.close(); gw.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);

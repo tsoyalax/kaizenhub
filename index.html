@@ -1064,7 +1064,7 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .sh-mem select{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 6px;font-size:13px}
 .sh-h{font-size:14px;font-weight:600;margin:14px 0 2px}
 .mine-h{margin:0;font-size:18px;font-weight:600}
-body.guest .tabs button:not([data-view="mine"]):not([data-view="mytasks"]),body.guest #filters,body.guest #newBtn,body.guest #cloudBtn{display:none!important}
+body.guest .tabs button:not([data-view="mine"]):not([data-view="mytasks"]):not([data-view="feed"]),body.guest #filters,body.guest #newBtn,body.guest #cloudBtn{display:none!important}
 .sh-link{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .sh-link input{flex:1;min-width:180px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);padding:0 8px;font-size:13px}
 .sh-link small{color:var(--muted);font-size:12.5px;flex-basis:100%}
@@ -1675,6 +1675,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .ef-list{display:flex;flex-wrap:wrap;gap:6px}
 .ef{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px;border-radius:8px;border:1px solid var(--line);font-size:12.5px;cursor:pointer;background:var(--surface)}
 .stg .exec-flags .ef input{width:14px;height:14px;margin:0;accent-color:var(--ink)}
+.stg .exec-flags label.ef{display:inline-flex;align-items:center;gap:6px;margin:0;font-size:12.5px;color:var(--ink);font-weight:400;text-transform:none;letter-spacing:0}
 .ef.on{border-color:var(--ink);background:var(--surface-2)}
 .ef small{color:var(--muted);font-size:11px}
 .ef:has(input:disabled){cursor:default;opacity:.85}
@@ -1686,6 +1687,61 @@ svg.clip{width:14px;height:14px;flex:none}
 .tk-who{display:flex;align-items:center;gap:8px;font-size:13px}
 .tk-who > span{color:var(--muted)}
 .tk-who .tk-as{height:34px;max-width:230px}
+
+/* карточка проекта: обзор только для чтения, карандаш — редактирование */
+.d-head-v{align-items:center}
+.d-head-v .d-title{flex:1;min-width:0}
+.d-head-v h2{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em;line-height:1.25}
+.d-head-v small{color:var(--muted);font-size:13.5px}
+.d-pen svg{width:18px;height:18px}
+.d-done{height:34px}
+.d-tabs{display:flex;align-items:center;gap:4px;border-bottom:1px solid var(--line);margin:4px 0 16px;overflow-x:auto;scrollbar-width:none}
+.d-tabs::-webkit-scrollbar{display:none}
+.d-tabs [data-dtab]{border:0;background:none;font:inherit;font-size:14px;font-weight:500;color:var(--muted);padding:10px 10px 11px;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap}
+.d-tabs [data-dtab][aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.d-tabs span{font-size:12px;color:var(--muted);margin-left:2px}
+.d-feed{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:0;background:none;font:inherit;font-size:13.5px;color:var(--link);cursor:pointer;white-space:nowrap;padding:8px 4px}
+.d-feed svg{width:16px;height:16px}
+.d-feed span{color:var(--muted)}
+.d-feed b{font-weight:inherit}.d-feed .sh{display:none}
+@media (max-width:640px){.d-feed b:not(.sh){display:none}.d-feed .sh{display:inline}}
+.d-status{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.d-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.d-fact{background:var(--surface);padding:12px 14px;display:grid;gap:2px;min-width:0}
+.d-fact > span{font-size:12px;color:var(--muted)}
+.d-fact b{font-size:14.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.d-fact small{font-size:12.5px;color:var(--muted)}
+.d-fact:last-child:nth-child(odd){grid-column:1/-1}
+.d-fact .dl-over{color:var(--r)}.d-fact .dl-warn{color:var(--y)}.d-fact .dl-client{color:var(--b)}.d-fact .dl-m{color:var(--m)}
+/* лента */
+.fd-head select{max-width:320px}
+.fd-form{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:18px}
+.fd-form select{grid-column:1/-1;height:36px}
+.fd-form textarea{resize:vertical;min-height:44px;border:0;background:transparent;padding:6px;font:inherit;color:var(--ink);outline:none}
+.fd-form .primary{height:38px}
+.feed{list-style:none;margin:0;padding:0;display:grid;gap:8px;max-width:760px}
+.fd-day{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:14px 2px 2px}
+.fd-day:first-child{margin-top:0}
+.fd-c{display:flex;gap:10px;align-items:flex-start}
+.fd-av{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:11.5px;font-weight:700;background:linear-gradient(145deg,hsl(var(--h) 65% 58%),hsl(calc(var(--h) + 30) 60% 45%))}
+.fd-bubble{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:4px 14px 14px 14px;padding:9px 12px}
+.fd-c.mine .fd-bubble{background:color-mix(in srgb,var(--brand) 6%,var(--surface))}
+.fd-c.new .fd-bubble{border-color:var(--b);box-shadow:0 0 0 1px var(--b)}
+.fd-meta{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:12.5px}
+.fd-meta b{font-size:13.5px}
+.fd-meta time{color:var(--muted)}
+.fd-meta .tx{margin-left:auto}
+.fd-proj{font-size:12.5px;color:var(--link)}
+.fd-text{margin-top:3px;font-size:14.5px;white-space:pre-wrap;word-break:break-word}
+.fd-l{display:flex;align-items:baseline;gap:8px;font-size:13px;color:var(--muted);padding:0 4px 0 12px}
+.fd-l i{flex:none;width:6px;height:6px;border-radius:50%;background:var(--line-strong);transform:translateY(-1px)}
+.fd-l span{flex:1;min-width:0;color:var(--ink);opacity:.8}
+.fd-l time{flex:none;font-size:12px}
+@media (max-width:640px){
+  .d-facts{grid-template-columns:1fr 1fr}
+  .fd-head select{flex:1 1 100%;max-width:none}
+  .fd-l{flex-wrap:wrap;padding-left:4px}.fd-l time{width:100%;padding-left:14px}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -1703,6 +1759,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="mytasks" id="myTasksTab">Мои задачи</button>
     <button data-view="assign">Поручения</button>
     <button data-view="mine" id="mineTab" hidden>Мои проекты</button>
+    <button data-view="feed">Лента</button>
     <button data-view="reports">AI-отчёты</button>
     <button data-view="load">Загрузка</button>
     <button data-view="team">Команда</button>
@@ -2500,14 +2557,14 @@ function rememberView(){ try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({
 function restoreView(){
   try {
     const v = JSON.parse(sessionStorage.getItem(VIEW_KEY) || 'null'); if (!v) return;
-    const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine', 'mytasks');
+    const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine', 'mytasks', 'feed');
     if (ok.includes(v.view)) ui.view = v.view;
     if (['deadlines','templates','categories','spaces'].includes(v.setTab)) ui.setTab = v.setTab;
     if (v.view === 'production' && v.prodMode === 'tasks') ui.view = 'mytasks';
   } catch(e) {}
 }
 function render(){
-  if (GUEST && ui.view !== 'mytasks') ui.view = 'mine';
+  if (GUEST && !['mytasks', 'feed'].includes(ui.view)) ui.view = 'mine';
   try { renderSide(); } catch(e) {}
   try { paintPhoneHead(); } catch(e) {}
   try { const vn = $('#viewName'); if (vn) vn.textContent = ({ production:'Производство', templates:'Настройки' })[ui.view] || MNAV[ui.view]?.[0] || ''; } catch(e) {}
@@ -2517,7 +2574,7 @@ function render(){
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
   $('#myTasksTab').hidden = false;
   renderFilters();
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), feed:renderFeed, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.open) renderDrawer();
   try { paintPage(); } catch(e) {}
   paintSelect();
@@ -2683,7 +2740,7 @@ function renderPhoneList(list){
     const dl = phoneDue(p, m);
     const onStage = m.daysAtCurrentStage && !m.maint ? `<small class="mc-age${m.plannedStage && m.daysAtCurrentStage > m.plannedStage ? ' slow' : ''}">(${m.daysAtCurrentStage}-й день на этапе)</small>` : '';
     return `<article class="pc mc">
-      <button class="mc-main" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''}>
+      <button class="mc-main" data-open="${p.id}">
         <span class="mc-top">${projAva(p, 'm36')}<span class="mc-tt"><b>${esc(p.name)}</b><small>PM ${esc(short(p.pm_id))} · ${esc(p.client)}${p.priority === 'high' ? ' · <em class="mc-hp">высокий</em>' : ''}</small></span>${stPill(risk, risk === 'green' ? 'В работе' : risk === 'red' ? 'Просрочен' : RISK_RU[risk])}</span>
         <span class="mc-mid">${ticksHtml(p, risk)}${onStage}</span>
         ${dl ? `<span class="mc-bot ${dl.cls}">${FLAG}${dl.html}</span>` : ''}
@@ -2770,6 +2827,94 @@ function execFlags(p, s){
     ${(s.subs || []).length ? `<span class="ef-sub">${CLIP_ICO}Прикрепляет материалы в подэтапах:</span><div class="ef-list">${s.subs.map(x => box(`data-sfilesp="${s.id}|${x.id}"`, !!x.files, !!tsub(x)?.files, esc(x.name))).join('')}</div>` : ''}
   </div>`;
 }
+// ---------- Лента: история проектов и комментарии (отдельный раздел меню) ----------
+const FEED_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/><path d="M8 9h8M8 13h5"/></svg>';
+// комментарии двух людей объединяются; удалённый остаётся удалённым
+function mergeComments(a = [], b = []){
+  const map = new Map();
+  [...(a || []), ...(b || [])].forEach(c => { const o = map.get(c.id); map.set(c.id, o ? { ...o, ...c, deleted:o.deleted || c.deleted, text:o.deleted || c.deleted ? '' : c.text } : c); });
+  return [...map.values()].sort((x, y) => String(x.at).localeCompare(String(y.at))).slice(-500);
+}
+const CSEEN_KEY = () => KEY + '-cseen';
+const readSeen = () => { try { return JSON.parse(localStorage.getItem(CSEEN_KEY()) || '{}') || {}; } catch(e) { return {}; } };
+const writeSeen = o => { try { localStorage.setItem(CSEEN_KEY(), JSON.stringify(o)); } catch(e) {} };
+const feedProjects = () => (GUEST ? ext.projects : [...db.projects, ...ext.projects]).filter(p => p.state !== 'archived');
+function unreadComments(){
+  const seen = readSeen(); const me = meKey();
+  return feedProjects().flatMap(p => (p.comments || []).filter(c => !c.deleted && c.by !== me && String(c.at) > String(seen[p.id] || '')).map(c => ({ p, c })))
+    .sort((x, y) => String(y.c.at).localeCompare(String(x.c.at)));
+}
+const feedDay = iso => { const d = String(iso).slice(0, 10); const t = today(); return d === t ? 'Сегодня' : d === addDays(t, -1) ? 'Вчера' : new Date(iso).toLocaleDateString('ru-RU', { day:'numeric', month:'long' }); };
+const feedTime = iso => new Date(iso).toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' });
+const fdInit = n => String(n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
+function renderFeed(){
+  const all = feedProjects();
+  const pid = all.some(p => p.id === ui.feedP) ? ui.feedP : '';
+  const kind = ui.feedKind === 'c' ? 'c' : 'all';
+  const ps = pid ? all.filter(p => p.id === pid) : all;
+  const items = [];
+  ps.forEach(p => {
+    (p.comments || []).filter(c => !c.deleted).forEach(c => items.push({ at:c.at, p, c }));
+    if (kind === 'all') (p.log || []).forEach(l => items.push({ at:l.at, p, l }));
+  });
+  items.sort((x, y) => String(y.at).localeCompare(String(x.at)));
+  const lim = ui.feedN || 60; const shown = items.slice(0, lim);
+  const me = meKey(); const seen = readSeen();
+  let day = '';
+  const rows = shown.map(i => {
+    const d = feedDay(i.at); const hd = d !== day ? `<li class="fd-day">${d}</li>` : ''; day = d;
+    const proj = pid ? '' : `<button class="link-plain fd-proj" data-feedp="${i.p.id}">${esc(i.p.name)}</button>`;
+    if (i.c){
+      const c = i.c; const isNew = c.by !== me && String(c.at) > String(seen[i.p.id] || '');
+      const canDel = c.by === me || (!i.p._ext && !GUEST);
+      return `${hd}<li class="fd-c${c.by === me ? ' mine' : ''}${isNew ? ' new' : ''}"><span class="fd-av" style="--h:${pHue({ id:c.by })}">${esc(fdInit(c.byName))}</span>
+        <div class="fd-bubble"><div class="fd-meta"><b>${esc(c.byName || 'Без имени')}</b>${proj}<time>${feedTime(c.at)}</time>
+          ${canDel ? `<button class="tx" data-cmdel="${i.p.id}|${c.id}" aria-label="Удалить комментарий" title="Удалить">×</button>` : ''}</div>
+          <div class="fd-text">${linkify(c.text)}</div></div></li>`;
+    }
+    return `${hd}<li class="fd-l"><i aria-hidden="true"></i><span>${esc(i.l.text)}${proj ? ` · ${proj}` : ''}</span><time>${feedTime(i.l.at)}${i.l.user ? ` · ${esc(short(i.l.user))}` : ''}</time></li>`;
+  }).join('');
+  const target = pid || ui.feedTo || all[0]?.id || '';
+  app.innerHTML = `<div class="fn-head-row fd-head">
+      <select id="feedP" aria-label="Проект"><option value="">Все проекты</option>${all.map(p => `<option value="${p.id}" ${p.id === pid ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
+      <div class="seg-toggle" role="group" aria-label="Что показывать"><button data-feedk="all" aria-pressed="${kind === 'all'}">Всё</button><button data-feedk="c" aria-pressed="${kind === 'c'}">Комментарии</button></div>
+      ${pid && !GUEST && !projById(pid)?._ext ? `<button class="link" data-open="${pid}">Карточка проекта</button>` : ''}</div>
+    ${all.length ? `<form class="fd-form" id="feedForm">
+      ${pid ? '' : `<select id="feedTo" aria-label="Проект комментария">${all.map(p => `<option value="${p.id}" ${p.id === target ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>`}
+      <textarea id="feedTx" rows="2" placeholder="${pid ? `Комментарий по проекту «${esc(projById(pid)?.name || '')}»` : 'Комментарий по проекту'}… Ctrl+Enter — отправить" aria-label="Комментарий"></textarea>
+      <button class="primary">Отправить</button></form>` : ''}
+    <ul class="feed">${rows || `<li class="empty">${kind === 'c' ? 'Комментариев пока нет. Напишите первый.' : 'Событий пока нет.'}</li>`}</ul>
+    ${items.length > lim ? '<p><button class="ghost" data-feedmore>Показать ещё</button></p>' : ''}`;
+  // открыли ленту — комментарии этих проектов прочитаны
+  const now = new Date().toISOString(); ps.forEach(p => { if ((p.comments || []).length) seen[p.id] = now; }); writeSeen(seen); paintBell();
+}
+function addComment(p, text){
+  p.comments = [...(p.comments || []), { id:uid(), by:meKey(), byName:actorName(), at:new Date().toISOString(), text }];
+  commit();
+}
+document.addEventListener('click', e => {
+  const f = e.target.closest?.('[data-feed]');
+  if (f){ ui.feedP = f.dataset.feed; ui.feedKind = 'all'; ui.feedN = 0; ui.open = null; layer.innerHTML = ''; ui.view = 'feed'; render(); scrollTo(0, 0); return; }
+  const fp = e.target.closest?.('[data-feedp]'); if (fp){ ui.feedP = fp.dataset.feedp; render(); scrollTo(0, 0); return; }
+  const k = e.target.closest?.('[data-feedk]'); if (k){ ui.feedKind = k.dataset.feedk; render(); return; }
+  if (e.target.closest?.('[data-feedmore]')){ ui.feedN = (ui.feedN || 60) + 60; render(); return; }
+  const d = e.target.closest?.('[data-cmdel]');
+  if (d){ const [pid, cid] = d.dataset.cmdel.split('|'); const p = projById(pid); const c = p?.comments?.find(x => x.id === cid); if (!c) return;
+    c.deleted = true; c.text = ''; commit(); return; }
+  const t = e.target.closest?.('[data-dtab]'); if (t && layer.querySelector('.drawer')){ ui.dTab = t.dataset.dtab; ui.focusStage = null; renderDrawer(); layer.querySelector('.drawer').scrollTop = 0; return; }
+  const ed = e.target.closest?.('[data-dedit]'); if (ed){ ui.dEdit = ed.dataset.dedit === '1'; ui.dTab = 'info'; renderDrawer(); return; }
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'feedP'){ ui.feedP = e.target.value; ui.feedN = 0; render(); }
+  if (e.target.id === 'feedTo') ui.feedTo = e.target.value;
+});
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'feedForm') return; e.preventDefault();
+  const tx = $('#feedTx'); const v = tx.value.trim(); if (!v) return;
+  const p = projById(ui.feedP || $('#feedTo')?.value); if (!p) return;
+  addComment(p, v.slice(0, 4000)); ui.feedKind = ui.feedKind || 'all'; render(); $('#feedTx')?.focus();
+});
+document.addEventListener('keydown', e => { if (e.target.id === 'feedTx' && e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); $('#feedForm')?.requestSubmit(); } });
 // ---------- Материалы исполнителя (подэтапы с галочкой «материалы») и запрос на переход этапа ----------
 const CLIP_ICO = '<svg class="clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 11-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l9.2-9.2a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.2a1.8 1.8 0 0 1-2.6-2.6L16 6"/></svg>';
 const actorName = () => (GUEST ? ui.meAcc?.name : userById(ME)?.name) || 'Исполнитель';
@@ -2985,7 +3130,7 @@ function renderCompact(list){
       const segs = p.stages.map(s => `<i class="pseg p-${s.status === 'done' ? 'done' : (c && s.id === c.id ? h.key : 'todo')}" title="${esc(s.name)}"></i>`).join('');
       const progress = ticksHtml(p, !c ? 'done' : h.key);
       const tm = getProjectTimeMetrics(p);
-      return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
+      return `<tr class="r-${h.key}" data-open="${p.id}" tabindex="0">
         <td title="${esc(p.name)}"><span class="cx-name">${projAva(p, 'sm')}<span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
         <td>${tm.isOverdue && h.key !== 'red' ? stPill('red', 'Просрочен') : stPill(h.key, h.label)}</td>
         <td>${progress}</td>
@@ -3344,12 +3489,46 @@ function renderDrawer(){
       </div>${isMaint(s) ? '' : execFlags(p, s)}</li>`;
   }).join('');
   const log = p.log.slice(0, 60).map(l => `<li><time>${new Date(l.at).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time><span>${esc(l.text)} <span class="hint">${esc(short(l.user))}</span></span></li>`).join('');
+  const tab = ui.dTab === 'stages' ? 'stages' : 'info'; const edit = !!ui.dEdit;
+  const tpl = tplById(p.template_id); const cat = (db.categories || []).find(c => c.id === p.category_id);
+  const m = getProjectTimeMetrics(p); const risk = projectRisk(p); const dl = phoneDue(p, m);
+  const nFeed = (p.comments || []).filter(c => !c.deleted).length;
+  const headView = `<div class="d-head d-head-v">${projAva(p, 'lg')}
+      <div class="d-title"><h2>${esc(p.name)}</h2><small>${esc(p.client || '')}${cat ? ` · ${esc(cat.name)}` : ''}</small></div>
+      <button class="icon-btn d-pen" data-dedit="1" title="Редактировать проект" aria-label="Редактировать проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+      <button class="close" data-close aria-label="Закрыть">×</button></div>`;
+  const tabs = `<div class="d-tabs" role="tablist"><button role="tab" data-dtab="info" aria-selected="${tab === 'info'}">Обзор</button><button role="tab" data-dtab="stages" aria-selected="${tab === 'stages'}">Этапы <span>${p.stages.length}</span></button>
+    <button class="d-feed" data-feed="${p.id}">${FEED_ICO}<b>История и комментарии</b><b class="sh">Лента</b>${nFeed ? ` <span>${nFeed}</span>` : ''}</button></div>`;
+  const fact = (label, val, sub = '') => `<div class="d-fact"><span>${label}</span><b>${val}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
+  const info = `<div class="d-status">${stPill(risk, risk === 'green' ? 'В работе' : risk === 'red' ? 'Просрочен' : RISK_RU[risk])}${ticksHtml(p, risk)}</div>
+    <div class="d-facts">
+      ${fact('PM', esc(short(p.pm_id) || '—'))}
+      ${fact('Исполнитель', esc(p.worker_id ? short(p.worker_id) : 'не назначен'))}
+      ${fact('Процесс', esc(tpl?.name || 'шаблон удалён'))}
+      ${fact('Приоритет', esc(PRI[p.priority]?.[0] || '—'))}
+      ${fact('Старт', fmt(p.start_date), startDay(p))}
+      ${fact(m.maint ? 'Срок' : p.deadline ? 'Дедлайн' : 'Финиш', m.maint ? 'Бессрочно' : fmt(m.deadline || plannedEnd(p)), dl ? `<span class="${dl.cls}">${dl.html.replace(/^[^·]*· /, '')}</span>` : '')}
+      ${m.daysAtCurrentStage && !m.maint ? fact('На текущем этапе', `${m.daysAtCurrentStage} дн.`, m.plannedStage ? `по плану ${days(m.plannedStage)}` : '') : ''}
+      ${p.is_maintenance ? fact('После воронки', 'Ведение', 'регулярные задачи по абонентке') : ''}
+    </div>
+    ${late ? `<div class="warn d-late">План не укладывается в дедлайн. <button class="link" id="fitDl">Уместить в дедлайн</button> — оставшиеся этапы сожмутся пропорционально.</div>` : ''}
+    <div class="d-sec-row"><div class="d-sec">AI-отчёты</div><div class="acts"><button class="link" data-rnew="${p.id}">Создать отчёт</button></div></div>
+    ${(() => { const rs = (db.reports || []).filter(r => r.project_id === p.id);
+      return rs.length ? `<ul class="d-reports">${rs.map(r => { const t = computeReport(r).totals;
+        return `<li><button data-ropen="${r.id}">${esc(r.title)}<small>${fmt(r.from)} – ${fmt(r.to)}${r.summary ? ', есть резюме' : ''}</small></button><span class="${t.romi == null ? 'hint' : t.romi >= 0 ? 'pos' : 'neg'}">ROMI ${pctf(t.romi)}</span></li>`; }).join('')}</ul>`
+        : '<p class="hint">Отчётов по проекту пока нет. Загрузите выгрузку CRM и расходы — метрики и резюме посчитаются автоматически.</p>'; })()}
+`;
   const html = `<div class="backdrop" data-close></div>
-  <aside class="drawer" role="dialog" aria-modal="true" aria-label="Карточка проекта">
-    <div class="d-head"><label class="pava-edit" title="${p.image ? 'Изменить фото проекта' : 'Добавить фото проекта'}">${projAva(p, 'lg')}<span class="pava-cam" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></span><input type="file" id="pImg" accept="image/*" aria-label="Фото проекта"></label>
+  <aside class="drawer${edit ? ' is-edit' : ''}" role="dialog" aria-modal="true" aria-label="Карточка проекта">
+    ${edit ? `    <div class="d-head"><label class="pava-edit" title="${p.image ? 'Изменить фото проекта' : 'Добавить фото проекта'}">${projAva(p, 'lg')}<span class="pava-cam" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></span><input type="file" id="pImg" accept="image/*" aria-label="Фото проекта"></label>
       <div class="d-title"><input id="pName" value="${esc(p.name)}" aria-label="Название проекта">${p.image ? '<button class="link danger d-img-del" id="pImgDel">Убрать фото</button>' : '<span class="hint d-img-hint">Нажмите на квадрат, чтобы добавить фото</span>'}</div>
-      <button class="close" data-close aria-label="Закрыть">×</button></div>
-    <div class="d-boxes">
+      <button class="ghost d-done" data-dedit="0">Готово</button><button class="close" data-close aria-label="Закрыть">×</button></div>` : headView}
+    ${tabs}
+    ${tab === 'stages' ? `    <div class="d-sec-row"><div class="d-sec">Этапы</div>
+      <div class="acts">${tplById(p.template_id) ? '<button class="link" id="openTpl">Редактировать шаблон</button>' : ''}<button class="link" id="chainToggle">${ui.editChain ? 'Готово' : 'Изменить этапы проекта'}</button></div></div>
+    <ol class="timeline">${stages}</ol>
+    ${ui.editChain ? `<div class="chain-add"><button class="ghost" id="cAdd">Добавить этап</button><span class="hint">Изменения касаются только этого проекта. Переставлять можно этапы, которые ещё не начаты.</span></div>` : ''}
+` : edit ? `    <div class="d-boxes">
       <section class="d-box"><h3>Проект</h3><div class="d-g">
         <div class="field"><label>Клиент</label><div class="val">${esc(p.client)}</div></div>
         <div class="field"><label for="pCat">Категория</label><select id="pCat">${catOpts(p.category_id)}</select></div>
@@ -3369,19 +3548,8 @@ function renderDrawer(){
       ${late ? `<div class="warn d-late">План не укладывается в дедлайн. <button class="link" id="fitDl">Уместить в дедлайн</button> — оставшиеся этапы сожмутся пропорционально.</div>` : ''}
       </section>
     </div>
-
-    <div class="d-sec-row"><div class="d-sec">Этапы</div>
-      <div class="acts">${tplById(p.template_id) ? '<button class="link" id="openTpl">Редактировать шаблон</button>' : ''}<button class="link" id="chainToggle">${ui.editChain ? 'Готово' : 'Изменить этапы проекта'}</button></div></div>
-    <ol class="timeline">${stages}</ol>
-    ${ui.editChain ? `<div class="chain-add"><button class="ghost" id="cAdd">Добавить этап</button><span class="hint">Изменения касаются только этого проекта. Переставлять можно этапы, которые ещё не начаты.</span></div>` : ''}
-    <div class="d-sec-row"><div class="d-sec">AI-отчёты</div><div class="acts"><button class="link" data-rnew="${p.id}">Создать отчёт</button></div></div>
-    ${(() => { const rs = (db.reports || []).filter(r => r.project_id === p.id);
-      return rs.length ? `<ul class="d-reports">${rs.map(r => { const t = computeReport(r).totals;
-        return `<li><button data-ropen="${r.id}">${esc(r.title)}<small>${fmt(r.from)} – ${fmt(r.to)}${r.summary ? ', есть резюме' : ''}</small></button><span class="${t.romi == null ? 'hint' : t.romi >= 0 ? 'pos' : 'neg'}">ROMI ${pctf(t.romi)}</span></li>`; }).join('')}</ul>`
-        : '<p class="hint">Отчётов по проекту пока нет. Загрузите выгрузку CRM и расходы — метрики и резюме посчитаются автоматически.</p>'; })()}
-    <div class="d-sec">История</div>
-    <ul class="log">${log || '<li><span></span><span class="hint">Изменений пока нет</span></li>'}</ul>
     <div class="d-foot"><button class="ghost" id="pArchive">Отправить в архив</button><button class="ghost danger" id="pDelete">Удалить проект</button></div>
+` : info}
   </aside>`;
   const scroll = layer.querySelector('.drawer')?.scrollTop;
   layer.innerHTML = html;
@@ -3389,7 +3557,7 @@ function renderDrawer(){
   if (scroll != null) d.scrollTop = scroll;
   else if (ui.focusStage) document.getElementById('stg-'+ui.focusStage)?.scrollIntoView({ block:'center' });
 }
-function openProject(id, stageId){ ui.open = id; ui.focusStage = stageId || null; ui.editChain = false; layer.innerHTML = ''; renderDrawer(); }
+function openProject(id, stageId){ ui.open = id; ui.focusStage = stageId || null; ui.editChain = false; ui.dEdit = false; ui.dTab = stageId ? 'stages' : 'info'; layer.innerHTML = ''; renderDrawer(); }
 function closeLayer(){ if (!db.onboarded && !GUEST) return; ui.open = null; ui.focusStage = null; layer.innerHTML = ''; }
 
 // ---------- Быстрое создание ----------
@@ -3464,9 +3632,10 @@ function openBell(){
   const list = GUEST ? [] : hotStages(); const a = myAlerts();
   const sec = (title, items) => items.length ? `<h3>${title} <span class="ntf-n">${items.length}</span></h3>${items.slice(0, 8).map(ntfItem).join('')}` : '';
   const perm = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
-  const rq = GUEST ? [] : gateRequests();
+  const rq = GUEST ? [] : gateRequests(); const nc = unreadComments();
   layer.innerHTML = `<div class="backdrop" data-close style="background:transparent"></div>
   <div class="pop" role="dialog" aria-label="Уведомления">
+  ${nc.length ? `<h3>Новые комментарии <span class="ntf-n">${nc.length}</span></h3>${nc.slice(0, 6).map(({ p, c }) => `<button class="ntf" data-feed="${p.id}"><span class="sw blue"></span><span><b>${esc(p.name)}</b><small>${esc(c.byName || '')}: ${esc(c.text.slice(0, 90))}</small></span></button>`).join('')}` : ''}
   ${rq.length ? `<h3>Запросы на переход <span class="ntf-n">${rq.length}</span></h3>${rq.map(({ p, s }) => gateReqItem(p, s)).join('')}` : ''}
   ${(() => { const nw = new Set(a.fresh.map(i => i.id)); return sec('Новые задачи', a.fresh) + sec('Просрочено', a.over.filter(i => !nw.has(i.id))) + sec('На сегодня', a.today.filter(i => !nw.has(i.id))); })()}
   ${!a.fresh.length && !a.over.length && !a.today.length ? '<h3>Мои задачи</h3><p class="hint" style="padding:0 8px">Срочного нет. Все задачи — во вкладке «Задачи».</p>' : ''}
@@ -3480,7 +3649,7 @@ function openBell(){
   const seen = readSet(NSEEN_KEY()); myTodo().forEach(i => seen.add(i.id)); writeSet(NSEEN_KEY(), seen); paintBell();
 }
 function paintBell(){
-  const n = (GUEST ? 0 : hotStages().length + gateRequests().length) + alertCount();
+  const n = (GUEST ? 0 : hotStages().length + gateRequests().length) + alertCount() + unreadComments().length;
   const b = $('#bellCount'); if (b) b.innerHTML = n ? `<span class="badge">${n}</span>` : '';
 }
 document.addEventListener('click', e => {
@@ -3929,7 +4098,7 @@ let sideOpen = false;
 const sidePinned = () => { if (innerWidth <= 1100) return false; try { const v = localStorage.getItem(SIDE_PIN); return v === null ? true : v === '1'; } catch(e) { return true; } };
 const setPin = on => { try { localStorage.setItem(SIDE_PIN, on ? '1' : '0'); } catch(e) {} };
 function sideViews(){
-  if (GUEST) return ['mine', 'mytasks'];
+  if (GUEST) return ['mine', 'mytasks', 'feed'];
   return [...document.querySelectorAll('.tabs [data-view]')].filter(b => !b.hidden).map(b => b.dataset.view);
 }
 function renderSide(){
@@ -4213,7 +4382,7 @@ const toggle = (arr, v) => arr.includes(v) ? arr.filter(x => x !== v) : [...arr,
 function resetFilters(){ ui.q=''; ui.pms=[]; ui.clients=[]; ui.risk=''; render(); }
 
 document.querySelector('.tabs').onclick = e => {
-  const b = e.target.closest('[data-view]'); if (!b || (GUEST && !['mine', 'mytasks'].includes(b.dataset.view))) return;
+  const b = e.target.closest('[data-view]'); if (!b || (GUEST && !['mine', 'mytasks', 'feed'].includes(b.dataset.view))) return;
   ui.view = b.dataset.view; ui.draft = null; render();
 };
 $('#newBtn').onclick = openCreate;
@@ -6652,7 +6821,7 @@ function onSharedProject(pid, snap){
   if (shared.pending || shared.writing) return;                 // свои несохранённые правки уйдут следом
   const remote = JSON.parse(body.json); const i = db.projects.findIndex(p => p.id === pid); if (i < 0) return;
   const local = db.projects[i];
-  db.projects[i] = { ...remote, share:local.share, log:mergeLogs(local.log, remote.log) };
+  db.projects[i] = { ...remote, share:local.share, log:mergeLogs(local.log, remote.log), comments:mergeComments(local.comments, remote.comments) };
   afterSharedApply();
 }
 function onSharedTasks(pid, snap){
@@ -6719,7 +6888,7 @@ function rebuildExt(){
     shared.hashes.set(path, s);
     let p; try { p = JSON.parse(b.json); } catch(e) { continue; }
     p._ext = { ownerId:b.ownerId, role, members:b.members || [], link:!!link };
-    if (old) p.log = mergeLogs(old.log, p.log);
+    if (old){ p.log = mergeLogs(old.log, p.log); p.comments = mergeComments(old.comments, p.comments); }
     next.push(p);
   }
   const gone = ext.projects.filter(p => !next.some(n => n.id === p.id)).map(p => p.id);
@@ -7188,6 +7357,7 @@ const MNAV = {
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
   assign:['Поручения', MI('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2 2 4-4M8.5 17h7"/>')],
+  feed:['Лента', MI('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/><path d="M8 9h8M8 13h5"/>')],
   mytasks:['Мои задачи', MI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5 2.5-2.5"/>')],
   reports:['AI-отчёты', MI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')],
   team:['Команда', MI('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>')],
@@ -7230,10 +7400,10 @@ document.addEventListener('click', e => {
   const k = c.dataset.kdrisk; ui.risk = ui.risk === k ? '' : k; render();
 });
 const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>');
-const moreViews = () => ['mytasks', 'assign', 'mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
+const moreViews = () => ['mytasks', 'feed', 'assign', 'mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
 function renderMobileNav(){
   const nav = $('#mnav'); if (!nav) return;
-  if (GUEST){ nav.innerHTML = ['mine', 'mytasks'].map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
+  if (GUEST){ nav.innerHTML = ['mine', 'mytasks', 'feed'].map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
   const inMore = !MNAV_MAIN.includes(ui.view);
   nav.innerHTML = MNAV_MAIN.map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')
     + `<button data-mmore aria-current="${inMore ? 'page' : 'false'}" aria-haspopup="dialog">${inMore ? MNAV[ui.view][1] : MORE_ICON}<span>${inMore ? MNAV[ui.view][0] : 'Ещё'}</span></button>`;

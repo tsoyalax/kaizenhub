@@ -61,7 +61,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const px = LS().projects.find(p => p.name === 'Клиника Х'); assert.equal(px.category_id, cM.id); ok('при создании проекта можно выбрать категорию');
   // назначить категорию в карточке проекта
   const p2 = LS().projects.find(p => p.state === 'active' && p.id !== px.id);
-  w.openProject(p2.id); await wait(100);
+  w.openProject(p2.id); await wait(100); $('[data-dedit="1"]').click(); await wait(50);
   const pc = $('#pCat'); assert.ok(pc); pc.value = cI.id; fire(pc, 'change'); await wait(100);
   assert.equal(LS().projects.find(p => p.id === p2.id).category_id, cI.id); ok('в карточке проекта категорию можно поменять');
   w.closeLayer(); await wait(50);

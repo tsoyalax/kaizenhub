@@ -58,7 +58,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
 
   // назначаем сотрудника ответственным за этап проекта
   $(own, '[data-view="matrix"]').click(); await wait(100);
-  const openBtn = $(own, '.prow[data-open]'); const pid = openBtn.dataset.open; openBtn.click(); await wait(200);
+  const openBtn = $(own, '.prow[data-open]'); const pid = openBtn.dataset.open; openBtn.click(); await wait(200); $(own, '[data-dtab="stages"]').click(); await wait(50);
   const sel = $(own, '[data-sassign]'); const sid = sel.dataset.sassign;
   const memberOpt = [...sel.options].find(o => o.textContent.startsWith('Тимур'));
   change(own, sel, memberOpt.value); await wait(1500);
@@ -98,7 +98,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
 
   // 5) сняли с этапа — доступ к проекту закрылся
   $(own, '[data-view="matrix"]').click(); await wait(100);
-  $(own, `.prow[data-open="${pid}"]`).click(); await wait(200);
+  $(own, `.prow[data-open="${pid}"]`).click(); await wait(200); $(own, '[data-dtab="stages"]').click(); await wait(50);
   change(own, $(own, `[data-sassign="${sid}"]`), ''); await wait(1500);
   const sp2 = be.rows.get('sp/' + pid);
   assert.ok(!sp2 || !(sp2.data.memberIds || []).includes(T)); ok('сняли с назначения — доступ к проекту закрыт');
