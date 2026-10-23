@@ -1631,6 +1631,43 @@ table.cx{border-collapse:collapse}
   .dt-proj-sec .dt-fold .pava{width:30px;height:30px;font-size:11px;border-radius:9px}
   .dt-proj-sec .dt-due{font-size:12.5px}
 }
+
+/* материалы исполнителя и запрос на переход */
+.tflags{display:flex;gap:12px;align-items:center}
+.tsub-tools{display:flex;gap:6px;align-items:center}
+.tsub-files{position:relative;height:30px;padding:0 10px;border-radius:8px;font-size:12.5px;display:inline-flex;align-items:center;gap:5px;border:1px dashed var(--line-strong);color:var(--muted);cursor:pointer;white-space:nowrap}
+.tsub-files input{position:absolute;opacity:0;width:1px;height:1px}
+.tsub-files.on{border-style:solid;border-color:var(--line);color:var(--ink);background:var(--surface-2)}
+.tsub-files:focus-within{outline:2px solid var(--focus);outline-offset:1px}
+svg.clip{width:14px;height:14px;flex:none}
+.pf-matn{display:inline-flex;align-items:center;gap:2px;margin-left:6px;font-size:11.5px;font-weight:600;color:var(--muted);vertical-align:middle}
+.pf-matn svg{width:12px;height:12px}
+.pf-tickwrap{display:grid;gap:4px}
+.pf-mat{display:inline-flex;align-items:center;gap:6px;justify-self:start;border:0;background:none;padding:2px 4px;font:inherit;font-size:12.5px;color:var(--link);cursor:pointer}
+.mats{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:6px}
+.mat{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mat .fchip{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:6px 10px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font:inherit;font-size:13.5px;cursor:pointer;text-decoration:none}
+.mat .fchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}
+.mat .fchip svg{width:14px;height:14px;flex:none}
+.mat .fchip small{color:var(--muted)}
+.mat-by{color:var(--muted);font-size:12px}
+.mat .tx{margin-left:auto}
+.mat-add{display:grid;gap:8px}
+.mat-add .file-btn{justify-self:start;display:inline-flex;align-items:center;gap:6px}
+.mat-add .row{display:flex;gap:6px}.mat-add .row input{flex:1;min-width:0}
+.gate{display:grid;gap:6px;margin-top:8px}
+.gate-btn{width:100%;justify-content:center}
+.gate-btn:disabled{opacity:.5}
+.gate.wait,.gate.ask{padding:10px 12px;border-radius:10px;background:var(--b-bg);color:var(--ink)}
+.gate.wait b,.gate.ask b{font-size:13px}
+.gate.wait small,.gate.ask small{color:var(--muted);font-size:12.5px}
+.gate.wait .link{justify-self:start;font-size:12.5px}
+.gate.info small{color:var(--muted);font-size:12px}
+.gate-back{color:var(--r);font-size:12.5px}
+.gate-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.gate-acts .primary,.gate-acts .ghost{height:32px;padding:0 12px;font-size:13px}
+.gate-ntf{align-items:flex-start;cursor:default}
+.gate-ntf .gate-note{color:var(--ink)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -1825,7 +1862,7 @@ const subsFor = (tid, name) => (DEFAULT_SUBS[tid]?.[name] || []).map(n => ({ id:
 const mergeSubs = (old = [], tpl = [], allDone = false, keepExtra = false) => {
   const out = tpl.map(t => {
     const o = old.find(x => (t.id && x.tsub === t.id) || norm(x.name) === norm(t.name));
-    return { ...(o || {}), id: o ? o.id : uid(), name: t.name, done: allDone || !!o?.done, ...(t.id ? { tsub:t.id } : {}) };
+    return { ...(o || {}), id: o ? o.id : uid(), name: t.name, done: allDone || !!o?.done, files: !!t.files, ...(t.id ? { tsub:t.id } : {}) };
   });
   // подэтапы, добавленные только в этом проекте, при обновлении по шаблону не теряются
   if (keepExtra) old.forEach((x, i) => { if (!tpl.some(t => norm(t.name) === norm(x.name))) out.splice(Math.min(i, out.length), 0, x); });
@@ -1866,7 +1903,7 @@ function makeProject({ name, client, template_id, start_date, pm_id, worker_id=n
   const tpl = tplById(template_id); let cur = start_date;
   const stages = tpl.stages.map((ts,i) => {
     const n = stageDaysFor(ts);
-    const s = { id:uid(), position:i, name:ts.name, days:n, approval:!!ts.approval, assignee_id:null, subs:mergeSubs([], ts.subs || []),
+    const s = { id:uid(), position:i, name:ts.name, days:n, approval:!!ts.approval, gate:!!ts.gate, assignee_id:null, subs:mergeSubs([], ts.subs || []),
       status:'not_started', planned_start:cur, due_date:addDays(cur, n), started_at:null, completed_at:null, tsid:ts.id };
     cur = s.due_date; return s;
   });
@@ -2091,7 +2128,7 @@ function changeTemplate(p, tplId){
     if (o){ used.add(o.id); o.approval = !!t.approval; o.tsid = t.id; o.subs = mergeSubs(o.subs, t.subs || [], o.status === 'done'); next.push(o); cursor = o.due_date; kept++; }
     else {
       const n = stageDaysFor(t);
-      const s = { id:uid(), position:0, name:t.name, days:n, approval:!!t.approval, assignee_id:null, status:'not_started', subs:mergeSubs([], t.subs || []),
+      const s = { id:uid(), position:0, name:t.name, days:n, approval:!!t.approval, gate:!!t.gate, assignee_id:null, status:'not_started', subs:mergeSubs([], t.subs || []),
         planned_start:cursor, due_date:addDays(cursor, n), started_at:null, completed_at:null, tsid:t.id };
       next.push(s); cursor = s.due_date; added++;
     }
@@ -2704,6 +2741,92 @@ document.addEventListener('click', e => {
   ui.mxOpen = ui.mxOpen || {}; ui.mxOpen[t.dataset.mxtoggle] = !ui.mxOpen[t.dataset.mxtoggle]; render();
 });
 
+// ---------- Материалы исполнителя (подэтапы с галочкой «материалы») и запрос на переход этапа ----------
+const CLIP_ICO = '<svg class="clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 11-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l9.2-9.2a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.2a1.8 1.8 0 0 1-2.6-2.6L16 6"/></svg>';
+const actorName = () => (GUEST ? ui.meAcc?.name : userById(ME)?.name) || 'Исполнитель';
+const meKey = () => cloud.uid || ME;
+const matBadge = (x, t) => x?.files ? `<span class="pf-matn" title="Материалы исполнителя">${CLIP_ICO}${t?.mats?.length || ''}</span>` : '';
+function matsSection(p, t){
+  const list = t.mats || []; const mine = m => m.by === meKey();
+  const row = m => `<li class="mat">${m.kind === 'file'
+      ? `<button class="fchip" data-fopen="${esc(m.path)}" title="Открыть файл">${CLIP_ICO}<span>${esc(m.name)}</span><small>${fsize(m.size)}</small></button>`
+      : `<a class="fchip" href="${esc(safeUrl(m.url) || '#')}" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg><span>${esc(m.name || m.url)}</span></a>`}
+    <small class="mat-by">${esc(m.byName || '')}, ${new Date(m.at).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</small>
+    ${mine(m) || canEditProject(p) ? `<button class="tx" data-matdel="${t.id}|${m.id}" aria-label="Убрать материал ${esc(m.name || '')}" title="Убрать">×</button>` : ''}</li>`;
+  return `<section class="tk-sec tk-mats"><h3>Материалы исполнителя${list.length ? ` <span class="ntf-n">${list.length}</span>` : ''}</h3>
+    ${list.length ? `<ul class="mats">${list.map(row).join('')}</ul>` : '<p class="hint">Исполнитель прикрепляет сюда файлы и ссылки на материалы по этому подэтапу.</p>'}
+    <div class="mat-add">${ui.matUp === t.id ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn">${CLIP_ICO}Прикрепить файл<input type="file" data-matfile="${t.id}"></label>`}
+      <form class="row" data-matlink="${t.id}"><input placeholder="Или ссылка на материал (Google Диск, Figma…)" inputmode="url" aria-label="Ссылка на материал"><button class="ghost">Добавить</button></form></div></section>`;
+}
+function addMat(t, m){
+  const p = projById(t.project_id); t.mats = [...(t.mats || []), { id:uid(), by:meKey(), byName:actorName(), at:new Date().toISOString(), ...m }];
+  if (p) addLog(p, `Подэтап «${t.title}»: ${actorName()} прикрепил ${m.kind === 'file' ? `файл «${m.name}»` : 'ссылку на материал'}`);
+  commit(); renderTaskModal();
+}
+document.addEventListener('change', async e => {
+  const tid = e.target.dataset?.matfile; if (!tid) return;
+  const file = e.target.files?.[0]; e.target.value = ''; const t = taskById(tid); if (!file || !t) return;
+  const F = window.claude?.use ? await window.claude.use('files').catch(() => null) : null;
+  if (!F || !cloud.uid){ toast('Файлы можно прикреплять, когда вы вошли в аккаунт'); return; }
+  if (file.size > F.maxSize){ toast('Файл больше 25 МБ. Загрузите его в облако и добавьте ссылку'); return; }
+  ui.matUp = tid; renderTaskModal();
+  try { const path = await F.upload(`${cloud.uid}/p/${t.project_id}/${uid()}-${safeFileName(file.name)}`, file); ui.matUp = null; addMat(t, { kind:'file', path, name:file.name, size:file.size }); }
+  catch(err) { ui.matUp = null; renderTaskModal(); toast(err?.message ? `Не удалось загрузить файл: ${err.message}` : 'Не удалось загрузить файл'); }
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest?.('[data-matlink]'); if (!f) return; e.preventDefault();
+  const t = taskById(f.dataset.matlink); const v = f.querySelector('input').value.trim(); if (!t || !v) return;
+  if (!safeUrl(v)){ toast('Ссылка должна начинаться с http:// или https://'); return; }
+  addMat(t, { kind:'link', url:v, name:v.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60) });
+});
+document.addEventListener('click', e => {
+  const d = e.target.closest?.('[data-matdel]'); if (!d) return;
+  const [tid, mid] = d.dataset.matdel.split('|'); const t = taskById(tid); if (!t) return;
+  t.mats = (t.mats || []).filter(m => m.id !== mid); commit(); renderTaskModal();
+});
+
+// запрос на переход: только на этапах с галочкой «запрос перехода»
+const gateRequests = () => db.projects.filter(p => p.state === 'active').flatMap(p => p.stages.filter(s => s.gate && s.req?.status === 'pending' && s.status !== 'done').map(s => ({ p, s })));
+const reqWhen = r => new Date(r.at).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+const gateReqItem = (p, s) => `<div class="ntf gate-ntf"><span class="sw blue"></span><span><b>${esc(p.name)}</b>
+    <small>${esc(s.req.byName || 'Исполнитель')} просит закрыть этап «${esc(s.name)}» · ${reqWhen(s.req)}</small>${s.req.note ? `<small class="gate-note">«${esc(s.req.note)}»</small>` : ''}
+    <span class="gate-acts"><button class="primary" data-gateok="${p.id}|${s.id}">Одобрить</button><button class="ghost" data-gateno="${p.id}|${s.id}">Вернуть</button><button class="link" data-open="${p.id}" data-stage="${s.id}">Проект</button></span></span></div>`;
+function gateBox(p, s, mine){
+  if (!s.gate || s.status === 'done' || isMaint(s)) return '';
+  const r = s.req; const cur = currentStage(p)?.id === s.id;
+  if (r?.status === 'pending') return mine
+    ? `<div class="gate wait"><b>Запрос на переход отправлен</b><small>Ждёт решения руководителя · ${reqWhen(r)}</small><button class="link" data-gatecancel="${p.id}|${s.id}">Отозвать</button></div>`
+    : `<div class="gate ask"><b>${esc(r.byName || 'Исполнитель')} просит перейти на следующий этап</b>${r.note ? `<small>«${esc(r.note)}»</small>` : ''}
+        <span class="gate-acts"><button class="primary" data-gateok="${p.id}|${s.id}">Одобрить</button><button class="ghost" data-gateno="${p.id}|${s.id}">Вернуть</button></span></div>`;
+  if (!mine) return `<div class="gate info"><small>Этап закрывается по запросу исполнителя</small></div>`;
+  return `<div class="gate">${r?.status === 'rejected' ? `<small class="gate-back">Руководитель вернул этап${r.reason ? `: «${esc(r.reason)}»` : ''}</small>` : ''}
+    <button class="ghost gate-btn" data-gatereq="${p.id}|${s.id}" ${cur ? '' : 'disabled title="Запрос можно отправить, когда этап в работе"'}>Запросить переход на следующий этап</button></div>`;
+}
+function gateDialog(title, label, btn, onOk, required = false){
+  layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal" role="dialog" aria-modal="true" aria-labelledby="gateT">
+    <h2 id="gateT">${title}</h2><form class="form" id="gateF"><div class="field"><label for="gateTx">${label}</label><textarea id="gateTx" rows="3"></textarea></div>
+    <div class="actions"><button type="button" class="ghost" data-close>Отмена</button><button class="primary">${btn}</button></div></form></div>`;
+  $('#gateTx').focus();
+  $('#gateF').onsubmit = ev => { ev.preventDefault(); const v = $('#gateTx').value.trim(); if (required && !v){ toast('Напишите, что нужно доделать'); return; } layer.innerHTML = ''; onOk(v); };
+}
+document.addEventListener('click', e => {
+  const q = e.target.closest?.('[data-gatereq],[data-gatecancel],[data-gateok],[data-gateno]'); if (!q) return;
+  const [pid, sid] = (q.dataset.gatereq || q.dataset.gatecancel || q.dataset.gateok || q.dataset.gateno).split('|');
+  const p = projById(pid); const s = p?.stages.find(x => x.id === sid); if (!s) return;
+  if (q.dataset.gatereq) return gateDialog(`Переход с этапа «${esc(s.name)}»`, 'Комментарий для руководителя (необязательно)', 'Отправить запрос', note => {
+    s.req = { status:'pending', by:meKey(), byName:actorName(), at:new Date().toISOString(), note };
+    addLog(p, `${actorName()} запросил переход с этапа «${s.name}» на следующий`); commit(); toast('Запрос отправлен руководителю'); });
+  if (q.dataset.gatecancel){ s.req = null; addLog(p, `Запрос на переход с этапа «${s.name}» отозван`); commit(); return; }
+  if (q.dataset.gateok){
+    const r = s.req || {}; s.req = { ...r, status:'approved', decidedBy:actorName(), decidedAt:new Date().toISOString() };
+    addLog(p, `Переход с этапа «${s.name}» одобрен (запрос: ${r.byName || 'исполнитель'})`);
+    if (layer.querySelector('.pop')) layer.innerHTML = '';
+    setStatus(p, s, 'done'); toast(`Этап «${s.name}» закрыт, следующий — в работе`); return;
+  }
+  if (q.dataset.gateno) return gateDialog(`Вернуть этап «${esc(s.name)}»`, 'Что нужно доделать', 'Вернуть исполнителю', reason => {
+    s.req = { ...(s.req || {}), status:'rejected', reason, decidedBy:actorName(), decidedAt:new Date().toISOString() };
+    addLog(p, `Запрос на переход с этапа «${s.name}» возвращён: ${reason}`); commit(); toast('Исполнитель увидит, что нужно доделать'); }, true);
+});
 // ---------- Производство на телефоне: лента проектов + этапы сверху вниз ----------
 function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage, curSub }){
   const key = mine ? 'myProject' : 'prodProject';
@@ -2719,16 +2842,16 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
     const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
-      if (mine && !t) return tickCard(p, s, x, here);
+      if (mine && !t) return x.files ? `<div class="pf-tickwrap">${tickCard(p, s, x, here)}<button class="pf-mat" data-pfsub="${s.id}|${x.id}">${CLIP_ICO}Прикрепить материалы</button></div>` : tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
-        ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<b>${esc(x.name)}${msgIcon(p, t)}</b>
+        ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<b>${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
         <small>${esc(short(whoId(p, s, t)))}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}</button>`;
     }).join('');
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" data-pmcol="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
-        <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}</header>
+        <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
       ${canEdit && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
     </section>`;
@@ -3312,8 +3435,10 @@ function openBell(){
   const list = GUEST ? [] : hotStages(); const a = myAlerts();
   const sec = (title, items) => items.length ? `<h3>${title} <span class="ntf-n">${items.length}</span></h3>${items.slice(0, 8).map(ntfItem).join('')}` : '';
   const perm = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
+  const rq = GUEST ? [] : gateRequests();
   layer.innerHTML = `<div class="backdrop" data-close style="background:transparent"></div>
   <div class="pop" role="dialog" aria-label="Уведомления">
+  ${rq.length ? `<h3>Запросы на переход <span class="ntf-n">${rq.length}</span></h3>${rq.map(({ p, s }) => gateReqItem(p, s)).join('')}` : ''}
   ${(() => { const nw = new Set(a.fresh.map(i => i.id)); return sec('Новые задачи', a.fresh) + sec('Просрочено', a.over.filter(i => !nw.has(i.id))) + sec('На сегодня', a.today.filter(i => !nw.has(i.id))); })()}
   ${!a.fresh.length && !a.over.length && !a.today.length ? '<h3>Мои задачи</h3><p class="hint" style="padding:0 8px">Срочного нет. Все задачи — во вкладке «Задачи».</p>' : ''}
   <button class="link ntf-all" data-ntfday="1">Все мои задачи</button>
@@ -3326,7 +3451,7 @@ function openBell(){
   const seen = readSet(NSEEN_KEY()); myTodo().forEach(i => seen.add(i.id)); writeSet(NSEEN_KEY(), seen); paintBell();
 }
 function paintBell(){
-  const n = (GUEST ? 0 : hotStages().length) + alertCount();
+  const n = (GUEST ? 0 : hotStages().length + gateRequests().length) + alertCount();
   const b = $('#bellCount'); if (b) b.innerHTML = n ? `<span class="badge">${n}</span>` : '';
 }
 document.addEventListener('click', e => {
@@ -3389,7 +3514,8 @@ function tplSubsHtml(st, i){
     ${subs.map((x, j) => `<div class="tsub" data-dz="sub" data-i="${i}" data-j="${j}">
       <span class="grip" data-drag="sub" data-i="${i}" data-j="${j}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить подэтап ${esc(x.name)}" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
       <input type="text" data-sf="name" value="${esc(x.name)}" aria-label="Подэтап ${j + 1} этапа ${esc(st.name)}" placeholder="Название подэтапа">
-      <button class="tcard${cardHas(x.card) ? ' on' : ''}" data-tcard="${i}|${j}" title="${cardHas(x.card) ? 'Карточка заполнена — нажмите, чтобы изменить' : 'Описание, регламент, видео и чек-лист для этого подэтапа'}">${cardHas(x.card) ? `<i class="okdot" aria-hidden="true"></i>Карточка${x.card.c?.length ? ` · ${x.card.c.length} ${plural(x.card.c.length, 'пункт', 'пункта', 'пунктов')}` : ''}` : '+ Карточка'}</button>
+      <span class="tsub-tools"><label class="tsub-files${x.files ? ' on' : ''}" title="Исполнитель прикрепляет к этому подэтапу материалы: файлы и ссылки"><input type="checkbox" data-sfiles ${x.files ? 'checked' : ''}>${CLIP_ICO}материалы</label>
+      <button class="tcard${cardHas(x.card) ? ' on' : ''}" data-tcard="${i}|${j}" title="${cardHas(x.card) ? 'Карточка заполнена — нажмите, чтобы изменить' : 'Описание, регламент, видео и чек-лист для этого подэтапа'}">${cardHas(x.card) ? `<i class="okdot" aria-hidden="true"></i>Карточка${x.card.c?.length ? ` · ${x.card.c.length} ${plural(x.card.c.length, 'пункт', 'пункта', 'пунктов')}` : ''}` : '+ Карточка'}</button></span>
       <button class="tx" data-sdel aria-label="Удалить подэтап ${esc(x.name)}" title="Удалить подэтап">×</button>
     </div>`).join('')}
     <form class="tsub-add" data-tsubadd="${i}"><input placeholder="+ Добавить подэтап и нажать Enter" aria-label="Новый подэтап этапа ${esc(st.name)}"></form>
@@ -3556,14 +3682,15 @@ function syncProjectWithTemplate(p, tpl){
   p.stages.forEach(s => {
     const t = T(s.tsid); if (!t || s._lost) return;
     if (s.name !== t.name){ addLog(p, `Этап «${s.name}» переименован в «${t.name}» по шаблону`); s.name = t.name; }
-    s.approval = !!t.approval;
+    s.approval = !!t.approval; s.gate = !!t.gate;
     const old = s.subs || []; const next = [];
     (t.subs || []).forEach(ts => {
       let x = old.find(y => y.tsub === ts.id && !y._lost);
       if (x){
         if (x.name !== ts.name){ const tk = ptasks(p).find(k => k.stage_id === s.id && k.substage_id === x.id); if (tk && norm(tk.title) === norm(x.name)) tk.title = ts.name; x.name = ts.name; }
+        x.files = !!ts.files;
         next.push(x);
-      } else next.push({ id:uid(), name:ts.name, done:s.status === 'done', tsub:ts.id });
+      } else next.push({ id:uid(), name:ts.name, done:s.status === 'done', tsub:ts.id, files:!!ts.files });
     });
     old.forEach((x, i) => {
       if (next.includes(x)) return;
@@ -3599,9 +3726,9 @@ function syncProjectWithTemplate(p, tpl){
     if (p.stages.slice(idx).some(st => st.status !== 'not_started') && idx < p.stages.length) return;
     if (idx >= p.stages.length && p.state !== 'active') return;
     const prev = p.stages[idx - 1]; const start = prev ? prev.due_date : p.start_date; const n = stageDaysFor(t);
-    p.stages.splice(idx, 0, { id:uid(), position:idx, name:t.name, days:n, approval:!!t.approval, assignee_id:null, status:'not_started',
+    p.stages.splice(idx, 0, { id:uid(), position:idx, name:t.name, days:n, approval:!!t.approval, gate:!!t.gate, assignee_id:null, status:'not_started',
       planned_start:start, due_date:addDays(start, n), started_at:null, completed_at:null, tsid:t.id,
-      subs:(t.subs || []).map(ts => ({ id:uid(), name:ts.name, done:false, tsub:ts.id })) });
+      subs:(t.subs || []).map(ts => ({ id:uid(), name:ts.name, done:false, tsub:ts.id, files:!!ts.files })) });
     addLog(p, `Добавлен этап «${t.name}» по шаблону`);
   });
   p.stages.forEach(st => delete st._lost);
@@ -3688,6 +3815,11 @@ document.addEventListener('submit', e => {
   if ((st.subs || []).some(x => norm(x.name) === norm(v))){ toast('Такой подэтап уже есть'); return; }
   (st.subs = st.subs || []).push({ id:uid(), name:v, card:null }); ui.draftDirty = true; renderTemplates();
   app.querySelector(`[data-tsubadd="${f.dataset.tsubadd}"] input`)?.focus();
+});
+document.addEventListener('change', e => {
+  const el = e.target; if (!el.matches?.('[data-sfiles]') || !ui.draft) return;
+  const row = el.closest('.tsub'); const x = ui.draft.stages[+row.dataset.i].subs[+row.dataset.j]; x.files = el.checked; ui.draftDirty = true;
+  el.closest('.tsub-files')?.classList.toggle('on', el.checked);
 });
 document.addEventListener('input', e => {
   const el = e.target; if (!el.dataset?.sf || !ui.draft) return;
@@ -4009,7 +4141,8 @@ function renderTemplates(){
         <span class="n">${i+1}</span>
         <input type="text" data-f="name" value="${esc(s.name)}" aria-label="Название этапа ${i+1}" placeholder="Название этапа">
         ${useTplD ? `<label class="tdays"><input type="number" min="1" data-f="days" value="${s.days}" aria-label="Дней на этап ${i+1}">дн.</label>` : ''}
-        <label class="tappr" title="Этап требует согласования клиента"><input type="checkbox" data-f="approval" ${s.approval?'checked':''}> согласование</label>
+        <span class="tflags"><label class="tappr" title="Этап требует согласования клиента"><input type="checkbox" data-f="approval" ${s.approval?'checked':''}> согласование</label>
+          <label class="tappr" title="Исполнитель не закрывает этап сам: отправляет запрос, руководитель одобряет переход на следующий этап"><input type="checkbox" data-f="gate" ${s.gate?'checked':''}> запрос перехода</label></span>
         <button class="tx" data-del aria-label="Удалить этап ${esc(s.name)}" title="Удалить этап">×</button>
       </div>${tplSubsHtml(s, i)}</div>`).join('')}</div>
       <p><button class="ghost" id="tAdd">Добавить этап</button></p>
@@ -4223,7 +4356,7 @@ document.addEventListener('change', e => {
   }
   if (el.id === 'tName' && ui.draft) ui.draft.name = el.value;
   const row = el.closest('.trow');
-  if (row && ui.draft){ const s = ui.draft.stages[+row.dataset.i]; const f = el.dataset.f; s[f] = f === 'approval' ? el.checked : f === 'days' ? +el.value : el.value; }
+  if (row && ui.draft){ const s = ui.draft.stages[+row.dataset.i]; const f = el.dataset.f; s[f] = f === 'approval' || f === 'gate' ? el.checked : f === 'days' ? +el.value : el.value; }
 });
 document.addEventListener('input', e => { if (e.target.id === 'tName' && ui.draft) ui.draft.name = e.target.value; });
 
@@ -5615,6 +5748,7 @@ function renderTaskModal(focusSel){
           <label class="ck-box"><input type="checkbox" data-ck="${i.id}" id="ck-${i.id}" ${i.done ? 'checked' : ''}><span class="ck-txt">${esc(i.text)}</span></label>
           ${i.done && i.completed_at ? `<small>${esc(i.completed_by || '')}, ${new Date(i.completed_at).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small>` : ''}</li>`).join('')}</ul>`
           : `<p class="hint">Пунктов пока нет.</p>${editable && sub && cardTplFor(p, sub.name)?.c?.length ? `<button class="ghost" data-tfill>Заполнить из шаблона «${esc(sub.name)}»</button>` : ''}`}</section>
+      ${sub?.files ? matsSection(p, t) : ''}
       <section class="tk-sec"><h3>Результат</h3>
         <div class="row"><input data-tres value="${esc(t.result_link)}" placeholder="Ссылка на сданную работу" inputmode="url" aria-label="Ссылка на результат">${res ? `<a class="ghost" href="${esc(res)}" target="_blank" rel="noopener noreferrer">Открыть</a>` : ''}</div></section>
       ${editable && !p?._ext ? `<section class="tk-sec"><h3>Ответственный</h3><select class="tk-as" data-tqassign="${t.id}" aria-label="Ответственный за подэтап">${peopleOpts(t.assignee_id, s?.assignee_id ? `Как у этапа: ${short(s.assignee_id)}` : 'Как у этапа: не назначен')}</select></section>` : ''}
@@ -5977,13 +6111,14 @@ document.addEventListener('change', e => {
     commit(); renderTaskModal(); assignNote(t.assignee_id, p); }
 });
 // «Мои проекты»: исполнитель сам меняет статус этапа и отмечает подэтапы без чек-листа — владелец видит это сразу
-const stageStatusSelect = (p, s) => `<select class="pf-status" data-mstatus="${p.id}|${s.id}" aria-label="Статус этапа ${esc(s.name)}">${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('')}</select>`;
+const stageStatusSelect = (p, s) => s.gate && s.status === 'done' ? '' : `<select class="pf-status" data-mstatus="${p.id}|${s.id}" aria-label="Статус этапа ${esc(s.name)}">${Object.entries(STATUS).filter(([k]) => !s.gate || k !== 'done').map(([k,v]) => `<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('')}</select>`;
 const tickCard = (p, s, x, here) => `<label class="pf-card pf-tick${x.done ? ' done' : ''}${here ? ' here' : ''}">
   ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<span class="pf-tick-row"><input type="checkbox" data-sub="${p.id}|${s.id}|${x.id}" ${x.done ? 'checked' : ''}><b>${esc(x.name)}</b></span>
   <small>${x.done ? 'Выполнено' : 'Отметьте, когда сделаете'}</small></label>`;
 document.addEventListener('change', e => {
   const v = e.target.dataset?.mstatus; if (!v) return;
   const [pid, sid] = v.split('|'); const p = projById(pid); const s = p?.stages.find(y => y.id === sid);
+  if (s && s.gate && e.target.value === 'done' && !canEditProject(p)){ toast('Этот этап закрывает руководитель: отправьте запрос на переход'); render(); return; }
   if (s) setStatus(p, s, e.target.value);
 });
 function projectProgress(p){
@@ -6025,10 +6160,10 @@ function renderProjectFocus(mine = false){
     const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
-      if (mine && !t) return tickCard(p, s, x, here);
+      if (mine && !t) return x.files ? `<div class="pf-tickwrap">${tickCard(p, s, x, here)}<button class="pf-mat" data-pfsub="${s.id}|${x.id}">${CLIP_ICO}Прикрепить материалы</button></div>` : tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
-        <b>${esc(x.name)}${msgIcon(p, t)}</b>
+        <b>${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
         <small>${esc(short(whoId(p, s, t)))}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
@@ -6036,7 +6171,7 @@ function renderProjectFocus(mine = false){
     }).join('');
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
-        <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}</header>
+        <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
       ${canEdit && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
     </section>`;
@@ -6070,7 +6205,7 @@ document.addEventListener('click', e => {
     const p = projById(ui[ui.view === 'mine' ? 'myProject' : 'prodProject']); const [sid, xid] = c.dataset.pfsub.split('|'); const s = p.stages.find(y => y.id === sid);
     let t = taskFor(p.id, sid, xid);
     if (!t){
-      if (!canEditProject(p)){ toast('У этого подэтапа нет чек-листа. Его может добавить владелец или руководитель проекта.'); return; }
+      if (!canEditProject(p) && !s.subs.find(y => y.id === xid)?.files){ toast('У этого подэтапа нет чек-листа. Его может добавить владелец или руководитель проекта.'); return; }
       tasksFromSubs(p, { ...s, subs: s.subs.filter(y => y.id === xid) }); t = taskFor(p.id, sid, xid); commit();
     }
     if (t) openTask(t.id);
