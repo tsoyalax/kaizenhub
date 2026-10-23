@@ -1668,6 +1668,24 @@ svg.clip{width:14px;height:14px;flex:none}
 .gate-acts .primary,.gate-acts .ghost{height:32px;padding:0 12px;font-size:13px}
 .gate-ntf{align-items:flex-start;cursor:default}
 .gate-ntf .gate-note{color:var(--ink)}
+
+.exec-flags{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.ef-h{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;width:100%}
+.ef-sub{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--muted);width:100%;margin-top:2px}
+.ef-list{display:flex;flex-wrap:wrap;gap:6px}
+.ef{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px;border-radius:8px;border:1px solid var(--line);font-size:12.5px;cursor:pointer;background:var(--surface)}
+.stg .exec-flags .ef input{width:14px;height:14px;margin:0;accent-color:var(--ink)}
+.ef.on{border-color:var(--ink);background:var(--surface-2)}
+.ef small{color:var(--muted);font-size:11px}
+.ef:has(input:disabled){cursor:default;opacity:.85}
+@media (max-width:640px){.trow .tappr,.tflags{display:flex!important}.tflags{grid-column:2/-1;flex-wrap:wrap;gap:4px 12px}}
+
+/* карточка подэтапа: прогресс и ответственный одной строкой */
+.tk-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.tk-meta .tk-progress{flex:1 1 240px;margin:0}
+.tk-who{display:flex;align-items:center;gap:8px;font-size:13px}
+.tk-who > span{color:var(--muted)}
+.tk-who .tk-as{height:34px;max-width:230px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -1862,7 +1880,7 @@ const subsFor = (tid, name) => (DEFAULT_SUBS[tid]?.[name] || []).map(n => ({ id:
 const mergeSubs = (old = [], tpl = [], allDone = false, keepExtra = false) => {
   const out = tpl.map(t => {
     const o = old.find(x => (t.id && x.tsub === t.id) || norm(x.name) === norm(t.name));
-    return { ...(o || {}), id: o ? o.id : uid(), name: t.name, done: allDone || !!o?.done, files: !!t.files, ...(t.id ? { tsub:t.id } : {}) };
+    return { ...(o || {}), id: o ? o.id : uid(), name: t.name, done: allDone || !!o?.done, files: !!t.files || !!o?.filesOwn, ...(t.id ? { tsub:t.id } : {}) };
   });
   // подэтапы, добавленные только в этом проекте, при обновлении по шаблону не теряются
   if (keepExtra) old.forEach((x, i) => { if (!tpl.some(t => norm(t.name) === norm(x.name))) out.splice(Math.min(i, out.length), 0, x); });
@@ -2741,20 +2759,32 @@ document.addEventListener('click', e => {
   ui.mxOpen = ui.mxOpen || {}; ui.mxOpen[t.dataset.mxtoggle] = !ui.mxOpen[t.dataset.mxtoggle]; render();
 });
 
+
+// карточка проекта: что разрешено исполнителю на этапе (то, что задано в шаблоне, здесь не снимается)
+function execFlags(p, s){
+  const ts = tplById(p.template_id)?.stages.find(t => t.id === s.tsid);
+  const tsub = x => ts?.subs?.find(y => y.id === x.tsub);
+  const box = (attr, on, fromTpl, label) => `<label class="ef${on ? ' on' : ''}"${fromTpl ? ' title="Задано в шаблоне процесса — меняется в «Настройках» → «Шаблоны»"' : ''}><input type="checkbox" ${attr} ${on ? 'checked' : ''} ${fromTpl ? 'disabled' : ''}>${label}${fromTpl ? '<small>в шаблоне</small>' : ''}</label>`;
+  return `<div class="exec-flags"><span class="ef-h">Исполнителю</span>
+    ${box(`data-sgate="${s.id}"`, !!s.gate, !!ts?.gate, 'Переход на следующий этап — по запросу')}
+    ${(s.subs || []).length ? `<span class="ef-sub">${CLIP_ICO}Прикрепляет материалы в подэтапах:</span><div class="ef-list">${s.subs.map(x => box(`data-sfilesp="${s.id}|${x.id}"`, !!x.files, !!tsub(x)?.files, esc(x.name))).join('')}</div>` : ''}
+  </div>`;
+}
 // ---------- Материалы исполнителя (подэтапы с галочкой «материалы») и запрос на переход этапа ----------
 const CLIP_ICO = '<svg class="clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 11-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l9.2-9.2a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.2a1.8 1.8 0 0 1-2.6-2.6L16 6"/></svg>';
 const actorName = () => (GUEST ? ui.meAcc?.name : userById(ME)?.name) || 'Исполнитель';
 const meKey = () => cloud.uid || ME;
 const matBadge = (x, t) => x?.files ? `<span class="pf-matn" title="Материалы исполнителя">${CLIP_ICO}${t?.mats?.length || ''}</span>` : '';
 function matsSection(p, t){
-  const list = t.mats || []; const mine = m => m.by === meKey();
+  const list = [...(t.result_link && safeUrl(t.result_link) ? [{ id:'res', kind:'link', url:t.result_link, name:t.result_link.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60), byName:'Результат', at:t.updated_at || new Date().toISOString(), legacy:true }] : []), ...(t.mats || [])];
+  const mine = m => !m.legacy && m.by === meKey();
   const row = m => `<li class="mat">${m.kind === 'file'
       ? `<button class="fchip" data-fopen="${esc(m.path)}" title="Открыть файл">${CLIP_ICO}<span>${esc(m.name)}</span><small>${fsize(m.size)}</small></button>`
       : `<a class="fchip" href="${esc(safeUrl(m.url) || '#')}" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg><span>${esc(m.name || m.url)}</span></a>`}
     <small class="mat-by">${esc(m.byName || '')}, ${new Date(m.at).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</small>
-    ${mine(m) || canEditProject(p) ? `<button class="tx" data-matdel="${t.id}|${m.id}" aria-label="Убрать материал ${esc(m.name || '')}" title="Убрать">×</button>` : ''}</li>`;
-  return `<section class="tk-sec tk-mats"><h3>Материалы исполнителя${list.length ? ` <span class="ntf-n">${list.length}</span>` : ''}</h3>
-    ${list.length ? `<ul class="mats">${list.map(row).join('')}</ul>` : '<p class="hint">Исполнитель прикрепляет сюда файлы и ссылки на материалы по этому подэтапу.</p>'}
+    ${!m.legacy && (mine(m) || canEditProject(p)) ? `<button class="tx" data-matdel="${t.id}|${m.id}" aria-label="Убрать материал ${esc(m.name || '')}" title="Убрать">×</button>` : ''}</li>`;
+  return `<section class="tk-sec tk-mats"><h3>Сдача работы · материалы${list.length ? ` <span class="ntf-n">${list.length}</span>` : ''}</h3>
+    ${list.length ? `<ul class="mats">${list.map(row).join('')}</ul>` : '<p class="hint">Прикрепите файлы или ссылки на готовые материалы по этому подэтапу.</p>'}
     <div class="mat-add">${ui.matUp === t.id ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn">${CLIP_ICO}Прикрепить файл<input type="file" data-matfile="${t.id}"></label>`}
       <form class="row" data-matlink="${t.id}"><input placeholder="Или ссылка на материал (Google Диск, Figma…)" inputmode="url" aria-label="Ссылка на материал"><button class="ghost">Добавить</button></form></div></section>`;
 }
@@ -2993,10 +3023,9 @@ function renderKanban(){
     const subsDone = c?.subs?.filter(x => x.done).length ?? 0;
     return `<article class="card" draggable="true" data-card="${p.id}">
       <button class="t" data-open="${p.id}">${projAva(p, 'xs')}${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</button>
-      <div class="meta">${esc(p.client)}, PM ${esc(short(p.pm_id))}${execTxt(p)}</div>
+      <div class="meta">${esc(p.client)} · PM ${esc(short(p.pm_id))}</div>
       <div class="stline"><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span><span>${h.note}</span></div>
-      ${c ? `<div class="meta">${esc(c.name)}${c.subs?.length ? `, подэтапы ${subsDone} из ${c.subs.length}` : ''}. ${esc(short(whoId(p, c)))}</div>` : ''}
-      ${c && curSubTxt(p) ? `<div class="meta subnow">Сейчас: ${esc(curSubTxt(p))}</div>` : ''}<div class="meta">${startTxt(p)}</div>
+      ${c && c.subs?.length ? `<div class="meta subnow">${curSubTxt(p) ? `Сейчас: ${esc(curSubTxt(p))}` : `Подэтапы ${subsDone} из ${c.subs.length}`}</div>` : ''}
       <div class="ctrl">${statusSel}${moveSel}${c ? `<select class="wide" data-qassign="${p.id}|${c.id}" aria-label="Ответственный за этап ${esc(c.name)}">${peopleOpts(c.assignee_id, 'Ответственный не назначен')}</select>` : ''}</div></article>`;
   };
   const colHtml = c => {
@@ -3312,7 +3341,7 @@ function renderDrawer(){
         <div><label for="st-${s.id}">Статус</label><select id="st-${s.id}" data-sstatus="${s.id}">${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('')}</select></div>
         <div><label for="as-${s.id}">Ответственный</label><select id="as-${s.id}" data-sassign="${s.id}">${opt(db.users, s.assignee_id, execLabel(p))}</select></div>
         <div><label for="du-${s.id}">Дедлайн</label><input type="date" id="du-${s.id}" data-sdue="${s.id}" value="${s.due_date}" ${s.status==='done'?'disabled':''}></div>
-      </div></li>`;
+      </div>${isMaint(s) ? '' : execFlags(p, s)}</li>`;
   }).join('');
   const log = p.log.slice(0, 60).map(l => `<li><time>${new Date(l.at).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time><span>${esc(l.text)} <span class="hint">${esc(short(l.user))}</span></span></li>`).join('');
   const html = `<div class="backdrop" data-close></div>
@@ -3639,7 +3668,7 @@ function ensureTplIds(){
   return n;
 }
 const ptasks = p => (p._ext ? ext.tasks : (db.tasks || [])).filter(t => t.project_id === p.id);
-const taskBusy = t => !!t && (t.checklist.some(i => i.done) || !!t.result_link);
+const taskBusy = t => !!t && (t.checklist.some(i => i.done) || !!t.result_link || !!(t.mats || []).length);
 function linkToTemplate(p, tpl){
   // этапы: живая связь, иначе — по названию (первый свободный этап шаблона)
   const used = new Set();
@@ -3682,13 +3711,13 @@ function syncProjectWithTemplate(p, tpl){
   p.stages.forEach(s => {
     const t = T(s.tsid); if (!t || s._lost) return;
     if (s.name !== t.name){ addLog(p, `Этап «${s.name}» переименован в «${t.name}» по шаблону`); s.name = t.name; }
-    s.approval = !!t.approval; s.gate = !!t.gate;
+    s.approval = !!t.approval; s.gate = !!t.gate || !!s.gateOwn;
     const old = s.subs || []; const next = [];
     (t.subs || []).forEach(ts => {
       let x = old.find(y => y.tsub === ts.id && !y._lost);
       if (x){
         if (x.name !== ts.name){ const tk = ptasks(p).find(k => k.stage_id === s.id && k.substage_id === x.id); if (tk && norm(tk.title) === norm(x.name)) tk.title = ts.name; x.name = ts.name; }
-        x.files = !!ts.files;
+        x.files = !!ts.files || !!x.filesOwn;
         next.push(x);
       } else next.push({ id:uid(), name:ts.name, done:s.status === 'done', tsub:ts.id, files:!!ts.files });
     });
@@ -4335,6 +4364,9 @@ document.addEventListener('change', e => {
     if (el.dataset.sstatus) return setStatus(p, st(el.dataset.sstatus), el.value);
     if (el.dataset.sassign !== undefined) return setAssignee(p, st(el.dataset.sassign), el.value);
     if (el.dataset.sdue) return setDue(p, st(el.dataset.sdue), el.value);
+    if (el.dataset.sgate){ const s = st(el.dataset.sgate); s.gateOwn = el.checked; s.gate = el.checked; addLog(p, `Этап «${s.name}»: ${el.checked ? 'переход по запросу исполнителя' : 'исполнитель закрывает этап сам'}`); return commit(); }
+    if (el.dataset.sfilesp){ const [sid, xid] = el.dataset.sfilesp.split('|'); const s = st(sid); const x = s?.subs.find(y => y.id === xid); if (!x) return;
+      x.filesOwn = el.checked; x.files = el.checked; addLog(p, `Подэтап «${x.name}»: исполнитель ${el.checked ? 'прикрепляет' : 'не прикрепляет'} материалы`); return commit(); }
     if (el.dataset.cname){ const s = st(el.dataset.cname); const v = el.value.trim(); if (!v){ el.value = s.name; return; } return renameStage(p, s, v); }
     if (el.dataset.cdays) return setDuration(p, st(el.dataset.cdays), el.value);
     if (el.id === 'pTpl'){
@@ -5563,7 +5595,7 @@ document.addEventListener('input', e => {
   const ctx = e.target.dataset?.msgval; if (!ctx) return; const m = bkList(ctx).find(b => b.type === 'msg'); if (m) m.value = e.target.value;
 });
 function blocksEditor(list, ctx){
-  return `${msgEditor(list, ctx)}<div class="field bk-field"><label>Блоки карточки</label>
+  return `${msgEditor(list, ctx)}<div class="field bk-field"><label>Материалы к заданию</label>
     <ol class="bk-list" data-bkctx="${ctx}">${(list || []).map((b, k) => b.type === 'msg' ? '' : `<li class="bk" data-bk="${k}">
       <span class="grip" data-bkdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить блок ${k + 1}. Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
       <div class="bk-body"><div class="bk-top"><span class="bk-type">${BLOCK_T[b.type]}</span><input data-bkf="title" data-bki="${k}" value="${esc(b.title || '')}" placeholder="Заголовок (необязательно)" aria-label="Заголовок блока ${k + 1}"></div>
@@ -5735,12 +5767,15 @@ function renderTaskModal(focusSel){
   let body;
   if (!d){
     const reg = safeUrl(t.regulation_link), res = safeUrl(t.result_link);
-    body = `<div class="tk-progress"><div class="tk-bar big"><i style="width:${pr.pct}%"></i></div>
-        <span>${pr.done ? 'Подэтап выполнен' : pr.total ? `${pr.n} из ${pr.total} выполнено, ${pr.pct}%` : 'Без чек-листа'}</span></div>
-      <section class="tk-sec"><h3>Описание и регламент</h3>
-        <div class="tk-text">${t.description ? linkify(t.description) : '<span class="hint">Инструкции пока нет.</span>'}</div>
-        ${reg ? `<p><a class="ghost tk-reg" href="${esc(reg)}" target="_blank" rel="noopener noreferrer">Открыть регламент ↗</a></p>` : ''}</section>
-      ${t.video_url || ui.localVideo ? `<section class="tk-sec"><h3>Видео</h3>${taskPlayer(ui.localVideo || t.video_url)}</section>` : ''}
+    // сверху одной строкой: прогресс и ответственный; дальше — задание, чек-лист, сдача работы
+    body = `<div class="tk-meta"><div class="tk-progress"><div class="tk-bar big"><i style="width:${pr.pct}%"></i></div>
+        <span>${pr.done ? 'Подэтап выполнен' : pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Без чек-листа'}</span></div>
+        ${editable && !p?._ext ? `<label class="tk-who"><span>Ответственный</span><select class="tk-as" data-tqassign="${t.id}" aria-label="Ответственный за подэтап">${peopleOpts(t.assignee_id, s?.assignee_id ? `Как у этапа: ${short(s.assignee_id)}` : 'Как у этапа: не назначен')}</select></label>`
+          : `<span class="tk-who"><span>Ответственный</span><b>${esc(short(whoId(p, s, t)) || 'не назначен')}</b></span>`}</div>
+      <section class="tk-sec"><h3>Задание</h3>
+        <div class="tk-text">${t.description ? linkify(t.description) : '<span class="hint">Описания пока нет.</span>'}</div>
+        ${reg ? `<p><a class="ghost tk-reg" href="${esc(reg)}" target="_blank" rel="noopener noreferrer">Открыть регламент ↗</a></p>` : ''}
+        ${t.video_url || ui.localVideo ? taskPlayer(ui.localVideo || t.video_url) : ''}</section>
       ${blocksView(t.blocks, projById(t.project_id), t)}
       <section class="tk-sec"><h3>Чек-лист</h3>
         ${t.checklist.length ? `<ul class="ck${t.checklist.length > 1 ? ' sortable' : ''}">${t.checklist.map((i, k) => `<li class="${i.done ? 'on' : ''}" data-ckv="${k}">
@@ -5748,21 +5783,16 @@ function renderTaskModal(focusSel){
           <label class="ck-box"><input type="checkbox" data-ck="${i.id}" id="ck-${i.id}" ${i.done ? 'checked' : ''}><span class="ck-txt">${esc(i.text)}</span></label>
           ${i.done && i.completed_at ? `<small>${esc(i.completed_by || '')}, ${new Date(i.completed_at).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small>` : ''}</li>`).join('')}</ul>`
           : `<p class="hint">Пунктов пока нет.</p>${editable && sub && cardTplFor(p, sub.name)?.c?.length ? `<button class="ghost" data-tfill>Заполнить из шаблона «${esc(sub.name)}»</button>` : ''}`}</section>
-      ${sub?.files ? matsSection(p, t) : ''}
-      <section class="tk-sec"><h3>Результат</h3>
-        <div class="row"><input data-tres value="${esc(t.result_link)}" placeholder="Ссылка на сданную работу" inputmode="url" aria-label="Ссылка на результат">${res ? `<a class="ghost" href="${esc(res)}" target="_blank" rel="noopener noreferrer">Открыть</a>` : ''}</div></section>
-      ${editable && !p?._ext ? `<section class="tk-sec"><h3>Ответственный</h3><select class="tk-as" data-tqassign="${t.id}" aria-label="Ответственный за подэтап">${peopleOpts(t.assignee_id, s?.assignee_id ? `Как у этапа: ${short(s.assignee_id)}` : 'Как у этапа: не назначен')}</select></section>` : ''}
-      <p class="hint tk-role">Ваша роль в проекте: ${ROLE_RU[role]}${p?._ext ? '. Изменения сразу видны владельцу проекта.' : ''}</p>`;
+      ${sub?.files ? matsSection(p, t) : `<section class="tk-sec"><h3>Сдача работы</h3>
+        <div class="row"><input data-tres value="${esc(t.result_link)}" placeholder="Ссылка на готовую работу" inputmode="url" aria-label="Ссылка на результат">${res ? `<a class="ghost" href="${esc(res)}" target="_blank" rel="noopener noreferrer">Открыть</a>` : ''}</div></section>`}
+      ${p?._ext ? '<p class="hint tk-role">Ваши отметки и материалы сразу видны владельцу проекта.</p>' : ''}`;
   } else {
     body = `<form class="form tk-form" id="tkForm" novalidate>
       <div class="field"><label for="tdTitle">Название подэтапа</label><input id="tdTitle" data-td="title" value="${esc(d.title)}"></div>
-      <div class="two">
-        <div class="field"><label for="tdSub">Ведёт подэтап воронки</label><select id="tdSub" data-td="substage_id"><option value="">Нет</option>${(s?.subs || []).map(x => { const o = taskFor(p.id, s.id, x.id); const busy = o && o.id !== t.id; return `<option value="${x.id}" ${x.id === d.substage_id ? 'selected' : ''} ${busy ? 'disabled' : ''}>${esc(x.name)}${busy ? ' (есть задача)' : ''}</option>`; }).join('')}</select></div>
-        ${p._ext ? '<div></div>' : `<div class="field"><label for="tdAs">Ответственный</label><select id="tdAs" data-td="assignee_id"><option value="">${s?.assignee_id ? `Как у этапа: ${esc(short(s.assignee_id))}` : execLabel(p)}</option>${db.users.map(u => `<option value="${u.id}" ${u.id === d.assignee_id ? 'selected' : ''}>${esc(u.name || 'Вы')}</option>`).join('')}</select></div>`}
-      </div>
-      <div class="field"><label for="tdDesc">Описание и регламент</label><textarea id="tdDesc" data-td="description" rows="6" placeholder="Что сделать, требования, критерии приёмки">${esc(d.description)}</textarea></div>
+      <div class="field"><label for="tdSub">Подэтап на доске</label><select id="tdSub" data-td="substage_id"><option value="">Нет</option>${(s?.subs || []).map(x => { const o = taskFor(p.id, s.id, x.id); const busy = o && o.id !== t.id; return `<option value="${x.id}" ${x.id === d.substage_id ? 'selected' : ''} ${busy ? 'disabled' : ''}>${esc(x.name)}${busy ? ' (есть задача)' : ''}</option>`; }).join('')}</select></div>
+      <div class="field"><label for="tdDesc">Задание</label><textarea id="tdDesc" data-td="description" rows="6" placeholder="Что сделать, требования, критерии приёмки">${esc(d.description)}</textarea></div>
       ${blocksEditor(d.blocks, 'td')}
-      <div class="field"><label>Конструктор чек-листа</label>
+      <div class="field"><label>Чек-лист</label>
         <ol class="ckb">${d.items.map((it, k) => `<li data-ckb="${k}">
           <span class="grip" data-ckdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить пункт ${k + 1}. Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
           <input type="checkbox" class="ckb-chk" data-ckbdone="${k}" ${it.done ? 'checked' : ''} aria-label="Пункт ${k + 1} выполнен">

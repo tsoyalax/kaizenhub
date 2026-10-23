@@ -93,6 +93,14 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E(gw, 'render()'); await wait(100);
   assert.equal(E(gw, `projById('${pid}').stages.find(s => s.id === '${sid}').status`), 'done'); ok('исполнитель видит, что этап закрыт');
 
+  // карточка проекта: галочки «Исполнителю» прямо в этапах, шаблон их не сбрасывает
+  const p2 = E(own, `db.projects.find(p => p.state === 'active' && p.id !== '${pid}' && currentStage(p) && (currentStage(p).subs || []).length > 1 && !currentStage(p).gate).id`);
+  E(own, `openProject('${p2}', currentStage(projById('${p2}')).id)`); await wait(200);
+  const s2 = E(own, `currentStage(projById('${p2}')).id`), x2 = E(own, `currentStage(projById('${p2}')).subs[1].id`);
+  assert.ok($(own, `.exec-flags [data-sgate="${s2}"]`) && $(own, `.exec-flags [data-sfilesp="${s2}|${x2}"]`)); ok('карточка проекта: в этапе блок «Исполнителю» с галочками');
+  for (const sel of [`[data-sgate="${s2}"]`, `[data-sfilesp="${s2}|${x2}"]`]){ const el = $(own, sel); el.checked = true; el.dispatchEvent(new own.w.Event('change', { bubbles: true })); await wait(100); }
+  E(own, `syncAllTemplates(projById('${p2}').template_id)`);
+  assert.ok(E(own, `(() => { const s = projById('${p2}').stages.find(x => x.id === '${s2}'); return s.gate && s.subs.find(x => x.id === '${x2}').files; })()`)); ok('галочки из карточки проекта не сбрасываются шаблоном');
   assert.equal(own.errors.length, 0, own.errors.join('\n')); assert.equal(gw.errors.length, 0, gw.errors.join('\n')); ok('ошибок на страницах нет');
   own.w.close(); gw.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
