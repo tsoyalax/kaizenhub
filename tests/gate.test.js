@@ -128,6 +128,15 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E(gw, 'render()'); await wait(100);
   assert.ok(/30 секунд/.test($(gw, '.feed').textContent) && /хронометраж/.test($(gw, '.feed').textContent)); ok('исполнитель видит ответ, его комментарий не затёрт');
   assert.equal(E(own, `projById('${pid}').comments.filter(c => !c.deleted).length`), 2); ok('у руководителя оба комментария');
+  // регламент: у руководителя — по шаблонам, у исполнителя — по процессу его проекта
+  E(own, `ui.view = 'reg'; render()`); await wait(50);
+  assert.ok($(own, '.rg-stage') && $(own, '.tabs [data-view="reg"]')); ok('руководитель: раздел «Регламент» в меню');
+  const tplName = E(own, `tplById(projById('${pid}').template_id).name`);
+  assert.ok(E(gw, `ext.projects.some(p => p._reg && p._reg.name === ${JSON.stringify(tplName)})`)); ok('регламент процесса пришёл исполнителю вместе с проектом');
+  E(gw, `ui.view = 'reg'; render()`); await wait(50);
+  assert.ok($(gw, '.rg-stage') && $(gw, '.rg-hero').textContent.includes(tplName) && !$(gw, '#regTpl')); ok('исполнитель видит регламент своего процесса');
+  assert.ok(gw.w.document.querySelectorAll('#mnav [data-mview]').length === 4 && $(gw, '#mnav [data-mview="reg"]')); ok('у исполнителя «Регламент» в нижнем меню телефона');
+  const rk = $(gw, '[data-regk]'); if (rk){ rk.checked = true; rk.dispatchEvent(new gw.w.Event('change', { bubbles: true })); await wait(50); assert.ok($(gw, `[data-regk="${rk.dataset.regk}"]`).checked); ok('отметки в регламенте сохраняются'); }
   assert.equal(own.errors.length, 0, own.errors.join('\n')); assert.equal(gw.errors.length, 0, gw.errors.join('\n')); ok('ошибок на страницах нет');
   own.w.close(); gw.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);

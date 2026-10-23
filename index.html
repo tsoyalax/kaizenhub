@@ -1064,7 +1064,7 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .sh-mem select{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 6px;font-size:13px}
 .sh-h{font-size:14px;font-weight:600;margin:14px 0 2px}
 .mine-h{margin:0;font-size:18px;font-weight:600}
-body.guest .tabs button:not([data-view="mine"]):not([data-view="mytasks"]):not([data-view="feed"]),body.guest #filters,body.guest #newBtn,body.guest #cloudBtn{display:none!important}
+body.guest .tabs button:not([data-view="mine"]):not([data-view="mytasks"]):not([data-view="feed"]):not([data-view="reg"]),body.guest #filters,body.guest #newBtn,body.guest #cloudBtn{display:none!important}
 .sh-link{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .sh-link input{flex:1;min-width:180px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);padding:0 8px;font-size:13px}
 .sh-link small{color:var(--muted);font-size:12.5px;flex-basis:100%}
@@ -1742,6 +1742,64 @@ svg.clip{width:14px;height:14px;flex:none}
   .fd-head select{flex:1 1 100%;max-width:none}
   .fd-l{flex-wrap:wrap;padding-left:4px}.fd-l time{width:100%;padding-left:14px}
 }
+
+/* регламент */
+.rg{max-width:860px}
+.rg-top{align-items:center}
+.rg-top select{max-width:320px}
+.rg-prog{flex:0 1 220px;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.rg-prog i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.rg-hero{padding:8px 0 4px}
+.rg-eye{font-size:12.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--brand)}
+.rg-hero h2{margin:8px 0 10px;font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.rg-hero p{margin:0;color:var(--muted);font-size:15.5px;max-width:64ch}
+.rg-facts{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
+.rg-facts span{padding:6px 12px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-size:14px}
+.rg-toc{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 0}
+.rg-toc button{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px 0 6px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font:inherit;font-size:13.5px;color:var(--ink);cursor:pointer}
+.rg-toc button b{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;background:var(--surface-2);font-size:12px}
+.rg-toc button:hover{border-color:var(--brand)}
+.rg-stage{scroll-margin-top:80px;margin-top:32px;padding-top:24px;border-top:1px solid var(--line)}
+.rg-head{display:flex;gap:14px;align-items:flex-start}
+.rg-num{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--brand);color:#fff;font-weight:800;font-size:16px}
+.rg-head h2{margin:2px 0 8px;font-size:24px;font-weight:800;letter-spacing:-.01em}
+.rg-pills{display:flex;flex-wrap:wrap;gap:6px}
+.rg-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:8px;font-size:12.5px;font-weight:500;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.rg-pill svg{width:13px;height:13px}
+.rg-pill.appr{background:var(--pl-b-bg,var(--b-bg));color:var(--pl-b,var(--b));border-color:transparent}
+.rg-pill.gate{background:var(--pl-m-bg,var(--m-bg));color:var(--pl-m,var(--m));border-color:transparent}
+.rg-pill.files{background:var(--pl-y-bg,var(--y-bg));color:var(--pl-y,var(--y));border-color:transparent}
+.rg-note{margin:10px 0 0 52px;font-size:14.5px;color:var(--muted)}
+.rg-sub{background:var(--surface);border:1px solid var(--card-bd,var(--line));border-radius:16px;padding:18px 20px;margin:14px 0 0 52px}
+.rg-sh{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px 10px}
+.rg-sh > span:first-child{font-size:12.5px;font-weight:700;color:var(--muted)}
+.rg-sh h3{margin:0;font-size:17px;font-weight:700}
+.rg-sh h3::first-letter{text-transform:uppercase}
+.rg-goal{margin:6px 0 0;font-size:15px;color:var(--ink)}
+.rg-lbl{margin:14px 0 6px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rg-checks{display:grid;gap:2px}
+.rg-check{display:flex;gap:10px;align-items:flex-start;padding:6px 8px;margin:0 -8px;border-radius:9px;cursor:pointer;font-size:15px}
+.rg-check:hover{background:var(--surface-2)}
+.rg-check input{width:18px;height:18px;margin:2px 0 0;flex:none;accent-color:var(--brand)}
+.rg-check input:checked + span{color:var(--muted);text-decoration:line-through}
+.rg-mats{display:flex;flex-wrap:wrap;gap:8px}
+.rg-mat{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:8px 12px;border-radius:10px;border:1px solid var(--fbd,var(--line));background:var(--surface);font:inherit;font-size:14px;color:var(--ink);cursor:pointer;text-decoration:none}
+.rg-mat:hover{border-color:var(--brand);text-decoration:none}
+.rg-mat svg{width:16px;height:16px;flex:none;color:var(--brand)}
+.rg-mat span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rg-mat small{flex:none;font-size:12px;color:var(--muted);white-space:nowrap}
+.rg-msg{border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;background:var(--surface-2);padding:10px 14px}
+.rg-msgh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--muted)}
+.rg-msgh .ghost{height:30px;padding:0 10px;font-size:12.5px}
+.rg-msg p{margin:0;white-space:pre-wrap;font-size:14.5px}
+.rg-how{margin-top:12px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.rg-how > summary{cursor:pointer;padding:10px 14px;background:color-mix(in srgb,var(--brand) 8%,var(--surface));color:var(--brand);font-weight:600;font-size:14px}
+.rg-how > div{padding:12px 14px;white-space:pre-wrap;font-size:14.5px;color:var(--ink)}
+@media (max-width:640px){
+  .rg-sub,.rg-note{margin-left:0}
+  .rg-hero h2{font-size:26px}
+  .rg-top select{flex:1 1 100%;max-width:none}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -1760,6 +1818,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="assign">Поручения</button>
     <button data-view="mine" id="mineTab" hidden>Мои проекты</button>
     <button data-view="feed">Лента</button>
+    <button data-view="reg">Регламент</button>
     <button data-view="reports">AI-отчёты</button>
     <button data-view="load">Загрузка</button>
     <button data-view="team">Команда</button>
@@ -2557,14 +2616,14 @@ function rememberView(){ try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({
 function restoreView(){
   try {
     const v = JSON.parse(sessionStorage.getItem(VIEW_KEY) || 'null'); if (!v) return;
-    const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine', 'mytasks', 'feed');
+    const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine', 'mytasks', 'feed', 'reg');
     if (ok.includes(v.view)) ui.view = v.view;
     if (['deadlines','templates','categories','spaces'].includes(v.setTab)) ui.setTab = v.setTab;
     if (v.view === 'production' && v.prodMode === 'tasks') ui.view = 'mytasks';
   } catch(e) {}
 }
 function render(){
-  if (GUEST && !['mytasks', 'feed'].includes(ui.view)) ui.view = 'mine';
+  if (GUEST && !['mytasks', 'feed', 'reg'].includes(ui.view)) ui.view = 'mine';
   try { renderSide(); } catch(e) {}
   try { paintPhoneHead(); } catch(e) {}
   try { const vn = $('#viewName'); if (vn) vn.textContent = ({ production:'Производство', templates:'Настройки' })[ui.view] || MNAV[ui.view]?.[0] || ''; } catch(e) {}
@@ -2574,7 +2633,7 @@ function render(){
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
   $('#myTasksTab').hidden = false;
   renderFilters();
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), feed:renderFeed, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), feed:renderFeed, reg:renderReg, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.open) renderDrawer();
   try { paintPage(); } catch(e) {}
   paintSelect();
@@ -2915,6 +2974,100 @@ document.addEventListener('submit', e => {
   addComment(p, v.slice(0, 4000)); ui.feedKind = ui.feedKind || 'all'; render(); $('#feedTx')?.focus();
 });
 document.addEventListener('keydown', e => { if (e.target.id === 'feedTx' && e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); $('#feedForm')?.requestSubmit(); } });
+// ---------- Регламент: этапы и карточки подэтапов шаблона процесса — для команды и исполнителей ----------
+// Исполнитель шаблонов не видит: регламент процесса едет вместе с общим проектом (_reg)
+function regData(tplId){
+  const t = tplById(tplId); if (!t) return null;
+  const T = db.cardTpls || {};
+  return { id:t.id, name:t.name, stages:t.stages.map(s => ({ name:s.name, days:stageDaysFor(s), approval:!!s.approval, gate:!!s.gate,
+    subs:(s.subs || []).map(x => { const c = T[cardKey(t.id, x.name)] || x.card || null;
+      return { name:x.name, files:!!x.files, card:c ? { d:c.d || '', reg:c.reg || '', vid:c.vid || '', c:[...(c.c || [])], b:(c.b || []).filter(blkOk).map(b => ({ ...b })) } : null }; }) })) };
+}
+function regList(){
+  const map = new Map();
+  if (!GUEST) db.templates.forEach(t => { const r = regData(t.id); if (r) map.set(r.id, r); });
+  ext.projects.forEach(p => { if (p._reg && !map.has(p._reg.id)) map.set(p._reg.id, p._reg); });
+  return [...map.values()];
+}
+const REG_KEY = () => KEY + '-reg';
+const regState = () => { try { return JSON.parse(localStorage.getItem(REG_KEY()) || '{}') || {}; } catch(e) { return {}; } };
+const REG_ICO = {
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>',
+  gate:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  link:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>',
+  play:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4Z" fill="currentColor"/></svg>',
+};
+const regHost = u => { try { const h = new URL(u).hostname; return /docs\.google/.test(h) ? (u.includes('/spreadsheets/') ? 'Google Таблица' : 'Google Документ') : /drive\.google/.test(h) ? 'Google Диск' : /youtu/.test(h) ? 'YouTube' : /notion/.test(h) ? 'Notion' : h.replace(/^www\./, ''); } catch(e) { return ''; } };
+// цель — первый абзац описания («Цель – …» без слова «Цель»), остальное — в «Подробной инструкции»
+function regGoal(d){
+  const txt = String(d || '').trim(); if (!txt) return { goal:'', rest:'' };
+  const parts = txt.split(/\n\s*\n/); let goal = parts[0].replace(/^\s*цель( этапа)?\s*[–—:-]\s*/i, '').trim(); let rest = parts.slice(1).join('\n\n').trim();
+  if (goal.length > 260){ rest = (goal + (rest ? '\n\n' + rest : '')); goal = ''; }
+  return { goal, rest };
+}
+function renderReg(){
+  const list = regList();
+  if (!list.length){ app.innerHTML = `<div class="empty">${GUEST ? 'Регламент появится, когда вам откроют проект.' : 'Создайте шаблон процесса в «Настройках» — по нему соберётся регламент.'}</div>`; return; }
+  const r = list.find(x => x.id === ui.regTpl) || list[0]; ui.regTpl = r.id;
+  const st = regState();
+  const nSubs = r.stages.reduce((n, s) => n + s.subs.length, 0);
+  const nChecks = r.stages.reduce((n, s) => n + s.subs.reduce((m, x) => m + (x.card?.c?.length || 0), 0), 0);
+  const nDays = r.stages.reduce((n, s) => n + (s.days || 0), 0);
+  const done = r.stages.reduce((n, s, i) => n + s.subs.reduce((m, x, j) => m + (x.card?.c || []).filter((_, k) => st[`${r.id}|${i}|${j}|${k}`]).length, 0), 0);
+  const sub = (s, i, x, j) => {
+    const c = x.card || {}; const { goal, rest } = regGoal(c.d);
+    const mats = (c.b || []).filter(b => b.type === 'link' || b.type === 'video' || b.type === 'file');
+    const msgs = (c.b || []).filter(b => b.type === 'msg' && String(b.value || '').trim().length > 10);
+    const texts = (c.b || []).filter(b => b.type === 'text');
+    const reg = safeUrl(c.reg), vid = safeUrl(c.vid);
+    const matHtml = [...(reg ? [{ type:'link', title:'Регламент', value:reg }] : []), ...(vid ? [{ type:'video', title:'Видео', value:vid }] : []), ...mats].map(b => b.type === 'file'
+      ? `<button class="rg-mat" data-fopen="${esc(b.path)}">${CLIP_ICO}<span>${esc(b.title || b.name || 'Файл')}</span><small>файл</small></button>`
+      : `<a class="rg-mat" href="${esc(safeUrl(b.value) || '#')}" target="_blank" rel="noopener noreferrer">${b.type === 'video' ? REG_ICO.play : REG_ICO.link}<span>${esc(b.title || (b.type === 'video' ? 'Видео' : regHost(b.value) || 'Ссылка'))}</span><small>${esc(regHost(b.value))}</small></a>`).join('');
+    const more = [rest, ...texts.map(b => (b.title ? b.title + '\n' : '') + b.value)].filter(Boolean).join('\n\n');
+    return `<article class="rg-sub" id="rg-${i}-${j}">
+      <div class="rg-sh"><span>${i + 1}.${j + 1}</span><h3>${esc(x.name)}</h3>${x.files ? `<span class="rg-pill files">${CLIP_ICO}материалы исполнителя</span>` : ''}</div>
+      ${goal ? `<p class="rg-goal"><b>Цель:</b> ${linkify(goal)}</p>` : ''}
+      ${c.c?.length ? `<div class="rg-lbl">Чек-лист</div><div class="rg-checks">${c.c.map((t, k) => { const id = `${r.id}|${i}|${j}|${k}`;
+        return `<label class="rg-check"><input type="checkbox" data-regk="${esc(id)}" ${st[id] ? 'checked' : ''}><span>${esc(t)}</span></label>`; }).join('')}</div>` : ''}
+      ${matHtml ? `<div class="rg-lbl">Материалы</div><div class="rg-mats">${matHtml}</div>` : ''}
+      ${msgs.map(b => `<div class="rg-lbl">Сообщение клиенту</div><div class="rg-msg"><div class="rg-msgh"><span>${esc(b.title || 'Шаблон — отправьте в чат с клиентом')}</span><button class="ghost" data-regcopy>Скопировать</button></div><p>${esc(b.value)}</p></div>`).join('')}
+      ${more ? `<details class="rg-how"><summary>Подробная инструкция</summary><div>${linkify(more)}</div></details>` : ''}
+      ${!x.card ? '<p class="hint">Карточка подэтапа пока не заполнена.</p>' : ''}
+    </article>`;
+  };
+  app.innerHTML = `<div class="rg">
+    <div class="fn-head-row rg-top">${list.length > 1 ? `<select id="regTpl" aria-label="Процесс">${list.map(x => `<option value="${x.id}" ${x.id === r.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>` : ''}
+      <span class="rg-prog"><i style="width:${nChecks ? Math.round(done / nChecks * 100) : 0}%"></i></span><span class="hint">${done} из ${nChecks} отмечено</span>
+      ${done ? '<button class="link" data-regreset>Сбросить отметки</button>' : ''}</div>
+    <header class="rg-hero"><span class="rg-eye">Процесс «${esc(r.name)}»</span><h2>Регламент ведения проекта</h2>
+      <p>Идите по этапам сверху вниз: у каждого подэтапа — цель, чек-лист, материалы и, где нужно, готовое сообщение клиенту. Отметки здесь — ваши личные, для себя.</p>
+      <div class="rg-facts"><span><b>${r.stages.length}</b> ${plural(r.stages.length, 'этап', 'этапа', 'этапов')}</span><span><b>${nSubs}</b> ${plural(nSubs, 'подэтап', 'подэтапа', 'подэтапов')}</span><span><b>${nChecks}</b> ${plural(nChecks, 'пункт', 'пункта', 'пунктов')} чек-листа</span>${nDays ? `<span>≈ <b>${days(nDays)}</b> по плану</span>` : ''}</div>
+      <nav class="rg-toc" aria-label="Этапы">${r.stages.map((s, i) => `<button data-regjump="${i}"><b>${i + 1}</b>${esc(s.name)}</button>`).join('')}</nav></header>
+    ${r.stages.map((s, i) => `<section class="rg-stage" id="rg-st-${i}">
+      <div class="rg-head"><span class="rg-num">${i + 1}</span><div><h2>${esc(s.name)}</h2><div class="rg-pills">
+        ${s.days ? `<span class="rg-pill">${REG_ICO.clock}${days(s.days)} по плану</span>` : ''}
+        ${s.approval ? `<span class="rg-pill appr">${REG_ICO.chat}Согласование с клиентом</span>` : ''}
+        ${s.gate ? `<span class="rg-pill gate">${REG_ICO.gate}Переход — по запросу руководителю</span>` : ''}</div></div></div>
+      ${s.gate ? '<p class="rg-note">Этап не закрывается сам: когда всё готово, нажмите в проекте «Запросить переход на следующий этап» — руководитель одобрит.</p>' : ''}
+      ${s.subs.length ? s.subs.map((x, j) => sub(s, i, x, j)).join('') : '<p class="hint rg-note">Подэтапов нет.</p>'}
+    </section>`).join('')}
+  </div>`;
+}
+document.addEventListener('change', e => {
+  if (e.target.id === 'regTpl'){ ui.regTpl = e.target.value; render(); scrollTo(0, 0); return; }
+  const k = e.target.dataset?.regk; if (k == null) return;
+  const st = regState(); if (e.target.checked) st[k] = 1; else delete st[k];
+  try { localStorage.setItem(REG_KEY(), JSON.stringify(st)); } catch(x) {}
+  const y = scrollY; render(); scrollTo(0, y);
+});
+document.addEventListener('click', async e => {
+  const j = e.target.closest?.('[data-regjump]'); if (j){ document.getElementById('rg-st-' + j.dataset.regjump)?.scrollIntoView({ behavior:'smooth', block:'start' }); return; }
+  if (e.target.closest?.('[data-regreset]')){ const st = regState(); Object.keys(st).forEach(k => { if (k.startsWith(ui.regTpl + '|')) delete st[k]; }); try { localStorage.setItem(REG_KEY(), JSON.stringify(st)); } catch(x) {} render(); return; }
+  const c = e.target.closest?.('[data-regcopy]'); if (!c) return;
+  const txt = c.closest('.rg-msg').querySelector('p').textContent;
+  try { await navigator.clipboard.writeText(txt); toast('Сообщение скопировано'); } catch(x) { toast('Не удалось скопировать — выделите текст вручную'); }
+});
 // ---------- Материалы исполнителя (подэтапы с галочкой «материалы») и запрос на переход этапа ----------
 const CLIP_ICO = '<svg class="clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 11-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l9.2-9.2a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.2a1.8 1.8 0 0 1-2.6-2.6L16 6"/></svg>';
 const actorName = () => (GUEST ? ui.meAcc?.name : userById(ME)?.name) || 'Исполнитель';
@@ -4098,7 +4251,7 @@ let sideOpen = false;
 const sidePinned = () => { if (innerWidth <= 1100) return false; try { const v = localStorage.getItem(SIDE_PIN); return v === null ? true : v === '1'; } catch(e) { return true; } };
 const setPin = on => { try { localStorage.setItem(SIDE_PIN, on ? '1' : '0'); } catch(e) {} };
 function sideViews(){
-  if (GUEST) return ['mine', 'mytasks', 'feed'];
+  if (GUEST) return ['mine', 'mytasks', 'feed', 'reg'];
   return [...document.querySelectorAll('.tabs [data-view]')].filter(b => !b.hidden).map(b => b.dataset.view);
 }
 function renderSide(){
@@ -4382,7 +4535,7 @@ const toggle = (arr, v) => arr.includes(v) ? arr.filter(x => x !== v) : [...arr,
 function resetFilters(){ ui.q=''; ui.pms=[]; ui.clients=[]; ui.risk=''; render(); }
 
 document.querySelector('.tabs').onclick = e => {
-  const b = e.target.closest('[data-view]'); if (!b || (GUEST && !['mine', 'mytasks', 'feed'].includes(b.dataset.view))) return;
+  const b = e.target.closest('[data-view]'); if (!b || (GUEST && !['mine', 'mytasks', 'feed', 'reg'].includes(b.dataset.view))) return;
   ui.view = b.dataset.view; ui.draft = null; render();
 };
 $('#newBtn').onclick = openCreate;
@@ -6753,7 +6906,7 @@ function sharedBodies(){
   const out = new Map();
   const team = db.users.map(u => ({ id:u.id, acc:accOf(u), name:u.name || '' })).filter(x => x.acc);
   const add = (p, ownerId, members) => {
-    const body = { ...trimLog(p), _team:p._ext ? (p._team || []) : team };
+    const body = { ...trimLog(p), _team:p._ext ? (p._team || []) : team, _reg:p._ext ? (p._reg || null) : regData(p.template_id) };
     let json = JSON.stringify(body);
     if (json.length > 200000) json = JSON.stringify({ ...body, log:(p.log || []).slice(0, 20) });
     out.set(`sp/${p.id}`, { ownerId, members, memberIds:members.map(m => m.id), json });
@@ -6819,7 +6972,7 @@ function onSharedProject(pid, snap){
   if (shared.hashes.get(`sp/${pid}`) === s) return;
   shared.hashes.set(`sp/${pid}`, s);
   if (shared.pending || shared.writing) return;                 // свои несохранённые правки уйдут следом
-  const remote = JSON.parse(body.json); const i = db.projects.findIndex(p => p.id === pid); if (i < 0) return;
+  const remote = JSON.parse(body.json); delete remote._reg; const i = db.projects.findIndex(p => p.id === pid); if (i < 0) return;
   const local = db.projects[i];
   db.projects[i] = { ...remote, share:local.share, log:mergeLogs(local.log, remote.log), comments:mergeComments(local.comments, remote.comments) };
   afterSharedApply();
@@ -7357,6 +7510,7 @@ const MNAV = {
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
   assign:['Поручения', MI('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2 2 4-4M8.5 17h7"/>')],
+  reg:['Регламент', MI('<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22.5Z"/><path d="M4 19.5V4.5M8 7h8M8 11h6"/>')],
   feed:['Лента', MI('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/><path d="M8 9h8M8 13h5"/>')],
   mytasks:['Мои задачи', MI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5 2.5-2.5"/>')],
   reports:['AI-отчёты', MI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')],
@@ -7400,10 +7554,10 @@ document.addEventListener('click', e => {
   const k = c.dataset.kdrisk; ui.risk = ui.risk === k ? '' : k; render();
 });
 const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>');
-const moreViews = () => ['mytasks', 'feed', 'assign', 'mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
+const moreViews = () => ['mytasks', 'feed', 'reg', 'assign', 'mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
 function renderMobileNav(){
   const nav = $('#mnav'); if (!nav) return;
-  if (GUEST){ nav.innerHTML = ['mine', 'mytasks', 'feed'].map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
+  if (GUEST){ nav.innerHTML = ['mine', 'mytasks', 'feed', 'reg'].map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
   const inMore = !MNAV_MAIN.includes(ui.view);
   nav.innerHTML = MNAV_MAIN.map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')
     + `<button data-mmore aria-current="${inMore ? 'page' : 'false'}" aria-haspopup="dialog">${inMore ? MNAV[ui.view][1] : MORE_ICON}<span>${inMore ? MNAV[ui.view][0] : 'Ещё'}</span></button>`;
