@@ -62,7 +62,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok([...D.querySelectorAll('.tcard:not(.on)')].every(b => b.textContent.trim() === '+ Карточка')); ok('карточка: пустые подписаны «+ Карточка»');
   assert.ok(!D.querySelector('[data-move],[data-smove]')); ok('шаблон: стрелок нет, порядок меняется перетаскиванием');
   // перетаскивание подэтапа: «Тестовый подэтап» (последний) — на первое место
-  const subsNow = () => [...D.querySelectorAll('.tsub[data-i="0"] input')].map(i => i.value);
+  const subsNow = () => [...D.querySelectorAll('.tsub[data-i="0"] input[data-sf]')].map(i => i.value);
   const lastJ = subsNow().length - 1; const g = D.querySelector(`[data-drag="sub"][data-i="0"][data-j="${lastJ}"]`);
   const first = D.querySelector('.tsub[data-i="0"][data-j="0"]');
   const ev = (type, target, y) => target.dispatchEvent(new w.MouseEvent(type, { bubbles: true, cancelable: true, clientY: y, button: 0 }));
