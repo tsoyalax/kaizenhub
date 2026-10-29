@@ -165,6 +165,9 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.equal(E(own, `projById('${pid}').stages.find(s => s.id === '${sid}').status`), 'done'); ok('«Принять этап» закрывает этап');
   E(own, `ui.view = 'review'; ui.revTab = 'accepted'; render()`); await wait(50);
   assert.ok($(own, '.rv-card.rv-done .rv-ok') && $(own, '.rv-card.rv-done').textContent.includes(E(own, `projById('${pid}').name`))); ok('«Приёмка» → «Принятые»: этап в истории');
+  assert.ok([...own.w.document.querySelectorAll('.rv-card.rv-done')].some(c => /Материал «.+» принят/.test(c.textContent))); ok('в «Принятых» и принятые материалы');
+  E(own, `(() => { const s = projById('${pid}').stages.find(x => x.id === '${sid}'); delete s.sub; render(); })()`); await wait(30);
+  assert.ok([...own.w.document.querySelectorAll('.rv-card.rv-done')].some(c => /Этап принят/.test(c.textContent))); ok('история не пропадает, даже если отметку в этапе затёрло');
   E(own, `ui.revTab = 'rejected'; render()`); await wait(30);
   assert.ok(!$(own, '.rv-card') || $(own, '.empty')); ok('«Возвращённые»: возвращённый ранее этап после повторной сдачи и приёмки там не висит');
   assert.notEqual(E(own, `currentStage(projById('${pid}'))?.id`), sid); ok('следующий этап — в работе (или проект завершён)');

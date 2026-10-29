@@ -3068,9 +3068,28 @@ function reviewHistory(){
   return all.flatMap(p => p.stages.filter(s => s.sub && (s.sub.status === 'accepted' || s.sub.status === 'rejected')).map(s => ({ p, s })))
     .sort((a, b) => String(b.s.sub.decidedAt || '').localeCompare(String(a.s.sub.decidedAt || '')));
 }
+// История приёмки — из журнала проекта: он при синхронизации склеивается и не затирается,
+// поэтому в «Принятых» видно всё: принятые этапы, одобренные переходы (старый способ) и принятые материалы
+const ACC_RX = [
+  [/^Этап «(.+?)» принят(?: \(сдал: (.+?)\))?$/, 'stage'],
+  [/^Переход с этапа «(.+?)» одобрен(?: \(запрос: (.+?)\))?$/, 'gate'],
+  [/^Подэтап «(.+?)»: материал «(.+?)» принят$/, 'mat'],
+];
+function acceptedHistory(){
+  const all = [...(GUEST ? [] : db.projects), ...ext.projects.filter(p => roleOf(p) === 'lead')];
+  const seen = new Set(); const out = [];
+  all.forEach(p => (p.log || []).forEach(l => {
+    for (const [rx, kind] of ACC_RX){ const m = rx.exec(String(l.text || '')); if (!m) continue;
+      const k = p.id + '|' + l.at + '|' + l.text; if (seen.has(k)) break; seen.add(k);
+      const st = kind === 'mat' ? null : p.stages.find(x => x.name === m[1]);
+      out.push({ p, kind, at:l.at, by:l.user, stage:st, stageName:kind === 'mat' ? '' : m[1], sub:kind === 'mat' ? m[1] : '', file:kind === 'mat' ? m[2] : '', from:kind === 'mat' ? '' : (m[2] || '') });
+      break; }
+  }));
+  return out.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+}
 function renderReview(){
   const pend = stageSubmissions(); const gates = gateRequests().filter(({ s }) => s.sub?.status !== 'pending'); const mats = matsToReview(); const hist = reviewHistory();
-  const acc = hist.filter(h => h.s.sub.status === 'accepted'), rej = hist.filter(h => h.s.sub.status === 'rejected');
+  const acc = acceptedHistory(), rej = hist.filter(h => h.s.sub.status === 'rejected');
   const tab = ['pending', 'accepted', 'rejected'].includes(ui.revTab) ? ui.revTab : 'pending';
   const head = (p, s) => `<div class="rv-h">${projAva(p, 'sm')}<div><b>${esc(p.name)}</b><small>${esc(p.client || '')} · этап ${s.position + 1}. ${esc(s.name)}</small></div>
     <button class="link" data-open="${p.id}" data-stage="${s.id}">Проект</button></div>`;
@@ -3085,12 +3104,17 @@ function renderReview(){
     <p class="rv-who">${s.sub.status === 'accepted' ? `<span class="rv-ok">${MAT_OK}Принят</span>` : '<span class="rv-no">Возвращён</span>'} ${esc(s.sub.decidedBy || '')} · ${s.sub.decidedAt ? ssWhen(s.sub.decidedAt) : ''} · сдал ${esc(s.sub.byName || 'исполнитель')}</p>
     ${s.sub.status === 'rejected' && s.sub.reason ? `<p class="rv-reason">«${esc(s.sub.reason)}»</p>` : ''}
     ${ssItems(p, s, false)}</article>`;
+  const acard = h => { const s = h.stage; const files = s?.sub?.status === 'accepted' ? ssItems(h.p, s, false) : '';
+    return `<article class="rv-card rv-done"><div class="rv-h">${projAva(h.p, 'sm')}<div><b>${esc(h.p.name)}</b><small>${esc(h.p.client || '')}${s ? ` · этап ${s.position + 1}. ${esc(s.name)}` : h.stageName ? ` · этап «${esc(h.stageName)}»` : h.sub ? ` · подэтап «${esc(h.sub)}»` : ''}</small></div>
+      <button class="link" data-open="${h.p.id}"${s ? ` data-stage="${s.id}"` : ''}>Проект</button></div>
+      <p class="rv-who"><span class="rv-ok">${MAT_OK}${h.kind === 'mat' ? `Материал «${esc(h.file)}» принят` : h.kind === 'gate' ? 'Переход одобрен' : 'Этап принят'}</span> · ${ssWhen(h.at)}${h.by && userById(h.by) ? ` · ${esc(short(h.by))}` : ''}${h.from ? ` · сдал ${esc(h.from)}` : ''}</p>
+      ${files}</article>`; };
   const matsByTask = [...mats.reduce((m, i) => { if (!m.has(i.t.id)) m.set(i.t.id, { ...i, list:[] }); m.get(i.t.id).list.push(i.m); return m; }, new Map()).values()];
   const pendHtml = pend.length || gates.length || matsByTask.length
     ? `${pend.map(card).join('')}${gates.map(gcard).join('')}
        ${matsByTask.length ? `<h3 class="rv-sub">Материалы в карточках подэтапов</h3>${matsByTask.map(g => `<button class="rv-mat" data-task="${g.t.id}">${projAva(g.p, 'xs')}<span><b>${esc(g.p.name)}</b><small>${esc(g.t.title)} · ${g.list.length} ${plural(g.list.length, 'материал', 'материала', 'материалов')} от ${esc([...new Set(g.list.map(m => m.byName || 'исполнитель'))].join(', '))}</small></span><span class="link">Открыть</span></button>`).join('')}` : ''}`
     : '<div class="empty">Всё принято — на проверке ничего нет.</div>';
-  const list = tab === 'pending' ? pendHtml : (tab === 'accepted' ? acc : rej).length ? (tab === 'accepted' ? acc : rej).slice(0, 60).map(hcard).join('') : `<div class="empty">${tab === 'accepted' ? 'Принятых этапов пока нет.' : 'Этапов на доработке нет.'}</div>`;
+  const list = tab === 'pending' ? pendHtml : (tab === 'accepted' ? acc : rej).length ? (tab === 'accepted' ? acc.slice(0, 100).map(acard) : rej.slice(0, 60).map(hcard)).join('') : `<div class="empty">${tab === 'accepted' ? 'Принятых этапов и материалов пока нет.' : 'Этапов на доработке нет.'}</div>`;
   app.innerHTML = `<div class="rv">
     <div class="fn-head-row"><h2 class="td-title">Приёмка</h2>
       <div class="seg-toggle" role="group" aria-label="Что показать">
@@ -6821,6 +6845,7 @@ async function initCloud(){
     const id = user ? await user.id() : null;
     const owner = user ? (await user.me()).isOwner : true;
     if (!owner){ setMode('guest'); render(); } else { setMode('owner'); bootOwner(); }
+    if (window.kzLoginNote){ toast(window.kzLoginNote); window.kzLoginNote = ''; }
     if (!store || !id){ setCloudStatus('local'); if (GUEST) render(); return; }
     cloud.store = store; cloud.user = user; cloud.uid = id; cloud.owner = ORG || id;
     if (ORG){
