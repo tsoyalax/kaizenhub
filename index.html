@@ -5848,8 +5848,7 @@ function renderTaskModal(focusSel){
           <label class="ck-box"><input type="checkbox" data-ck="${i.id}" id="ck-${i.id}" ${i.done ? 'checked' : ''}><span class="ck-txt">${esc(i.text)}</span></label>
           ${i.done && i.completed_at ? `<small>${esc(i.completed_by || '')}, ${new Date(i.completed_at).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small>` : ''}</li>`).join('')}</ul>`
           : `<p class="hint">Пунктов пока нет.</p>${editable && sub && cardTplFor(p, sub.name)?.c?.length ? `<button class="ghost" data-tfill>Заполнить из шаблона «${esc(sub.name)}»</button>` : ''}`}</section>
-      ${sub?.files ? matsSection(p, t) : `<section class="tk-sec"><h3>Сдача работы</h3>
-        <div class="row"><input data-tres value="${esc(t.result_link)}" placeholder="Ссылка на готовую работу" inputmode="url" aria-label="Ссылка на результат">${res ? `<a class="ghost" href="${esc(res)}" target="_blank" rel="noopener noreferrer">Открыть</a>` : ''}</div></section>`}
+      ${sub?.files ? matsSection(p, t) : res ? `<section class="tk-sec"><h3>Результат</h3><p><a class="ghost tk-reg" href="${esc(res)}" target="_blank" rel="noopener noreferrer">Открыть сданную работу ↗</a></p></section>` : ''}
       ${p?._ext ? '<p class="hint tk-role">Ваши отметки и материалы сразу видны владельцу проекта.</p>' : ''}`;
   } else {
     body = `<form class="form tk-form" id="tkForm" novalidate>
