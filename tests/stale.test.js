@@ -104,6 +104,15 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
       assert.equal(E1(`projById('${r}').stages.find(x => x.id === '${sid2}').status`), 'done'); ok('после «Принять этап» этап закрыт');
     }
   }
+  { // дата старта — когда первый этап взяли в работу, а не когда создали проект
+    const np = E1(`(() => { const t = db.templates[0]; const p = createProject({ name:'Новый без старта', client:'К', template_id:t.id, start_date:addDays(today(), -5), pm_id:ME }); return p.id; })()`);
+    assert.ok(E1(`projById('${np}').stages.every(s => s.status === 'not_started') && !projById('${np}').started_at`)); ok('новый проект сам не стартует');
+    assert.ok(/Не начат/.test(E1(`startTxt(projById('${np}'))`))); ok('пока работа не началась — «Не начат»');
+    E1(`(() => { const p = projById('${np}'); setStatus(p, p.stages[0], 'in_progress'); })()`); await wait(50);
+    assert.equal(E1(`projById('${np}').start_date`), E1('today()')); ok('первый этап «в работе» — это дата старта');
+    assert.equal(E1(`projById('${np}').started_at`), E1('today()')); ok('отметка начала работы сохранена');
+    assert.ok(/1-й день/.test(E1(`startTxt(projById('${np}'))`))); ok('день проекта считается от начала работы');
+  }
   assert.equal(d1.errors.length + d4.errors.length, 0, d1.errors.concat(d4.errors).join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });
