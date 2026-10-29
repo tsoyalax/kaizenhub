@@ -1847,8 +1847,53 @@ body.guest #aiBtn{display:none!important}
 .bd-step{display:block;color:var(--muted);margin:4px 0 0}
 .bd-sel{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .bd-sel select{font-size:13px;padding:4px 8px}
-#bdBack{margin-right:auto}
+#bdBack,#bdBack2{margin-right:auto}
 @media (max-width:640px){.top .ai-btn{width:40px;height:40px;padding:0;border:0;background:transparent;justify-content:center}.top .ai-btn span{display:none}.top .ai-btn svg{width:20px;height:20px}}
+/* Кайдзен: план и раздел */
+.bd-h{font-size:15px;margin:14px 0 8px;display:flex;gap:6px;align-items:baseline}.bd-h small{color:var(--muted);font-weight:500}
+.bd-grp h4{font-size:13px;margin:6px 0 4px;color:var(--muted);font-weight:600}
+.bd-goal{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;display:grid;gap:8px}
+.bd-goal.off > :not(.bd-gtop),.bd-goal.off .bd-title{opacity:.45}
+.bd-gtop{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:8px;align-items:center}
+.bd-gtop select{font-size:13px;padding:4px 8px}
+.bd-q{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.bd-q > span{font-size:13px;color:var(--muted);min-width:64px}
+.bd-min{margin:6px 0 4px;padding:10px 12px;border-radius:12px;background:var(--fbg,rgba(127,127,127,.08))}.bd-min > span{color:var(--ink);font-weight:600;width:100%}
+.kz-chips{display:inline-flex;gap:6px;flex-wrap:wrap}
+.kz-chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 11px;font-size:13px;cursor:pointer}
+.kz-chip[aria-pressed="true"]{background:var(--brand,#6366f1);border-color:var(--brand,#6366f1);color:#fff}
+.kz-hero{display:grid;gap:2px;padding:16px;border-radius:14px;background:linear-gradient(135deg,color-mix(in srgb,var(--brand,#6366f1) 18%,transparent),transparent);margin-bottom:10px}
+.kz-hero small{color:var(--muted)}.kz-hero b{font-size:34px;line-height:1.1}.kz-hero span{font-size:14px}
+.kz-today{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:6px}
+.kz-today li{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:14px}.kz-today small{color:var(--muted)}
+.kz-today i,.kz-list i{font-style:normal;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:0 5px;margin-left:4px}
+.kz-chart{display:flex;align-items:flex-end;gap:2px;height:64px;padding:4px 0;border-bottom:1px solid var(--line)}
+.kz-chart i{flex:1;background:color-mix(in srgb,var(--brand,#6366f1) 70%,transparent);border-radius:3px 3px 0 0;min-height:3px}
+.kz-chart-cap{margin:6px 0 12px;font-size:12px}
+.kz-goal{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;background:var(--surface);display:grid;gap:6px}
+.kz-gh{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:start}.kz-gh b{display:block;font-size:15px}.kz-gh small{color:var(--muted)}
+.kz-ico{font-size:20px;line-height:1.2}
+.kz-why,.kz-win,.kz-habits,.kz-stage,.kz-next{margin:0;font-size:13.5px}.kz-why{font-style:italic;color:var(--muted)}.kz-win{color:var(--g)}
+.kz-next small{color:var(--muted)}
+.kz-stages{margin:0;padding-left:20px;display:grid;gap:3px;font-size:13.5px}.kz-stages small{color:var(--muted)}.kz-stages li.cur b{color:var(--brand,inherit)}
+.kz-risk{border-radius:10px;padding:8px 10px;background:color-mix(in srgb,var(--y) 14%,transparent);font-size:13px;display:grid;gap:6px}.kz-risk p{margin:0}
+.kz-assume{font-size:13px;color:var(--muted);margin:6px 0}
+.kz-page{max-width:860px;margin:0 auto;padding:8px 0 40px}
+.kz-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:6px 0 10px}.kz-top h2{margin:0}.kz-top .hint{margin:2px 0 0}
+.kz-welcome{border-radius:12px;padding:12px 14px;margin-bottom:12px;background:color-mix(in srgb,var(--g) 14%,transparent);display:flex;gap:8px;flex-wrap:wrap;align-items:baseline}.kz-welcome .link{margin-left:auto}
+.kz-list{list-style:none;margin:0 0 14px;padding:0;border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}
+.kz-list li + li{border-top:1px solid var(--line)}
+.kz-list label{display:grid;grid-template-columns:20px 26px minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 14px;cursor:pointer}
+.kz-list input{width:18px;height:18px}.kz-list .kz-t small{display:block;color:var(--muted);font-size:12px}.kz-list label > small{color:var(--muted)}
+.kz-list li.done .kz-t{text-decoration:line-through;opacity:.55}
+.kz-empty{padding:14px;color:var(--muted)}
+.kz-budget{margin:0 0 16px}.kz-budget > small{width:100%}
+.kz-h{font-size:16px;margin:8px 0}
+.kz-goals{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}.kz-goals .kz-goal{margin:0}
+.kz-bar{height:6px;border-radius:3px;background:var(--line)}.kz-bar i{display:block;height:100%;border-radius:3px;background:var(--g)}
+.kz-del{width:28px;height:28px;font-size:13px}
+.kz-nextst{justify-self:start}
+.kz-start{text-align:center;padding:40px 16px;border:1px dashed var(--line);border-radius:16px}.kz-start p{max-width:520px;margin:0 auto 16px}
+@media (max-width:640px){.kz-goals{grid-template-columns:1fr}.kz-top .primary{padding:8px 12px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/v2/config.js"></script>
@@ -1860,6 +1905,7 @@ body.guest #aiBtn{display:none!important}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
   <div class="brand"><button class="space-name" id="spaceName" hidden title="Пространство — сменить в настройках"></button></div>
   <nav class="tabs" aria-label="Разделы">
+    <button data-view="kaizen" id="kzTab">Кайдзен</button>
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
@@ -2639,7 +2685,7 @@ function removeMember(u){
 // =====================================================================
 //  ФИЛЬТРЫ И СОРТИРОВКА
 // =====================================================================
-const ui = { view:'matrix', prodMode:'project', prodTpl:'t1', prodOpen:{}, q:'', pms:[], clients:[], risk:'', sort:'risk', group:'auto', kbTpl:'t1', dept:'',
+const ui = { view:'kaizen', prodMode:'project', prodTpl:'t1', prodOpen:{}, q:'', pms:[], clients:[], risk:'', sort:'risk', group:'auto', kbTpl:'t1', dept:'',
   open:null, focusStage:null, tplSel:null, draft:null };
 const $ = s => document.querySelector(s);
 const app = $('#app'), layer = $('#layer');
@@ -2732,7 +2778,7 @@ function render(){
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
   $('#myTasksTab').hidden = false;
   renderFilters();
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ kaizen:renderKaizen, matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.open) renderDrawer();
   try { paintPage(); } catch(e) {}
   paintSelect();
@@ -5682,8 +5728,8 @@ function watchIT(){
   if (!cloud.store || !cloud.uid || IT.subs.length) return;
   const on = snap => {
     IT.list = snap.docs.map(d => { try { const b = d.data(); return { ...JSON.parse(b.json), _owner:b.ownerId, _members:b.memberIds || [] }; } catch(e) { return null; } }).filter(t => t && !t.deleted);
-    syncItMembers();
-    if (ui.view === 'mytasks' || ui.view === 'assign') render(); else paintBell();
+    IT.ready = true; syncItMembers();
+    if (ui.view === 'mytasks' || ui.view === 'assign' || ui.view === 'kaizen') render(); else paintBell();
   };
   IT.subs.push(cloud.store.collection('it').where('memberIds', 'array-contains', GUEST ? cloud.uid : OWNER()).onSnapshot(on, () => {}));
 }
@@ -5750,7 +5796,8 @@ function dayProjectItems(who){
   return out;
 }
 function dayInternalItems(who){
-  return itAll().filter(t => GUEST ? true : (!who || t.assignee_id === who)).map(t => ({ kind:'i', id:t.id, it:t, who:t.assignee_id, done:t.status === 'done', due:t.due_date || '', title:t.title }));
+  // шаги кайдзен-плана на будущие дни живут в разделе «Кайдзен», в общем списке — только сегодняшние
+  return itAll().filter(t => (GUEST ? true : (!who || t.assignee_id === who)) && !(t.kz && t.due_date > today())).map(t => ({ kind:'i', id:t.id, it:t, who:t.assignee_id, done:t.status === 'done', due:t.due_date || '', title:t.title }));
 }
 const PRI_W = { urgent:0, high:1, medium:2, low:3 };
 const byDue = (a, b) => (a.done - b.done) || (a.due || '9999').localeCompare(b.due || '9999') || (PRI_W[a.it?.priority] ?? 2) - (PRI_W[b.it?.priority] ?? 2);
@@ -5923,7 +5970,7 @@ function myAlerts(){
   const t0 = today(); const seen = readSet(NSEEN_KEY()); const first = (() => { try { return localStorage.getItem(NSEEN_KEY()) === null; } catch(e) { return true; } })();
   const list = myTodo();
   if (first){ writeSet(NSEEN_KEY(), new Set(list.map(i => i.id))); return { over:list.filter(i => i.due && i.due < t0), today:list.filter(i => i.due === t0), fresh:[] }; }
-  return { over:list.filter(i => i.due && i.due < t0), today:list.filter(i => i.due === t0), fresh:list.filter(i => !seen.has(i.id)) };
+  return { over:list.filter(i => i.due && i.due < t0), today:list.filter(i => i.due === t0), fresh:list.filter(i => !seen.has(i.id) && !i.it?.kz) };   // свои шаги плана — не «новые задачи»
 }
 function alertCount(){ const a = myAlerts(); return new Set([...a.over, ...a.today, ...a.fresh].map(i => i.id)).size; }
 // уведомления браузера (если человек разрешил): о новых задачах и раз в день — что на сегодня
@@ -7789,6 +7836,7 @@ document.addEventListener('click', e => {
 // =====================================================================
 const MI = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const MNAV = {
+  kaizen:['Кайдзен', MI('<path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="5"/><path d="m12 10 0 2 1.5 1"/>')],
   matrix:['Матрица', MI('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>')],
   kanban:['Канбан', MI('<rect x="3" y="3" width="5" height="15" rx="1.5"/><rect x="10" y="3" width="5" height="10" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/>')],
   production:['Произв.', MI('<path d="M3 12h4l3-8 4 16 3-8h4"/>')],
@@ -7802,7 +7850,7 @@ const MNAV = {
   team:['Команда', MI('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>')],
   templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
 };
-const MNAV_MAIN = ['matrix', 'kanban', 'production', 'load'];
+const MNAV_MAIN = ['kaizen', 'matrix', 'kanban', 'mytasks'];
 // иконки в боковом меню (те же, что в нижнем меню телефона)
 const NAV_FULL = { production:'Производство' };
 document.querySelectorAll('.tabs [data-view]').forEach(b => { const m = MNAV[b.dataset.view]; if (m && !b.querySelector('svg')) b.insertAdjacentHTML('afterbegin', m[1]); });
@@ -7869,68 +7917,72 @@ document.addEventListener('click', e => {
 $('#q').insertAdjacentHTML('afterend', '<button class="ghost f-toggle" id="fToggle" aria-expanded="false" aria-controls="tags" title="PM и клиенты"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5Z"/></svg><span>Фильтры</span><b class="f-n"></b></button>');
 $('#density').insertAdjacentHTML('afterend', '<button class="ghost sel-toggle" id="selToggle" aria-pressed="false" title="Выбрать несколько проектов"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/></svg><span>Выбрать</span></button>');
 
-try { db = JSON.parse(localStorage.getItem(KEY)); } catch(e) {}
-if (!db || !db.projects || !db.users) db = (SPACE || ORG) ? emptySpace() : seed();
-migrate();
-if (!db.reports) db.reports = [];
-if (!db.tasks){ db.tasks = []; seedDemoTasks(); save(); }
-migrateCardTpls();
-db.tasks = db.tasks.filter(t => projById(t.project_id));   // задачи удалённых проектов
-migrateLinks();
-repairStageOrder();
-syncDoneStages();
-(db.reports || []).forEach(fixReport);
-replanAll();
-localSave();
-setInterval(() => { if (!GUEST && replanAll()) commit(); }, 3600e3);
-restoreView();
-{ let m = null; try { m = localStorage.getItem(MODE_KEY); } catch(e) {}
-  if (URL_INVITE && m !== 'owner') m = 'guest';
-  if (m === 'guest') setMode('guest');
-  if (m) render(); else app.innerHTML = '<div class="empty">Загрузка…</div>';   // первый визит: ждём, кто открыл приложение
-  if (m === 'owner'){ ownerBooted = true; if (!db.onboarded) openProfile(true); } }
-initCloud();
-
 // =====================================================================
-//  AI-помощник «Брейн-дамп» (только v2): человек наговаривает или пишет всё, что в голове,
-//  помощник делит поток на задачи и раскладывает по сферам жизни, у каждой — первый маленький шаг (кайдзен).
-//  Выбранное становится внутренними задачами (itSave) со сферой в category. Без входа в аккаунт AI недоступен —
-//  разбираем по ключевым словам. Черновик текста помнит браузер (kz2-dump), чтобы надиктованное не терялось.
+//  КАЙДЗЕН (только v2): брейн-дамп → цели и разовые дела → уточнения кнопками → план → ежедневные маленькие шаги.
+//  Цели и бюджет — db.prefs.kaizen (уходит в облако вместе с настройками):
+//    { minutes, load, lastSeen, lastCheck, welcome, goals:[{ id, title, sphere, result, why, deadline, priority, level, cur,
+//      stages:[{ title, result, weeks, tasks:[…] }], habits:[{ id, title, per_week, start_minutes, max_minutes, from }], first_win, created }] }
+//  Шаг — внутренняя задача (itSave) с полем kz = { g:цель, st:этап, min:минуты, size, h:привычка, o:порядок }, срок = день шага.
+//  AI придумывает, ЧТО делать; КОГДА — считает код (kzPlace): дневной бюджет минут × нагрузка, которая растёт на 1% в день,
+//  пока получается (kzRebalance). Без входа в аккаунт AI недоступен — разбор по ключевым словам и план по общему шаблону.
+//  Черновик брейн-дампа помнит браузер (kz2-dump), чтобы надиктованное не терялось.
 // =====================================================================
 const BD_WHEN = { today:'Сегодня', week:'На этой неделе', month:'В этом месяце', later:'Когда-нибудь' };
 const BD_KEY = 'kz2-dump';
-const bd = { text:'', items:null, ai:false, busy:false, rec:null, on:false };
+const KZ_MIN = [15, 30, 60, 120];
+const KZ_LEVEL = { beginner:'С нуля', intermediate:'Есть опыт', advanced:'Продолжаю' };
+const KZ_DL = { m1:['Через месяц', 30], m3:['Через 3 месяца', 91], m6:['Через полгода', 182], none:['Без срока', 0] };
+const bd = { text:'', step:'input', goals:[], items:[], plan:null, ai:false, busy:false, rec:null, on:false, minutes:0 };
 const bdDraft = v => { try { if (v === undefined) return localStorage.getItem(BD_KEY) || ''; if (v) localStorage.setItem(BD_KEY, v); else localStorage.removeItem(BD_KEY); } catch(e) { return ''; } };
+const kz = () => { db.prefs = db.prefs || {}; const k = db.prefs.kaizen = db.prefs.kaizen || {}; k.goals = k.goals || [];
+  if (!(+k.minutes > 0)) k.minutes = 30; if (!(+k.load > 0)) k.load = 0.5; return k; };
+const kzSteps = () => itAll().filter(t => t.kz && !t.deleted);
+const kzGoal = id => kz().goals.find(g => g.id === id);
+// минут на день d (0 = сегодня): бюджет × нагрузка, нагрузка растёт на 1% в день, не выше бюджета
+const kzCap = d => { const k = kz(); return Math.max(5, Math.round(k.minutes * Math.min(1, k.load * Math.pow(1.01, d)))); };
+const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1, 200);
 
-// разбор без AI: делим на фразы, сферу и срок угадываем по словам
+// ---------- разбор без AI: делим на фразы, цель/дело, сферу и срок угадываем по словам ----------
 const BD_WORDS = {
-  work:/клиент|проект|работ|офис|встреч|созвон|отч[её]т|презентац|договор|сотрудник|команд|продаж|бизнес|заказ|начальник|коллег|кп\b|руковод|запуск|сайт|реклам/i,
+  work:/клиент|проект|работ|офис|встреч|созвон|отч[её]т|презентац|договор|сотрудник|команд|продаж|бизнес|заказ|начальник|коллег|кп(?![а-яё])|руковод|запуск|сайт|реклам|магазин/i,
   money:/деньг|оплат|счёт|счет|кредит|долг|налог|бюджет|заплат|перевест|зарплат|инвест|накоп|ипотек|расход|доход|банк|копил/i,
-  health:/врач|здоров|спорт|зал|трениров|бег|пробеж|йог|сон\b|спать|выспат|вод[аыу]\b|питан|диет|анализ|зуб|таблет|массаж|прогулк|вес\b/i,
+  health:/врач|здоров|спорт|зал|трениров|бег|пробеж|йог|сон(?![а-яё])|спать|выспат|вод[аыу](?![а-яё])|питан|диет|анализ|зуб|таблет|массаж|прогулк|вес(?![а-яё])|похуд/i,
   family:/мам|пап|жен[аеуы]|муж|дет|сын|доч|родител|семь|друг|подруг|бабушк|дедушк|брат|сестр|день рождени|подарок|свидани|позвонить/i,
   growth:/книг|курс|учи|изуч|англий|язык|навык|обучен|прочит|лекци|вебинар|тренинг|медитац|дневник|цел[иья]|план на/i,
-  home:/дом\b|дома\b|квартир|убрат|уборк|ремонт|продукт|магазин|купить|стирк|посуд|машин[ау]|кошк|собак|гараж|дача|почин|вынести/i,
-  rest:/отпуск|отдых|кино|фильм|сериал|путешеств|поездк|хобби|игр|концерт|рыбалк|выходн|море|гор[ыа]\b/i
+  home:/дом(?![а-яё])|дома(?![а-яё])|квартир|убрат|уборк|ремонт|продукт|купить|стирк|посуд|машин[ау]|кошк|собак|гараж|дача|почин|вынести/i,
+  rest:/отпуск|отдых|кино|фильм|сериал|путешеств|поездк|хобби|игр|концерт|рыбалк|выходн|море|гор[ыа](?![а-яё])/i
 };
-function bdLocal(text){
-  const parts = String(text).replace(/\s+/g, ' ')
-    .split(/[.!?;\n]+|,\s*(?=(?:и\s+)?(?:ещё|еще|также|потом|а также|плюс)\s)|(?:,|\s+и)\s+(?=(?:не\s+)?[а-яё]{2,}(?:ть|ться|ти|чь)(?![а-яё]))|\s+(?:и ещё|и еще|а ещё|а еще|а также|потом|плюс)\s+/i)
-    .map(s => s.trim().replace(/^(?:и|а|ещё|еще|также|так|ну|короче|в общем|мне|надо|нужно|не забыть|хочу|хотелось бы)\s+/i, '').trim())
-    .filter(s => s.length > 2);
-  return parts.slice(0, 40).map(s => {
-    const sphere = Object.keys(BD_WORDS).find(k => BD_WORDS[k].test(s)) || 'other';
-    const when = /сегодня|срочно|сейчас/i.test(s) ? 'today' : /завтра|недел|выходн/i.test(s) ? 'week' : /месяц/i.test(s) ? 'month' : 'later';
-    return { title:s.charAt(0).toUpperCase() + s.slice(1, 200), sphere, when, priority:/срочно|важно|обязательно/i.test(s) ? 'high' : 'medium', step:'' };
-  });
+const BD_SPLIT = /[.!?;\n]+|,\s*(?=(?:и\s+)?(?:ещё|еще|также|потом|а также|плюс)\s)|(?:,|\s+и)\s+(?=(?:не\s+)?[а-яё]{2,}(?:ть|ться|ти|чь)(?![а-яё]))|\s+(?:и ещё|и еще|а ещё|а еще|а также|потом|плюс)\s+/i;
+const BD_FILLER = /^(?:и|а|ещё|еще|также|так|ну|короче|в общем|мне|надо|нужно|не забыть|хочу|хотелось бы|мечтаю|планирую|я)\s+/i;
+const GOAL_RX = /^(?:(?:я\s+)?(?:хочу|хотелось бы|мечтаю|планирую)\s+)?(?:выучить|научиться|освоить|запустить|открыть|создать|построить|начать|похудеть|накопить|пробежать|бросить|написать книгу|сменить работу|найти работу|перейти|подготовиться|сдать|прочитать \d+|заработать)/i;
+// «до лета», «до осени», «до конца года» — ближайшая такая дата
+const BD_UNTIL = /\s*до\s+(?:лета|осени|зимы|весны|конца года|нового года)(?![а-яё])/i;
+function bdUntil(s){
+  const m = String(s).match(/до\s+(лета|осени|зимы|весны|конца года|нового года)/i); if (!m) return null;
+  const md = { 'лета':'06-01', 'осени':'09-01', 'зимы':'12-01', 'весны':'03-01', 'конца года':'12-31', 'нового года':'12-31' }[m[1].toLowerCase()];
+  const y = +today().slice(0, 4); return `${y}-${md}` > today() ? `${y}-${md}` : `${y + 1}-${md}`;
 }
-const bdPrompt = text => `Ты помощник по кайдзен-планированию. Человек сделал брейн-дамп: выгрузил всё, что у него в голове (часто это расшифровка голоса, без знаков препинания).
-Раздели текст на отдельные конкретные задачи или дела. Одна мысль — одна задача. Формулируй коротко, с глагола, по-русски. Не придумывай дел, которых нет в тексте; повторы объединяй.
-Для каждой задачи:
-- sphere — сфера жизни: ${Object.entries(SPHERES).map(([k, v]) => `${k} (${v})`).join(', ')};
-- when — когда: today (сегодня или срочно), week (эта неделя), month (этот месяц), later (без срока / когда-нибудь);
-- priority — high, medium или low;
-- step — первый маленький шаг по принципу кайдзен: действие на 5–15 минут, с которого можно начать прямо сейчас.
-Ответ — JSON: {"items":[{"title":"...","sphere":"work","when":"week","priority":"medium","step":"..."}]}
+const bdSphere = s => Object.keys(BD_WORDS).find(k => BD_WORDS[k].test(s)) || 'other';
+function bdLocal(text){
+  const goals = [], tasks = [];
+  String(text).replace(/\s+/g, ' ').split(BD_SPLIT).map(s => s.trim()).filter(s => s.length > 2).slice(0, 40).forEach(raw => {
+    const lead = raw.replace(/^(?:и|а|ещё|еще|также|ну|короче|в общем|мне)\s+/i, '');
+    const s = raw.replace(BD_FILLER, '').replace(BD_FILLER, '').trim(); if (s.length < 3) return;
+    if (GOAL_RX.test(lead) && !/сегодня|завтра/i.test(raw)) return goals.push({ title:cap1(s.replace(BD_UNTIL, '').trim()), sphere:bdSphere(s), deadline:bdUntil(s) });
+    const when = /сегодня|срочно|сейчас/i.test(s) ? 'today' : /завтра|недел|выходн/i.test(s) ? 'week' : /месяц/i.test(s) ? 'month' : 'later';
+    tasks.push({ title:cap1(s), sphere:bdSphere(s), when, priority:/срочно|важно|обязательно/i.test(s) ? 'high' : 'medium', step:'' });
+  });
+  return { goals, tasks };
+}
+const bdPromptA = text => `Ты помощник по кайдзен-планированию. Человек сделал брейн-дамп: выгрузил всё, что у него в голове (часто это расшифровка голоса, без знаков препинания). Сегодня ${today()}.
+Раздели текст на две группы. Не придумывай ничего, чего нет в тексте; повторы объединяй. Пиши по-русски, коротко.
+1) goals — крупные цели, на которые нужны недели или месяцы и много шагов (выучить язык, запустить магазин, начать бегать, похудеть, накопить). Для каждой:
+   title — желаемый результат коротко; sphere; deadline — YYYY-MM-DD, если срок назван («до лета» — 1 июня ближайшего), иначе null;
+   level — true, если для плана важно, с какого уровня человек начинает (навыки, спорт, языки), иначе false.
+2) tasks — разовые дела на один-два подхода. Для каждого: title (с глагола); sphere; when — today (сегодня/срочно), week, month или later;
+   priority — high, medium или low; step — первый маленький шаг на 5–15 минут, с которого можно начать прямо сейчас.
+sphere — одна из: ${Object.entries(SPHERES).map(([k, v]) => `${k} (${v})`).join(', ')}.
+Ответ — JSON: {"goals":[{"title":"...","sphere":"growth","deadline":null,"level":true}],"tasks":[{"title":"...","sphere":"work","when":"week","priority":"medium","step":"..."}]}
 
 Текст брейн-дампа:
 """
@@ -7942,37 +7994,243 @@ function bdClean(list){
     when:BD_WHEN[x?.when] ? x.when : 'later', priority:IT_PRI[x?.priority] ? x.priority : 'medium', step:String(x?.step || '').trim().slice(0, 300), on:true
   })).filter(x => x.title);
 }
+const isoOk = s => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ''));
+function bdCleanGoals(list){
+  return (Array.isArray(list) ? list : []).slice(0, 8).map(x => {
+    const sphere = SPHERES[x?.sphere] ? x.sphere : 'other', deadline = isoOk(x?.deadline) && x.deadline > today() ? x.deadline : null;
+    return { id:'g' + uid(), title:String(x?.title || '').trim().slice(0, 160), sphere, deadline, dl:deadline ? 'set' : sphere === 'health' ? 'none' : 'm3',
+      askLevel:x?.level === true || (x?.level == null && (sphere === 'growth' || sphere === 'health')), level:'beginner', on:true };
+  }).filter(x => x.title);
+}
 const bdDue = w => ({ today:today(), week:addDays(today(), 6), month:addDays(today(), 29) })[w] || '';
-const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+const goalDeadline = g => g.dl === 'set' ? g.deadline : KZ_DL[g.dl]?.[1] ? addDays(today(), KZ_DL[g.dl][1]) : null;
 
+// ---------- план: AI декомпозирует цели, без AI — общий шаблон ----------
+const bdPromptB = (goals, minutes) => `Ты — AI-декомпозитор в приложении планирования по философии кайдзен: большие цели достигаются маленькими ежедневными шагами,
+которые не пугают; нагрузка растёт плавно (~1% в день), когда у человека получается, и снижается без упрёков, когда нет.
+
+ВХОД: сегодня ${today()}; на цели человек готов тратить ${minutes} минут в день (на все цели вместе).
+Цели (JSON): ${JSON.stringify(goals.map(g => ({ id:g.id, title:g.title, sphere:g.sphere, deadline:goalDeadline(g), level:g.askLevel ? g.level : null })))}
+Исходный брейн-дамп (для контекста и слов человека): """${bd.text.slice(0, 6000)}"""
+
+ЗАДАЧА:
+1. Для каждой цели сформулируй измеримый результат («пробежать 5 км без остановки»), а не процесс («бегать»).
+2. Разбей цель на 3–6 этапов. У каждого этапа — проверяемый промежуточный результат и длительность в неделях.
+   Сумма недель должна укладываться в deadline, если он задан.
+3. Этап 1 разбей на задачи, задачи — на шаги. Шаг выполняется за 2–30 минут за один подход, начинается с глагола и конкретен
+   («Установить Duolingo и пройти 1 урок», а не «Заниматься английским»). Самый первый шаг каждой цели — не больше 5 минут.
+   Сложность растёт постепенно: size 1 (2–5 мин) … 5 (25–30 мин). Остальные этапы — только задачи, без шагов.
+4. Повторяющиеся действия (тренировки, слова, практика) оформи как habits: per_week (1–7), start_minutes, max_minutes; рост не больше 10% в неделю.
+   Не дублируй привычку шагами.
+5. Учитывай уровень (beginner — с нуля, intermediate — есть опыт, advanced — продолжаю) и бюджет минут: план должен быть выполнимым.
+   Если цель с дедлайном не помещается — не сжимай шаги, а верни risks с вариантами решения.
+6. Не придумывай целей, которых нет во входе. Без медицинских и финансовых рекомендаций сверх общих безопасных.
+7. По-русски, коротко, дружелюбно, без канцелярита и мотивационной воды. why — одна фраза, зачем человеку цель, по возможности его словами.
+
+ВЫХОД — только один JSON-объект:
+{"goals":[{"id":"<id из входа>","result":"...","why":"...",
+  "stages":[{"title":"...","result":"...","weeks":2,"tasks":[{"title":"...","steps":[{"title":"...","minutes":5,"size":1,"day":0}]}]}],
+  "habits":[{"title":"...","per_week":3,"start_minutes":10,"max_minutes":40}],
+  "first_win":"что человек почувствует через 7 дней"}],
+ "assumptions":["Считаю, что ..."],
+ "risks":[{"goal_id":"...","problem":"...","options":["..."]}]}
+day — смещение от сегодня (0 = сегодня). Шаги — только у этапа 1.`;
+const num = (v, a, b, d) => { const n = Math.round(+v); return isFinite(n) ? Math.min(b, Math.max(a, n)) : d; };
+function kzLocalPlan(g){
+  const weeks = g.level === 'advanced' ? [1, 1, 3, 3] : g.level === 'intermediate' ? [1, 2, 3, 4] : [1, 2, 4, 4];
+  const steps = [[`Записать в одном предложении, какой результат хочу: «${g.title}»`, 2, 1, 0], ['Выбрать время дня и место для занятий', 5, 1, 0],
+    ['Найти один источник: книгу, курс, приложение или человека, который уже это сделал', 15, 2, 1], ['Сделать первое пробное занятие на 10 минут', 10, 2, 2],
+    ['Записать, что получилось и что мешало', 5, 1, 3], ['Повторить занятие и сделать его на 5 минут дольше', 15, 3, 4]];
+  const rep = g.sphere === 'health' || g.sphere === 'growth';
+  return { ...g, result:g.title, why:'', first_win:'появится ясность, с чего начинать каждый день, и первые маленькие победы.',
+    stages:[
+      { title:'Старт', result:'Понятно, что и как делать', weeks:weeks[0], tasks:[{ title:'Подготовиться к началу', steps:steps.map(([title, minutes, size, day]) => ({ title, minutes, size, day })) }] },
+      { title:'Первые шаги', result:'Занятия стали привычкой', weeks:weeks[1], tasks:[{ title:'Заниматься понемногу каждый день' }, { title:'Отмечать прогресс' }] },
+      { title:'Регулярность', result:'Занятия идут без усилий, объём растёт', weeks:weeks[2], tasks:[{ title:'Увеличить объём занятий' }, { title:'Разобрать, что мешает, и убрать это' }] },
+      { title:'Результат', result:g.title, weeks:weeks[3], tasks:[{ title:'Проверить результат' }, { title:'Решить, что дальше' }] }],
+    habits:rep ? [{ title:g.sphere === 'health' ? 'Тренировка' : 'Практика', per_week:g.sphere === 'health' ? 3 : 5, start_minutes:10, max_minutes:40 }] : [] };
+}
+function kzCleanPlan(raw, goals){
+  const list = Array.isArray(raw?.goals) ? raw.goals : [];
+  const out = goals.map((g, i) => {
+    const r = list.find(x => x?.id === g.id) || list[i];
+    if (!r || !Array.isArray(r.stages) || !r.stages.length) return kzLocalPlan(g);
+    const stages = r.stages.slice(0, 6).map((s, si) => ({ title:String(s?.title || `Этап ${si + 1}`).slice(0, 120), result:String(s?.result || '').slice(0, 200), weeks:num(s?.weeks, 1, 26, 2),
+      tasks:(Array.isArray(s?.tasks) ? s.tasks : []).slice(0, 8).map(t => ({ title:String(t?.title || '').slice(0, 160),
+        steps:si ? undefined : (Array.isArray(t?.steps) ? t.steps : []).slice(0, 10).map(x => ({ title:String(x?.title || '').slice(0, 200), minutes:num(x?.minutes, 2, 60, 10), size:num(x?.size, 1, 5, 2), day:num(x?.day, 0, 60, 0) })).filter(x => x.title)
+      })).filter(t => t.title) }));
+    if (!stages[0].tasks.some(t => t.steps?.length)) return kzLocalPlan(g);
+    return { ...g, result:String(r.result || g.title).slice(0, 200), why:String(r.why || '').slice(0, 300), first_win:String(r.first_win || '').slice(0, 300), stages,
+      habits:(Array.isArray(r.habits) ? r.habits : []).slice(0, 3).map(h => ({ title:String(h?.title || '').slice(0, 120), per_week:num(h?.per_week, 1, 7, 3), start_minutes:num(h?.start_minutes, 2, 60, 10), max_minutes:num(h?.max_minutes, 5, 120, 30) })).filter(h => h.title) };
+  });
+  return { goals:out, assumptions:(Array.isArray(raw?.assumptions) ? raw.assumptions : []).slice(0, 6).map(x => String(x).slice(0, 200)),
+    risks:(Array.isArray(raw?.risks) ? raw.risks : []).slice(0, 6).map(x => ({ goal_id:x?.goal_id, problem:String(x?.problem || '').slice(0, 300), options:(Array.isArray(x?.options) ? x.options : []).slice(0, 4).map(o => String(o).slice(0, 120)) })).filter(x => x.problem) };
+}
+
+// ---------- раскладка по дням ----------
+// дни занятий привычки внутри недели: равномерно, начиная с понедельника недели старта
+const habitMinutes = (h, date) => Math.min(h.max_minutes || 40, Math.round((h.start_minutes || 10) * Math.pow(1.1, Math.max(0, Math.floor(diffDays(date, h.from) / 7)))));
+function habitDates(h, from, to){
+  const out = []; const per = Math.min(7, Math.max(1, h.per_week || 3)); const offs = Array.from({ length:per }, (_, i) => Math.floor(i * 7 / per));
+  for (let d = from; d <= to; d = addDays(d, 1)){ const n = ((diffDays(d, h.from) % 7) + 7) % 7; if (offs.includes(n)) out.push(d); }
+  return out;
+}
+// items — шаги в порядке очереди { g, min, day (не раньше) }; used — уже занятые минуты по дням; cap(d) — лимит дня.
+// По кругу целей: каждый день берём следующий шаг каждой цели, пока помещается; в пустой день один шаг ставим всегда,
+// первый (крошечный) шаг каждой новой цели — всегда сегодня.
+function kzPlace(items, used = {}, cap = kzCap){
+  const queues = []; const by = {};
+  items.forEach(x => { if (!by[x.g]) queues.push(by[x.g] = []); by[x.g].push(x); });
+  const out = [];
+  for (let d = 0; d < 365 && queues.some(q => q.length); d++){
+    let moved = true;
+    while (moved){ moved = false;
+      for (const q of queues){
+        const x = q[0]; if (!x || (x.day || 0) > d) continue;
+        if ((used[d] || 0) + x.min <= cap(d) || !used[d] || (x.first && d === 0)){ used[d] = (used[d] || 0) + x.min; out.push({ ...x, d }); q.shift(); moved = true; }
+      }
+    }
+  }
+  return out;
+}
+// план для показа и записи: шаги этапа 1 + занятия привычек на 4 недели (дальше их продлевает kzExtendHabits)
+function kzSchedule(goals, used = {}){
+  const t0 = today(), items = [], fixed = [];
+  goals.forEach(g => {
+    (g.habits || []).forEach(h => { h.id = h.id || 'h' + uid(); h.from = h.from || t0;
+      habitDates(h, t0, addDays(t0, 27)).forEach(date => { const d = diffDays(date, t0), min = habitMinutes(h, date); used[d] = (used[d] || 0) + min; fixed.push({ g:g.id, title:h.title, min, h:h.id, d, st:0 }); }); });
+    let o = 0;
+    (g.stages[0]?.tasks || []).forEach(t => (t.steps || []).forEach(x => items.push({ g:g.id, title:x.title, min:o ? x.minutes : Math.min(5, x.minutes), size:x.size, day:o ? x.day : 0, st:0, task:t.title, first:!o, o:o++ })));
+  });
+  return [...fixed, ...kzPlace(items, used)].sort((a, b) => a.d - b.d || (a.o ?? -1) - (b.o ?? -1));
+}
+const kzEnd = g => addDays(g.created || today(), g.stages.reduce((n, s) => n + (s.weeks || 1) * 7, 0));
+const kzTask = (g, x, due) => ({ id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Я', created_at:new Date().toISOString(), source:'kaizen',
+  title:x.title, description:`🎯 ${g.title} · ${x.h ? 'привычка' : g.stages[x.st || 0]?.title || ''}${x.task ? ` · ${x.task}` : ''}`, assignee_id:ME,
+  priority:g.priority || 'medium', category:g.sphere, status:'todo', due_date:due, kz:{ g:g.id, st:x.st || 0, min:x.min, size:x.size || 1, h:x.h || '', o:x.o ?? 0 } });
+
+// ---------- ежедневный пересчёт: без завалов и без чувства вины ----------
+function kzRebalance(force){
+  if (GUEST || !(itLocal() || IT.ready)) return;
+  const k = kz(), t0 = today();
+  if (!k.goals.length || (k.lastCheck === t0 && !force)) return;
+  const steps = kzSteps(), gap = k.lastSeen ? diffDays(t0, k.lastSeen) : 0;
+  // как шла последняя неделя: ≥80% — нагрузка +1% за каждый день, меньше половины — легче на 15%
+  const week = steps.filter(t => t.due_date && t.due_date < t0 && t.due_date >= addDays(t0, -7));
+  const rate = week.length ? week.filter(t => t.status === 'done').length / week.length : 1;
+  const days = k.lastCheck ? Math.min(30, Math.max(0, diffDays(t0, k.lastCheck))) : 0;
+  if (rate >= 0.8) k.load = Math.min(1, k.load * Math.pow(1.01, days)); else if (rate < 0.5 && days) k.load = Math.max(0.3, k.load * 0.85);
+  const back = gap >= 2;
+  const open = steps.filter(t => t.status !== 'done');
+  open.filter(t => t.kz.h && t.due_date && t.due_date < t0).forEach(t => itDelete(t));   // пропущенные занятия привычек не копятся
+  const flex = open.filter(t => !t.kz.h);
+  if (flex.some(t => !t.due_date || t.due_date < t0) || back){
+    // возвращение — мягкое: сегодня 60% обычного, дальше +10% в день до обычного
+    const cap = d => back ? Math.max(5, Math.round(kzCap(d) * Math.min(1, 0.6 + 0.1 * d))) : kzCap(d);
+    const used = {}; open.filter(t => t.kz.h && t.due_date >= t0).forEach(t => { const d = diffDays(t.due_date, t0); used[d] = (used[d] || 0) + (t.kz.min || 10); });
+    const order = (a, b) => (a.due_date || '').localeCompare(b.due_date || '') || (a.kz.st - b.kz.st) || (a.kz.o - b.kz.o);
+    kzPlace(flex.sort(order).map(t => ({ t, g:t.kz.g, min:t.kz.min || 10, day:0 })), used, cap)
+      .forEach(x => { const due = addDays(t0, x.d); if (x.t.due_date !== due) itSave({ ...x.t, due_date:due }); });
+    if (back) k.welcome = { at:t0, min:cap(0) };
+  }
+  kzExtendHabits();
+  k.lastCheck = t0; k.lastSeen = t0; commit();
+}
+// занятия привычек — на две недели вперёд
+function kzExtendHabits(){
+  const t0 = today(), steps = kzSteps();
+  kz().goals.forEach(g => (g.habits || []).forEach(h => {
+    const mine = steps.filter(t => t.kz.h === h.id); const last = mine.reduce((m, t) => t.due_date > m ? t.due_date : m, addDays(t0, -1));
+    habitDates(h, addDays(last > addDays(t0, -1) ? last : addDays(t0, -1), 1), addDays(t0, 13))
+      .forEach(date => itSave(kzTask(g, { title:h.title, min:habitMinutes(h, date), h:h.id }, date)));
+  }));
+}
+// следующий этап: AI раскладывает его задачи на шаги (без AI — шаг на задачу)
+async function kzNextStage(g){
+  const si = (g.cur || 0) + 1, st = g.stages[si]; if (!st) return;
+  let steps = null; const S = await getSample();
+  if (S){ try {
+    const r = await S.json(`Ты — AI-декомпозитор по кайдзен. Цель: «${g.title}» (результат: ${g.result || g.title}). Этап ${si + 1}: «${st.title}» — результат этапа: ${st.result || '—'}, ${st.weeks} нед.
+Задачи этапа: ${JSON.stringify((st.tasks || []).map(t => t.title))}. Человек тратит на все цели ${kz().minutes} мин в день.
+Разбей задачи на шаги по 2–30 минут: с глагола, конкретно, сложность растёт плавно (size 1–5), первый шаг — до 5 минут. day — через сколько дней от сегодня начинать.
+JSON: {"steps":[{"title":"...","minutes":10,"size":1,"day":0,"task":"название задачи"}]}`, { modelTier:'fast' });
+    steps = (Array.isArray(r?.steps) ? r.steps : []).slice(0, 20).map(x => ({ title:String(x?.title || '').slice(0, 200), min:num(x?.minutes, 2, 60, 10), size:num(x?.size, 1, 5, 2), day:num(x?.day, 0, 60, 0), task:String(x?.task || '').slice(0, 160) })).filter(x => x.title);
+  } catch(e) { toast('AI не ответил, разложил этап по задачам: ' + sampleErr(e)); } }
+  if (!steps?.length) steps = (st.tasks || []).map((t, i) => ({ title:t.title, min:15, size:2, day:i, task:'' }));
+  const t0 = today(), used = {};
+  kzSteps().filter(t => t.status !== 'done' && t.due_date >= t0).forEach(t => { const d = diffDays(t.due_date, t0); used[d] = (used[d] || 0) + (t.kz.min || 10); });
+  kzPlace(steps.map((x, o) => ({ ...x, g:g.id, st:si, o })), used).forEach(x => itSave(kzTask(g, x, addDays(t0, x.d))));
+  g.cur = si; commit(); toast(`Этап «${st.title}» разложен на шаги: ${steps.length}`);
+}
+
+// ---------- окно помощника ----------
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 function openBrainDump(){
   if (GUEST) return;
-  if (!bd.items) bd.text = bd.text || bdDraft();
+  if (bd.step === 'input') bd.text = bd.text || bdDraft();
   paintBrainDump();
 }
-function paintBrainDump(){
+// кнопки-варианты: data-k — что меняем, data-v — значение, data-i — номер цели
+const chips = (k, opts, cur, i = '') => `<span class="kz-chips">${opts.map(([v, l]) => `<button type="button" class="kz-chip" data-k="${k}" data-v="${v}" data-i="${i}" aria-pressed="${String(v) === String(cur)}">${l}</button>`).join('')}</span>`;
+function bdInputHtml(){
   const mic = SpeechRec ? `<button type="button" class="ghost bd-mic${bd.on ? ' on' : ''}" id="bdMic" aria-pressed="${bd.on}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>${bd.on ? 'Остановить' : 'Наговорить'}</span></button>` : '';
-  const body = !bd.items ? `
-      <p class="hint">Выгрузите всё, что крутится в голове: дела, идеи, обещания, тревоги — как есть, в любом порядке. Помощник разделит это на задачи по сферам жизни и предложит первый маленький шаг для каждой.</p>
-      <div class="field"><textarea id="bdText" rows="9" maxlength="20000" placeholder="Например: позвонить маме, оплатить интернет, подготовить отчёт для клиента до пятницы, записаться к стоматологу, начать бегать по утрам…">${esc(bd.text)}</textarea>
-        <small class="bd-live" id="bdLive" aria-live="polite"></small></div>
-      ${SpeechRec ? '' : '<p class="hint">Этот браузер не умеет слушать голос. Нажмите на поле и используйте микрофон на клавиатуре телефона.</p>'}
-      <div class="err" id="bdErr" aria-live="polite"></div>
-      <div class="actions">${mic}<button type="button" class="ghost" data-close>Закрыть</button><button type="button" class="primary" id="bdGo" ${bd.busy ? 'disabled' : ''}>${bd.busy ? 'Разбираю…' : 'Разобрать'}</button></div>`
-    : `
-      <p class="hint">${bd.ai ? 'AI разложил ваш брейн-дамп по сферам жизни.' : 'Разобрано по ключевым словам (AI-разбор работает после входа в аккаунт).'} Снимите лишние галочки, поправьте сферу и срок — и добавьте в задачи.</p>
-      <div class="bd-list">${Object.keys(SPHERES).filter(k => bd.items.some(x => x.sphere === k)).map(k => `
-        <div class="bd-grp"><h3>${SPH_ICO[k]} ${SPHERES[k]} <small>${bd.items.filter(x => x.sphere === k).length}</small></h3>
-        ${bd.items.map((x, i) => x.sphere !== k ? '' : `<div class="bd-row${x.on ? '' : ' off'}">
-          <input type="checkbox" data-bdon="${i}" ${x.on ? 'checked' : ''} aria-label="Добавить в задачи">
-          <div class="bd-main"><input class="bd-title" data-bdtitle="${i}" value="${esc(x.title)}" maxlength="200" aria-label="Задача">
-            ${x.step ? `<small class="bd-step">Первый шаг: ${esc(x.step)}</small>` : ''}
-            <div class="bd-sel"><select data-bdsph="${i}" aria-label="Сфера">${Object.entries(SPHERES).map(([s, v]) => `<option value="${s}" ${s === x.sphere ? 'selected' : ''}>${SPH_ICO[s]} ${v}</option>`).join('')}</select>
-            <select data-bdwhen="${i}" aria-label="Когда">${Object.entries(BD_WHEN).map(([s, v]) => `<option value="${s}" ${s === x.when ? 'selected' : ''}>${v}</option>`).join('')}</select></div></div>
-        </div>`).join('')}</div>`).join('')}</div>
-      <div class="actions"><button type="button" class="ghost m-out" id="bdBack">← К тексту</button><button type="button" class="ghost" data-close>Закрыть</button><button type="button" class="primary" id="bdAdd">Добавить в задачи (${bd.items.filter(x => x.on).length})</button></div>`;
+  return `<p class="hint">Выгрузите всё, что крутится в голове: цели, дела, идеи, обещания — как есть, в любом порядке. Помощник отделит большие цели от мелких дел, разложит цели на этапы и маленькие ежедневные шаги.</p>
+    <div class="field"><textarea id="bdText" rows="9" maxlength="20000" placeholder="Например: хочу выучить английский, запустить интернет-магазин до лета и начать бегать по утрам. А ещё позвонить маме и оплатить интернет…">${esc(bd.text)}</textarea>
+      <small class="bd-live" id="bdLive" aria-live="polite"></small></div>
+    ${SpeechRec ? '' : '<p class="hint">Этот браузер не умеет слушать голос. Нажмите на поле и используйте микрофон на клавиатуре телефона.</p>'}
+    <div class="err" id="bdErr" aria-live="polite"></div>
+    <div class="actions">${mic}<button type="button" class="ghost" data-close>Закрыть</button><button type="button" class="primary" id="bdGo" ${bd.busy ? 'disabled' : ''}>${bd.busy ? 'Разбираю…' : 'Разобрать'}</button></div>`;
+}
+function bdReviewHtml(){
+  const gs = bd.goals, on = gs.filter(g => g.on).length, tn = bd.items.filter(x => x.on).length;
+  const goalsHtml = gs.length ? `<h3 class="bd-h">🎯 Цели <small>${gs.length}</small></h3>${gs.map((g, i) => `<div class="bd-goal${g.on ? '' : ' off'}">
+      <div class="bd-gtop"><input type="checkbox" data-bdgon="${i}" ${g.on ? 'checked' : ''} aria-label="Планировать цель">
+        <input class="bd-title" data-bdgtitle="${i}" value="${esc(g.title)}" maxlength="160" aria-label="Цель">
+        <select data-bdgsph="${i}" aria-label="Сфера">${Object.entries(SPHERES).map(([s, v]) => `<option value="${s}" ${s === g.sphere ? 'selected' : ''}>${SPH_ICO[s]} ${v}</option>`).join('')}</select></div>
+      <div class="bd-q"><span>Срок</span>${chips('bdgdl', [...(g.deadline ? [['set', fmt(g.deadline)]] : []), ...Object.entries(KZ_DL).map(([k, v]) => [k, v[0]])], g.dl, i)}</div>
+      ${g.askLevel ? `<div class="bd-q"><span>Уровень</span>${chips('bdglv', Object.entries(KZ_LEVEL), g.level, i)}</div>` : ''}
+    </div>`).join('')}
+    <div class="bd-q bd-min"><span>Сколько минут в день готовы давать целям?</span>${chips('bdmin', KZ_MIN.map(m => [m, m < 60 ? `${m} мин` : `${m / 60} ч`]), bd.minutes)}</div>` : '';
+  const tasksHtml = bd.items.length ? `<h3 class="bd-h">✅ Разовые дела <small>${bd.items.length}</small></h3><div class="bd-list">${Object.keys(SPHERES).filter(k => bd.items.some(x => x.sphere === k)).map(k => `
+      <div class="bd-grp"><h4>${SPH_ICO[k]} ${SPHERES[k]}</h4>
+      ${bd.items.map((x, i) => x.sphere !== k ? '' : `<div class="bd-row${x.on ? '' : ' off'}">
+        <input type="checkbox" data-bdon="${i}" ${x.on ? 'checked' : ''} aria-label="Добавить в задачи">
+        <div class="bd-main"><input class="bd-title" data-bdtitle="${i}" value="${esc(x.title)}" maxlength="200" aria-label="Задача">
+          ${x.step ? `<small class="bd-step">Первый шаг: ${esc(x.step)}</small>` : ''}
+          <div class="bd-sel"><select data-bdsph="${i}" aria-label="Сфера">${Object.entries(SPHERES).map(([s, v]) => `<option value="${s}" ${s === x.sphere ? 'selected' : ''}>${SPH_ICO[s]} ${v}</option>`).join('')}</select>
+          <select data-bdwhen="${i}" aria-label="Когда">${Object.entries(BD_WHEN).map(([s, v]) => `<option value="${s}" ${s === x.when ? 'selected' : ''}>${v}</option>`).join('')}</select></div></div>
+      </div>`).join('')}</div>`).join('')}</div>` : '';
+  return `<p class="hint">${bd.ai ? 'Я услышал' : 'Разобрал по ключевым словам (умный AI-разбор — после входа в аккаунт)'}: ${gs.length} ${plural(gs.length, 'цель', 'цели', 'целей')} и ${bd.items.length} ${plural(bd.items.length, 'разовое дело', 'разовых дела', 'разовых дел')}. Поправьте, если что-то не так, — и ответьте на пару вопросов кнопками.</p>
+    ${goalsHtml}${tasksHtml}
+    <div class="err" id="bdErr" aria-live="polite"></div>
+    <div class="actions"><button type="button" class="ghost m-out" id="bdBack">← К тексту</button><button type="button" class="ghost" data-close>Закрыть</button>
+      ${on ? `<button type="button" class="primary" id="bdPlan" ${bd.busy ? 'disabled' : ''}>${bd.busy ? 'Продумываю этапы…' : `Составить план${tn ? ` (+${tn} ${plural(tn, 'дело', 'дела', 'дел')})` : ''}`}</button>`
+        : `<button type="button" class="primary" id="bdAdd">Добавить в задачи (${tn})</button>`}</div>`;
+}
+function bdPlanHtml(){
+  const P = bd.plan, t0 = today(), sched = P.sched, todayList = sched.filter(x => x.d === 0), todayMin = todayList.reduce((n, x) => n + x.min, 0);
+  const days = Array.from({ length:28 }, (_, d) => sched.filter(x => x.d === d).reduce((n, x) => n + x.min, 0)), max = Math.max(...days, 1);
+  const gname = id => P.goals.find(g => g.id === id);
+  const risks = [...P.risks, ...P.goals.filter(g => g.deadline && kzEnd({ ...g, created:t0 }) > g.deadline && !P.risks.some(r => r.goal_id === g.id))
+    .map(g => ({ goal_id:g.id, problem:`По этапам цель «${g.title}» займёт до ${fmt(kzEnd({ ...g, created:t0 }))} — позже срока ${fmt(g.deadline)}.`, options:['добавить время в день', 'сдвинуть срок', 'упростить цель'] }))];
+  return `<div class="kz-hero"><small>Сегодня — всего</small><b>${todayMin} мин</b><span>${todayList.length} ${plural(todayList.length, 'маленький шаг', 'маленьких шага', 'маленьких шагов')}. Дальше — понемногу каждый день.</span></div>
+    <ul class="kz-today">${todayList.map(x => `<li><span class="kz-ico">${SPH_ICO[gname(x.g)?.sphere] || '🎯'}</span><span>${esc(x.title)}${x.h ? ' <i>привычка</i>' : ''}</span><small>${x.min} мин</small></li>`).join('')}</ul>
+    <div class="kz-chart" aria-label="Нагрузка на 4 недели">${days.map((m, d) => `<i style="height:${Math.max(4, Math.round(m / max * 100))}%" title="${fmt(addDays(t0, d))}: ${m} мин"></i>`).join('')}</div>
+    <p class="hint kz-chart-cap">Нагрузка на 4 недели: начинаем с половины бюджета (${bd.minutes} мин) и прибавляем 1% в день, пока получается.</p>
+    ${P.goals.map(g => `<div class="kz-goal"><div class="kz-gh"><span class="kz-ico">${SPH_ICO[g.sphere]}</span><div><b>${esc(g.title)}</b><small>${g.result && g.result !== g.title ? esc(g.result) + ' · ' : ''}${g.deadline ? `до ${fmt(g.deadline)}` : 'без срока'}</small></div></div>
+      ${g.why ? `<p class="kz-why">${esc(g.why)}</p>` : ''}
+      <ol class="kz-stages">${g.stages.map((s, i) => `<li${i ? '' : ' class="cur"'}><b>${esc(s.title)}</b> <small>${s.weeks} нед.${s.result ? ` · ${esc(s.result)}` : ''}</small></li>`).join('')}</ol>
+      ${(g.habits || []).length ? `<p class="kz-habits">${g.habits.map(h => `🔁 ${esc(h.title)}: ${h.per_week} ${plural(h.per_week, 'раз', 'раза', 'раз')} в неделю, от ${h.start_minutes} мин`).join('<br>')}</p>` : ''}
+      ${g.first_win ? `<p class="kz-win">Через неделю: ${esc(g.first_win)}</p>` : ''}</div>`).join('')}
+    ${risks.length ? `<div class="kz-risk">${risks.map(r => `<p>⚠️ ${esc(r.problem)}${r.options.length ? `<br><small>Варианты: ${r.options.map(esc).join(' · ')}</small>` : ''}</p>`).join('')}</div>` : ''}
+    ${P.assumptions.length ? `<details class="kz-assume"><summary>Что я предположил</summary><ul>${P.assumptions.map(a => `<li>${esc(a)}</li>`).join('')}</ul></details>` : ''}
+    ${bd.items.some(x => x.on) ? `<p class="hint">+ ${bd.items.filter(x => x.on).length} разовых дел попадут в «Мои задачи».</p>` : ''}
+    <div class="actions"><button type="button" class="ghost m-out" id="bdBack2">← Назад</button><button type="button" class="ghost" data-close>Закрыть</button><button type="button" class="primary" id="bdAccept">Принять план</button></div>`;
+}
+function paintBrainDump(){
+  const title = bd.step === 'plan' ? '✨ Ваш план готов' : '✨ AI-помощник · Брейн-дамп';
   layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal bd-modal" role="dialog" aria-modal="true" aria-labelledby="bdT">
-    <h2 id="bdT">✨ AI-помощник · Брейн-дамп</h2>${body}</div>`;
+    <h2 id="bdT">${title}</h2>${bd.step === 'plan' ? bdPlanHtml() : bd.step === 'review' ? bdReviewHtml() : bdInputHtml()}</div>`;
   const ta = $('#bdText'); if (ta){ ta.oninput = () => { bd.text = ta.value; bdDraft(bd.text); }; if (!bd.on) ta.focus(); }
 }
 function bdStop(){ bd.on = false; try { bd.rec?.stop(); } catch(e) {} bd.rec = null; }
@@ -7999,42 +8257,159 @@ async function bdParse(){
   const text = ($('#bdText')?.value ?? bd.text).trim(); bd.text = text;
   if (!text){ $('#bdErr').textContent = 'Наговорите или напишите хотя бы пару дел'; return; }
   bdStop(); bd.busy = true; paintBrainDump();
-  let items = null, ai = false, err = '';
+  let res = null, ai = false, err = '';
   const S = await getSample();
-  if (S){ try { items = bdClean((await S.json(bdPrompt(text), { modelTier:'fast' }))?.items); ai = true; } catch(e) { err = sampleErr(e); } }
-  if (!items?.length){ items = bdClean(bdLocal(text)); ai = false; }
+  if (S){ try { const r = await S.json(bdPromptA(text), { modelTier:'fast' }); res = { goals:bdCleanGoals(r?.goals), items:bdClean(r?.tasks || r?.items) }; ai = true; } catch(e) { err = sampleErr(e); } }
+  if (!res || (!res.goals.length && !res.items.length)){ const l = bdLocal(text); res = { goals:bdCleanGoals(l.goals.map(g => ({ ...g, level:null }))), items:bdClean(l.tasks) }; ai = false; }
   bd.busy = false;
   if (!layer.querySelector('.bd-modal')) return;                             // окно закрыли, пока ждали ответ
-  if (!items.length){ paintBrainDump(); $('#bdErr').textContent = 'Не нашёл в тексте ни одного дела. Попробуйте сформулировать подробнее.'; return; }
-  bd.items = items; bd.ai = ai; paintBrainDump();
+  if (!res.goals.length && !res.items.length){ paintBrainDump(); $('#bdErr').textContent = 'Не нашёл в тексте ни одного дела. Попробуйте сформулировать подробнее.'; return; }
+  Object.assign(bd, { goals:res.goals, items:res.items, ai, step:'review', minutes:bd.minutes || kz().minutes }); paintBrainDump();
   if (err) toast('AI не ответил, разобрал по ключевым словам: ' + err);
 }
-function bdAdd(){
-  const list = bd.items.filter(x => x.on && x.title.trim()); if (!list.length){ toast('Отметьте хотя бы одну задачу'); return; }
-  const now = new Date().toISOString();
+async function bdMakePlan(){
+  const goals = bd.goals.filter(g => g.on && g.title.trim()).map(g => ({ ...g, title:g.title.trim(), deadline:goalDeadline(g) }));
+  bd.busy = true; paintBrainDump();
+  let raw = null; const S = await getSample();
+  if (S){ try { raw = await S.json(bdPromptB(goals, bd.minutes)); } catch(e) { toast('AI не ответил, план — по общему шаблону: ' + sampleErr(e)); } }
+  const P = kzCleanPlan(raw, goals);
+  if (!S) P.assumptions.unshift('План составлен по общему шаблону: умная декомпозиция AI станет доступна после входа в аккаунт.');
+  bd.busy = false; if (!layer.querySelector('.bd-modal')) return;
+  // раскладываем с учётом бюджета и того, что уже запланировано
+  const k = kz(), keep = { minutes:k.minutes, load:k.load }; k.minutes = bd.minutes; if (!k.goals.length) k.load = 0.5;
+  const used = {}; kzSteps().filter(t => t.status !== 'done' && t.due_date >= today()).forEach(t => { const d = diffDays(t.due_date, today()); used[d] = (used[d] || 0) + (t.kz.min || 10); });
+  P.sched = kzSchedule(P.goals, used); Object.assign(k, keep);
+  bd.plan = P; bd.step = 'plan'; paintBrainDump();
+}
+function bdAccept(){
+  const k = kz(), t0 = today(), P = bd.plan;
+  k.minutes = bd.minutes; if (!k.goals.length) k.load = 0.5; k.lastSeen = k.lastCheck = t0;
+  P.goals.forEach(g => { const { on, dl, askLevel, ...rest } = g; k.goals.push({ ...rest, level:askLevel ? g.level : null, cur:0, created:t0, priority:'medium' }); });
+  P.sched.forEach(x => itSave(kzTask(kzGoal(x.g), x, addDays(t0, x.d))));
+  const n = bdAddTasks();
+  Object.assign(bd, { step:'input', goals:[], items:[], plan:null, text:'' }); bdDraft('');
+  layer.innerHTML = ''; ui.view = 'kaizen'; commit(); render();
+  toast(`План принят: ${P.goals.length} ${plural(P.goals.length, 'цель', 'цели', 'целей')}, шагов на сегодня — ${P.sched.filter(x => x.d === 0).length}${n ? `, дел — ${n}` : ''}`);
+}
+function bdAddTasks(){
+  const list = bd.items.filter(x => x.on && x.title.trim()), now = new Date().toISOString();
   list.forEach(x => itSave({ id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Я', created_at:now, source:'braindump',
     title:x.title.trim(), description:x.step ? `Первый шаг: ${x.step}` : '', assignee_id:ME, priority:x.priority, category:x.sphere, status:'todo', due_date:bdDue(x.when) }));
-  bd.items = null; bd.text = ''; bdDraft('');
-  layer.innerHTML = ''; ui.view = 'mytasks'; render();
-  toast(`Добавлено задач: ${list.length}`);
+  return list.length;
+}
+function bdAdd(){
+  if (!bd.items.some(x => x.on && x.title.trim())){ toast('Отметьте хотя бы одно дело'); return; }
+  const n = bdAddTasks();
+  Object.assign(bd, { step:'input', goals:[], items:[], plan:null, text:'' }); bdDraft('');
+  layer.innerHTML = ''; ui.view = 'kaizen'; render();
+  toast(`Добавлено задач: ${n}`);
 }
 document.addEventListener('click', e => {
-  if (e.target.closest?.('#aiBtn')) return openBrainDump();
+  if (e.target.closest?.('#aiBtn,[data-kzdump]')) return openBrainDump();
   if (e.target.closest?.('[data-close]') && bd.on){ bdStop(); return; }
   if (!layer.querySelector('.bd-modal')) return;
+  const c = e.target.closest('.kz-chip');
+  if (c){ const { k, v, i } = c.dataset;
+    if (k === 'bdmin') bd.minutes = +v;
+    if (k === 'bdgdl') bd.goals[+i].dl = v;
+    if (k === 'bdglv') bd.goals[+i].level = v;
+    return paintBrainDump(); }
   if (e.target.closest('#bdMic')) return bdListen();
   if (e.target.closest('#bdGo')) return bdParse();
-  if (e.target.closest('#bdBack')){ bd.items = null; return paintBrainDump(); }
+  if (e.target.closest('#bdBack')){ bd.step = 'input'; return paintBrainDump(); }
+  if (e.target.closest('#bdBack2')){ bd.step = 'review'; return paintBrainDump(); }
+  if (e.target.closest('#bdPlan')) return bdMakePlan();
+  if (e.target.closest('#bdAccept')) return bdAccept();
   if (e.target.closest('#bdAdd')) return bdAdd();
 });
 document.addEventListener('change', e => {
-  const t = e.target; if (!t.closest?.('.bd-modal') || !bd.items) return;
-  if (t.dataset.bdon){ bd.items[+t.dataset.bdon].on = t.checked; paintBrainDump(); }
-  if (t.dataset.bdsph){ bd.items[+t.dataset.bdsph].sphere = t.value; paintBrainDump(); }
-  if (t.dataset.bdwhen) bd.items[+t.dataset.bdwhen].when = t.value;
+  const t = e.target; if (!t.closest?.('.bd-modal')) return;
+  const d = t.dataset;
+  if (d.bdon){ bd.items[+d.bdon].on = t.checked; paintBrainDump(); }
+  if (d.bdsph){ bd.items[+d.bdsph].sphere = t.value; paintBrainDump(); }
+  if (d.bdwhen) bd.items[+d.bdwhen].when = t.value;
+  if (d.bdgon){ bd.goals[+d.bdgon].on = t.checked; paintBrainDump(); }
+  if (d.bdgsph) bd.goals[+d.bdgsph].sphere = t.value;
 });
-document.addEventListener('input', e => { const t = e.target; if (t.dataset?.bdtitle && bd.items) bd.items[+t.dataset.bdtitle].title = t.value; });
+document.addEventListener('input', e => { const d = e.target.dataset || {};
+  if (d.bdtitle) bd.items[+d.bdtitle].title = e.target.value;
+  if (d.bdgtitle) bd.goals[+d.bdgtitle].title = e.target.value; });
+
+// ---------- раздел «Кайдзен» ----------
+function renderKaizen(){
+  const k = kz(), t0 = today(), steps = kzSteps();
+  if (k.lastCheck !== t0) setTimeout(() => kzRebalance(), 0);
+  const todays = steps.filter(t => t.due_date && (t.status !== 'done' ? t.due_date <= t0 : (t.updated_at || '').slice(0, 10) === t0 || t.due_date === t0))
+    .sort((a, b) => (a.status === 'done') - (b.status === 'done') || (a.kz.h ? 0 : 1) - (b.kz.h ? 0 : 1) || a.kz.o - b.kz.o);
+  const left = todays.filter(t => t.status !== 'done'), minLeft = left.reduce((n, t) => n + (t.kz.min || 10), 0);
+  const welcome = k.welcome?.at === t0 && !k.welcome.hidden;
+  const goalCard = g => {
+    const gs = steps.filter(t => t.kz.g === g.id), done = gs.filter(t => t.status === 'done').length, cur = g.cur || 0;
+    const stageOpen = gs.filter(t => !t.kz.h && t.kz.st === cur && t.status !== 'done').length;
+    const next = gs.filter(t => t.status !== 'done' && !t.kz.h).sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.kz.o - b.kz.o)[0];
+    const end = kzEnd(g), late = g.deadline && end > g.deadline;
+    return `<div class="kz-goal"><div class="kz-gh"><span class="kz-ico">${SPH_ICO[g.sphere] || '🎯'}</span><div><b>${esc(g.title)}</b><small>${g.result && g.result !== g.title ? esc(g.result) + ' · ' : ''}${g.deadline ? `до ${fmt(g.deadline)}` : 'без срока'}</small></div>
+        <button class="icon-btn kz-del" data-kzdel="${g.id}" title="Удалить цель" aria-label="Удалить цель">✕</button></div>
+      <div class="kz-bar" title="Сделано шагов: ${done} из ${gs.length}"><i style="width:${gs.length ? Math.round(done / gs.length * 100) : 0}%"></i></div>
+      <p class="kz-stage">Этап ${cur + 1} из ${g.stages.length}: <b>${esc(g.stages[cur]?.title || '')}</b>${g.stages[cur]?.result ? ` — ${esc(g.stages[cur].result)}` : ''}</p>
+      ${next ? `<p class="kz-next">Следующий шаг: ${esc(next.title)} <small>${next.kz.min} мин · ${next.due_date <= t0 ? 'сегодня' : fmt(next.due_date)}</small></p>` : ''}
+      ${late ? `<div class="kz-risk"><p>⚠️ По этапам цель займёт до ${fmt(end)} — позже срока ${fmt(g.deadline)}. Это нормально, план можно поправить:</p>
+        <span class="kz-chips"><button type="button" class="kz-chip" data-kzmore="${g.id}">+15 мин в день</button><button type="button" class="kz-chip" data-kzshift="${g.id}">Сдвинуть срок на ${fmt(end)}</button></span><small>или упростите цель — например, меньший первый результат.</small></div>` : ''}
+      ${!stageOpen && g.stages[cur + 1] ? `<button class="primary kz-nextst" data-kznext="${g.id}">Этап пройден 🎉 Разложить «${esc(g.stages[cur + 1].title)}» на шаги</button>` : ''}</div>`;
+  };
+  app.innerHTML = `<div class="kz-page">
+    ${welcome ? `<div class="kz-welcome"><b>С возвращением!</b> Начнём с ${k.welcome.min} минут — этого достаточно. Пропущенное я уже разложил заново, без завалов.<button class="link" data-kzwelcome>Хорошо</button></div>` : ''}
+    <div class="kz-top"><div><h2>Сегодня</h2><p class="hint">${k.goals.length ? (left.length ? `Осталось ${left.length} ${plural(left.length, 'шаг', 'шага', 'шагов')} · ~${minLeft} мин` : 'Все шаги на сегодня сделаны. Улучшение на 1% — засчитано ✨') : 'Целей пока нет'}</p></div>
+      <button class="primary" data-kzdump>✨ Брейн-дамп</button></div>
+    ${k.goals.length ? `<ul class="kz-list">${todays.map(t => { const g = kzGoal(t.kz.g); return `<li class="${t.status === 'done' ? 'done' : ''}"><label><input type="checkbox" data-kzdone="${t.id}" ${t.status === 'done' ? 'checked' : ''}>
+        <span class="kz-ico">${SPH_ICO[g?.sphere] || '🎯'}</span><span class="kz-t">${esc(t.title)}<small>${esc(g?.title || '')}${t.kz.h ? ' · привычка' : ''}${t.due_date < t0 ? ' · перенесено' : ''}</small></span><small>${t.kz.min} мин</small></label></li>`; }).join('') || '<li class="kz-empty">На сегодня шагов нет — отдых тоже часть кайдзен.</li>'}</ul>
+      <div class="bd-q kz-budget"><span>Время на цели в день</span>${chips('kzmin', KZ_MIN.map(m => [m, m < 60 ? `${m} мин` : `${m / 60} ч`]), k.minutes)}<small class="hint">Сейчас нагрузка ${Math.round(k.load * 100)}% — растёт на 1% в день, когда получается.</small></div>
+      <h3 class="kz-h">Цели</h3><div class="kz-goals">${k.goals.map(goalCard).join('')}</div>`
+    : `<div class="kz-start"><p>Выгрузите всё, что в голове, голосом или текстом — AI отделит цели от мелких дел, разложит цели на этапы и маленькие ежедневные шаги и посчитает нагрузку на каждый день.</p><button class="primary" data-kzdump>✨ Начать брейн-дамп</button></div>`}
+  </div>`;
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest?.('[data-k="kzmin"],[data-kzdel],[data-kznext],[data-kzmore],[data-kzshift],[data-kzwelcome]'); if (!t || !t.closest('.kz-page')) return;
+  const k = kz(), d = t.dataset, kmin = d.k === 'kzmin' ? +d.v : 0;
+  if (d.kzwelcome){ k.welcome.hidden = true; commit(); return; }
+  if (kmin){ k.minutes = kmin; kzRebalance(true); commit(); toast(`Время на цели: ${kmin} мин в день`); return; }
+  const g = kzGoal(d.kzdel || d.kznext || d.kzmore || d.kzshift); if (!g) return;
+  if (d.kzdel){ if (!confirm(`Удалить цель «${g.title}» и её невыполненные шаги?`)) return;
+    k.goals = k.goals.filter(x => x !== g); kzSteps().filter(s => s.kz.g === g.id && s.status !== 'done').forEach(s => itDelete(s)); commit(); toast('Цель удалена'); return; }
+  if (d.kznext){ t.disabled = true; t.textContent = 'Раскладываю…'; kzNextStage(g); return; }
+  if (d.kzmore){ k.minutes = Math.min(240, k.minutes + 15); kzRebalance(true); commit(); toast(`Время на цели: ${k.minutes} мин в день`); return; }
+  if (d.kzshift){ g.deadline = kzEnd(g); commit(); toast(`Новый срок: ${fmt(g.deadline)}`); return; }
+});
+document.addEventListener('change', e => {
+  const id = e.target.dataset?.kzdone; if (!id) return;
+  const t = kzSteps().find(x => x.id === id); if (!t) return;
+  itSave({ ...t, status:e.target.checked ? 'done' : 'todo' }); render();
+  if (e.target.checked && !kzSteps().some(x => x.status !== 'done' && x.due_date && x.due_date <= today())) toast('Все шаги на сегодня сделаны. +1% ✨');
+});
 $('#bell').insertAdjacentHTML('beforebegin', '<button class="ghost ai-btn" id="aiBtn" title="AI-помощник: брейн-дамп голосом"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg><span>AI-помощник</span></button>');
+setTimeout(() => kzRebalance(), 1500);
+
+try { db = JSON.parse(localStorage.getItem(KEY)); } catch(e) {}
+if (!db || !db.projects || !db.users) db = (SPACE || ORG) ? emptySpace() : seed();
+migrate();
+if (!db.reports) db.reports = [];
+if (!db.tasks){ db.tasks = []; seedDemoTasks(); save(); }
+migrateCardTpls();
+db.tasks = db.tasks.filter(t => projById(t.project_id));   // задачи удалённых проектов
+migrateLinks();
+repairStageOrder();
+syncDoneStages();
+(db.reports || []).forEach(fixReport);
+replanAll();
+localSave();
+setInterval(() => { if (!GUEST && replanAll()) commit(); }, 3600e3);
+restoreView();
+{ let m = null; try { m = localStorage.getItem(MODE_KEY); } catch(e) {}
+  if (URL_INVITE && m !== 'owner') m = 'guest';
+  if (m === 'guest') setMode('guest');
+  if (m) render(); else app.innerHTML = '<div class="empty">Загрузка…</div>';   // первый визит: ждём, кто открыл приложение
+  if (m === 'owner'){ ownerBooted = true; if (!db.onboarded) openProfile(true); } }
+initCloud();
 </script>
 </body>
 </html>

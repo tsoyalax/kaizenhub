@@ -86,7 +86,48 @@ function checkStorage(w, where) {
   assert.equal(its.length, 3); ok('AI-помощник: выбранные дела стали задачами (снятая галочка — нет)');
   const mama = its.find(t => /маме/i.test(t.title));
   assert.ok(mama && mama.category === 'family' && mama.due_date === local.w.eval('today()') && mama.status === 'todo'); ok('AI-помощник: сфера и срок «сегодня» сохранены в задаче');
-  assert.equal(local.w.eval('ui.view'), 'mytasks'); assert.ok(!local.w.localStorage.getItem('kz2-dump')); ok('AI-помощник: после добавления — «Мои задачи», черновик очищен');
+  assert.equal(local.w.eval('ui.view'), 'kaizen'); assert.ok(!local.w.localStorage.getItem('kz2-dump')); ok('AI-помощник: после добавления — раздел «Кайдзен», черновик очищен');
+
+  // цели -> уточнения кнопками -> план -> шаги по дням
+  $('#aiBtn').click(); $('#bdText').value = 'Хочу выучить английский. Начать бегать по утрам, а ещё запустить интернет-магазин. Позвонить бабушке сегодня';
+  $('#bdGo').click(); await wait(300);
+  const gl = local.w.eval('bd.goals');
+  assert.equal(gl.length, 3, JSON.stringify(gl)); assert.equal(local.w.eval('bd.items').length, 1); ok('брейн-дамп: 3 цели отделены от разового дела');
+  assert.ok(d.querySelector('[data-k="bdmin"]') && d.querySelector('[data-k="bdgdl"]') && d.querySelector('[data-k="bdglv"]')); ok('уточнения кнопками: минуты в день, срок, уровень');
+  d.querySelector('[data-k="bdmin"][data-v="60"]').click(); d.querySelector('[data-k="bdgdl"][data-i="2"][data-v="m1"]').click();
+  assert.equal(local.w.eval('bd.minutes'), 60); assert.equal(local.w.eval('bd.goals[2].dl'), 'm1'); ok('ответ кнопкой запоминается');
+  $('#bdPlan').click(); await wait(300);
+  assert.ok($('.kz-hero') && /Сегодня — всего/.test($('.kz-hero').textContent)); ok('план: «Сегодня — всего N мин»');
+  assert.equal(d.querySelectorAll('.bd-modal .kz-goal').length, 3); assert.equal(d.querySelectorAll('.kz-chart i').length, 28); ok('план: карточки целей с этапами и график нагрузки на 4 недели');
+  assert.ok($('.bd-modal .kz-risk')); ok('план: срок «через месяц» короче этапов — предупреждение с вариантами');
+  const sched = local.w.eval('bd.plan.sched');
+  const perDay = {}; sched.forEach(x => perDay[x.d] = (perDay[x.d] || 0) + x.min);
+  assert.ok(sched.filter(x => x.d === 0).length >= 3); ok('план: сегодня по шагу на каждую цель');
+  const firsts = ['g'].length && local.w.eval('bd.plan.goals').map(g => sched.find(x => x.g === g.id && !x.h && x.d === 0));
+  assert.ok(firsts.every(x => x && x.min <= 5)); ok('план: первый шаг каждой цели — до 5 минут');
+  $('#bdAccept').click(); await wait(300);
+  const K = local.w.eval('db.prefs.kaizen'); assert.equal(K.goals.length, 3); assert.equal(K.minutes, 60); assert.equal(K.load, 0.5); ok('план принят: цели и бюджет в настройках (уходят в облако)');
+  const kzs = local.w.eval('db.itasks').filter(t => t.kz);
+  assert.ok(kzs.length > 10 && kzs.some(t => t.kz.h) && kzs.every(t => t.due_date >= local.w.eval('today()'))); ok('план принят: шаги и занятия привычек — задачи с датами');
+  assert.ok(local.w.eval('db.itasks').some(t => /бабушке/i.test(t.title) && !t.kz)); ok('план принят: разовое дело тоже в задачах');
+  assert.equal(local.w.eval('ui.view'), 'kaizen'); assert.equal(d.querySelectorAll('.kz-page .kz-goal').length, 3); assert.ok(d.querySelectorAll('[data-kzdone]').length >= 3); ok('раздел «Кайдзен»: сегодняшние шаги и цели');
+  const first = d.querySelector('[data-kzdone]'); first.click(); await wait(100);
+  assert.equal(local.w.eval('db.itasks').find(t => t.id === first.dataset.kzdone).status, 'done'); ok('галочка у шага — выполнено');
+  d.querySelector('[data-k="kzmin"][data-v="30"]').click(); await wait(50); assert.equal(local.w.eval('db.prefs.kaizen.minutes'), 30); ok('бюджет минут меняется кнопкой');
+
+  // пропал на 3 дня: пропущенное не копится, возвращение мягкое
+  local.w.eval(`(() => { const back = addDays(today(), -3);
+    db.itasks.filter(t => t.kz).forEach(t => { if (t.due_date) t.due_date = addDays(t.due_date, -3); });
+    Object.assign(db.prefs.kaizen, { lastSeen:back, lastCheck:back }); })()`);
+  local.w.eval('kzRebalance()'); await wait(100);
+  const t0 = local.w.eval('today()'), after = local.w.eval('db.itasks').filter(t => t.kz && t.status !== 'done');
+  assert.ok(!after.some(t => t.due_date < t0)); ok('пересчёт: ни одного просроченного шага');
+  assert.ok(!local.w.eval('db.itasks').some(t => t.kz && t.kz.h && t.due_date < t0 && t.status !== 'done')); ok('пересчёт: пропущенные занятия привычек убраны, а не перенесены');
+  const todayMin = after.filter(t => t.due_date === t0).reduce((n, t) => n + t.kz.min, 0), cap = local.w.eval('kzCap(0)');
+  const welcome = local.w.eval('db.prefs.kaizen.welcome');
+  assert.ok(welcome && welcome.at === t0 && welcome.min < cap); ok('пересчёт: «С возвращением» и лёгкий первый день (' + welcome.min + ' из ' + cap + ' мин)');
+  assert.ok(todayMin <= Math.max(welcome.min, ...after.filter(t => t.due_date === t0).map(t => t.kz.min)) + 40); ok('пересчёт: на сегодня не свалено всё пропущенное (' + todayMin + ' мин)');
+  local.w.eval('render()'); assert.ok(d.querySelector('.kz-welcome')); ok('раздел «Кайдзен»: приветствие после перерыва');
   checkStorage(local.w, 'брейн-дамп');
   local.w.close();
 
@@ -104,7 +145,7 @@ function checkStorage(w, where) {
   checkStorage(cloud.w, 'с облаком'); ok('v2 с облаком: ключи основной версии целы');
   { const d = cloud.w.document, $ = q => d.querySelector(q);
     $('#aiBtn').click(); $('#bdText').value = 'бегать надо начать и ещё что-то'; $('#bdGo').click(); await wait(500);
-    assert.equal(calls.length, 1); assert.equal(calls[0].url, '/api/v2/sample'); assert.equal(calls[0].body.mode, 'json');
+    assert.equal(calls.length, 1, JSON.stringify(calls.map(c => c.url))); assert.equal(calls[0].url, '/api/v2/sample'); assert.equal(calls[0].body.mode, 'json');
     assert.ok(calls[0].body.prompt.includes('бегать надо начать')); ok('AI-помощник с облаком: текст ушёл в Claude через /api/v2/sample');
     assert.ok(d.querySelector('.bd-modal').textContent.includes('Первый шаг: Положить кроссовки')); ok('AI-помощник: показан первый маленький шаг');
     assert.deepEqual([...d.querySelectorAll('[data-bdsph]')].map(x => x.value).sort(), ['health', 'other']); ok('AI-помощник: неизвестная сфера -> «Другое»');
