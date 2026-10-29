@@ -202,7 +202,8 @@
         // вкладка «Руководитель» открывается только аккаунтам с доступом руководителя
         if (WHO === 'lead' && !(await isLead(session.user))) {
           gating = true;
-          try { await sb.auth.signOut(); } catch (e) { /* всё равно не пускаем */ }
+          // только на этом устройстве: глобальный выход выкидывал человека со всех его устройств
+          try { await sb.auth.signOut({ scope: 'local' }); } catch (e) { /* всё равно не пускаем */ }
           gating = false; session = null; WHO = null; gateWho = 'worker';
           note = 'У этого аккаунта нет доступа руководителя. Войдите на вкладке «Исполнитель» — откроются проекты, где вы назначены. Доступ руководителя выдаёт администратор сервиса.';
           continue;
@@ -257,7 +258,8 @@
 
   // Выход: чистим локальные данные приложения, чтобы следующий человек на этом компьютере их не увидел
   window.kzSignOut = async function () {
-    try { await sb.auth.signOut(); } catch (e) { /* всё равно выходим */ }
+    // выходим только на этом устройстве — на телефоне и других браузерах человек остаётся в аккаунте
+    try { await sb.auth.signOut({ scope: 'local' }); } catch (e) { /* всё равно выходим */ }
     try {
       Object.keys(localStorage).forEach(function (k) { if (k.indexOf('agency-pipeline-demo-v2') === 0 || k === 'agency-mode' || k === 'kz-space' || k === 'kz-org' || k === 'kz-org-own') localStorage.removeItem(k); });
     } catch (e) { /* ничего */ }
