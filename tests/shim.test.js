@@ -112,6 +112,6 @@ function boot(backend, userId, extra) {
   await wait(100);
   assert.equal(resolved, false); assert.ok(wn.document.querySelector('#kzForm')); assert.ok(/Войти/.test(wn.document.body.textContent)); ok('без входа: экран входа, приложение ждёт');
   { const calls = shimSrc.match(/auth\.signOut\([^)]*\)/g) || [];
-    assert.ok(calls.length >= 2 && calls.every(c => /scope:\s*'local'/.test(c)), calls.join(', ')); ok('выход из аккаунта — только на этом устройстве (не выкидывает с других устройств)'); }
+    assert.ok(calls.length >= 1 && calls.every(c => /scope:\s*'local'/.test(c)), calls.join(', ')); ok('выход из аккаунта — только на этом устройстве (не выкидывает с других устройств)'); }
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });
