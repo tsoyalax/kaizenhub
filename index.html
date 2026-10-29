@@ -2008,7 +2008,18 @@ function stampStages(){
   }));
 }
 const rememberStages = list => (list || []).forEach(p => (p.stages || []).forEach(s => { stageSigs.set(s.id, stageSig(s)); (s.subs || []).forEach(x => stageSigs.set(s.id + '|' + x.id, !!x.done)); }));
-function save(){ try { stampStages(); } catch(e) {} db.savedAt = Date.now(); try { replanAll(); } catch(e) {} try { syncAutoShares(); } catch(e) {} try { ensureSharedTasks(); } catch(e) {} localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
+// Старт проекта — не день создания, а день, когда первый этап взяли в работу (p.started_at). До этого проект «не начат»,
+// а p.start_date — плановая дата; с началом работы она становится фактической, и от неё считаются день проекта и сроки.
+const projStarted = p => (p.stages || []).some(s => !isMaint(s) && (s.started_at || s.completed_at || s.status !== 'not_started'));
+function markStarted(p){
+  if (!p || p._ext || p.started_at || !projStarted(p)) return false;
+  const first = p.stages.map(s => s.started_at || s.completed_at).filter(Boolean).map(d => String(d).slice(0, 10)).sort()[0]
+    || (p.start_date && p.start_date <= today() ? p.start_date : today());
+  p.started_at = first;
+  if (p.start_date !== first){ addLog(p, `Работа по проекту началась ${fmt(first)} — это дата старта`); p.start_date = first; }
+  return true;
+}
+function save(){ try { stampStages(); } catch(e) {} try { (db.projects || []).forEach(markStarted); } catch(e) {} db.savedAt = Date.now(); try { replanAll(); } catch(e) {} try { syncAutoShares(); } catch(e) {} try { ensureSharedTasks(); } catch(e) {} localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
 
 const userById = id => db.users.find(u => u.id === id);
 const tplById = id => db.templates.find(t => t.id === id);
@@ -2192,7 +2203,6 @@ function commit(){ save(); render(); }
 // POST /api/projects
 function createProject(data){
   const p = makeProject(data);
-  if (data.start_date <= today()){ p.stages[0].status='in_progress'; p.stages[0].started_at=today(); }
   addLog(p, `Проект создан по шаблону «${tplById(data.template_id).name}»`);
   db.projects.unshift(p); copyCards(p); commit(); return p;
 }
@@ -2283,7 +2293,7 @@ function normalizeChain(p){
 }
 // Если проект уже стартовал, а в работе ничего нет — запускаем первый незавершённый этап
 function ensureActive(p){
-  if (p.start_date > today()) return;
+  if (!projStarted(p)) return;                                  // работа ещё не начиналась — ждём, пока этап возьмут в работу
   if (p.stages.some(s => s.status === 'in_progress' || s.status === 'client_review')) return;
   const next = p.stages.find(s => s.status !== 'done');
   if (next){ next.status = 'in_progress'; next.started_at = next.started_at || today(); }
@@ -2448,7 +2458,7 @@ function setTemplateSubs(t, i, names, apply){
 // PATCH /api/stages/:id/subs/:subId { done }
 function toggleSub(p, s, x, checked){
   x.done = checked;
-  if (checked && s.status === 'not_started' && currentStage(p)?.id === s.id && p.start_date <= today()){ s.status = 'in_progress'; s.started_at = today(); }
+  if (checked && s.status === 'not_started' && currentStage(p)?.id === s.id){ s.status = 'in_progress'; s.started_at = today(); }
   addLog(p, `Подэтап «${x.name}» (${s.name}): ${checked ? 'выполнен' : 'снова в работе'}`);
   commit();
   if (checked) queueAutoClose(p.id);
@@ -3812,7 +3822,7 @@ function renderDrawer(){
         <div class="field"><label for="pWorker">Исполнитель проекта</label><select id="pWorker">${opt(db.users, p.worker_id, 'Не назначен')}</select></div>
       </div></section>
       <section class="d-box"><h3>Сроки</h3><div class="d-g">
-        <div class="field"><label for="pStart">Старт</label><input type="date" id="pStart" value="${p.start_date}"></div>
+        <div class="field"><label for="pStart">${projStarted(p) ? 'Старт' : 'Плановый старт'}</label><input type="date" id="pStart" value="${p.start_date}"></div>
         <div class="field"><label for="pDl">Финальный дедлайн</label><input type="date" id="pDl" value="${p.deadline || ''}"></div>
         <div class="field"><label>Расчётный финиш</label><div class="val">${fmt(end)} ${p.deadline ? (late ? `<span class="pill s-red">позже на ${days(diffDays(end, p.deadline))}</span>` : `<span class="pill s-green">в срок${diffDays(p.deadline, end) ? `, запас ${days(diffDays(p.deadline, end))}` : ''}</span>`) : ''}</div></div>
       </div>
@@ -5528,7 +5538,7 @@ function syncTaskToSub(t){
   const x = s?.subs?.find(y => y.id === t.substage_id);
   if (!x || x.done === done) return false;
   x.done = done;
-  if (done && s.status === 'not_started' && currentStage(p)?.id === s.id && p.start_date <= today()){ s.status = 'in_progress'; s.started_at = today(); }
+  if (done && s.status === 'not_started' && currentStage(p)?.id === s.id){ s.status = 'in_progress'; s.started_at = today(); }
   addLog(p, `Подэтап «${x.name}» (${s.name}) ${done ? 'закрыт задачей' : 'снова открыт: в задаче есть невыполненные пункты'}`);
   return true;
 }
@@ -6557,8 +6567,10 @@ function curSub(p){
 }
 const curSubTxt = p => { const r = curSub(p); return r ? (r.all ? r.name : `${r.name} (${r.n}/${r.total})`) : ''; };
 // дата старта проекта и какой идёт день
-const startDay = p => p.start_date > today() ? `через ${days(diffDays(p.start_date, today()))}` : p.state === 'completed' ? 'завершён' : `${diffDays(today(), p.start_date) + 1}-й день`;
-const startTxt = p => p.start_date > today() ? `Старт ${fmt(p.start_date)}, через ${days(diffDays(p.start_date, today()))}`
+const notStarted = p => !projStarted(p);
+const startDay = p => notStarted(p) ? (p.start_date > today() ? `не начат, план через ${days(diffDays(p.start_date, today()))}` : 'не начат')
+  : p.state === 'completed' ? 'завершён' : `${diffDays(today(), p.start_date) + 1}-й день`;
+const startTxt = p => notStarted(p) ? `Не начат${p.start_date > today() ? `, план ${fmt(p.start_date)}` : ''}`
   : `Старт ${fmt(p.start_date)}${p.state !== 'completed' ? `, ${diffDays(today(), p.start_date) + 1}-й день` : ''}`;
 // Время проекта: срок, сколько на текущем этапе, сколько ждём клиента, цикл ведения
 function getProjectTimeMetrics(p){
@@ -6597,7 +6609,7 @@ function deadlineCell(p, m){
 function startCell(p, m){
   const slow = m.plannedStage && m.daysAtCurrentStage > m.plannedStage;
   const at = m.daysAtCurrentStage && !m.maint ? ` · <span class="st-age${slow ? ' slow' : ''}" title="${slow ? `Этап идёт дольше плана (${days(m.plannedStage)})` : 'Сколько дней проект на текущем этапе'}">на этапе ${m.daysAtCurrentStage} дн.</span>` : '';
-  return `${fmt(p.start_date)}<small>${startDay(p)}${at}</small>`;
+  return notStarted(p) ? `<span class="muted">Не начат</span><small>${p.start_date > today() ? `план ${fmt(p.start_date)}` : 'ждёт старта'}</small>` : `${fmt(p.start_date)}<small>${startDay(p)}${at}</small>`;
 }
 // сколько дней идёт этап (или сколько занял, если закрыт)
 function stageAge(s){
