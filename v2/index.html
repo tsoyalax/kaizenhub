@@ -1825,6 +1825,30 @@ svg.clip{width:14px;height:14px;flex:none}
 .sb-dots i{width:4px;height:4px;border-radius:50%;background:currentColor}
 .sb-dots i:nth-child(2){opacity:.65}.sb-dots i:nth-child(3){opacity:.35}
 .more-sheet .side-brand{justify-content:center;padding:4px 0 8px}
+/* AI-помощник «Брейн-дамп» */
+.top .ai-btn{display:inline-flex;align-items:center;gap:6px;height:38px;font-weight:600;color:var(--brand,var(--ink))}
+.top .ai-btn svg{width:18px;height:18px}
+body.guest #aiBtn{display:none!important}
+.bd-modal{width:min(640px,calc(100% - 24px))}
+.bd-modal textarea{width:100%;font-size:15px;line-height:1.5}
+.bd-live{display:block;min-height:1.2em;color:var(--muted);font-style:italic;margin-top:4px}
+.bd-modal .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.bd-mic{display:inline-flex;align-items:center;gap:6px;margin-right:auto}
+.bd-mic svg{width:18px;height:18px}
+.bd-mic.on{background:var(--r);border-color:var(--r);color:#fff;animation:bdPulse 1.4s ease-in-out infinite}
+@keyframes bdPulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--r) 25%,transparent)}}
+.bd-list{display:grid;gap:14px;margin:6px 0 14px}
+.bd-grp h3{font-size:14px;margin:0 0 6px;display:flex;gap:6px;align-items:baseline}
+.bd-grp h3 small{color:var(--muted);font-weight:500}
+.bd-row{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;align-items:start;padding:8px 0;border-top:1px solid var(--line)}
+.bd-row input[type=checkbox]{margin-top:9px;width:18px;height:18px}
+.bd-row.off .bd-main{opacity:.45}
+.bd-title{width:100%;font-weight:500}
+.bd-step{display:block;color:var(--muted);margin:4px 0 0}
+.bd-sel{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.bd-sel select{font-size:13px;padding:4px 8px}
+#bdBack{margin-right:auto}
+@media (max-width:640px){.top .ai-btn{width:40px;height:40px;padding:0;border:0;background:transparent;justify-content:center}.top .ai-btn span{display:none}.top .ai-btn svg{width:20px;height:20px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/v2/config.js"></script>
@@ -5649,6 +5673,11 @@ const IT = { list:[], subs:[] };
 const IT_STATUS = { todo:'К выполнению', in_progress:'В работе', review:'На проверке', done:'Готово' };
 const IT_PRI = { low:'Низкий', medium:'Средний', high:'Высокий', urgent:'Срочно' };
 const IT_CAT = { admin:'Административная', hr:'HR', marketing:'Маркетинг', finance:'Финансы', other:'Другое' };
+// сферы жизни для брейн-дампа (AI-помощник, в конце файла) — тоже категории внутренних задач
+const SPHERES = { work:'Работа и бизнес', money:'Финансы', health:'Здоровье и спорт', family:'Семья и отношения',
+  growth:'Развитие и обучение', home:'Дом и быт', rest:'Отдых и хобби', other:'Другое' };
+const SPH_ICO = { work:'💼', money:'💰', health:'💪', family:'❤️', growth:'📚', home:'🏠', rest:'🌴', other:'📌' };
+Object.assign(IT_CAT, SPHERES);
 function watchIT(){
   if (!cloud.store || !cloud.uid || IT.subs.length) return;
   const on = snap => {
@@ -7861,6 +7890,151 @@ restoreView();
   if (m) render(); else app.innerHTML = '<div class="empty">Загрузка…</div>';   // первый визит: ждём, кто открыл приложение
   if (m === 'owner'){ ownerBooted = true; if (!db.onboarded) openProfile(true); } }
 initCloud();
+
+// =====================================================================
+//  AI-помощник «Брейн-дамп» (только v2): человек наговаривает или пишет всё, что в голове,
+//  помощник делит поток на задачи и раскладывает по сферам жизни, у каждой — первый маленький шаг (кайдзен).
+//  Выбранное становится внутренними задачами (itSave) со сферой в category. Без входа в аккаунт AI недоступен —
+//  разбираем по ключевым словам. Черновик текста помнит браузер (kz2-dump), чтобы надиктованное не терялось.
+// =====================================================================
+const BD_WHEN = { today:'Сегодня', week:'На этой неделе', month:'В этом месяце', later:'Когда-нибудь' };
+const BD_KEY = 'kz2-dump';
+const bd = { text:'', items:null, ai:false, busy:false, rec:null, on:false };
+const bdDraft = v => { try { if (v === undefined) return localStorage.getItem(BD_KEY) || ''; if (v) localStorage.setItem(BD_KEY, v); else localStorage.removeItem(BD_KEY); } catch(e) { return ''; } };
+
+// разбор без AI: делим на фразы, сферу и срок угадываем по словам
+const BD_WORDS = {
+  work:/клиент|проект|работ|офис|встреч|созвон|отч[её]т|презентац|договор|сотрудник|команд|продаж|бизнес|заказ|начальник|коллег|кп\b|руковод|запуск|сайт|реклам/i,
+  money:/деньг|оплат|счёт|счет|кредит|долг|налог|бюджет|заплат|перевест|зарплат|инвест|накоп|ипотек|расход|доход|банк|копил/i,
+  health:/врач|здоров|спорт|зал|трениров|бег|пробеж|йог|сон\b|спать|выспат|вод[аыу]\b|питан|диет|анализ|зуб|таблет|массаж|прогулк|вес\b/i,
+  family:/мам|пап|жен[аеуы]|муж|дет|сын|доч|родител|семь|друг|подруг|бабушк|дедушк|брат|сестр|день рождени|подарок|свидани|позвонить/i,
+  growth:/книг|курс|учи|изуч|англий|язык|навык|обучен|прочит|лекци|вебинар|тренинг|медитац|дневник|цел[иья]|план на/i,
+  home:/дом\b|дома\b|квартир|убрат|уборк|ремонт|продукт|магазин|купить|стирк|посуд|машин[ау]|кошк|собак|гараж|дача|почин|вынести/i,
+  rest:/отпуск|отдых|кино|фильм|сериал|путешеств|поездк|хобби|игр|концерт|рыбалк|выходн|море|гор[ыа]\b/i
+};
+function bdLocal(text){
+  const parts = String(text).replace(/\s+/g, ' ')
+    .split(/[.!?;\n]+|,\s*(?=(?:и\s+)?(?:ещё|еще|также|потом|а также|плюс)\s)|(?:,|\s+и)\s+(?=(?:не\s+)?[а-яё]{2,}(?:ть|ться|ти|чь)(?![а-яё]))|\s+(?:и ещё|и еще|а ещё|а еще|а также|потом|плюс)\s+/i)
+    .map(s => s.trim().replace(/^(?:и|а|ещё|еще|также|так|ну|короче|в общем|мне|надо|нужно|не забыть|хочу|хотелось бы)\s+/i, '').trim())
+    .filter(s => s.length > 2);
+  return parts.slice(0, 40).map(s => {
+    const sphere = Object.keys(BD_WORDS).find(k => BD_WORDS[k].test(s)) || 'other';
+    const when = /сегодня|срочно|сейчас/i.test(s) ? 'today' : /завтра|недел|выходн/i.test(s) ? 'week' : /месяц/i.test(s) ? 'month' : 'later';
+    return { title:s.charAt(0).toUpperCase() + s.slice(1, 200), sphere, when, priority:/срочно|важно|обязательно/i.test(s) ? 'high' : 'medium', step:'' };
+  });
+}
+const bdPrompt = text => `Ты помощник по кайдзен-планированию. Человек сделал брейн-дамп: выгрузил всё, что у него в голове (часто это расшифровка голоса, без знаков препинания).
+Раздели текст на отдельные конкретные задачи или дела. Одна мысль — одна задача. Формулируй коротко, с глагола, по-русски. Не придумывай дел, которых нет в тексте; повторы объединяй.
+Для каждой задачи:
+- sphere — сфера жизни: ${Object.entries(SPHERES).map(([k, v]) => `${k} (${v})`).join(', ')};
+- when — когда: today (сегодня или срочно), week (эта неделя), month (этот месяц), later (без срока / когда-нибудь);
+- priority — high, medium или low;
+- step — первый маленький шаг по принципу кайдзен: действие на 5–15 минут, с которого можно начать прямо сейчас.
+Ответ — JSON: {"items":[{"title":"...","sphere":"work","when":"week","priority":"medium","step":"..."}]}
+
+Текст брейн-дампа:
+"""
+${text.slice(0, 20000)}
+"""`;
+function bdClean(list){
+  return (Array.isArray(list) ? list : []).map(x => ({
+    title:String(x?.title || '').trim().slice(0, 200), sphere:SPHERES[x?.sphere] ? x.sphere : 'other',
+    when:BD_WHEN[x?.when] ? x.when : 'later', priority:IT_PRI[x?.priority] ? x.priority : 'medium', step:String(x?.step || '').trim().slice(0, 300), on:true
+  })).filter(x => x.title);
+}
+const bdDue = w => ({ today:today(), week:addDays(today(), 6), month:addDays(today(), 29) })[w] || '';
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function openBrainDump(){
+  if (GUEST) return;
+  if (!bd.items) bd.text = bd.text || bdDraft();
+  paintBrainDump();
+}
+function paintBrainDump(){
+  const mic = SpeechRec ? `<button type="button" class="ghost bd-mic${bd.on ? ' on' : ''}" id="bdMic" aria-pressed="${bd.on}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>${bd.on ? 'Остановить' : 'Наговорить'}</span></button>` : '';
+  const body = !bd.items ? `
+      <p class="hint">Выгрузите всё, что крутится в голове: дела, идеи, обещания, тревоги — как есть, в любом порядке. Помощник разделит это на задачи по сферам жизни и предложит первый маленький шаг для каждой.</p>
+      <div class="field"><textarea id="bdText" rows="9" maxlength="20000" placeholder="Например: позвонить маме, оплатить интернет, подготовить отчёт для клиента до пятницы, записаться к стоматологу, начать бегать по утрам…">${esc(bd.text)}</textarea>
+        <small class="bd-live" id="bdLive" aria-live="polite"></small></div>
+      ${SpeechRec ? '' : '<p class="hint">Этот браузер не умеет слушать голос. Нажмите на поле и используйте микрофон на клавиатуре телефона.</p>'}
+      <div class="err" id="bdErr" aria-live="polite"></div>
+      <div class="actions">${mic}<button type="button" class="ghost" data-close>Закрыть</button><button type="button" class="primary" id="bdGo" ${bd.busy ? 'disabled' : ''}>${bd.busy ? 'Разбираю…' : 'Разобрать'}</button></div>`
+    : `
+      <p class="hint">${bd.ai ? 'AI разложил ваш брейн-дамп по сферам жизни.' : 'Разобрано по ключевым словам (AI-разбор работает после входа в аккаунт).'} Снимите лишние галочки, поправьте сферу и срок — и добавьте в задачи.</p>
+      <div class="bd-list">${Object.keys(SPHERES).filter(k => bd.items.some(x => x.sphere === k)).map(k => `
+        <div class="bd-grp"><h3>${SPH_ICO[k]} ${SPHERES[k]} <small>${bd.items.filter(x => x.sphere === k).length}</small></h3>
+        ${bd.items.map((x, i) => x.sphere !== k ? '' : `<div class="bd-row${x.on ? '' : ' off'}">
+          <input type="checkbox" data-bdon="${i}" ${x.on ? 'checked' : ''} aria-label="Добавить в задачи">
+          <div class="bd-main"><input class="bd-title" data-bdtitle="${i}" value="${esc(x.title)}" maxlength="200" aria-label="Задача">
+            ${x.step ? `<small class="bd-step">Первый шаг: ${esc(x.step)}</small>` : ''}
+            <div class="bd-sel"><select data-bdsph="${i}" aria-label="Сфера">${Object.entries(SPHERES).map(([s, v]) => `<option value="${s}" ${s === x.sphere ? 'selected' : ''}>${SPH_ICO[s]} ${v}</option>`).join('')}</select>
+            <select data-bdwhen="${i}" aria-label="Когда">${Object.entries(BD_WHEN).map(([s, v]) => `<option value="${s}" ${s === x.when ? 'selected' : ''}>${v}</option>`).join('')}</select></div></div>
+        </div>`).join('')}</div>`).join('')}</div>
+      <div class="actions"><button type="button" class="ghost m-out" id="bdBack">← К тексту</button><button type="button" class="ghost" data-close>Закрыть</button><button type="button" class="primary" id="bdAdd">Добавить в задачи (${bd.items.filter(x => x.on).length})</button></div>`;
+  layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal bd-modal" role="dialog" aria-modal="true" aria-labelledby="bdT">
+    <h2 id="bdT">✨ AI-помощник · Брейн-дамп</h2>${body}</div>`;
+  const ta = $('#bdText'); if (ta){ ta.oninput = () => { bd.text = ta.value; bdDraft(bd.text); }; if (!bd.on) ta.focus(); }
+}
+function bdStop(){ bd.on = false; try { bd.rec?.stop(); } catch(e) {} bd.rec = null; }
+function bdListen(){
+  if (bd.on){ bdStop(); paintBrainDump(); return; }
+  const r = new SpeechRec(); r.lang = 'ru-RU'; r.continuous = true; r.interimResults = true;
+  r.onresult = ev => {
+    let live = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++){
+      const t = ev.results[i][0].transcript.trim(); if (!t) continue;
+      if (ev.results[i].isFinal){ bd.text = (bd.text ? bd.text.replace(/\s+$/, '') + (/[.!?,]$/.test(bd.text.trim()) ? ' ' : '. ') : '') + t; bdDraft(bd.text); const ta = $('#bdText'); if (ta) ta.value = bd.text; }
+      else live += t + ' ';
+    }
+    const l = $('#bdLive'); if (l) l.textContent = live;
+  };
+  r.onerror = ev => { if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed'){ bdStop(); paintBrainDump(); const e = $('#bdErr'); if (e) e.textContent = 'Нет доступа к микрофону. Разрешите его в настройках браузера для этого сайта.'; } };
+  r.onend = () => { if (bd.on && bd.rec === r && !layer.querySelector('.bd-modal')){ bdStop(); return; }
+    if (bd.on && bd.rec === r){ try { r.start(); } catch(e) { bdStop(); paintBrainDump(); } } };   // браузер сам останавливается после паузы — слушаем дальше
+  bd.rec = r; bd.on = true;
+  try { r.start(); } catch(e) { bdStop(); }
+  paintBrainDump();
+}
+async function bdParse(){
+  const text = ($('#bdText')?.value ?? bd.text).trim(); bd.text = text;
+  if (!text){ $('#bdErr').textContent = 'Наговорите или напишите хотя бы пару дел'; return; }
+  bdStop(); bd.busy = true; paintBrainDump();
+  let items = null, ai = false, err = '';
+  const S = await getSample();
+  if (S){ try { items = bdClean((await S.json(bdPrompt(text), { modelTier:'fast' }))?.items); ai = true; } catch(e) { err = sampleErr(e); } }
+  if (!items?.length){ items = bdClean(bdLocal(text)); ai = false; }
+  bd.busy = false;
+  if (!layer.querySelector('.bd-modal')) return;                             // окно закрыли, пока ждали ответ
+  if (!items.length){ paintBrainDump(); $('#bdErr').textContent = 'Не нашёл в тексте ни одного дела. Попробуйте сформулировать подробнее.'; return; }
+  bd.items = items; bd.ai = ai; paintBrainDump();
+  if (err) toast('AI не ответил, разобрал по ключевым словам: ' + err);
+}
+function bdAdd(){
+  const list = bd.items.filter(x => x.on && x.title.trim()); if (!list.length){ toast('Отметьте хотя бы одну задачу'); return; }
+  const now = new Date().toISOString();
+  list.forEach(x => itSave({ id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Я', created_at:now, source:'braindump',
+    title:x.title.trim(), description:x.step ? `Первый шаг: ${x.step}` : '', assignee_id:ME, priority:x.priority, category:x.sphere, status:'todo', due_date:bdDue(x.when) }));
+  bd.items = null; bd.text = ''; bdDraft('');
+  layer.innerHTML = ''; ui.view = 'mytasks'; render();
+  toast(`Добавлено задач: ${list.length}`);
+}
+document.addEventListener('click', e => {
+  if (e.target.closest?.('#aiBtn')) return openBrainDump();
+  if (e.target.closest?.('[data-close]') && bd.on){ bdStop(); return; }
+  if (!layer.querySelector('.bd-modal')) return;
+  if (e.target.closest('#bdMic')) return bdListen();
+  if (e.target.closest('#bdGo')) return bdParse();
+  if (e.target.closest('#bdBack')){ bd.items = null; return paintBrainDump(); }
+  if (e.target.closest('#bdAdd')) return bdAdd();
+});
+document.addEventListener('change', e => {
+  const t = e.target; if (!t.closest?.('.bd-modal') || !bd.items) return;
+  if (t.dataset.bdon){ bd.items[+t.dataset.bdon].on = t.checked; paintBrainDump(); }
+  if (t.dataset.bdsph){ bd.items[+t.dataset.bdsph].sphere = t.value; paintBrainDump(); }
+  if (t.dataset.bdwhen) bd.items[+t.dataset.bdwhen].when = t.value;
+});
+document.addEventListener('input', e => { const t = e.target; if (t.dataset?.bdtitle && bd.items) bd.items[+t.dataset.bdtitle].title = t.value; });
+$('#bell').insertAdjacentHTML('beforebegin', '<button class="ghost ai-btn" id="aiBtn" title="AI-помощник: брейн-дамп голосом"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg><span>AI-помощник</span></button>');
 </script>
 </body>
 </html>
