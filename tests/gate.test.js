@@ -137,9 +137,13 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.equal(gw.w.document.querySelectorAll(`[data-ssdrop="${pid}|${sid}"] .ss-items li`).length, 2); ok('в «Сдать этап» два файла с русскими названиями');
   $(gw, `[data-sslink="${pid}|${sid}"] input`).value = 'https://drive.google.com/folder/abc';
   $(gw, `[data-sssend="${pid}|${sid}"]`).click(); await wait(100);
+  // в ту же секунду владелец тоже сохраняет проект (гонка): сдача этапа не должна потеряться
+  E(own, `(() => { const p = projById('${pid}'); addLog(p, 'параллельная правка владельца'); commit(); })()`);
   assert.ok($(gw, '.ss-wait') && E(gw, `projById('${pid}').stages.find(s => s.id === '${sid}').sub.items.length`) === 3); ok('исполнитель: «Этап сдан на проверку», вставленная ссылка ушла вместе с файлами');
   await wait(3000);
+  await wait(2500);
   assert.equal(E(own, 'stageSubmissions().length'), 1); ok('руководитель получил сдачу этапа');
+  assert.equal(E(gw, `projById('${pid}').stages.find(s => s.id === '${sid}').sub.status`), 'pending'); ok('после параллельного сохранения владельца сдача у исполнителя не пропала');
   E(own, `ui.view = 'review'; ui.revTab = 'pending'; render()`); await wait(50);
   assert.ok($(own, '.tabs [data-view="review"]') && $(own, `.rv-card [data-ssok="${pid}|${sid}"]`)); ok('раздел «Приёмка»: сданный этап с файлами, «Принять» и «Вернуть»');
   assert.ok(E(ld, 'guestViews().includes("review")') && E(gw, '!guestViews().includes("review")')); ok('«Приёмка» есть у руководителя по ссылке и нет у исполнителя');
