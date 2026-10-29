@@ -1794,6 +1794,37 @@ svg.clip{width:14px;height:14px;flex:none}
 .side-sync svg{width:15px;height:15px;flex:none}
 .side-sync button:disabled{opacity:.6}
 .more-sheet .side-sync{padding:0 0 12px;margin:0 0 12px;border-bottom:1px solid var(--line)}
+
+/* карточка проекта: плотнее (компьютер и телефон) */
+.d-box{padding:12px 14px 4px}
+.d-g{grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px 10px}
+.d-g .p-maint{grid-column:1/-1;margin:0 0 4px;padding:8px 10px}
+.d-g .p-maint small{font-size:12px;line-height:1.35}
+.stg .g.g2{gap:8px;margin-top:8px}
+.stg .g label{font-size:11.5px;margin-bottom:2px}
+.stg .g select,.stg .g input{height:34px;padding-top:0;padding-bottom:0;font-size:13.5px}
+/* «Исполнителю»: одна-две строки, галочка по центру плашки (.stg label не должен её ломать) */
+.exec-flags{gap:6px;margin-top:8px;padding-top:8px}
+.ef-h{width:auto;margin-right:4px;font-size:11px}
+.ef-sub{width:auto;margin:0 0 0 4px;font-size:12px}
+.ef-list{display:contents}
+.stg .exec-flags label.ef{display:inline-flex;align-items:center;gap:6px;min-height:28px;margin:0;padding:0 9px;font-size:12.5px;color:var(--ink);line-height:1.2}
+.stg .exec-flags label.ef input{flex:none;width:14px;height:14px;margin:0}
+@media (max-width:520px){
+  .drawer .d-head{gap:12px;min-height:56px}
+  .drawer .pava.lg{width:52px;height:52px;font-size:18px;border-radius:15px}
+  .stg{padding-left:28px}
+  .stg .exec-flags label.ef{min-height:30px}
+}
+
+/* логотип: из шапки убран, тихо — внизу боковой панели под профилем */
+.top .brand{gap:0;padding:14px 0}
+.top .brand:not(:has(.space-name:not([hidden]))){display:none}
+.side-brand{display:flex;align-items:center;gap:7px;padding:10px 2px 0;font-size:11.5px;font-weight:600;letter-spacing:.01em;color:var(--muted);opacity:.7;user-select:none}
+.sb-dots{display:inline-flex;gap:2px}
+.sb-dots i{width:4px;height:4px;border-radius:50%;background:currentColor}
+.sb-dots i:nth-child(2){opacity:.65}.sb-dots i:nth-child(3){opacity:.35}
+.more-sheet .side-brand{justify-content:center;padding:4px 0 8px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -1803,7 +1834,7 @@ svg.clip{width:14px;height:14px;flex:none}
 <header class="top">
   <button class="icon-btn side-btn" id="sideBtn" aria-label="Открыть меню" aria-expanded="false" aria-controls="side" title="Меню и пространства">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
-  <div class="brand"><span class="logo" aria-hidden="true"><i></i><i></i><i></i></span><span class="brand-t">KaizenHub</span><button class="space-name" id="spaceName" hidden title="Пространство — сменить в настройках"></button></div>
+  <div class="brand"><button class="space-name" id="spaceName" hidden title="Пространство — сменить в настройках"></button></div>
   <nav class="tabs" aria-label="Разделы">
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
@@ -2916,8 +2947,8 @@ function execFlags(p, s){
   const tsub = x => ts?.subs?.find(y => y.id === x.tsub);
   const box = (attr, on, fromTpl, label) => `<label class="ef${on ? ' on' : ''}"${fromTpl ? ' title="Задано в шаблоне процесса — меняется в «Настройках» → «Шаблоны»"' : ''}><input type="checkbox" ${attr} ${on ? 'checked' : ''} ${fromTpl ? 'disabled' : ''}>${label}${fromTpl ? '<small>в шаблоне</small>' : ''}</label>`;
   return `<div class="exec-flags"><span class="ef-h">Исполнителю</span>
-    ${box(`data-sgate="${s.id}"`, !!s.gate, !!ts?.gate, 'Переход на следующий этап — по запросу')}
-    ${(s.subs || []).length ? `<span class="ef-sub">${CLIP_ICO}Прикрепляет материалы в подэтапах:</span><div class="ef-list">${s.subs.map(x => box(`data-sfilesp="${s.id}|${x.id}"`, !!x.files, !!tsub(x)?.files, esc(x.name))).join('')}</div>` : ''}
+    ${box(`data-sgate="${s.id}"`, !!s.gate, !!ts?.gate, 'Переход по запросу')}
+    ${(s.subs || []).length ? `<span class="ef-sub" title="Исполнитель прикрепляет материалы в этих подэтапах">${CLIP_ICO}Материалы:</span><div class="ef-list">${s.subs.map(x => box(`data-sfilesp="${s.id}|${x.id}"`, !!x.files, !!tsub(x)?.files, esc(x.name))).join('')}</div>` : ''}
   </div>`;
 }
 // ---------- Материалы исполнителя (подэтапы с галочкой «материалы») и запрос на переход этапа ----------
@@ -3773,8 +3804,8 @@ function renderDrawer(){
         <div class="field"><label>Клиент</label><div class="val">${esc(p.client)}</div></div>
         <div class="field"><label for="pCat">Категория</label><select id="pCat">${catOpts(p.category_id)}</select></div>
         <div class="field"><label for="pTpl">Шаблон процесса</label><select id="pTpl">${tplById(p.template_id) ? '' : '<option value="" selected>Шаблон удалён</option>'}${db.templates.map(t => `<option value="${t.id}" ${t.id===p.template_id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></div>
-        <label class="check maint-check p-maint"><input type="checkbox" id="pMaint" ${p.is_maintenance ? 'checked' : ''}> <span>${RT_ICO}<b>На ведении после воронки</b><small>Проект не закроется, а перейдёт на этап «Ведение / Поддержка» с регулярными задачами.</small></span></label>
         <div class="field"><label for="pPri">Приоритет</label><select id="pPri">${Object.entries(PRI).map(([k,[v]]) => `<option value="${k}" ${p.priority===k?'selected':''}>${v}</option>`).join('')}</select></div>
+        <label class="check maint-check p-maint"><input type="checkbox" id="pMaint" ${p.is_maintenance ? 'checked' : ''}> <span>${RT_ICO}<b>На ведении после воронки</b><small>Проект не закроется, а перейдёт на этап «Ведение / Поддержка» с регулярными задачами.</small></span></label>
       </div></section>
       <section class="d-box"><h3>Команда</h3><div class="d-g">
         <div class="field"><label for="pPm">PM</label><select id="pPm">${opt(pms(), p.pm_id)}</select></div>
@@ -4382,7 +4413,8 @@ function sideFoot(){
     <button class="side-me" data-sideme title="Мой профиль">${u && (avatarOk(u) || u.name) ? avHtml(u, 'av av-sm') : '<span class="av av-sm">?</span>'}<span><b>${esc(u?.name || 'Мой профиль')}</b><small>${esc(u?.title || u?.email || (GUEST ? 'Исполнитель' : 'Профиль'))}</small></span></button>
     <button class="icon-btn" data-sidetheme title="${dark ? 'Светлая тема' : 'Тёмная тема'}" aria-label="${dark ? 'Включить светлую тему' : 'Включить тёмную тему'}">${dark ? SUN : MOON}</button>
     ${GUEST ? '' : `<button class="icon-btn side-cloud" data-sidecloud data-state="${cloud.status}" title="${esc(cloudText())}" aria-label="${esc(cloudText())}">${CLOUD_ICON}</button>`}</div>
-    ${GUEST ? '' : `<div class="side-sync"><button class="ghost" data-savenow title="Записать изменения в облако сейчас">${SAVE_ICO}Сохранить</button><button class="ghost" data-syncnow title="Загрузить актуальные данные из облака">${SYNC_ICO}Синхронизировать</button></div>`}`;
+    ${GUEST ? '' : `<div class="side-sync"><button class="ghost" data-savenow title="Записать изменения в облако сейчас">${SAVE_ICO}Сохранить</button><button class="ghost" data-syncnow title="Загрузить актуальные данные из облака">${SYNC_ICO}Синхронизировать</button></div>`}
+    <div class="side-brand" aria-label="KaizenHub"><span class="sb-dots" aria-hidden="true"><i></i><i></i><i></i></span>KaizenHub</div>`;
 }
 function openSide(){ sideOpen = true; renderSide(); }
 function closeSide(){ if (!sideOpen) return; sideOpen = false; renderSide(); }
