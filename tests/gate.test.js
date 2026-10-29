@@ -63,7 +63,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E(gw, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(150);
   const stSel = $(gw, `select[data-mstatus="${pid}|${sid}"]`);
   assert.ok(stSel && ![...stSel.options].some(o => o.value === 'done')); ok('исполнитель: на этапе с запросом нельзя самому поставить «Завершён»');
-  assert.ok($(gw, `[data-gatereq="${pid}|${sid}"]`)); ok('исполнитель: есть кнопка «Запросить переход на следующий этап»');
+  assert.ok($(gw, `[data-ssfile="${pid}|${sid}"]`) && $(gw, `[data-sssend="${pid}|${sid}"]`) && !$(gw, '[data-gatereq]')); ok('исполнитель: под текущим этапом блок «Сдать этап»');
+  assert.ok(!$(gw, '.pf-mat')); ok('на доске исполнителя нет ссылок «Прикрепить материалы» у подэтапов');
   // отметка «материалы» через интерфейс шаблона: галочка → «Сохранить шаблон» → исполнитель может прикрепить файлы
   { const tId = E(own, `projById('${pid}').template_id`);
     const nxt = E(own, `(() => { const p = projById('${pid}'); const c = p.stages.find(st => st.tsid && !isMaint(st) && (st.subs || []).length && st.subs[0].tsub && !st.subs[0].files); return c ? { sid:c.id, xid:c.subs[0].id, tsid:c.tsid, tsub:c.subs[0].tsub } : null; })()`);
@@ -79,14 +80,16 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
       E(gw, 'render()'); await wait(50);
       assert.ok(E(gw, `projById('${pid}').stages.find(s => s.id === '${nxt.sid}').subs.find(x => x.id === '${nxt.xid}').files`)); ok('отметка из шаблона дошла до исполнителя');
       E(gw, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(80);
-      const btn = gw.w.document.querySelector(`[data-pfsub="${nxt.sid}|${nxt.xid}"]`); btn.click(); await wait(150);
+      if (!E(gw, `!!taskFor('${pid}', '${nxt.sid}', '${nxt.xid}')`)) E(gw, `(() => { const p = projById('${pid}'); const s = p.stages.find(x => x.id === '${nxt.sid}'); tasksFromSubs(p, { ...s, subs:s.subs.filter(x => x.id === '${nxt.xid}') }); commit(); })()`);
+      E(gw, `openTask(taskFor('${pid}', '${nxt.sid}', '${nxt.xid}').id)`); await wait(150);
       assert.ok($(gw, '.tk-mats [data-matfile]')); ok('исполнитель: в карточке этого подэтапа можно прикрепить файлы');
       E(gw, 'closeTask()');
     }
   }
 
   // материалы: подэтап без задачи — кнопка «Прикрепить материалы» создаёт карточку
-  $(gw, `.pf-mat[data-pfsub="${sid}|${xid}"]`)?.click() || $(gw, `[data-pfsub="${sid}|${xid}"]`).click(); await wait(200);
+  if (!E(gw, `!!taskFor('${pid}', '${sid}', '${xid}')`)) E(gw, `(() => { const p = projById('${pid}'); const s = p.stages.find(x => x.id === '${sid}'); tasksFromSubs(p, { ...s, subs:s.subs.filter(x => x.id === '${xid}') }); commit(); })()`);
+  E(gw, `openTask(taskFor('${pid}', '${sid}', '${xid}').id)`); await wait(200);
   assert.ok($(gw, '.tk-mats') && $(gw, '[data-matfile]')); ok('исполнитель: в подэтапе блок «Материалы» с загрузкой файла');
   const li = $(gw, '[data-matlink] input'); li.value = 'https://drive.google.com/file/xyz';
   li.form.dispatchEvent(new gw.w.Event('submit', { bubbles: true, cancelable: true })); await wait(100);
@@ -126,29 +129,33 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E(gw, 'closeTask()'); await wait(50);
   assert.equal(E(own, `taskFor('${pid}', '${sid}', '${xid}').mats[0].byName`), 'Гоша Исполнитель'); ok('у материала подписан автор');
 
-  // запрос на переход → руководитель возвращает → снова запрос → одобряет
-  $(gw, `[data-gatereq="${pid}|${sid}"]`).click(); await wait(50);
-  $(gw, '#gateTx').value = 'Всё готово';
-  $(gw, '#gateF').dispatchEvent(new gw.w.Event('submit', { bubbles: true, cancelable: true })); await wait(100);
-  assert.ok($(gw, '.gate.wait')); ok('исполнитель: видит «Запрос отправлен»');
+  // сдача этапа: исполнитель разом загружает сделанное → руководитель возвращает → снова сдаёт → «Принять этап»
+  E(gw, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(50);
+  assert.ok($(gw, `[data-sssend="${pid}|${sid}"]`).disabled); ok('«Отправить на проверку» неактивна, пока ничего не прикреплено');
+  await E(gw, `ssUpload(projById('${pid}'), projById('${pid}').stages.find(s => s.id === '${sid}'), [new File(['a'], 'Итог этапа.pdf'), new File(['b'], 'Видео монтаж.mp4')])`); await wait(100);
+  { const li = $(gw, `[data-sslink="${pid}|${sid}"] input`); li.value = 'https://drive.google.com/folder/abc'; li.form.dispatchEvent(new gw.w.Event('submit', { bubbles: true, cancelable: true })); await wait(80); }
+  assert.equal(gw.w.document.querySelectorAll(`[data-ssdrop="${pid}|${sid}"] .ss-items li`).length, 3); ok('в «Сдать этап» два файла с русскими названиями и ссылка');
+  $(gw, `#ssnote-${sid}`).value = 'Всё готово';
+  $(gw, `[data-sssend="${pid}|${sid}"]`).click(); await wait(100);
+  assert.ok($(gw, '.ss-wait')); ok('исполнитель: «Этап сдан на проверку»');
   await wait(3000);
-  assert.equal(E(own, 'gateRequests().length'), 1); ok('руководитель получил запрос');
+  assert.equal(E(own, 'stageSubmissions().length'), 1); ok('руководитель получил сдачу этапа');
   E(ld, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(100);
-  assert.ok(E(ld, 'gateRequests().length') === 1 && $(ld, '.gate.ask [data-gateok]') && !$(ld, '[data-gatereq]')); ok('руководитель по ссылке видит запрос с «Одобрить», без кнопки исполнителя');
+  assert.ok(E(ld, 'stageSubmissions().length') === 1 && $(ld, '.ss-ask [data-ssok]')); ok('руководитель по ссылке видит сдачу с «Принять этап»');
   $(own, '#bell').click(); await wait(50);
-  assert.ok($(own, '.pop .gate-ntf') && /Всё готово/.test($(own, '.pop .gate-ntf').textContent)); ok('запрос с комментарием — в колокольчике');
-  $(own, '.pop [data-gateno]').click(); await wait(50);
+  assert.ok(/Сдача этапов/.test($(own, '.pop').textContent) && /сдал этап/.test($(own, '.pop').textContent)); ok('сдача этапа — в колокольчике');
+  E(own, 'closeLayer()');
+  E(own, `ui.view = 'production'; ui.prodProject = '${pid}'; render()`); await wait(100);
+  assert.ok($(own, '.ss-ask .ss-items .fchip') && /Всё готово/.test($(own, '.ss-ask').textContent)); ok('под этапом у руководителя — сданные файлы и комментарий');
+  $(own, '.ss-ask [data-ssno]').click(); await wait(50);
   $(own, '#gateTx').value = 'Нужна ещё одна версия';
   $(own, '#gateF').dispatchEvent(new own.w.Event('submit', { bubbles: true, cancelable: true })); await wait(3000);
   E(gw, 'render()'); await wait(100);
-  assert.ok($(gw, '.gate-back') && /ещё одна версия/.test($(gw, '.gate-back').textContent)); ok('исполнитель видит, что этап вернули и почему');
-  $(gw, `[data-gatereq="${pid}|${sid}"]`).click(); await wait(50);
-  $(gw, '#gateF').dispatchEvent(new gw.w.Event('submit', { bubbles: true, cancelable: true })); await wait(3000);
-  E(own, `ui.view = 'production'; ui.prodProject = '${pid}'; render()`); await wait(100);
-  assert.ok($(own, '.gate.ask [data-gateok]')); ok('запрос виден на доске проекта');
-  assert.ok($(own, '.gate.ask .gate-mats .fchip') && /Сдано материалов: 3/.test($(own, '.gate.ask').textContent)); ok('в запросе на переход видны сданные материалы');
-  $(own, '.gate.ask [data-gateok]').click(); await wait(3000);
-  assert.equal(E(own, `projById('${pid}').stages.find(s => s.id === '${sid}').status`), 'done'); ok('одобрение закрывает этап');
+  assert.ok($(gw, '.ss-back') && /ещё одна версия/.test($(gw, '.ss-back').textContent) && $(gw, `[data-sssend="${pid}|${sid}"]`)); ok('исполнитель видит, что этап вернули и почему, и может сдать снова');
+  $(gw, `[data-sssend="${pid}|${sid}"]`).click(); await wait(3000);
+  E(own, 'render()'); await wait(100);
+  $(own, '.ss-ask [data-ssok]').click(); await wait(3000);
+  assert.equal(E(own, `projById('${pid}').stages.find(s => s.id === '${sid}').status`), 'done'); ok('«Принять этап» закрывает этап');
   assert.notEqual(E(own, `currentStage(projById('${pid}'))?.id`), sid); ok('следующий этап — в работе (или проект завершён)');
   E(gw, 'render()'); await wait(100);
   assert.equal(E(gw, `projById('${pid}').stages.find(s => s.id === '${sid}').status`), 'done'); ok('исполнитель видит, что этап закрыт');

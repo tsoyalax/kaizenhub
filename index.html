@@ -1702,6 +1702,33 @@ svg.clip{width:14px;height:14px;flex:none}
 .gate-mats .fchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
 .gate-mats .fchip svg{width:13px;height:13px;flex:none}
 .gate-nomat{color:var(--y)!important}
+
+/* сдача этапа */
+.ss{display:grid;gap:8px;margin-top:12px;padding:14px;border-radius:12px;border:1.5px dashed var(--line-strong);background:var(--surface)}
+.ss > b{font-size:14.5px}
+.ss > small{font-size:12.5px;color:var(--muted)}
+.ss.drop-on{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 6%,var(--surface))}
+.ss-add{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ss-add .file-btn{display:inline-flex;align-items:center;gap:6px;height:34px}
+.ss-link{display:flex;gap:4px;flex:1;min-width:140px}
+.ss-link input{flex:1;min-width:0;height:34px}
+.ss-link .ghost{height:34px;padding:0 10px}
+.ss textarea{width:100%;min-height:52px;resize:vertical;font:inherit;font-size:13.5px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--surface-2);color:var(--ink)}
+.ss-send{width:100%;height:40px}
+.ss-send:disabled{opacity:.5;cursor:default}
+.ss-items{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ss-items li{display:flex;align-items:center;gap:6px;min-width:0}
+.ss-items .fchip{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:100%;padding:6px 10px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font:inherit;font-size:13px;cursor:pointer;text-decoration:none}
+.ss-items .fchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ss-items .fchip svg{width:14px;height:14px;flex:none}
+.ss-items .fchip small{color:var(--muted);flex:none}
+.ss-items .tx{margin-left:auto}
+.ss-wait,.ss-ask{border-style:solid;border-color:transparent;background:var(--b-bg)}
+.ss-wait .link{justify-self:start;font-size:12.5px}
+.ss-note{color:var(--ink)!important}
+.ss-back{color:var(--r)!important}
+.ss-ok{display:flex;align-items:center;gap:6px;border:0;background:var(--g-bg);color:var(--g);font-size:13px;font-weight:600;padding:8px 12px}
+.ss-ok svg{width:14px;height:14px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2882,6 +2909,7 @@ function gateMats(p, s){
 function gateBox(p, s, mine){
   if (!s.gate || s.status === 'done' || isMaint(s)) return '';
   if (mine && canEditProject(p)) mine = false;
+  if (mine && s.req?.status !== 'pending') return '';   // исполнитель сдаёт этап блоком «Сдать этап» под этапом
   const r = s.req; const cur = currentStage(p)?.id === s.id;
   if (r?.status === 'pending') return mine
     ? `<div class="gate wait"><b>Запрос на переход отправлен</b><small>Ждёт решения руководителя · ${reqWhen(r)}</small><button class="link" data-gatecancel="${p.id}|${s.id}">Отозвать</button></div>`
@@ -2916,6 +2944,92 @@ document.addEventListener('click', e => {
     s.req = { ...(s.req || {}), status:'rejected', reason, decidedBy:actorName(), decidedAt:new Date().toISOString() };
     addLog(p, `Запрос на переход с этапа «${s.name}» возвращён: ${reason}`); commit(); toast('Исполнитель увидит, что нужно доделать'); }, true);
 });
+// ---------- Сдача этапа: исполнитель разом загружает сделанное под этапом, руководитель принимает — этап закрывается ----------
+// s.sub = { status:'draft'|'pending'|'rejected'|'accepted', items:[{ id, kind:'file'|'link', path|url, name, size, by, byName, at }], note, by, byName, at, reason, decidedBy, decidedAt }
+const stageSubmissions = () => reviewProjects().flatMap(p => p.stages.filter(s => s.sub?.status === 'pending' && s.status !== 'done').map(s => ({ p, s })));
+const ssWhen = iso => new Date(iso).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+function ssItems(p, s, canDel){
+  const items = s.sub?.items || []; if (!items.length) return '';
+  return `<ul class="ss-items">${items.map(m => `<li>${m.kind === 'file'
+      ? `<button class="fchip" data-fopen="${esc(m.path)}" title="Открыть файл">${CLIP_ICO}<span>${esc(m.name)}</span>${m.size ? `<small>${fsize(m.size)}</small>` : ''}</button>`
+      : `<a class="fchip" href="${esc(safeUrl(m.url) || '#')}" target="_blank" rel="noopener noreferrer">${REG_LINK_ICO}<span>${esc(m.name || m.url)}</span></a>`}
+    ${canDel && (m.by === meKey() || canEditProject(p)) ? `<button class="tx" data-ssdel="${p.id}|${s.id}|${m.id}" aria-label="Убрать ${esc(m.name || '')}" title="Убрать">×</button>` : ''}</li>`).join('')}</ul>`;
+}
+function stageSubmitBox(p, s, mine){
+  if (isMaint(s)) return '';
+  const sub = s.sub || {}; const items = sub.items || [];
+  if (s.status === 'done') return sub.status === 'accepted' ? `<div class="ss ss-ok">${MAT_OK}<span>Этап принят${sub.decidedBy ? ` · ${esc(sub.decidedBy)}` : ''}</span></div>` : '';
+  const lead = canEditProject(p); const cur = currentStage(p)?.id === s.id;
+  if (mine && !lead){
+    if (sub.status === 'pending') return `<div class="ss ss-wait"><b>Этап сдан на проверку</b><small>${ssWhen(sub.at)} · ждём решения руководителя</small>${ssItems(p, s, false)}${sub.note ? `<small class="ss-note">«${esc(sub.note)}»</small>` : ''}
+      <button class="link" data-sscancel="${p.id}|${s.id}">Отозвать и дополнить</button></div>`;
+    if (!cur && !items.length) return '';
+    const up = ui.ssUp === s.id;
+    return `<div class="ss" data-ssdrop="${p.id}|${s.id}"><b>Сдать этап</b>
+      ${sub.status === 'rejected' ? `<small class="ss-back">Руководитель вернул этап${sub.reason ? `: «${esc(sub.reason)}»` : ''}</small>` : '<small>Загрузите сюда всё, что сделали по этапу, и отправьте на проверку.</small>'}
+      ${ssItems(p, s, true)}
+      <div class="ss-add">${up ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn">${CLIP_ICO}Файлы<input type="file" multiple data-ssfile="${p.id}|${s.id}"></label>`}
+        <form class="ss-link" data-sslink="${p.id}|${s.id}"><input placeholder="или ссылка" inputmode="url" aria-label="Ссылка на результат"><button class="ghost" aria-label="Добавить ссылку">+</button></form></div>
+      <small class="hint">Можно перетащить файлы сюда, до 25 МБ каждый</small>
+      <textarea id="ssnote-${s.id}" rows="2" placeholder="Комментарий для руководителя (необязательно)" aria-label="Комментарий для руководителя">${esc(sub.note || '')}</textarea>
+      <button class="primary ss-send" data-sssend="${p.id}|${s.id}" ${items.length ? '' : 'disabled title="Сначала прикрепите файлы или ссылку"'}>Отправить на проверку</button></div>`;
+  }
+  if (sub.status === 'pending') return `<div class="ss ss-ask"><b>${esc(sub.byName || 'Исполнитель')} сдал этап</b><small>${ssWhen(sub.at)}</small>
+      ${sub.note ? `<small class="ss-note">«${esc(sub.note)}»</small>` : ''}${ssItems(p, s, false)}
+      <span class="gate-acts"><button class="primary" data-ssok="${p.id}|${s.id}">Принять этап</button><button class="ghost" data-ssno="${p.id}|${s.id}">Вернуть</button></span></div>`;
+  return '';
+}
+const REG_LINK_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
+const ssFind = v => { const [pid, sid, mid] = String(v).split('|'); const p = projById(pid); const s = p?.stages.find(x => x.id === sid); return { p, s, mid }; };
+const ssEnsure = s => (s.sub = s.sub && s.sub.status !== 'accepted' ? s.sub : { status:'draft', items:[] });
+async function ssUpload(p, s, files){
+  files = [...(files || [])]; if (!files.length || !p || !s) return;
+  const F = window.claude?.use ? await window.claude.use('files').catch(() => null) : null;
+  if (!F || !cloud.uid){ toast('Файлы можно прикреплять, когда вы вошли в аккаунт'); return; }
+  const big = files.filter(f => f.size > F.maxSize); files = files.filter(f => f.size <= F.maxSize);
+  if (big.length) toast(`Больше 25 МБ: ${big.map(f => f.name).join(', ')}. Загрузите в облако и добавьте ссылку`);
+  ui.ssUp = s.id; render();
+  const added = [], failed = [];
+  for (const file of files){
+    try { const path = await F.upload(`${cloud.uid}/p/${p.id}/${uid()}-${safeFileName(file.name)}`, file); added.push({ id:uid(), kind:'file', path, name:file.name, size:file.size, by:meKey(), byName:actorName(), at:new Date().toISOString() }); }
+    catch(err) { failed.push(`${file.name} — ${uploadErr(err)}`); }
+  }
+  ui.ssUp = null;
+  const q = projById(p.id); const st = q?.stages.find(x => x.id === s.id);
+  if (st && added.length){ const sub = ssEnsure(st); if (sub.status === 'rejected') sub.status = 'draft'; sub.items = [...(sub.items || []), ...added]; commit(); } else render();
+  if (failed.length) toast(`Не загрузились: ${failed.join('; ')}`);
+}
+document.addEventListener('change', e => { const v = e.target.dataset?.ssfile; if (!v) return; const { p, s } = ssFind(v); const files = [...(e.target.files || [])]; e.target.value = ''; ssUpload(p, s, files); });
+document.addEventListener('dragover', e => { const z = e.target.closest?.('[data-ssdrop]'); if (!z || !e.dataTransfer?.types?.includes('Files')) return; e.preventDefault(); z.classList.add('drop-on'); });
+document.addEventListener('dragleave', e => { const z = e.target.closest?.('[data-ssdrop]'); if (z && !z.contains(e.relatedTarget)) z.classList.remove('drop-on'); });
+document.addEventListener('drop', e => { const z = e.target.closest?.('[data-ssdrop]'); if (!z || !e.dataTransfer?.files?.length) return; e.preventDefault(); z.classList.remove('drop-on'); const { p, s } = ssFind(z.dataset.ssdrop); ssUpload(p, s, e.dataTransfer.files); });
+document.addEventListener('submit', e => {
+  const f = e.target.closest?.('[data-sslink]'); if (!f) return; e.preventDefault();
+  const { p, s } = ssFind(f.dataset.sslink); const v = f.querySelector('input').value.trim(); if (!s || !v) return;
+  if (!safeUrl(v)){ toast('Ссылка должна начинаться с http:// или https://'); return; }
+  const sub = ssEnsure(s); if (sub.status === 'rejected') sub.status = 'draft';
+  sub.items = [...(sub.items || []), { id:uid(), kind:'link', url:v, name:v.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60), by:meKey(), byName:actorName(), at:new Date().toISOString() }];
+  commit();
+});
+document.addEventListener('input', e => { const m = /^ssnote-(.+)$/.exec(e.target.id || ''); if (!m) return; const s = (projById(ui.view === 'mine' ? ui.myProject : ui.prodProject)?.stages || []).find(x => x.id === m[1]); if (s) ssEnsure(s).note = e.target.value; });
+document.addEventListener('click', e => {
+  const q = e.target.closest?.('[data-ssdel],[data-sssend],[data-sscancel],[data-ssok],[data-ssno]'); if (!q) return;
+  const d = q.dataset; const { p, s, mid } = ssFind(d.ssdel || d.sssend || d.sscancel || d.ssok || d.ssno); if (!s) return;
+  if (d.ssdel){ s.sub.items = (s.sub.items || []).filter(m => m.id !== mid); commit(); return; }
+  if (d.sssend){ const sub = ssEnsure(s); if (!(sub.items || []).length){ toast('Сначала прикрепите файлы или ссылку'); return; }
+    const note = $(`#ssnote-${s.id}`)?.value.trim() || sub.note || '';
+    Object.assign(sub, { status:'pending', note, by:meKey(), byName:actorName(), at:new Date().toISOString(), reason:'' });
+    addLog(p, `${actorName()} сдал этап «${s.name}» на проверку: ${sub.items.length} ${plural(sub.items.length, 'материал', 'материала', 'материалов')}`); commit(); toast('Этап отправлен на проверку'); return; }
+  if (d.sscancel){ s.sub.status = 'draft'; addLog(p, `Сдача этапа «${s.name}» отозвана`); commit(); return; }
+  if (d.ssok){ const sub = s.sub; Object.assign(sub, { status:'accepted', decidedBy:actorName(), decidedAt:new Date().toISOString() });
+    if (s.req?.status === 'pending') s.req = { ...s.req, status:'approved', decidedBy:actorName(), decidedAt:sub.decidedAt };
+    addLog(p, `Этап «${s.name}» принят (сдал: ${sub.byName || 'исполнитель'})`);
+    if (layer.querySelector('.pop')) layer.innerHTML = '';
+    setStatus(p, s, 'done'); toast(`Этап «${s.name}» принят, следующий — в работе`); return; }
+  if (d.ssno) return gateDialog(`Вернуть этап «${esc(s.name)}»`, 'Что нужно доделать', 'Вернуть исполнителю', reason => {
+    Object.assign(s.sub, { status:'rejected', reason, decidedBy:actorName(), decidedAt:new Date().toISOString() });
+    addLog(p, `Этап «${s.name}» возвращён на доработку: ${reason}`); commit(); toast('Исполнитель увидит, что нужно доделать'); }, true);
+});
 // ---------- Производство на телефоне: лента проектов + этапы сверху вниз ----------
 function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage, curSub }){
   const key = mine ? 'myProject' : 'prodProject';
@@ -2931,7 +3045,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
     const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
-      if (mine && !t) return x.files ? `<div class="pf-tickwrap">${tickCard(p, s, x, here)}<button class="pf-mat" data-pfsub="${s.id}|${x.id}">${CLIP_ICO}Прикрепить материалы</button></div>` : tickCard(p, s, x, here);
+      if (mine && !t) return tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<b>${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
         <small>${esc(short(whoId(p, s, t)))}</small>
@@ -2942,7 +3056,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
-      ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
+      ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}${stageSubmitBox(p, s, mine)}
     </section>`;
   }).join('');
   const steps = p.stages.map(s => `<button class="pm-step${s.status === 'done' ? ' done' : ''}${s.id === cur.stageId ? ' cur' : ''} h-${health(s).key}" data-pmgo="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">${s.status === 'done' ? '✓' : s.position + 1}</button>`).join('');
@@ -3523,10 +3637,11 @@ function openBell(){
   const list = GUEST ? [] : hotStages(); const a = myAlerts();
   const sec = (title, items) => items.length ? `<h3>${title} <span class="ntf-n">${items.length}</span></h3>${items.slice(0, 8).map(ntfItem).join('')}` : '';
   const perm = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
-  const rq = gateRequests(); const mr = matsToReview();
+  const rq = gateRequests(); const mr = matsToReview(); const ssq = stageSubmissions();
   const mrByTask = [...mr.reduce((m, i) => { const k = i.t.id; if (!m.has(k)) m.set(k, { ...i, n:0, who:new Set() }); const g = m.get(k); g.n++; g.who.add(i.m.byName || 'Исполнитель'); return m; }, new Map()).values()];
   layer.innerHTML = `<div class="backdrop" data-close style="background:transparent"></div>
   <div class="pop" role="dialog" aria-label="Уведомления">
+  ${ssq.length ? `<h3>Сдача этапов <span class="ntf-n">${ssq.length}</span></h3>${ssq.map(({ p, s }) => `<button class="ntf" data-open="${p.id}" data-stage="${s.id}"><span class="sw blue"></span><span><b>${esc(p.name)}</b><small>${esc(s.sub.byName || 'Исполнитель')} сдал этап «${esc(s.name)}»: ${(s.sub.items || []).length} ${plural((s.sub.items || []).length, 'материал', 'материала', 'материалов')}</small></span></button>`).join('')}` : ''}
   ${mrByTask.length ? `<h3>Материалы на проверку <span class="ntf-n">${mr.length}</span></h3>${mrByTask.slice(0, 8).map(g => `<button class="ntf" data-task="${g.t.id}"><span class="sw blue"></span><span><b>${esc(g.p.name)}</b><small>${esc(g.t.title)}: ${g.n} ${plural(g.n, 'материал', 'материала', 'материалов')} от ${esc([...g.who].join(', '))}</small></span></button>`).join('')}` : ''}
   ${rq.length ? `<h3>Запросы на переход <span class="ntf-n">${rq.length}</span></h3>${rq.map(({ p, s }) => gateReqItem(p, s)).join('')}` : ''}
   ${(() => { const nw = new Set(a.fresh.map(i => i.id)); return sec('Новые задачи', a.fresh) + sec('Просрочено', a.over.filter(i => !nw.has(i.id))) + sec('На сегодня', a.today.filter(i => !nw.has(i.id))); })()}
@@ -3541,7 +3656,7 @@ function openBell(){
   const seen = readSet(NSEEN_KEY()); myTodo().forEach(i => seen.add(i.id)); writeSet(NSEEN_KEY(), seen); paintBell();
 }
 function paintBell(){
-  const n = (GUEST ? 0 : hotStages().length) + gateRequests().length + matsToReview().length + alertCount();
+  const n = (GUEST ? 0 : hotStages().length) + gateRequests().length + matsToReview().length + stageSubmissions().length + alertCount();
   const b = $('#bellCount'); if (b) b.innerHTML = n ? `<span class="badge">${n}</span>` : '';
 }
 document.addEventListener('click', e => {
@@ -5503,6 +5618,9 @@ function pushNotify(){
   if (mr.length){ const byP = [...new Set(mr.map(i => i.p.name))];
     try { new Notification('Новые материалы на проверку', { body:mr.length === 1 ? `${mr[0].m.byName || 'Исполнитель'}: «${mr[0].m.name}» — ${mr[0].p.name}, ${mr[0].t.title}` : `${mr.length} ${plural(mr.length, 'материал', 'материала', 'материалов')}: ${byP.slice(0, 3).join(', ')}`, tag:'kz-mats' }); } catch(e) {}
     mr.forEach(i => sent.add('mat:' + i.m.id)); }
+  stageSubmissions().filter(({ s }) => !sent.has('ss:' + s.id + ':' + s.sub.at)).slice(0, 3).forEach(({ p, s }) => {
+    try { new Notification('Сдача этапа', { body:`${s.sub.byName || 'Исполнитель'} сдал этап «${s.name}» — ${p.name}`, tag:'kz-ss-' + s.id }); } catch(e) {}
+    sent.add('ss:' + s.id + ':' + s.sub.at); });
   gateRequests().filter(({ s }) => !sent.has('gate:' + s.id + ':' + s.req.at)).slice(0, 3).forEach(({ p, s }) => {
     try { new Notification('Запрос на переход', { body:`${s.req.byName || 'Исполнитель'} просит закрыть этап «${s.name}» — ${p.name}`, tag:'kz-gate-' + s.id }); } catch(e) {}
     sent.add('gate:' + s.id + ':' + s.req.at); });
@@ -6234,14 +6352,14 @@ document.addEventListener('change', e => {
     commit(); renderTaskModal(); assignNote(t.assignee_id, p); }
 });
 // «Мои проекты»: исполнитель сам меняет статус этапа и отмечает подэтапы без чек-листа — владелец видит это сразу
-const stageStatusSelect = (p, s) => s.gate && s.status === 'done' ? '' : `<select class="pf-status" data-mstatus="${p.id}|${s.id}" aria-label="Статус этапа ${esc(s.name)}">${Object.entries(STATUS).filter(([k]) => !s.gate || canEditProject(p) || k !== 'done').map(([k,v]) => `<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('')}</select>`;
+const stageStatusSelect = (p, s) => !canEditProject(p) && s.status === 'done' ? '' : `<select class="pf-status" data-mstatus="${p.id}|${s.id}" aria-label="Статус этапа ${esc(s.name)}">${Object.entries(STATUS).filter(([k]) => canEditProject(p) || k !== 'done').map(([k,v]) => `<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('')}</select>`;
 const tickCard = (p, s, x, here) => `<label class="pf-card pf-tick${x.done ? ' done' : ''}${here ? ' here' : ''}">
   ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<span class="pf-tick-row"><input type="checkbox" data-sub="${p.id}|${s.id}|${x.id}" ${x.done ? 'checked' : ''}><b>${esc(x.name)}</b></span>
   <small>${x.done ? 'Выполнено' : 'Отметьте, когда сделаете'}</small></label>`;
 document.addEventListener('change', e => {
   const v = e.target.dataset?.mstatus; if (!v) return;
   const [pid, sid] = v.split('|'); const p = projById(pid); const s = p?.stages.find(y => y.id === sid);
-  if (s && s.gate && e.target.value === 'done' && !canEditProject(p)){ toast('Этот этап закрывает руководитель: отправьте запрос на переход'); render(); return; }
+  if (s && e.target.value === 'done' && !canEditProject(p)){ toast('Этап закрывает руководитель: загрузите сделанное в «Сдать этап» под этапом'); render(); return; }
   if (s) setStatus(p, s, e.target.value);
 });
 function projectProgress(p){
@@ -6283,7 +6401,7 @@ function renderProjectFocus(mine = false){
     const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
-      if (mine && !t) return x.files ? `<div class="pf-tickwrap">${tickCard(p, s, x, here)}<button class="pf-mat" data-pfsub="${s.id}|${x.id}">${CLIP_ICO}Прикрепить материалы</button></div>` : tickCard(p, s, x, here);
+      if (mine && !t) return tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
         <b>${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
@@ -6296,7 +6414,7 @@ function renderProjectFocus(mine = false){
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
-      ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
+      ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}${stageSubmitBox(p, s, mine)}
     </section>`;
   }).join('');
 
