@@ -58,8 +58,9 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
 
   // назначаем сотрудника ответственным за этап проекта
   $(own, '[data-view="matrix"]').click(); await wait(100);
-  const openBtn = $(own, '.prow[data-open]'); const pid = openBtn.dataset.open; openBtn.click(); await wait(200);
-  const sel = $(own, '[data-sassign]'); const sid = sel.dataset.sassign;
+  const pid = $(own, '.prow[data-open]').dataset.open;
+  // ответственный за этап — в ячейке матрицы (в карточке проекта ответственный только у проекта)
+  const sel = $(own, `.mx select.cell-as[data-qassign^="${pid}|"]`); const sid = sel.dataset.qassign.split('|')[1];
   const memberOpt = [...sel.options].find(o => o.textContent.startsWith('Тимур'));
   change(own, sel, memberOpt.value); await wait(1500);
   assert.ok(!be.rows.has('sp/' + pid) || !(be.rows.get('sp/' + pid).data.memberIds || []).length); ok('пока человек не вошёл, проект ему не открыт');
@@ -98,8 +99,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
 
   // 5) сняли с этапа — доступ к проекту закрылся
   $(own, '[data-view="matrix"]').click(); await wait(100);
-  $(own, `.prow[data-open="${pid}"]`).click(); await wait(200);
-  change(own, $(own, `[data-sassign="${sid}"]`), ''); await wait(1500);
+  change(own, $(own, `.mx select.cell-as[data-qassign="${pid}|${sid}"]`), ''); await wait(1500);
   const sp2 = be.rows.get('sp/' + pid);
   assert.ok(!sp2 || !(sp2.data.memberIds || []).includes(T)); ok('сняли с назначения — доступ к проекту закрыт');
 

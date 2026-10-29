@@ -168,6 +168,22 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok([...own.w.document.querySelectorAll('.rv-card.rv-done')].some(c => /Материал «.+» принят/.test(c.textContent))); ok('в «Принятых» и принятые материалы');
   E(own, `(() => { const s = projById('${pid}').stages.find(x => x.id === '${sid}'); delete s.sub; render(); })()`); await wait(30);
   assert.ok([...own.w.document.querySelectorAll('.rv-card.rv-done')].some(c => /Этап принят/.test(c.textContent))); ok('история не пропадает, даже если отметку в этапе затёрло');
+  { const pname = E(own, `projById('${pid}').name`);
+    assert.ok([...own.w.document.querySelectorAll('.rv-grp .rv-gh')].some(h => h.textContent.includes(pname))); ok('«Принятые» сгруппированы по проектам');
+    E(own, `ui.revTab = 'files'; ui.revP = ''; render()`); await wait(30);
+    assert.ok($(own, '.fl-list .fl-row .fchip') && [...own.w.document.querySelectorAll('.fl-row')].some(r => /Бриф клиента/.test(r.textContent))); ok('вкладка «Файлы»: сданные файлы видны');
+    assert.ok([...own.w.document.querySelectorAll('.fl-row .fl-meta')].some(m => /этап/.test(m.textContent))); ok('у файла видно, какой этап');
+    E(own, `ui.revQ = 'нет-такого-файла'; render()`); await wait(30);
+    assert.ok(!$(own, '.fl-row') && $(own, '.empty')); ok('поиск по файлам');
+    E(own, `ui.revQ = ''; ui.revP = 'нет'; render()`); await wait(30);
+    assert.ok($(own, '.fl-row')); ok('неизвестный проект в фильтре — показываются все');
+    const other = E(own, `db.projects.find(p => p.id !== '${pid}').id`);
+    E(own, `ui.revP = '${other}'; render()`); await wait(30);
+    assert.ok(![...own.w.document.querySelectorAll('.fl-row')].some(r => /Бриф клиента/.test(r.textContent))); ok('фильтр по проекту скрывает файлы других проектов');
+    E(own, `openProject('${pid}')`); await wait(100);
+    $(own, `[data-pfiles="${pid}"]`).click(); await wait(50);
+    assert.ok(E(own, `ui.view === 'review' && ui.revTab === 'files' && ui.revP === '${pid}'`) && $(own, '.fl-row')); ok('«Файлы проекта» из карточки открывают файлы этого проекта');
+    E(own, `ui.revP = ''`); }
   E(own, `ui.revTab = 'rejected'; render()`); await wait(30);
   assert.ok(!$(own, '.rv-card') || $(own, '.empty')); ok('«Возвращённые»: возвращённый ранее этап после повторной сдачи и приёмки там не висит');
   assert.notEqual(E(own, `currentStage(projById('${pid}'))?.id`), sid); ok('следующий этап — в работе (или проект завершён)');
@@ -176,7 +192,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
 
   // карточка проекта: галочки «Исполнителю» прямо в этапах, шаблон их не сбрасывает
   const p2 = E(own, `db.projects.find(p => p.state === 'active' && p.id !== '${pid}' && currentStage(p) && (currentStage(p).subs || []).length > 1 && !currentStage(p).gate).id`);
-  E(own, `openProject('${p2}', currentStage(projById('${p2}')).id)`); await wait(200);
+  E(own, `openProject('${p2}', currentStage(projById('${p2}')).id)`); await wait(200); $(own, '#stEdit').click(); await wait(50);
   const s2 = E(own, `currentStage(projById('${p2}')).id`), x2 = E(own, `currentStage(projById('${p2}')).subs[1].id`);
   assert.ok($(own, `.exec-flags [data-sgate="${s2}"]`) && $(own, `.exec-flags [data-sfilesp="${s2}|${x2}"]`)); ok('карточка проекта: в этапе блок «Исполнителю» с галочками');
   for (const sel of [`[data-sgate="${s2}"]`, `[data-sfilesp="${s2}|${x2}"]`]){ const el = $(own, sel); el.checked = true; el.dispatchEvent(new own.w.Event('change', { bubbles: true })); await wait(100); }
@@ -186,6 +202,19 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     E(gw, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(50);
     assert.ok(!$(gw, '.pf-add')); ok('у исполнителя на доске нет «Добавить подэтап»');
   }
+  { const p3 = E(own, `db.projects.find(p => p.state === 'active' && p.id !== '${pid}').id`);
+    E(own, `openProject('${p3}')`); await wait(150);
+    assert.ok($(own, '.subs-ro') || !$(own, '.stg select')); ok('карточка проекта: этапы сначала только для просмотра');
+    assert.ok(![...own.w.document.querySelectorAll('.stg select')].some(x => /Ответствен/.test(x.getAttribute('aria-label') || '') || x.matches('[data-sassign]'))); ok('в этапах нет выбора ответственного');
+    $(own, '#stEdit').click(); await wait(50);
+    assert.ok($(own, '.stg .g.g2 select')); ok('«Редактировать» открывает статус и дедлайн');
+    E(own, `archiveProject(projById('${p3}')); commit()`); await wait(100);
+    assert.equal(E(own, `projById('${p3}').state`), 'archived'); ok('проект в архиве');
+    E(own, `ui.open = null; layer.innerHTML = ''; ui.view = 'archive'; render()`); await wait(50);
+    assert.ok($(own, `.ar-card [data-unarch="${p3}"]`)); ok('раздел «Архив» показывает проект и «Вернуть»');
+    $(own, `[data-unarch="${p3}"]`).click(); await wait(100);
+    assert.equal(E(own, `projById('${p3}').state`), 'active'); ok('«Вернуть» возвращает проект в прежнее состояние');
+    assert.ok(!$(own, `.ar-card [data-unarch="${p3}"]`)); ok('после возврата проекта нет в архиве'); }
   assert.equal(own.errors.length, 0, own.errors.join('\n')); assert.equal(gw.errors.length, 0, gw.errors.join('\n')); assert.equal(ld.errors.length, 0, ld.errors.join('\n')); ok('ошибок на страницах нет');
   own.w.close(); gw.w.close(); ld.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
