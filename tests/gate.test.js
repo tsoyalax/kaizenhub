@@ -140,6 +140,9 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok($(gw, '.ss-wait')); ok('исполнитель: «Этап сдан на проверку»');
   await wait(3000);
   assert.equal(E(own, 'stageSubmissions().length'), 1); ok('руководитель получил сдачу этапа');
+  E(own, `ui.view = 'review'; ui.revTab = 'pending'; render()`); await wait(50);
+  assert.ok($(own, '.tabs [data-view="review"]') && $(own, `.rv-card [data-ssok="${pid}|${sid}"]`) && /Всё готово/.test($(own, '.rv-card').textContent)); ok('раздел «Приёмка»: сданный этап с файлами, «Принять» и «Вернуть»');
+  assert.ok(E(ld, 'guestViews().includes("review")') && E(gw, '!guestViews().includes("review")')); ok('«Приёмка» есть у руководителя по ссылке и нет у исполнителя');
   E(ld, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(100);
   assert.ok(E(ld, 'stageSubmissions().length') === 1 && $(ld, '.ss-ask [data-ssok]')); ok('руководитель по ссылке видит сдачу с «Принять этап»');
   $(own, '#bell').click(); await wait(50);
@@ -156,6 +159,10 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E(own, 'render()'); await wait(100);
   $(own, '.ss-ask [data-ssok]').click(); await wait(3000);
   assert.equal(E(own, `projById('${pid}').stages.find(s => s.id === '${sid}').status`), 'done'); ok('«Принять этап» закрывает этап');
+  E(own, `ui.view = 'review'; ui.revTab = 'accepted'; render()`); await wait(50);
+  assert.ok($(own, '.rv-card.rv-done .rv-ok') && $(own, '.rv-card.rv-done').textContent.includes(E(own, `projById('${pid}').name`))); ok('«Приёмка» → «Принятые»: этап в истории');
+  E(own, `ui.revTab = 'rejected'; render()`); await wait(30);
+  assert.ok(!$(own, '.rv-card') || $(own, '.empty')); ok('«Возвращённые»: возвращённый ранее этап после повторной сдачи и приёмки там не висит');
   assert.notEqual(E(own, `currentStage(projById('${pid}'))?.id`), sid); ok('следующий этап — в работе (или проект завершён)');
   E(gw, 'render()'); await wait(100);
   assert.equal(E(gw, `projById('${pid}').stages.find(s => s.id === '${sid}').status`), 'done'); ok('исполнитель видит, что этап закрыт');

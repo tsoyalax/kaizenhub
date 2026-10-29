@@ -1064,7 +1064,7 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .sh-mem select{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 6px;font-size:13px}
 .sh-h{font-size:14px;font-weight:600;margin:14px 0 2px}
 .mine-h{margin:0;font-size:18px;font-weight:600}
-body.guest .tabs button:not([data-view="mine"]):not([data-view="mytasks"]),body.guest #filters,body.guest #newBtn,body.guest #cloudBtn{display:none!important}
+body.guest .tabs button:not([data-view="mine"]):not([data-view="mytasks"]):not([data-view="review"]),body.guest #filters,body.guest #newBtn,body.guest #cloudBtn{display:none!important}
 .sh-link{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .sh-link input{flex:1;min-width:180px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);padding:0 8px;font-size:13px}
 .sh-link small{color:var(--muted);font-size:12.5px;flex-basis:100%}
@@ -1729,6 +1729,27 @@ svg.clip{width:14px;height:14px;flex:none}
 .ss-back{color:var(--r)!important}
 .ss-ok{display:flex;align-items:center;gap:6px;border:0;background:var(--g-bg);color:var(--g);font-size:13px;font-weight:600;padding:8px 12px}
 .ss-ok svg{width:14px;height:14px}
+
+/* приёмка */
+.rv{max-width:880px}
+.rv-card{background:var(--surface);border:1px solid var(--card-bd,var(--line));border-radius:16px;padding:16px 18px;margin-bottom:12px;display:grid;gap:10px}
+.rv-h{display:flex;align-items:center;gap:12px}
+.rv-h > div{flex:1;min-width:0;display:grid}
+.rv-h b{font-size:16px;font-weight:700}
+.rv-h small{font-size:13px;color:var(--muted)}
+.rv-who{margin:0;font-size:14px;color:var(--ink-2,var(--muted))}
+.rv-who b{color:var(--ink)}
+.rv-reason{margin:0;font-size:14px;color:var(--r)}
+.rv-ok{display:inline-flex;align-items:center;gap:4px;font-weight:600;color:var(--g)}.rv-ok svg{width:13px;height:13px}
+.rv-no{font-weight:600;color:var(--r)}
+.rv-done{opacity:.95}
+.rv-sub{margin:22px 2px 10px;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.rv-mat{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--card-bd,var(--line));background:var(--surface);border-radius:14px;padding:12px 14px;margin-bottom:8px;font:inherit;color:var(--ink);cursor:pointer}
+.rv-mat > span:nth-child(2){flex:1;min-width:0;display:grid}
+.rv-mat small{color:var(--muted);font-size:13px}
+.rv-badge{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--brand);color:#fff;font-size:11.5px;font-weight:700;line-height:20px;text-align:center}
+.mnav .rv-badge{position:absolute;margin:0;top:6px;transform:translateX(12px);min-width:16px;height:16px;line-height:16px;font-size:10px}
+.mnav button{position:relative}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -1744,6 +1765,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
     <button data-view="mytasks" id="myTasksTab">Мои задачи</button>
+    <button data-view="review" id="reviewTab">Приёмка</button>
     <button data-view="assign">Поручения</button>
     <button data-view="mine" id="mineTab" hidden>Мои проекты</button>
     <button data-view="reports">AI-отчёты</button>
@@ -2543,15 +2565,16 @@ function rememberView(){ try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({
 function restoreView(){
   try {
     const v = JSON.parse(sessionStorage.getItem(VIEW_KEY) || 'null'); if (!v) return;
-    const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine', 'mytasks');
+    const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine', 'mytasks', 'review');
     if (ok.includes(v.view)) ui.view = v.view;
     if (['deadlines','templates','categories','spaces'].includes(v.setTab)) ui.setTab = v.setTab;
     if (v.view === 'production' && v.prodMode === 'tasks') ui.view = 'mytasks';
   } catch(e) {}
 }
 function render(){
-  if (GUEST && ui.view !== 'mytasks') ui.view = 'mine';
+  if (GUEST && !guestViews().includes(ui.view)) ui.view = 'mine';
   try { renderSide(); } catch(e) {}
+  setTimeout(() => { try { paintReviewBadge(); } catch(e) {} }, 0);
   try { paintPhoneHead(); } catch(e) {}
   try { const vn = $('#viewName'); if (vn) vn.textContent = ({ production:'Производство', templates:'Настройки' })[ui.view] || MNAV[ui.view]?.[0] || ''; } catch(e) {}
   paintSpace(); rememberView();
@@ -2560,7 +2583,7 @@ function render(){
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
   $('#myTasksTab').hidden = false;
   renderFilters();
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.open) renderDrawer();
   try { paintPage(); } catch(e) {}
   paintSelect();
@@ -3030,6 +3053,53 @@ document.addEventListener('click', e => {
     Object.assign(s.sub, { status:'rejected', reason, decidedBy:actorName(), decidedAt:new Date().toISOString() });
     addLog(p, `Этап «${s.name}» возвращён на доработку: ${reason}`); commit(); toast('Исполнитель увидит, что нужно доделать'); }, true);
 });
+
+// ---------- Приёмка: всё, что руководитель принимает, — в одном разделе ----------
+const guestViews = () => ['mine', 'mytasks', ...(ext.projects.some(p => roleOf(p) === 'lead') ? ['review'] : [])];
+function reviewHistory(){
+  const all = [...(GUEST ? [] : db.projects), ...ext.projects.filter(p => roleOf(p) === 'lead')];
+  return all.flatMap(p => p.stages.filter(s => s.sub && (s.sub.status === 'accepted' || s.sub.status === 'rejected')).map(s => ({ p, s })))
+    .sort((a, b) => String(b.s.sub.decidedAt || '').localeCompare(String(a.s.sub.decidedAt || '')));
+}
+function renderReview(){
+  const pend = stageSubmissions(); const gates = gateRequests().filter(({ s }) => s.sub?.status !== 'pending'); const mats = matsToReview(); const hist = reviewHistory();
+  const acc = hist.filter(h => h.s.sub.status === 'accepted'), rej = hist.filter(h => h.s.sub.status === 'rejected');
+  const tab = ['pending', 'accepted', 'rejected'].includes(ui.revTab) ? ui.revTab : 'pending';
+  const head = (p, s) => `<div class="rv-h">${projAva(p, 'sm')}<div><b>${esc(p.name)}</b><small>${esc(p.client || '')} · этап ${s.position + 1}. ${esc(s.name)}</small></div>
+    <button class="link" data-open="${p.id}" data-stage="${s.id}">Проект</button></div>`;
+  const card = ({ p, s }) => `<article class="rv-card">${head(p, s)}
+    <p class="rv-who"><b>${esc(s.sub.byName || 'Исполнитель')}</b> сдал ${ssWhen(s.sub.at)}${s.sub.note ? ` · «${esc(s.sub.note)}»` : ''}</p>
+    ${ssItems(p, s, false)}
+    <span class="gate-acts"><button class="primary" data-ssok="${p.id}|${s.id}">Принять этап</button><button class="ghost" data-ssno="${p.id}|${s.id}">Вернуть</button></span></article>`;
+  const gcard = ({ p, s }) => `<article class="rv-card">${head(p, s)}
+    <p class="rv-who"><b>${esc(s.req.byName || 'Исполнитель')}</b> просит перейти на следующий этап · ${ssWhen(s.req.at)}${s.req.note ? ` · «${esc(s.req.note)}»` : ''}</p>
+    <span class="gate-acts"><button class="primary" data-gateok="${p.id}|${s.id}">Одобрить</button><button class="ghost" data-gateno="${p.id}|${s.id}">Вернуть</button></span></article>`;
+  const hcard = ({ p, s }) => `<article class="rv-card rv-done">${head(p, s)}
+    <p class="rv-who">${s.sub.status === 'accepted' ? `<span class="rv-ok">${MAT_OK}Принят</span>` : '<span class="rv-no">Возвращён</span>'} ${esc(s.sub.decidedBy || '')} · ${s.sub.decidedAt ? ssWhen(s.sub.decidedAt) : ''} · сдал ${esc(s.sub.byName || 'исполнитель')}</p>
+    ${s.sub.status === 'rejected' && s.sub.reason ? `<p class="rv-reason">«${esc(s.sub.reason)}»</p>` : ''}
+    ${ssItems(p, s, false)}</article>`;
+  const matsByTask = [...mats.reduce((m, i) => { if (!m.has(i.t.id)) m.set(i.t.id, { ...i, list:[] }); m.get(i.t.id).list.push(i.m); return m; }, new Map()).values()];
+  const pendHtml = pend.length || gates.length || matsByTask.length
+    ? `${pend.map(card).join('')}${gates.map(gcard).join('')}
+       ${matsByTask.length ? `<h3 class="rv-sub">Материалы в карточках подэтапов</h3>${matsByTask.map(g => `<button class="rv-mat" data-task="${g.t.id}">${projAva(g.p, 'xs')}<span><b>${esc(g.p.name)}</b><small>${esc(g.t.title)} · ${g.list.length} ${plural(g.list.length, 'материал', 'материала', 'материалов')} от ${esc([...new Set(g.list.map(m => m.byName || 'исполнитель'))].join(', '))}</small></span><span class="link">Открыть</span></button>`).join('')}` : ''}`
+    : '<div class="empty">Всё принято — на проверке ничего нет.</div>';
+  const list = tab === 'pending' ? pendHtml : (tab === 'accepted' ? acc : rej).length ? (tab === 'accepted' ? acc : rej).slice(0, 60).map(hcard).join('') : `<div class="empty">${tab === 'accepted' ? 'Принятых этапов пока нет.' : 'Этапов на доработке нет.'}</div>`;
+  app.innerHTML = `<div class="rv">
+    <div class="fn-head-row"><h2 class="td-title">Приёмка</h2>
+      <div class="seg-toggle" role="group" aria-label="Что показать">
+        <button data-revtab="pending" aria-pressed="${tab === 'pending'}">На проверке${pend.length + gates.length + matsByTask.length ? ` <span class="seg-n">${pend.length + gates.length + matsByTask.length}</span>` : ''}</button>
+        <button data-revtab="accepted" aria-pressed="${tab === 'accepted'}">Принятые${acc.length ? ` <span class="seg-n">${acc.length}</span>` : ''}</button>
+        <button data-revtab="rejected" aria-pressed="${tab === 'rejected'}">На доработке${rej.length ? ` <span class="seg-n">${rej.length}</span>` : ''}</button></div></div>
+    ${list}</div>`;
+}
+document.addEventListener('click', e => { const t = e.target.closest?.('[data-revtab]'); if (!t) return; ui.revTab = t.dataset.revtab; render(); });
+// цифра «на проверке» в меню
+function paintReviewBadge(){
+  const n = stageSubmissions().length + gateRequests().filter(({ s }) => s.sub?.status !== 'pending').length;
+  document.querySelectorAll('.tabs [data-view="review"], .side [data-sideview="review"], #mnav [data-mview="review"]').forEach(b => {
+    let i = b.querySelector('.rv-badge'); if (!n){ i?.remove(); return; }
+    if (!i){ i = document.createElement('b'); i.className = 'rv-badge'; b.appendChild(i); } i.textContent = n; });
+}
 // ---------- Производство на телефоне: лента проектов + этапы сверху вниз ----------
 function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage, curSub }){
   const key = mine ? 'myProject' : 'prodProject';
@@ -4105,7 +4175,7 @@ let sideOpen = false;
 const sidePinned = () => { if (innerWidth <= 1100) return false; try { const v = localStorage.getItem(SIDE_PIN); return v === null ? true : v === '1'; } catch(e) { return true; } };
 const setPin = on => { try { localStorage.setItem(SIDE_PIN, on ? '1' : '0'); } catch(e) {} };
 function sideViews(){
-  if (GUEST) return ['mine', 'mytasks'];
+  if (GUEST) return guestViews();
   return [...document.querySelectorAll('.tabs [data-view]')].filter(b => !b.hidden).map(b => b.dataset.view);
 }
 function renderSide(){
@@ -4389,7 +4459,7 @@ const toggle = (arr, v) => arr.includes(v) ? arr.filter(x => x !== v) : [...arr,
 function resetFilters(){ ui.q=''; ui.pms=[]; ui.clients=[]; ui.risk=''; render(); }
 
 document.querySelector('.tabs').onclick = e => {
-  const b = e.target.closest('[data-view]'); if (!b || (GUEST && !['mine', 'mytasks'].includes(b.dataset.view))) return;
+  const b = e.target.closest('[data-view]'); if (!b || (GUEST && !guestViews().includes(b.dataset.view))) return;
   ui.view = b.dataset.view; ui.draft = null; render();
 };
 $('#newBtn').onclick = openCreate;
@@ -7399,6 +7469,7 @@ const MNAV = {
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
   assign:['Поручения', MI('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2 2 4-4M8.5 17h7"/>')],
+  review:['Приёмка', MI('<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>')],
   mytasks:['Мои задачи', MI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5 2.5-2.5"/>')],
   reports:['AI-отчёты', MI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')],
   team:['Команда', MI('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>')],
@@ -7441,10 +7512,10 @@ document.addEventListener('click', e => {
   const k = c.dataset.kdrisk; ui.risk = ui.risk === k ? '' : k; render();
 });
 const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>');
-const moreViews = () => ['mytasks', 'assign', 'mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
+const moreViews = () => ['review', 'mytasks', 'assign', 'mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
 function renderMobileNav(){
   const nav = $('#mnav'); if (!nav) return;
-  if (GUEST){ nav.innerHTML = ['mine', 'mytasks'].map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
+  if (GUEST){ nav.innerHTML = guestViews().map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
   const inMore = !MNAV_MAIN.includes(ui.view);
   nav.innerHTML = MNAV_MAIN.map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')
     + `<button data-mmore aria-current="${inMore ? 'page' : 'false'}" aria-haspopup="dialog">${inMore ? MNAV[ui.view][1] : MORE_ICON}<span>${inMore ? MNAV[ui.view][0] : 'Ещё'}</span></button>`;
