@@ -1686,6 +1686,22 @@ svg.clip{width:14px;height:14px;flex:none}
 .tk-who{display:flex;align-items:center;gap:8px;font-size:13px}
 .tk-who > span{color:var(--muted)}
 .tk-who .tk-as{height:34px;max-width:230px}
+
+/* приёмка материалов */
+.mat-acc{height:28px;padding:0 10px;font-size:12.5px;display:inline-flex;align-items:center;gap:5px}
+.mat-acc svg,.mat-ok svg{width:13px;height:13px}
+.mat-ok{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--g);background:var(--g-bg);padding:3px 9px;border-radius:7px}
+.mat-ok .link{font-size:12px;font-weight:400}
+.mat-wait{font-size:12px;color:var(--muted);background:var(--surface-2);padding:3px 9px;border-radius:7px}
+.tk-mats.drop-on{outline:2px dashed var(--brand);outline-offset:4px;border-radius:12px;background:color-mix(in srgb,var(--brand) 5%,transparent)}
+.mat-drop-hint{font-size:12.5px}
+.mat-add > .file-btn + .mat-drop-hint{margin-top:-4px}
+.gate-mats{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
+.gate-mats > small{width:100%}
+.gate-mats .fchip{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:4px 9px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer;text-decoration:none}
+.gate-mats .fchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
+.gate-mats .fchip svg{width:13px;height:13px;flex:none}
+.gate-nomat{color:var(--y)!important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2777,15 +2793,16 @@ const meKey = () => cloud.uid || ME;
 const matBadge = (x, t) => x?.files ? `<span class="pf-matn" title="Материалы исполнителя">${CLIP_ICO}${t?.mats?.length || ''}</span>` : '';
 function matsSection(p, t){
   const list = [...(t.result_link && safeUrl(t.result_link) ? [{ id:'res', kind:'link', url:t.result_link, name:t.result_link.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60), byName:'Результат', at:t.updated_at || new Date().toISOString(), legacy:true }] : []), ...(t.mats || [])];
-  const mine = m => !m.legacy && m.by === meKey();
+  const mine = m => !m.legacy && m.by === meKey(); const pm = canEditProject(p);
   const row = m => `<li class="mat">${m.kind === 'file'
       ? `<button class="fchip" data-fopen="${esc(m.path)}" title="Открыть файл">${CLIP_ICO}<span>${esc(m.name)}</span><small>${fsize(m.size)}</small></button>`
       : `<a class="fchip" href="${esc(safeUrl(m.url) || '#')}" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg><span>${esc(m.name || m.url)}</span></a>`}
     <small class="mat-by">${esc(m.byName || '')}, ${new Date(m.at).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</small>
+    ${m.legacy ? '' : m.ok ? `<span class="mat-ok" title="${esc(m.okBy || '')}">${MAT_OK}Принято${pm ? ` <button class="link" data-matok="${t.id}|${m.id}" data-v="0">отменить</button>` : ''}</span>` : pm ? `<button class="ghost mat-acc" data-matok="${t.id}|${m.id}" data-v="1">${MAT_OK}Принять</button>` : '<span class="mat-wait">на проверке</span>'}
     ${!m.legacy && (mine(m) || canEditProject(p)) ? `<button class="tx" data-matdel="${t.id}|${m.id}" aria-label="Убрать материал ${esc(m.name || '')}" title="Убрать">×</button>` : ''}</li>`;
-  return `<section class="tk-sec tk-mats"><h3>Сдача работы · материалы${list.length ? ` <span class="ntf-n">${list.length}</span>` : ''}</h3>
+  return `<section class="tk-sec tk-mats" data-matdrop="${t.id}"><h3>Сдача работы · материалы${list.length ? ` <span class="ntf-n">${list.length}</span>` : ''}</h3>
     ${list.length ? `<ul class="mats">${list.map(row).join('')}</ul>` : '<p class="hint">Прикрепите файлы или ссылки на готовые материалы по этому подэтапу.</p>'}
-    <div class="mat-add">${ui.matUp === t.id ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn">${CLIP_ICO}Прикрепить файл<input type="file" data-matfile="${t.id}"></label>`}
+    <div class="mat-add">${ui.matUp === t.id ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn">${CLIP_ICO}Прикрепить файлы<input type="file" multiple data-matfile="${t.id}"></label><span class="hint mat-drop-hint">или перетащите сюда, до 25 МБ каждый</span>`}
       <form class="row" data-matlink="${t.id}"><input placeholder="Или ссылка на материал (Google Диск, Figma…)" inputmode="url" aria-label="Ссылка на материал"><button class="ghost">Добавить</button></form></div></section>`;
 }
 function addMat(t, m){
@@ -2793,15 +2810,42 @@ function addMat(t, m){
   if (p) addLog(p, `Подэтап «${t.title}»: ${actorName()} прикрепил ${m.kind === 'file' ? `файл «${m.name}»` : 'ссылку на материал'}`);
   commit(); renderTaskModal();
 }
-document.addEventListener('change', async e => {
-  const tid = e.target.dataset?.matfile; if (!tid) return;
-  const file = e.target.files?.[0]; e.target.value = ''; const t = taskById(tid); if (!file || !t) return;
+const MAT_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+// загрузка одного или нескольких файлов в «Сдачу работы»
+async function uploadMats(t, files){
+  files = [...(files || [])]; if (!files.length || !t) return;
   const F = window.claude?.use ? await window.claude.use('files').catch(() => null) : null;
   if (!F || !cloud.uid){ toast('Файлы можно прикреплять, когда вы вошли в аккаунт'); return; }
-  if (file.size > F.maxSize){ toast('Файл больше 25 МБ. Загрузите его в облако и добавьте ссылку'); return; }
-  ui.matUp = tid; renderTaskModal();
-  try { const path = await F.upload(`${cloud.uid}/p/${t.project_id}/${uid()}-${safeFileName(file.name)}`, file); ui.matUp = null; addMat(t, { kind:'file', path, name:file.name, size:file.size }); }
-  catch(err) { ui.matUp = null; renderTaskModal(); toast(err?.message ? `Не удалось загрузить файл: ${err.message}` : 'Не удалось загрузить файл'); }
+  const big = files.filter(f => f.size > F.maxSize); files = files.filter(f => f.size <= F.maxSize);
+  if (big.length) toast(`Больше 25 МБ: ${big.map(f => f.name).join(', ')}. Загрузите в облако и добавьте ссылку`);
+  const added = [], failed = [];
+  ui.matUp = t.id; renderTaskModal();
+  for (const file of files){
+    try { const path = await F.upload(`${cloud.uid}/p/${t.project_id}/${uid()}-${safeFileName(file.name)}`, file); added.push({ id:uid(), kind:'file', path, name:file.name, size:file.size, by:meKey(), byName:actorName(), at:new Date().toISOString() }); }
+    catch(err) { failed.push(`${file.name} — ${uploadErr(err)}`); }
+  }
+  ui.matUp = null;
+  const tt = taskById(t.id) || t;
+  if (added.length){ tt.mats = [...(tt.mats || []), ...added]; const p = projById(tt.project_id);
+    if (p) addLog(p, `Подэтап «${tt.title}»: ${actorName()} прикрепил ${added.length === 1 ? `файл «${added[0].name}»` : `файлы (${added.length})`}`); commit(); }
+  renderTaskModal();
+  if (failed.length) toast(`Не загрузились: ${failed.join('; ')}`); else if (added.length > 1) toast(`Загружено файлов: ${added.length}`);
+}
+document.addEventListener('change', e => {
+  const tid = e.target.dataset?.matfile; if (!tid) return;
+  const files = [...(e.target.files || [])]; e.target.value = ''; uploadMats(taskById(tid), files);
+});
+// перетаскивание файлов в блок «Сдача работы»
+document.addEventListener('dragover', e => { const z = e.target.closest?.('[data-matdrop]'); if (!z || !e.dataTransfer?.types?.includes('Files')) return; e.preventDefault(); z.classList.add('drop-on'); });
+document.addEventListener('dragleave', e => { const z = e.target.closest?.('[data-matdrop]'); if (z && !z.contains(e.relatedTarget)) z.classList.remove('drop-on'); });
+document.addEventListener('drop', e => { const z = e.target.closest?.('[data-matdrop]'); if (!z || !e.dataTransfer?.files?.length) return; e.preventDefault(); z.classList.remove('drop-on'); uploadMats(taskById(z.dataset.matdrop), e.dataTransfer.files); });
+// руководитель принимает материал
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-matok]'); if (!b) return;
+  const [tid, mid] = b.dataset.matok.split('|'); const t = taskById(tid); const m = t?.mats?.find(x => x.id === mid); if (!m) return;
+  if (b.dataset.v === '1'){ m.ok = true; m.okBy = actorName(); m.okAt = new Date().toISOString(); } else { delete m.ok; delete m.okBy; delete m.okAt; }
+  const p = projById(t.project_id); if (p) addLog(p, `Подэтап «${t.title}»: материал «${m.name}» ${m.ok ? 'принят' : 'снова на проверке'}`);
+  commit(); renderTaskModal();
 });
 document.addEventListener('submit', e => {
   const f = e.target.closest?.('[data-matlink]'); if (!f) return; e.preventDefault();
@@ -2816,17 +2860,32 @@ document.addEventListener('click', e => {
 });
 
 // запрос на переход: только на этапах с галочкой «запрос перехода»
-const gateRequests = () => db.projects.filter(p => p.state === 'active').flatMap(p => p.stages.filter(s => s.gate && s.req?.status === 'pending' && s.status !== 'done').map(s => ({ p, s })));
+const reviewProjects = () => [...(GUEST ? [] : db.projects), ...ext.projects.filter(p => roleOf(p) === 'lead')].filter(p => p.state === 'active');
+// сданные материалы, которые ещё никто не принял (свои не считаем)
+const matsToReview = () => reviewProjects().flatMap(p => ptasks(p).flatMap(t => (t.mats || []).filter(m => !m.ok && m.by !== meKey()).map(m => ({ p, t, m }))))
+  .sort((a, b) => String(b.m.at).localeCompare(String(a.m.at)));
+const gateRequests = () => reviewProjects().flatMap(p => p.stages.filter(s => s.gate && s.req?.status === 'pending' && s.status !== 'done').map(s => ({ p, s })));
 const reqWhen = r => new Date(r.at).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
 const gateReqItem = (p, s) => `<div class="ntf gate-ntf"><span class="sw blue"></span><span><b>${esc(p.name)}</b>
     <small>${esc(s.req.byName || 'Исполнитель')} просит закрыть этап «${esc(s.name)}» · ${reqWhen(s.req)}</small>${s.req.note ? `<small class="gate-note">«${esc(s.req.note)}»</small>` : ''}
     <span class="gate-acts"><button class="primary" data-gateok="${p.id}|${s.id}">Одобрить</button><button class="ghost" data-gateno="${p.id}|${s.id}">Вернуть</button><button class="link" data-open="${p.id}" data-stage="${s.id}">Проект</button></span></span></div>`;
+// сданные материалы этапа — чтобы руководитель проверил их перед «Одобрить»
+function gateMats(p, s){
+  const items = ptasks(p).filter(t => t.stage_id === s.id).flatMap(t => (t.mats || []).map(m => ({ t, m })));
+  if (!items.length) return '<small class="gate-nomat">Материалов в подэтапах нет</small>';
+  const ok = items.filter(i => i.m.ok).length;
+  return `<div class="gate-mats"><small>Сдано материалов: ${items.length}${ok ? `, принято ${ok}` : ''}</small>${items.slice(0, 8).map(({ t, m }) => m.kind === 'file'
+      ? `<button class="fchip" data-fopen="${esc(m.path)}" title="${esc(t.title)}">${m.ok ? MAT_OK : CLIP_ICO}<span>${esc(m.name)}</span></button>`
+      : `<a class="fchip" href="${esc(safeUrl(m.url) || '#')}" target="_blank" rel="noopener noreferrer" title="${esc(t.title)}">${m.ok ? MAT_OK : CLIP_ICO}<span>${esc(m.name || m.url)}</span></a>`).join('')}
+    <button class="link" data-task="${items[0].t.id}">Открыть подэтап</button></div>`;
+}
 function gateBox(p, s, mine){
   if (!s.gate || s.status === 'done' || isMaint(s)) return '';
+  if (mine && canEditProject(p)) mine = false;
   const r = s.req; const cur = currentStage(p)?.id === s.id;
   if (r?.status === 'pending') return mine
     ? `<div class="gate wait"><b>Запрос на переход отправлен</b><small>Ждёт решения руководителя · ${reqWhen(r)}</small><button class="link" data-gatecancel="${p.id}|${s.id}">Отозвать</button></div>`
-    : `<div class="gate ask"><b>${esc(r.byName || 'Исполнитель')} просит перейти на следующий этап</b>${r.note ? `<small>«${esc(r.note)}»</small>` : ''}
+    : `<div class="gate ask"><b>${esc(r.byName || 'Исполнитель')} просит перейти на следующий этап</b>${r.note ? `<small>«${esc(r.note)}»</small>` : ''}${gateMats(p, s)}
         <span class="gate-acts"><button class="primary" data-gateok="${p.id}|${s.id}">Одобрить</button><button class="ghost" data-gateno="${p.id}|${s.id}">Вернуть</button></span></div>`;
   if (!mine) return `<div class="gate info"><small>Этап закрывается по запросу исполнителя</small></div>`;
   return `<div class="gate">${r?.status === 'rejected' ? `<small class="gate-back">Руководитель вернул этап${r.reason ? `: «${esc(r.reason)}»` : ''}</small>` : ''}
@@ -2883,7 +2942,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
-      ${canEdit && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
+      ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
     </section>`;
   }).join('');
   const steps = p.stages.map(s => `<button class="pm-step${s.status === 'done' ? ' done' : ''}${s.id === cur.stageId ? ' cur' : ''} h-${health(s).key}" data-pmgo="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">${s.status === 'done' ? '✓' : s.position + 1}</button>`).join('');
@@ -3464,9 +3523,11 @@ function openBell(){
   const list = GUEST ? [] : hotStages(); const a = myAlerts();
   const sec = (title, items) => items.length ? `<h3>${title} <span class="ntf-n">${items.length}</span></h3>${items.slice(0, 8).map(ntfItem).join('')}` : '';
   const perm = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
-  const rq = GUEST ? [] : gateRequests();
+  const rq = gateRequests(); const mr = matsToReview();
+  const mrByTask = [...mr.reduce((m, i) => { const k = i.t.id; if (!m.has(k)) m.set(k, { ...i, n:0, who:new Set() }); const g = m.get(k); g.n++; g.who.add(i.m.byName || 'Исполнитель'); return m; }, new Map()).values()];
   layer.innerHTML = `<div class="backdrop" data-close style="background:transparent"></div>
   <div class="pop" role="dialog" aria-label="Уведомления">
+  ${mrByTask.length ? `<h3>Материалы на проверку <span class="ntf-n">${mr.length}</span></h3>${mrByTask.slice(0, 8).map(g => `<button class="ntf" data-task="${g.t.id}"><span class="sw blue"></span><span><b>${esc(g.p.name)}</b><small>${esc(g.t.title)}: ${g.n} ${plural(g.n, 'материал', 'материала', 'материалов')} от ${esc([...g.who].join(', '))}</small></span></button>`).join('')}` : ''}
   ${rq.length ? `<h3>Запросы на переход <span class="ntf-n">${rq.length}</span></h3>${rq.map(({ p, s }) => gateReqItem(p, s)).join('')}` : ''}
   ${(() => { const nw = new Set(a.fresh.map(i => i.id)); return sec('Новые задачи', a.fresh) + sec('Просрочено', a.over.filter(i => !nw.has(i.id))) + sec('На сегодня', a.today.filter(i => !nw.has(i.id))); })()}
   ${!a.fresh.length && !a.over.length && !a.today.length ? '<h3>Мои задачи</h3><p class="hint" style="padding:0 8px">Срочного нет. Все задачи — во вкладке «Задачи».</p>' : ''}
@@ -3480,7 +3541,7 @@ function openBell(){
   const seen = readSet(NSEEN_KEY()); myTodo().forEach(i => seen.add(i.id)); writeSet(NSEEN_KEY(), seen); paintBell();
 }
 function paintBell(){
-  const n = (GUEST ? 0 : hotStages().length + gateRequests().length) + alertCount();
+  const n = (GUEST ? 0 : hotStages().length) + gateRequests().length + matsToReview().length + alertCount();
   const b = $('#bellCount'); if (b) b.innerHTML = n ? `<span class="badge">${n}</span>` : '';
 }
 document.addEventListener('click', e => {
@@ -5423,6 +5484,13 @@ function pushNotify(){
   a.fresh.filter(i => !sent.has('new:' + i.id)).slice(0, 3).forEach(i => { try { new Notification('Новая задача', { body:`${i.title}${i.p ? ` — ${i.p.name}` : ''}${i.due ? `, срок ${fmt(i.due)}` : ''}`, tag:'kz-' + i.id }); } catch(e) {} sent.add('new:' + i.id); });
   const day = 'day:' + today(); const n = a.over.length + a.today.length;
   if (n && !sent.has(day)){ try { new Notification('Задачи на сегодня', { body:`${a.today.length ? `Сегодня: ${a.today.length}. ` : ''}${a.over.length ? `Просрочено: ${a.over.length}.` : ''}`.trim(), tag:'kz-day' }); } catch(e) {} sent.add(day); }
+  const mr = matsToReview().filter(i => !sent.has('mat:' + i.m.id));
+  if (mr.length){ const byP = [...new Set(mr.map(i => i.p.name))];
+    try { new Notification('Новые материалы на проверку', { body:mr.length === 1 ? `${mr[0].m.byName || 'Исполнитель'}: «${mr[0].m.name}» — ${mr[0].p.name}, ${mr[0].t.title}` : `${mr.length} ${plural(mr.length, 'материал', 'материала', 'материалов')}: ${byP.slice(0, 3).join(', ')}`, tag:'kz-mats' }); } catch(e) {}
+    mr.forEach(i => sent.add('mat:' + i.m.id)); }
+  gateRequests().filter(({ s }) => !sent.has('gate:' + s.id + ':' + s.req.at)).slice(0, 3).forEach(({ p, s }) => {
+    try { new Notification('Запрос на переход', { body:`${s.req.byName || 'Исполнитель'} просит закрыть этап «${s.name}» — ${p.name}`, tag:'kz-gate-' + s.id }); } catch(e) {}
+    sent.add('gate:' + s.id + ':' + s.req.at); });
   writeSet(NSENT_KEY(), sent);
 }
 const ntfItem = i => i.kind === 'i'
@@ -5567,7 +5635,18 @@ const blkOk = b => b && (b.type === 'file' ? !!b.path : !!String(b.value || '').
 const cleanBlocks = list => (list || []).filter(blkOk).map(b => ({ id:b.id || uid(), type:b.type, title:String(b.title || '').trim(), value:String(b.value || '').trim(),
   ...(b.type === 'file' ? { path:b.path, name:b.name || 'Файл', size:b.size || 0 } : {}) }));
 const fsize = n => !n ? '' : n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} КБ` : `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} МБ`;
-const safeFileName = n => String(n || 'file').replace(/[^\w.\-а-яё ]+/gi, '_').replace(/\s+/g, '_').slice(-80) || 'file';
+// имя файла для пути в хранилище: Supabase принимает только латиницу, цифры и . _ - — кириллицу переводим в латиницу
+// (в карточке файл показывается с исходным названием)
+const TRANSLIT = { а:'a', б:'b', в:'v', г:'g', д:'d', е:'e', ё:'e', ж:'zh', з:'z', и:'i', й:'y', к:'k', л:'l', м:'m', н:'n', о:'o', п:'p', р:'r', с:'s', т:'t', у:'u', ф:'f', х:'h', ц:'ts', ч:'ch', ш:'sh', щ:'sch', ъ:'', ы:'y', ь:'', э:'e', ю:'yu', я:'ya',
+  ә:'a', ғ:'g', қ:'q', ң:'n', ө:'o', ұ:'u', ү:'u', һ:'h', і:'i' };
+const safeFileName = n => {
+  const lat = String(n || 'file').normalize('NFC').split('').map(c => { const l = c.toLowerCase(); const t = TRANSLIT[l]; return t === undefined ? c : (c !== l && t ? t[0].toUpperCase() + t.slice(1) : t); }).join('');
+  const clean = lat.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9._-]+/g, '_').replace(/_+/g, '_').replace(/^[_.]+|_+$/g, '');
+  const m = clean.match(/^(.*?)(\.[A-Za-z0-9]{1,8})?$/); const base = (m[1] || 'file').slice(0, 70).replace(/[_.-]+$/, ''), ext = m[2] || '';
+  return (base || 'file') + ext;
+};
+// понятные сообщения об ошибках загрузки
+const uploadErr = err => err?.code === 'too_large' ? 'файл больше 25 МБ' : err?.code === 'not_granted' ? 'нет доступа: войдите в аккаунт заново' : /invalid key/i.test(err?.message || '') ? 'недопустимое имя файла' : (err?.message || 'ошибка сети');
 function blocksView(list, p, t){
   return (list || []).filter(blkOk).map(b => {
     const h = `<h3>${esc(b.title || BLOCK_T[b.type])}</h3>`;
@@ -5669,7 +5748,7 @@ document.addEventListener('change', async e => {
   const list = bkList(ctx); const b = list[+k]; if (!b) return;
   b.uploading = true; bkRender(ctx);
   try { const path = await F.upload(`${base}/${uid()}-${safeFileName(file.name)}`, file); Object.assign(b, { path, name:file.name, size:file.size }); }
-  catch(err) { toast(err?.message ? `Не удалось загрузить файл: ${err.message}` : 'Не удалось загрузить файл'); }
+  catch(err) { toast(`Не удалось загрузить файл: ${uploadErr(err)}`); }
   delete b.uploading; if (bkList(ctx).includes(b)) bkRender(ctx);
 });
 // открыть файл: временная ссылка на скачивание
@@ -5783,8 +5862,7 @@ function renderTaskModal(focusSel){
           <label class="ck-box"><input type="checkbox" data-ck="${i.id}" id="ck-${i.id}" ${i.done ? 'checked' : ''}><span class="ck-txt">${esc(i.text)}</span></label>
           ${i.done && i.completed_at ? `<small>${esc(i.completed_by || '')}, ${new Date(i.completed_at).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small>` : ''}</li>`).join('')}</ul>`
           : `<p class="hint">Пунктов пока нет.</p>${editable && sub && cardTplFor(p, sub.name)?.c?.length ? `<button class="ghost" data-tfill>Заполнить из шаблона «${esc(sub.name)}»</button>` : ''}`}</section>
-      ${sub?.files ? matsSection(p, t) : `<section class="tk-sec"><h3>Сдача работы</h3>
-        <div class="row"><input data-tres value="${esc(t.result_link)}" placeholder="Ссылка на готовую работу" inputmode="url" aria-label="Ссылка на результат">${res ? `<a class="ghost" href="${esc(res)}" target="_blank" rel="noopener noreferrer">Открыть</a>` : ''}</div></section>`}
+      ${sub?.files ? matsSection(p, t) : res ? `<section class="tk-sec"><h3>Результат</h3><p><a class="ghost tk-reg" href="${esc(res)}" target="_blank" rel="noopener noreferrer">Открыть сданную работу ↗</a></p></section>` : ''}
       ${p?._ext ? '<p class="hint tk-role">Ваши отметки и материалы сразу видны владельцу проекта.</p>' : ''}`;
   } else {
     body = `<form class="form tk-form" id="tkForm" novalidate>
@@ -6141,7 +6219,7 @@ document.addEventListener('change', e => {
     commit(); renderTaskModal(); assignNote(t.assignee_id, p); }
 });
 // «Мои проекты»: исполнитель сам меняет статус этапа и отмечает подэтапы без чек-листа — владелец видит это сразу
-const stageStatusSelect = (p, s) => s.gate && s.status === 'done' ? '' : `<select class="pf-status" data-mstatus="${p.id}|${s.id}" aria-label="Статус этапа ${esc(s.name)}">${Object.entries(STATUS).filter(([k]) => !s.gate || k !== 'done').map(([k,v]) => `<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('')}</select>`;
+const stageStatusSelect = (p, s) => s.gate && s.status === 'done' ? '' : `<select class="pf-status" data-mstatus="${p.id}|${s.id}" aria-label="Статус этапа ${esc(s.name)}">${Object.entries(STATUS).filter(([k]) => !s.gate || canEditProject(p) || k !== 'done').map(([k,v]) => `<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('')}</select>`;
 const tickCard = (p, s, x, here) => `<label class="pf-card pf-tick${x.done ? ' done' : ''}${here ? ' here' : ''}">
   ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<span class="pf-tick-row"><input type="checkbox" data-sub="${p.id}|${s.id}|${x.id}" ${x.done ? 'checked' : ''}><b>${esc(x.name)}</b></span>
   <small>${x.done ? 'Выполнено' : 'Отметьте, когда сделаете'}</small></label>`;
@@ -6203,7 +6281,7 @@ function renderProjectFocus(mine = false){
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
-      ${canEdit && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
+      ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}
     </section>`;
   }).join('');
 
