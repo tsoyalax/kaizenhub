@@ -76,6 +76,19 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     assert.equal($(gw, '.tk-mats').querySelectorAll('.mat').length, 3); ok('в «Сдаче работы» видны все три материала'); }
   $(gw, '[data-tclose]').click(); await wait(2500);
   assert.equal(E(own, `(taskFor('${pid}', '${sid}', '${xid}')?.mats || []).length`), 3); ok('руководитель видит материалы исполнителя');
+  // руководитель, которому проект открыли ссылкой: видит материалы в колокольчике и может принять
+  await own.w.createLink(pid, 'lead'); await wait(600);
+  const lcode = [...be.rows.values()].filter(r => r.path.startsWith('inv/') && r.data.pid === pid && r.data.role === 'lead').map(r => r.path.slice(4))[0];
+  const L = 'eeeeeeee-0000-0000-0000-000000000005';
+  const ld = openApp(be, L, 'https://kz.test/?invite=' + lcode, { meta: { role: 'guest', name: 'Лена Руководитель' } });
+  await wait(4500);
+  assert.equal(E(ld, `roleOf(projById('${pid}'))`), 'lead'); ok('руководитель по ссылке: роль «Руководитель» в проекте');
+  assert.equal(E(ld, 'matsToReview().length'), 3); ok('руководитель по ссылке: 3 материала на проверку');
+  $(ld, '#bell').click(); await wait(50);
+  assert.ok(/Материалы на проверку/.test($(ld, '.pop').textContent) && $(ld, `.pop .ntf[data-task]`)); ok('в колокольчике раздел «Материалы на проверку»');
+  $(ld, '.pop .ntf[data-task]').click(); await wait(80);
+  assert.ok($(ld, '.tk-mats [data-matok][data-v="1"]')); ok('руководитель по ссылке может принять материал');
+  E(ld, 'closeTask()'); E(ld, 'closeLayer()');
   // руководитель принимает файл
   E(own, `openTask(taskFor('${pid}', '${sid}', '${xid}').id)`); await wait(50);
   assert.ok($(own, '.tk-mats [data-matok][data-v="1"]')); ok('у руководителя кнопка «Принять» у материала');
@@ -94,6 +107,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok($(gw, '.gate.wait')); ok('исполнитель: видит «Запрос отправлен»');
   await wait(3000);
   assert.equal(E(own, 'gateRequests().length'), 1); ok('руководитель получил запрос');
+  E(ld, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(100);
+  assert.ok(E(ld, 'gateRequests().length') === 1 && $(ld, '.gate.ask [data-gateok]') && !$(ld, '[data-gatereq]')); ok('руководитель по ссылке видит запрос с «Одобрить», без кнопки исполнителя');
   $(own, '#bell').click(); await wait(50);
   assert.ok($(own, '.pop .gate-ntf') && /Всё готово/.test($(own, '.pop .gate-ntf').textContent)); ok('запрос с комментарием — в колокольчике');
   $(own, '.pop [data-gateno]').click(); await wait(50);
@@ -120,7 +135,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   for (const sel of [`[data-sgate="${s2}"]`, `[data-sfilesp="${s2}|${x2}"]`]){ const el = $(own, sel); el.checked = true; el.dispatchEvent(new own.w.Event('change', { bubbles: true })); await wait(100); }
   E(own, `syncAllTemplates(projById('${p2}').template_id)`);
   assert.ok(E(own, `(() => { const s = projById('${p2}').stages.find(x => x.id === '${s2}'); return s.gate && s.subs.find(x => x.id === '${x2}').files; })()`)); ok('галочки из карточки проекта не сбрасываются шаблоном');
-  assert.equal(own.errors.length, 0, own.errors.join('\n')); assert.equal(gw.errors.length, 0, gw.errors.join('\n')); ok('ошибок на страницах нет');
-  own.w.close(); gw.w.close();
+  assert.equal(own.errors.length, 0, own.errors.join('\n')); assert.equal(gw.errors.length, 0, gw.errors.join('\n')); assert.equal(ld.errors.length, 0, ld.errors.join('\n')); ok('ошибок на страницах нет');
+  own.w.close(); gw.w.close(); ld.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });

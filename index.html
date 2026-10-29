@@ -2793,7 +2793,7 @@ const meKey = () => cloud.uid || ME;
 const matBadge = (x, t) => x?.files ? `<span class="pf-matn" title="Материалы исполнителя">${CLIP_ICO}${t?.mats?.length || ''}</span>` : '';
 function matsSection(p, t){
   const list = [...(t.result_link && safeUrl(t.result_link) ? [{ id:'res', kind:'link', url:t.result_link, name:t.result_link.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60), byName:'Результат', at:t.updated_at || new Date().toISOString(), legacy:true }] : []), ...(t.mats || [])];
-  const mine = m => !m.legacy && m.by === meKey(); const pm = canEditProject(p) && !p._ext;
+  const mine = m => !m.legacy && m.by === meKey(); const pm = canEditProject(p);
   const row = m => `<li class="mat">${m.kind === 'file'
       ? `<button class="fchip" data-fopen="${esc(m.path)}" title="Открыть файл">${CLIP_ICO}<span>${esc(m.name)}</span><small>${fsize(m.size)}</small></button>`
       : `<a class="fchip" href="${esc(safeUrl(m.url) || '#')}" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg><span>${esc(m.name || m.url)}</span></a>`}
@@ -2860,7 +2860,11 @@ document.addEventListener('click', e => {
 });
 
 // запрос на переход: только на этапах с галочкой «запрос перехода»
-const gateRequests = () => db.projects.filter(p => p.state === 'active').flatMap(p => p.stages.filter(s => s.gate && s.req?.status === 'pending' && s.status !== 'done').map(s => ({ p, s })));
+const reviewProjects = () => [...(GUEST ? [] : db.projects), ...ext.projects.filter(p => roleOf(p) === 'lead')].filter(p => p.state === 'active');
+// сданные материалы, которые ещё никто не принял (свои не считаем)
+const matsToReview = () => reviewProjects().flatMap(p => ptasks(p).flatMap(t => (t.mats || []).filter(m => !m.ok && m.by !== meKey()).map(m => ({ p, t, m }))))
+  .sort((a, b) => String(b.m.at).localeCompare(String(a.m.at)));
+const gateRequests = () => reviewProjects().flatMap(p => p.stages.filter(s => s.gate && s.req?.status === 'pending' && s.status !== 'done').map(s => ({ p, s })));
 const reqWhen = r => new Date(r.at).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
 const gateReqItem = (p, s) => `<div class="ntf gate-ntf"><span class="sw blue"></span><span><b>${esc(p.name)}</b>
     <small>${esc(s.req.byName || 'Исполнитель')} просит закрыть этап «${esc(s.name)}» · ${reqWhen(s.req)}</small>${s.req.note ? `<small class="gate-note">«${esc(s.req.note)}»</small>` : ''}
@@ -2877,6 +2881,7 @@ function gateMats(p, s){
 }
 function gateBox(p, s, mine){
   if (!s.gate || s.status === 'done' || isMaint(s)) return '';
+  if (mine && canEditProject(p)) mine = false;
   const r = s.req; const cur = currentStage(p)?.id === s.id;
   if (r?.status === 'pending') return mine
     ? `<div class="gate wait"><b>Запрос на переход отправлен</b><small>Ждёт решения руководителя · ${reqWhen(r)}</small><button class="link" data-gatecancel="${p.id}|${s.id}">Отозвать</button></div>`
@@ -3518,9 +3523,11 @@ function openBell(){
   const list = GUEST ? [] : hotStages(); const a = myAlerts();
   const sec = (title, items) => items.length ? `<h3>${title} <span class="ntf-n">${items.length}</span></h3>${items.slice(0, 8).map(ntfItem).join('')}` : '';
   const perm = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
-  const rq = GUEST ? [] : gateRequests();
+  const rq = gateRequests(); const mr = matsToReview();
+  const mrByTask = [...mr.reduce((m, i) => { const k = i.t.id; if (!m.has(k)) m.set(k, { ...i, n:0, who:new Set() }); const g = m.get(k); g.n++; g.who.add(i.m.byName || 'Исполнитель'); return m; }, new Map()).values()];
   layer.innerHTML = `<div class="backdrop" data-close style="background:transparent"></div>
   <div class="pop" role="dialog" aria-label="Уведомления">
+  ${mrByTask.length ? `<h3>Материалы на проверку <span class="ntf-n">${mr.length}</span></h3>${mrByTask.slice(0, 8).map(g => `<button class="ntf" data-task="${g.t.id}"><span class="sw blue"></span><span><b>${esc(g.p.name)}</b><small>${esc(g.t.title)}: ${g.n} ${plural(g.n, 'материал', 'материала', 'материалов')} от ${esc([...g.who].join(', '))}</small></span></button>`).join('')}` : ''}
   ${rq.length ? `<h3>Запросы на переход <span class="ntf-n">${rq.length}</span></h3>${rq.map(({ p, s }) => gateReqItem(p, s)).join('')}` : ''}
   ${(() => { const nw = new Set(a.fresh.map(i => i.id)); return sec('Новые задачи', a.fresh) + sec('Просрочено', a.over.filter(i => !nw.has(i.id))) + sec('На сегодня', a.today.filter(i => !nw.has(i.id))); })()}
   ${!a.fresh.length && !a.over.length && !a.today.length ? '<h3>Мои задачи</h3><p class="hint" style="padding:0 8px">Срочного нет. Все задачи — во вкладке «Задачи».</p>' : ''}
@@ -3534,7 +3541,7 @@ function openBell(){
   const seen = readSet(NSEEN_KEY()); myTodo().forEach(i => seen.add(i.id)); writeSet(NSEEN_KEY(), seen); paintBell();
 }
 function paintBell(){
-  const n = (GUEST ? 0 : hotStages().length + gateRequests().length) + alertCount();
+  const n = (GUEST ? 0 : hotStages().length) + gateRequests().length + matsToReview().length + alertCount();
   const b = $('#bellCount'); if (b) b.innerHTML = n ? `<span class="badge">${n}</span>` : '';
 }
 document.addEventListener('click', e => {
@@ -5477,6 +5484,13 @@ function pushNotify(){
   a.fresh.filter(i => !sent.has('new:' + i.id)).slice(0, 3).forEach(i => { try { new Notification('Новая задача', { body:`${i.title}${i.p ? ` — ${i.p.name}` : ''}${i.due ? `, срок ${fmt(i.due)}` : ''}`, tag:'kz-' + i.id }); } catch(e) {} sent.add('new:' + i.id); });
   const day = 'day:' + today(); const n = a.over.length + a.today.length;
   if (n && !sent.has(day)){ try { new Notification('Задачи на сегодня', { body:`${a.today.length ? `Сегодня: ${a.today.length}. ` : ''}${a.over.length ? `Просрочено: ${a.over.length}.` : ''}`.trim(), tag:'kz-day' }); } catch(e) {} sent.add(day); }
+  const mr = matsToReview().filter(i => !sent.has('mat:' + i.m.id));
+  if (mr.length){ const byP = [...new Set(mr.map(i => i.p.name))];
+    try { new Notification('Новые материалы на проверку', { body:mr.length === 1 ? `${mr[0].m.byName || 'Исполнитель'}: «${mr[0].m.name}» — ${mr[0].p.name}, ${mr[0].t.title}` : `${mr.length} ${plural(mr.length, 'материал', 'материала', 'материалов')}: ${byP.slice(0, 3).join(', ')}`, tag:'kz-mats' }); } catch(e) {}
+    mr.forEach(i => sent.add('mat:' + i.m.id)); }
+  gateRequests().filter(({ s }) => !sent.has('gate:' + s.id + ':' + s.req.at)).slice(0, 3).forEach(({ p, s }) => {
+    try { new Notification('Запрос на переход', { body:`${s.req.byName || 'Исполнитель'} просит закрыть этап «${s.name}» — ${p.name}`, tag:'kz-gate-' + s.id }); } catch(e) {}
+    sent.add('gate:' + s.id + ':' + s.req.at); });
   writeSet(NSENT_KEY(), sent);
 }
 const ntfItem = i => i.kind === 'i'
@@ -6205,7 +6219,7 @@ document.addEventListener('change', e => {
     commit(); renderTaskModal(); assignNote(t.assignee_id, p); }
 });
 // «Мои проекты»: исполнитель сам меняет статус этапа и отмечает подэтапы без чек-листа — владелец видит это сразу
-const stageStatusSelect = (p, s) => s.gate && s.status === 'done' ? '' : `<select class="pf-status" data-mstatus="${p.id}|${s.id}" aria-label="Статус этапа ${esc(s.name)}">${Object.entries(STATUS).filter(([k]) => !s.gate || k !== 'done').map(([k,v]) => `<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('')}</select>`;
+const stageStatusSelect = (p, s) => s.gate && s.status === 'done' ? '' : `<select class="pf-status" data-mstatus="${p.id}|${s.id}" aria-label="Статус этапа ${esc(s.name)}">${Object.entries(STATUS).filter(([k]) => !s.gate || canEditProject(p) || k !== 'done').map(([k,v]) => `<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('')}</select>`;
 const tickCard = (p, s, x, here) => `<label class="pf-card pf-tick${x.done ? ' done' : ''}${here ? ' here' : ''}">
   ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<span class="pf-tick-row"><input type="checkbox" data-sub="${p.id}|${s.id}|${x.id}" ${x.done ? 'checked' : ''}><b>${esc(x.name)}</b></span>
   <small>${x.done ? 'Выполнено' : 'Отметьте, когда сделаете'}</small></label>`;
