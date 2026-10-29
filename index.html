@@ -2857,7 +2857,7 @@ function matsSection(p, t){
     ${!m.legacy && (mine(m) || canEditProject(p)) ? `<button class="tx" data-matdel="${t.id}|${m.id}" aria-label="Убрать материал ${esc(m.name || '')}" title="Убрать">×</button>` : ''}</li>`;
   return `<section class="tk-sec tk-mats" data-matdrop="${t.id}"><h3>Сдача работы · материалы${list.length ? ` <span class="ntf-n">${list.length}</span>` : ''}</h3>
     ${list.length ? `<ul class="mats">${list.map(row).join('')}</ul>` : '<p class="hint">Прикрепите файлы или ссылки на готовые материалы по этому подэтапу.</p>'}
-    <div class="mat-add">${ui.matUp === t.id ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn">${CLIP_ICO}Прикрепить файлы<input type="file" multiple data-matfile="${t.id}"></label><span class="hint mat-drop-hint">или перетащите сюда, до 25 МБ каждый</span>`}
+    <div class="mat-add">${ui.matUp === t.id ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn">${CLIP_ICO}Прикрепить файлы<input type="file" multiple data-matfile="${t.id}"></label><span class="hint mat-drop-hint">или перетащите сюда, до 50 МБ каждый</span>`}
       <form class="row" data-matlink="${t.id}"><input placeholder="Или ссылка на материал (Google Диск, Figma…)" inputmode="url" aria-label="Ссылка на материал"><button class="ghost">Добавить</button></form></div></section>`;
 }
 function addMat(t, m){
@@ -2872,7 +2872,7 @@ async function uploadMats(t, files){
   const F = window.claude?.use ? await window.claude.use('files').catch(() => null) : null;
   if (!F || !cloud.uid){ toast('Файлы можно прикреплять, когда вы вошли в аккаунт'); return; }
   const big = files.filter(f => f.size > F.maxSize); files = files.filter(f => f.size <= F.maxSize);
-  if (big.length) toast(`Больше 25 МБ: ${big.map(f => f.name).join(', ')}. Загрузите в облако и добавьте ссылку`);
+  if (big.length) toast(`Больше 50 МБ: ${big.map(f => f.name).join(', ')}. Загрузите в облако и добавьте ссылку`);
   const added = [], failed = [];
   ui.matUp = t.id; renderTaskModal();
   for (const file of files){
@@ -2996,7 +2996,7 @@ function stageSubmitBox(p, s, mine){
     return `<div class="ss" data-ssdrop="${p.id}|${s.id}"><b>Сдать этап</b>
       ${sub.status === 'rejected' ? `<small class="ss-back">Вернули на доработку${sub.reason ? `: «${esc(sub.reason)}»` : ''}</small>` : ''}
       ${ssItems(p, s, true)}
-      <div class="ss-row">${up ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn" title="Можно несколько, до 25 МБ каждый">${CLIP_ICO}Файлы<input type="file" multiple data-ssfile="${p.id}|${s.id}"></label>`}
+      <div class="ss-row">${up ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn" title="Можно несколько, до 50 МБ каждый">${CLIP_ICO}Файлы<input type="file" multiple data-ssfile="${p.id}|${s.id}"></label>`}
         <form class="ss-link" data-sslink="${p.id}|${s.id}"><input placeholder="Ссылка" inputmode="url" aria-label="Ссылка на результат"></form>
         <button class="primary ss-send" data-sssend="${p.id}|${s.id}">Отправить</button></div></div>`;
   }
@@ -3013,7 +3013,7 @@ async function ssUpload(p, s, files){
   const F = window.claude?.use ? await window.claude.use('files').catch(() => null) : null;
   if (!F || !cloud.uid){ toast('Файлы можно прикреплять, когда вы вошли в аккаунт'); return; }
   const big = files.filter(f => f.size > F.maxSize); files = files.filter(f => f.size <= F.maxSize);
-  if (big.length) toast(`Больше 25 МБ: ${big.map(f => f.name).join(', ')}. Загрузите в облако и добавьте ссылку`);
+  if (big.length) toast(`Больше 50 МБ: ${big.map(f => f.name).join(', ')}. Загрузите в облако и добавьте ссылку`);
   ui.ssUp = s.id; render();
   const added = [], failed = [];
   for (const file of files){
@@ -5856,7 +5856,7 @@ const safeFileName = n => {
   return (base || 'file') + ext;
 };
 // понятные сообщения об ошибках загрузки
-const uploadErr = err => err?.code === 'too_large' ? 'файл больше 25 МБ' : err?.code === 'not_granted' ? 'нет доступа: войдите в аккаунт заново' : /invalid key/i.test(err?.message || '') ? 'недопустимое имя файла' : (err?.message || 'ошибка сети');
+const uploadErr = err => err?.code === 'too_large' ? 'файл больше 50 МБ' : err?.code === 'not_granted' ? 'нет доступа: войдите в аккаунт заново' : /invalid key/i.test(err?.message || '') ? 'недопустимое имя файла' : (err?.message || 'ошибка сети');
 function blocksView(list, p, t){
   return (list || []).filter(blkOk).map(b => {
     const h = `<h3>${esc(b.title || BLOCK_T[b.type])}</h3>`;
@@ -5890,7 +5890,7 @@ function blocksEditor(list, ctx){
       <div class="bk-body"><div class="bk-top"><span class="bk-type">${BLOCK_T[b.type]}</span><input data-bkf="title" data-bki="${k}" value="${esc(b.title || '')}" placeholder="Заголовок (необязательно)" aria-label="Заголовок блока ${k + 1}"></div>
         ${b.type === 'text' ? `<textarea data-bkf="value" data-bki="${k}" rows="3" placeholder="Текст" aria-label="Текст блока ${k + 1}">${esc(b.value || '')}</textarea>`
         : b.type === 'msg' ? `<textarea data-bkf="value" data-bki="${k}" rows="4" placeholder="Здравствуйте, {клиент}! …" aria-label="Текст сообщения ${k + 1}">${esc(b.value || '')}</textarea><small class="hint">Исполнитель скопирует сообщение одним нажатием. Можно вставить {клиент}, {проект}, {этап}, {pm} — подставятся сами.</small>`
-        : b.type === 'file' ? `<div class="row bk-file">${b.uploading ? '<span class="hint">Загружаю…</span>' : b.path ? `<span class="fchip static"><span aria-hidden="true">📎</span>${esc(b.name)}<small>${fsize(b.size)}</small></span><label class="link file-btn">Заменить<input type="file" data-bkfile="${k}"></label>` : `<label class="ghost file-btn">Выбрать файл<input type="file" data-bkfile="${k}"></label><span class="hint">до 25 МБ</span>`}</div>`
+        : b.type === 'file' ? `<div class="row bk-file">${b.uploading ? '<span class="hint">Загружаю…</span>' : b.path ? `<span class="fchip static"><span aria-hidden="true">📎</span>${esc(b.name)}<small>${fsize(b.size)}</small></span><label class="link file-btn">Заменить<input type="file" data-bkfile="${k}"></label>` : `<label class="ghost file-btn">Выбрать файл<input type="file" data-bkfile="${k}"></label><span class="hint">до 50 МБ</span>`}</div>`
         : `<input data-bkf="value" data-bki="${k}" value="${esc(b.value || '')}" inputmode="url" placeholder="${b.type === 'video' ? 'YouTube, Vimeo, Google Drive, Loom или MP4' : 'https://…'}" aria-label="Ссылка блока ${k + 1}">`}
       </div>
       <button type="button" class="tx bk-x" data-bkdel="${k}" aria-label="Удалить блок ${k + 1}" title="Удалить блок">×</button></li>`).join('')}</ol>
@@ -5951,7 +5951,7 @@ document.addEventListener('change', async e => {
   const file = e.target.files?.[0]; e.target.value = ''; if (!file) return;
   const F = window.claude?.use ? await window.claude.use('files').catch(() => null) : null;
   if (!F || !cloud.uid){ toast('Файлы можно добавлять, когда вы вошли в аккаунт'); return; }
-  if (file.size > F.maxSize){ toast('Файл больше 25 МБ. Загрузите его в облако и добавьте блок «Ссылка»'); return; }
+  if (file.size > F.maxSize){ toast('Файл больше 50 МБ. Загрузите его в облако и добавьте блок «Ссылка»'); return; }
   let base;
   if (ctx === 'ce'){ if (!ui.draft?.id){ toast('Сначала сохраните шаблон, потом добавляйте файлы'); return; } base = `${cloud.uid}/t/${ui.draft.id}`; }
   else { const t = taskById(ui.taskId); if (!t) return; base = `${cloud.uid}/p/${t.project_id}`; }
