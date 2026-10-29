@@ -113,5 +113,19 @@ function boot(backend, userId, extra) {
   assert.equal(resolved, false); assert.ok(wn.document.querySelector('#kzForm')); assert.ok(/Войти/.test(wn.document.body.textContent)); ok('без входа: экран входа, приложение ждёт');
   { const calls = shimSrc.match(/auth\.signOut\([^)]*\)/g) || [];
     assert.ok(calls.length >= 1 && calls.every(c => /scope:\s*'local'/.test(c)), calls.join(', ')); ok('выход из аккаунта — только на этом устройстве (не выкидывает с других устройств)'); }
+  { // медленная загрузка, начатая до своей записи, не должна откатывать записанное
+    const bs = makeBackend(); const ws = boot(bs, A); const st = await ws.claude.use('db');
+    await st.doc('data/users/' + A + '/main/p1').set({ v: 1 }); await wait(50);
+    const seen = []; st.collection('data/users/' + A + '/main').onSnapshot(s => seen.push(s.docs.filter(d => d.id === 'p1').map(d => d.data().v).join(',')));
+    await wait(50);
+    bs.readDelay = 120;
+    const ref = st.doc('data/users/' + A + '/main/p1');
+    bs.put('data/users/' + A + '/main/p2', { v: 9 });               // другое устройство что-то поменяло — загрузка пойдёт целиком
+    ws.dispatchEvent(new ws.Event('online'));                       // проверка «нет ли нового» стартует
+    await wait(160); await ref.set({ v: 2 }); const mark = seen.length;                       // загрузка уже прочитала v:1, а мы тем временем сохраняем v:2
+    await wait(600); bs.readDelay = 0; await wait(200);
+    assert.equal(seen[seen.length - 1], '2', seen.join(' → '));
+    assert.ok(!seen.slice(mark).includes('1'), 'после записи пришёл старый снимок: ' + seen.join(' → ')); ok('снимок, прочитанный до своей записи, не откатывает её');
+  }
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });

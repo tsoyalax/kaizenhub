@@ -42,6 +42,8 @@ function makeBackend() {
             if (rng) list = list.slice(rng[0], rng[1] + 1);
             const pick = r => { const o = {}; cols.split(',').forEach(c => o[c.trim()] = r[c.trim()]); return o; };
             const out = single ? { data: list[0] ? pick(list[0]) : null, error: null } : { data: list.map(pick), error: null };
+            // медленная сеть: данные прочитаны сейчас, а ответ приходит позже (self.readDelay мс)
+            if (self.readDelay) return new Promise(r => setTimeout(() => r(JSON.parse(JSON.stringify(out))), self.readDelay)).then(res, rej);
             return Promise.resolve(out).then(res, rej);
           }
         };

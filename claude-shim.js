@@ -352,6 +352,10 @@
   var contentSig = function (rows) { return hash(rows.map(function (r) { return r.path + '\u0000' + JSON.stringify(r.data); }).join('\u0001')); };
 
   var listeners = new Set();
+  // Счётчик своих записей. Загрузка, во время которой мы что-то записали, могла прочитать базу ДО записи —
+  // такой снимок устарел: отдать его приложению значит откатить только что сохранённое. Его выбрасываем и грузим заново.
+  var writeSeq = 0;
+  var wrote = function () { writeSeq++; };
 
   function addListener(spec, cb, errCb) {
     var L = Object.assign({ cb: cb, errCb: errCb, sig: null, csig: null, busy: false, pending: null, timer: null, dead: false }, spec);
@@ -372,8 +376,10 @@
       var skip = false;
       if (cheap && L.sig !== null) skip = (await L.sigNow()) === L.sig;
       if (!skip) {
+        var seq = writeSeq;
         var res = await L.load();
-        if (!L.dead) {
+        if (!L.dead && seq !== writeSeq) { L.pending = 'full'; }
+        else if (!L.dead) {
           L.sig = res.sig;
           // снимок отдаём приложению только если изменилось содержимое (метка времени меняется и при той же записи)
           if (res.csig !== L.csig) { L.csig = res.csig; L.cb(res.value); }
@@ -421,9 +427,9 @@
         }
         return docSnap(path, await fetchOne(path, 'path,data'));
       },
-      set: async function (body) { await rpc('doc_set', { p_path: path, p_data: clean(body) }); poke(path); },
-      update: async function (patch) { await rpc('doc_update', { p_path: path, p_patch: clean(patch) }); poke(path); },
-      delete: async function () { await rpc('doc_delete', { p_path: path }); pokeAll(); },
+      set: async function (body) { wrote(); try { await rpc('doc_set', { p_path: path, p_data: clean(body) }); } finally { wrote(); } poke(path); },
+      update: async function (patch) { wrote(); try { await rpc('doc_update', { p_path: path, p_patch: clean(patch) }); } finally { wrote(); } poke(path); },
+      delete: async function () { wrote(); try { await rpc('doc_delete', { p_path: path }); } finally { wrote(); } pokeAll(); },
       collection: function (sub) { return colRef(path + '/' + sub); },
       onSnapshot: function (cb, errCb) {
         return addListener({
