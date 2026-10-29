@@ -1,5 +1,11 @@
 {
-  "functions": { "api/sample.js": { "maxDuration": 60 } },
+  "functions": {
+    "api/sample.js": { "maxDuration": 60 },
+    "api/v2/sample.js": { "maxDuration": 60 }
+  },
+  "rewrites": [
+    { "source": "/v2", "destination": "/v2/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
