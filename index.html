@@ -1750,6 +1750,11 @@ svg.clip{width:14px;height:14px;flex:none}
 .rv-badge{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--brand);color:#fff;font-size:11.5px;font-weight:700;line-height:20px;text-align:center}
 .mnav .rv-badge{position:absolute;margin:0;top:6px;transform:translateX(12px);min-width:16px;height:16px;line-height:16px;font-size:10px}
 .mnav button{position:relative}
+.ss-row{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center}
+.ss-row .ss-link{grid-column:1 / -1;grid-row:1;min-width:0}
+.ss-row .ss-link input{width:100%;height:38px;border:1px solid var(--fbd,var(--line));border-radius:10px;padding:0 12px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px}
+.ss-row .file-btn,.ss-row > .hint{grid-column:1;grid-row:2;display:inline-flex;align-items:center;gap:6px;height:38px}
+.ss-row .ss-send{grid-column:2;grid-row:2;justify-self:end;width:auto;height:38px;padding:0 16px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2989,13 +2994,11 @@ function stageSubmitBox(p, s, mine){
     if (!cur && !items.length) return '';
     const up = ui.ssUp === s.id;
     return `<div class="ss" data-ssdrop="${p.id}|${s.id}"><b>Сдать этап</b>
-      ${sub.status === 'rejected' ? `<small class="ss-back">Руководитель вернул этап${sub.reason ? `: «${esc(sub.reason)}»` : ''}</small>` : '<small>Загрузите сюда всё, что сделали по этапу, и отправьте на проверку.</small>'}
+      ${sub.status === 'rejected' ? `<small class="ss-back">Вернули на доработку${sub.reason ? `: «${esc(sub.reason)}»` : ''}</small>` : ''}
       ${ssItems(p, s, true)}
-      <div class="ss-add">${up ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn">${CLIP_ICO}Файлы<input type="file" multiple data-ssfile="${p.id}|${s.id}"></label>`}
-        <form class="ss-link" data-sslink="${p.id}|${s.id}"><input placeholder="или ссылка" inputmode="url" aria-label="Ссылка на результат"><button class="ghost" aria-label="Добавить ссылку">+</button></form></div>
-      <small class="hint">Можно перетащить файлы сюда, до 25 МБ каждый</small>
-      <textarea id="ssnote-${s.id}" rows="2" placeholder="Комментарий для руководителя (необязательно)" aria-label="Комментарий для руководителя">${esc(sub.note || '')}</textarea>
-      <button class="primary ss-send" data-sssend="${p.id}|${s.id}" ${items.length ? '' : 'disabled title="Сначала прикрепите файлы или ссылку"'}>Отправить на проверку</button></div>`;
+      <div class="ss-row">${up ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn" title="Можно несколько, до 25 МБ каждый">${CLIP_ICO}Файлы<input type="file" multiple data-ssfile="${p.id}|${s.id}"></label>`}
+        <form class="ss-link" data-sslink="${p.id}|${s.id}"><input placeholder="Ссылка" inputmode="url" aria-label="Ссылка на результат"></form>
+        <button class="primary ss-send" data-sssend="${p.id}|${s.id}">Отправить</button></div></div>`;
   }
   if (sub.status === 'pending') return `<div class="ss ss-ask"><b>${esc(sub.byName || 'Исполнитель')} сдал этап</b><small>${ssWhen(sub.at)}</small>
       ${sub.note ? `<small class="ss-note">«${esc(sub.note)}»</small>` : ''}${ssItems(p, s, false)}
@@ -3039,8 +3042,12 @@ document.addEventListener('click', e => {
   const q = e.target.closest?.('[data-ssdel],[data-sssend],[data-sscancel],[data-ssok],[data-ssno]'); if (!q) return;
   const d = q.dataset; const { p, s, mid } = ssFind(d.ssdel || d.sssend || d.sscancel || d.ssok || d.ssno); if (!s) return;
   if (d.ssdel){ s.sub.items = (s.sub.items || []).filter(m => m.id !== mid); commit(); return; }
-  if (d.sssend){ const sub = ssEnsure(s); if (!(sub.items || []).length){ toast('Сначала прикрепите файлы или ссылку'); return; }
-    const note = $(`#ssnote-${s.id}`)?.value.trim() || sub.note || '';
+  if (d.sssend){ const sub = ssEnsure(s);
+    const li = q.closest('.ss')?.querySelector('[data-sslink] input'); const lv = li?.value.trim() || '';
+    if (lv){ if (!safeUrl(lv)){ toast('Ссылка должна начинаться с http:// или https://'); return; }
+      sub.items = [...(sub.items || []), { id:uid(), kind:'link', url:lv, name:lv.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60), by:meKey(), byName:actorName(), at:new Date().toISOString() }]; }
+    if (!(sub.items || []).length){ toast('Прикрепите файлы или вставьте ссылку'); return; }
+    const note = '';
     Object.assign(sub, { status:'pending', note, by:meKey(), byName:actorName(), at:new Date().toISOString(), reason:'' });
     addLog(p, `${actorName()} сдал этап «${s.name}» на проверку: ${sub.items.length} ${plural(sub.items.length, 'материал', 'материала', 'материалов')}`); commit(); toast('Этап отправлен на проверку'); return; }
   if (d.sscancel){ s.sub.status = 'draft'; addLog(p, `Сдача этапа «${s.name}» отозвана`); commit(); return; }
