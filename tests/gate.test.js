@@ -131,17 +131,17 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
 
   // сдача этапа: исполнитель разом загружает сделанное → руководитель возвращает → снова сдаёт → «Принять этап»
   E(gw, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(50);
-  assert.ok($(gw, `[data-sssend="${pid}|${sid}"]`).disabled); ok('«Отправить на проверку» неактивна, пока ничего не прикреплено');
+  $(gw, `[data-sssend="${pid}|${sid}"]`).click(); await wait(50);
+  assert.ok(!E(gw, `projById('${pid}').stages.find(s => s.id === '${sid}').sub?.status === 'pending'`) && !$(gw, '.ss textarea')); ok('без файлов и ссылки этап не отправляется; поля комментария нет');
   await E(gw, `ssUpload(projById('${pid}'), projById('${pid}').stages.find(s => s.id === '${sid}'), [new File(['a'], 'Итог этапа.pdf'), new File(['b'], 'Видео монтаж.mp4')])`); await wait(100);
-  { const li = $(gw, `[data-sslink="${pid}|${sid}"] input`); li.value = 'https://drive.google.com/folder/abc'; li.form.dispatchEvent(new gw.w.Event('submit', { bubbles: true, cancelable: true })); await wait(80); }
-  assert.equal(gw.w.document.querySelectorAll(`[data-ssdrop="${pid}|${sid}"] .ss-items li`).length, 3); ok('в «Сдать этап» два файла с русскими названиями и ссылка');
-  $(gw, `#ssnote-${sid}`).value = 'Всё готово';
+  assert.equal(gw.w.document.querySelectorAll(`[data-ssdrop="${pid}|${sid}"] .ss-items li`).length, 2); ok('в «Сдать этап» два файла с русскими названиями');
+  $(gw, `[data-sslink="${pid}|${sid}"] input`).value = 'https://drive.google.com/folder/abc';
   $(gw, `[data-sssend="${pid}|${sid}"]`).click(); await wait(100);
-  assert.ok($(gw, '.ss-wait')); ok('исполнитель: «Этап сдан на проверку»');
+  assert.ok($(gw, '.ss-wait') && E(gw, `projById('${pid}').stages.find(s => s.id === '${sid}').sub.items.length`) === 3); ok('исполнитель: «Этап сдан на проверку», вставленная ссылка ушла вместе с файлами');
   await wait(3000);
   assert.equal(E(own, 'stageSubmissions().length'), 1); ok('руководитель получил сдачу этапа');
   E(own, `ui.view = 'review'; ui.revTab = 'pending'; render()`); await wait(50);
-  assert.ok($(own, '.tabs [data-view="review"]') && $(own, `.rv-card [data-ssok="${pid}|${sid}"]`) && /Всё готово/.test($(own, '.rv-card').textContent)); ok('раздел «Приёмка»: сданный этап с файлами, «Принять» и «Вернуть»');
+  assert.ok($(own, '.tabs [data-view="review"]') && $(own, `.rv-card [data-ssok="${pid}|${sid}"]`)); ok('раздел «Приёмка»: сданный этап с файлами, «Принять» и «Вернуть»');
   assert.ok(E(ld, 'guestViews().includes("review")') && E(gw, '!guestViews().includes("review")')); ok('«Приёмка» есть у руководителя по ссылке и нет у исполнителя');
   E(ld, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(100);
   assert.ok(E(ld, 'stageSubmissions().length') === 1 && $(ld, '.ss-ask [data-ssok]')); ok('руководитель по ссылке видит сдачу с «Принять этап»');
@@ -149,7 +149,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(/Сдача этапов/.test($(own, '.pop').textContent) && /сдал этап/.test($(own, '.pop').textContent)); ok('сдача этапа — в колокольчике');
   E(own, 'closeLayer()');
   E(own, `ui.view = 'production'; ui.prodProject = '${pid}'; render()`); await wait(100);
-  assert.ok($(own, '.ss-ask .ss-items .fchip') && /Всё готово/.test($(own, '.ss-ask').textContent)); ok('под этапом у руководителя — сданные файлы и комментарий');
+  assert.ok($(own, '.ss-ask .ss-items .fchip')); ok('под этапом у руководителя — сданные файлы и ссылки');
   $(own, '.ss-ask [data-ssno]').click(); await wait(50);
   $(own, '#gateTx').value = 'Нужна ещё одна версия';
   $(own, '#gateF').dispatchEvent(new own.w.Event('submit', { bubbles: true, cancelable: true })); await wait(3000);
