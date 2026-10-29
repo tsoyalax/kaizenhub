@@ -1867,7 +1867,7 @@ function localSave(){
   try { if (typeof cloud !== 'undefined' && cloud.hashes.size) localStorage.setItem(KEY + '-sync', JSON.stringify({ h:[...cloud.hashes], m:cloud.baseMeta || null })); } catch(e) {}
 }
 // Любое изменение: кэш в браузере + отложенное сохранение в аккаунт Claude
-function save(){ db.savedAt = Date.now(); try { replanAll(); } catch(e) {} try { syncAutoShares(); } catch(e) {} localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
+function save(){ db.savedAt = Date.now(); try { replanAll(); } catch(e) {} try { syncAutoShares(); } catch(e) {} try { ensureSharedTasks(); } catch(e) {} localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
 
 const userById = id => db.users.find(u => u.id === id);
 const tplById = id => db.templates.find(t => t.id === id);
@@ -5138,6 +5138,21 @@ function syncTaskToSub(t){
   return true;
 }
 // Создать задачи для подэтапов этапа, у которых их ещё нет
+// проект открыт исполнителям — у подэтапов с карточкой в шаблоне сразу есть задача (задание, чек-лист, материалы):
+// иначе исполнитель видит только галочку «Отметьте, когда сделаете» — шаблонов карточек у него нет
+function ensureSharedTasks(){
+  if (GUEST || typeof ownShared !== 'function') return 0;
+  let n = 0;
+  ownShared().forEach(p => {
+    if (p._ext || p.state !== 'active') return;
+    p.stages.forEach(s => {
+      if (isMaint(s)) return;
+      const need = (s.subs || []).filter(x => !taskFor(p.id, s.id, x.id) && cardTplFor(p, x.name));
+      if (need.length) n += tasksFromSubs(p, { ...s, subs:need });
+    });
+  });
+  return n;
+}
 function tasksFromSubs(p, s){
   let n = 0;
   (s.subs || []).forEach(x => {
@@ -6934,7 +6949,7 @@ function initShared(){
   if (!cloud.store || !cloud.uid) return;
   try { watchIT(); } catch(e) { /* задачи не критичны */ }
   watchMine(); syncSharedSubs(); watchTeam();
-  if (ownShared().length) scheduleShared();
+  if (ownShared().length){ if (ensureSharedTasks()) save(); scheduleShared(); }
   if (GUEST) cloud.user.me().then(m => { ui.meAcc = m; paintMeBtn(); }, () => {}); else refreshProfiles(true);
 }
 

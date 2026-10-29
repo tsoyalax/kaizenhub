@@ -54,6 +54,12 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const code = [...be.rows.values()].find(r => r.path.startsWith('inv/') && r.data.pid === pid).path.slice(4);
   const gw = openApp(be, G, 'https://kz.test/?invite=' + code, { meta: { role: 'guest', name: 'Гоша Исполнитель' } });
   await wait(4500);
+  // у подэтапов с карточкой в шаблоне исполнитель сразу видит полную карточку, а не голую галочку
+  E(own, `(() => { const p = projById('${pid}'); db.cardTpls = db.cardTpls || {}; p.stages.filter(s => !isMaint(s) && s.status !== 'done').slice(-2).forEach(s => (s.subs || []).slice(0, 2).forEach(x => { db.cardTpls[cardKey(p.template_id, x.name)] = { sub:x.name, d:'Цель — сделать по регламенту', c:['Пункт 1', 'Пункт 2'], b:[] }; })); commit(); })()`); await wait(2500);
+  { const info = E(own, `(() => { const p = projById('${pid}'); const out = []; p.stages.forEach(s => { if (isMaint(s)) return; (s.subs || []).forEach(x => { if (cardTplFor(p, x.name)) out.push([s.id, x.id, !!taskFor(p.id, s.id, x.id)]); }); }); return out; })()`);
+    assert.ok(info.length && info.every(r => r[2]), JSON.stringify([info, E(own, 'Object.keys(db.cardTpls||{}).length'), E(own, `tplById(projById('${pid}').template_id).id`), E(own, 'ownShared().map(p=>p.id)'), E(own, `'${pid}'`)])); ok(`задачи созданы для всех подэтапов с карточкой (${info.length})`);
+    E(gw, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(100);
+    assert.ok(info.every(([sid2, xid2]) => gw.w.document.querySelector(`button.pf-card[data-pfsub="${sid2}|${xid2}"]`) && !gw.w.document.querySelector(`.pf-tick input[data-sub$="|${xid2}"]`))); ok('исполнитель видит полные карточки, а не галочку «Отметьте, когда сделаете»'); }
   E(gw, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(150);
   const stSel = $(gw, `select[data-mstatus="${pid}|${sid}"]`);
   assert.ok(stSel && ![...stSel.options].some(o => o.value === 'done')); ok('исполнитель: на этапе с запросом нельзя самому поставить «Завершён»');
