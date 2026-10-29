@@ -58,6 +58,26 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const stSel = $(gw, `select[data-mstatus="${pid}|${sid}"]`);
   assert.ok(stSel && ![...stSel.options].some(o => o.value === 'done')); ok('исполнитель: на этапе с запросом нельзя самому поставить «Завершён»');
   assert.ok($(gw, `[data-gatereq="${pid}|${sid}"]`)); ok('исполнитель: есть кнопка «Запросить переход на следующий этап»');
+  // отметка «материалы» через интерфейс шаблона: галочка → «Сохранить шаблон» → исполнитель может прикрепить файлы
+  { const tId = E(own, `projById('${pid}').template_id`);
+    const nxt = E(own, `(() => { const p = projById('${pid}'); const c = p.stages.find(st => st.tsid && !isMaint(st) && (st.subs || []).length && st.subs[0].tsub && !st.subs[0].files); return c ? { sid:c.id, xid:c.subs[0].id, tsid:c.tsid, tsub:c.subs[0].tsub } : null; })()`);
+    assert.ok(nxt, 'нет подходящего этапа для проверки'); if (nxt){
+      E(own, `ui.view = 'templates'; ui.setTab = 'templates'; ui.tplSel = '${tId}'; ui.draft = null; ui.tplOpen = {}; render()`); await wait(80);
+      const si = E(own, `ui.draft.stages.findIndex(s => s.id === '${nxt.tsid}')`);
+      own.w.document.querySelector(`[data-tsubtog="${nxt.tsid}"]`).click(); await wait(50);
+      const cb = own.w.document.querySelector(`.tsub[data-i="${si}"][data-j="0"] input[data-sfiles]`);
+      cb.checked = !cb.checked || true; cb.checked = true; cb.dispatchEvent(new own.w.Event('change', { bubbles: true })); await wait(30);
+      $(own, '#tSave').click(); await wait(3000);
+      assert.ok(E(own, `tplById('${tId}').stages.find(s => s.id === '${nxt.tsid}').subs.find(x => x.id === '${nxt.tsub}').files`)); ok('шаблон: отметка «материалы» сохраняется кнопкой «Сохранить шаблон»');
+      assert.ok(E(own, `projById('${pid}').stages.find(s => s.id === '${nxt.sid}').subs.find(x => x.id === '${nxt.xid}').files`)); ok('отметка из шаблона дошла до проекта');
+      E(gw, 'render()'); await wait(50);
+      assert.ok(E(gw, `projById('${pid}').stages.find(s => s.id === '${nxt.sid}').subs.find(x => x.id === '${nxt.xid}').files`)); ok('отметка из шаблона дошла до исполнителя');
+      E(gw, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(80);
+      const btn = gw.w.document.querySelector(`[data-pfsub="${nxt.sid}|${nxt.xid}"]`); btn.click(); await wait(150);
+      assert.ok($(gw, '.tk-mats [data-matfile]')); ok('исполнитель: в карточке этого подэтапа можно прикрепить файлы');
+      E(gw, 'closeTask()');
+    }
+  }
 
   // материалы: подэтап без задачи — кнопка «Прикрепить материалы» создаёт карточку
   $(gw, `.pf-mat[data-pfsub="${sid}|${xid}"]`)?.click() || $(gw, `[data-pfsub="${sid}|${xid}"]`).click(); await wait(200);
@@ -135,6 +155,10 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   for (const sel of [`[data-sgate="${s2}"]`, `[data-sfilesp="${s2}|${x2}"]`]){ const el = $(own, sel); el.checked = true; el.dispatchEvent(new own.w.Event('change', { bubbles: true })); await wait(100); }
   E(own, `syncAllTemplates(projById('${p2}').template_id)`);
   assert.ok(E(own, `(() => { const s = projById('${p2}').stages.find(x => x.id === '${s2}'); return s.gate && s.subs.find(x => x.id === '${x2}').files; })()`)); ok('галочки из карточки проекта не сбрасываются шаблоном');
+  {
+    E(gw, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(50);
+    assert.ok(!$(gw, '.pf-add')); ok('у исполнителя на доске нет «Добавить подэтап»');
+  }
   assert.equal(own.errors.length, 0, own.errors.join('\n')); assert.equal(gw.errors.length, 0, gw.errors.join('\n')); assert.equal(ld.errors.length, 0, ld.errors.join('\n')); ok('ошибок на страницах нет');
   own.w.close(); gw.w.close(); ld.w.close();
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
