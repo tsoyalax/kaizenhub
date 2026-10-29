@@ -1787,6 +1787,13 @@ svg.clip{width:14px;height:14px;flex:none}
 .fl-meta{flex:1;min-width:160px;font-size:12.5px;color:var(--muted)}
 .fl-st{font-size:12px;font-weight:600;padding:3px 9px;border-radius:7px;white-space:nowrap}
 .fl-ok{background:var(--g-bg);color:var(--g)}.fl-wait{background:var(--b-bg);color:var(--b)}.fl-back{background:var(--r-bg);color:var(--r)}.fl-draft{background:var(--surface-2);color:var(--muted)}
+
+/* сохранить / синхронизировать */
+.side-sync{display:grid;gap:6px;padding-top:8px}
+.side-sync button{display:flex;align-items:center;justify-content:flex-start;gap:8px;min-width:0;height:34px;padding:0 12px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-sync svg{width:15px;height:15px;flex:none}
+.side-sync button:disabled{opacity:.6}
+.more-sheet .side-sync{padding:0 0 12px;margin:0 0 12px;border-bottom:1px solid var(--line)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -1948,6 +1955,9 @@ function nextCycle(due, freq){
 
 // ---------- данные ----------
 let db = null;
+const DIRTY_KEY = () => KEY + '-dirty';
+const readDirty = () => { try { return new Set(JSON.parse(localStorage.getItem(DIRTY_KEY()) || '[]')); } catch(e) { return new Set(); } };
+const writeDirty = set => { try { set.size ? localStorage.setItem(DIRTY_KEY(), JSON.stringify([...set])) : localStorage.removeItem(DIRTY_KEY()); } catch(e) {} };
 function localSave(){
   try { localStorage.setItem(KEY, JSON.stringify(db)); } catch(e) {}
   // что было в облаке при последней сверке: по нему отличаем свои правки от чужих
@@ -4335,7 +4345,8 @@ function sideFoot(){
   return `<div class="side-foot${GUEST ? '' : ' with-sp'}">
     <button class="side-me" data-sideme title="Мой профиль">${u && (avatarOk(u) || u.name) ? avHtml(u, 'av av-sm') : '<span class="av av-sm">?</span>'}<span><b>${esc(u?.name || 'Мой профиль')}</b><small>${esc(u?.title || u?.email || (GUEST ? 'Исполнитель' : 'Профиль'))}</small></span></button>
     <button class="icon-btn" data-sidetheme title="${dark ? 'Светлая тема' : 'Тёмная тема'}" aria-label="${dark ? 'Включить светлую тему' : 'Включить тёмную тему'}">${dark ? SUN : MOON}</button>
-    ${GUEST ? '' : `<button class="icon-btn side-cloud" data-sidecloud data-state="${cloud.status}" title="${esc(cloudText())}" aria-label="${esc(cloudText())}">${CLOUD_ICON}</button>`}</div>`;
+    ${GUEST ? '' : `<button class="icon-btn side-cloud" data-sidecloud data-state="${cloud.status}" title="${esc(cloudText())}" aria-label="${esc(cloudText())}">${CLOUD_ICON}</button>`}</div>
+    ${GUEST ? '' : `<div class="side-sync"><button class="ghost" data-savenow title="Записать изменения в облако сейчас">${SAVE_ICO}Сохранить</button><button class="ghost" data-syncnow title="Загрузить актуальные данные из облака">${SYNC_ICO}Синхронизировать</button></div>`}`;
 }
 function openSide(){ sideOpen = true; renderSide(); }
 function closeSide(){ if (!sideOpen) return; sideOpen = false; renderSide(); }
@@ -6736,10 +6747,10 @@ function cloudApply(r){
 // Так вкладка со старыми данными больше не затирает чужие изменения своими устаревшими копиями.
 const META_FIELDS = ['ver','onboarded','users','templates','categories','prefs','cardTpls','cardTplsInit'];
 const metaOf = () => ({ ver:db.ver, onboarded:db.onboarded, users:db.users, templates:db.templates, categories:db.categories || [], prefs:db.prefs || {}, cardTpls:db.cardTpls || {}, cardTplsInit:!!db.cardTplsInit });
-function mergeRemote(remote, base, baseMeta){
+function mergeRemote(remote, base, baseMeta, only){
   const local = cloudDocs(); const mine = new Set(), gone = new Set();
-  for (const [k, b] of local) if (k !== 'meta' && base.get(k) !== cloudCanon(b)) mine.add(b.base || k);
-  for (const k of base.keys()){ const bk = k.split('~')[0]; if (bk !== 'meta' && !local.has(bk)) gone.add(bk); }
+  for (const [k, b] of local) if (k !== 'meta' && base.get(k) !== cloudCanon(b) && (!only || only.has(b.base || k))) mine.add(b.base || k);
+  for (const k of base.keys()){ const bk = k.split('~')[0]; if (bk !== 'meta' && !local.has(bk) && (!only || only.has(bk))) gone.add(bk); }
   const pick = (list, pre, remoteList) => {
     const loc = new Map(list.filter(x => mine.has(pre + x.id)).map(x => [x.id, x]));
     const out = remoteList.filter(x => !gone.has(pre + x.id)).map(x => { const l = loc.get(x.id); loc.delete(x.id); return l || x; });
@@ -6749,7 +6760,7 @@ function mergeRemote(remote, base, baseMeta){
   remote.tasks = pick(db.tasks || [], 't_', remote.tasks);
   remote.reports = pick(db.reports || [], 'r_', remote.reports);
   let metaMine = 0;
-  if (baseMeta){ const lm = metaOf(); META_FIELDS.forEach(f => { if (JSON.stringify(lm[f] ?? null) !== JSON.stringify(baseMeta[f] ?? null)){ remote.meta[f] = lm[f]; metaMine++; } }); }
+  if (baseMeta && (!only || only.has('meta'))){ const lm = metaOf(); META_FIELDS.forEach(f => { if (JSON.stringify(lm[f] ?? null) !== JSON.stringify(baseMeta[f] ?? null)){ remote.meta[f] = lm[f]; metaMine++; } }); }
   return mine.size + gone.size + metaMine;
 }
 const metaBase = m => Object.fromEntries(META_FIELDS.map(f => [f, m?.[f]]));
@@ -6776,8 +6787,15 @@ function switchOrg(owner){
   if (cloud.pending) flushCloud();
   setTimeout(() => (window.kzReloadHook || (() => location.reload()))(), cloud.writing ? 900 : 150);
 }
+function markDirty(){
+  // документы, которые отличаются от облака: только они — «мои несохранённые правки» при следующем открытии
+  const d = readDirty(); let n = d.size;
+  for (const [k, b] of cloudDocs()){ const base = b.base || k; if (cloud.hashes.get(k) !== cloudCanon(b)) d.add(base); }
+  if (d.size !== n || !n) writeDirty(d);
+}
 function scheduleCloud(){
   if (!cloud.col || !cloud.ready) return;
+  try { markDirty(); } catch(e) {}
   cloud.pending = true; clearTimeout(cloud.timer);
   cloud.timer = setTimeout(flushCloud, 1200);
   setCloudStatus('saving');
@@ -6797,7 +6815,7 @@ async function flushCloud(){
       if (k === 'meta') cloud.baseMeta = meta;
     }
     for (const k of [...cloud.hashes.keys()]) if (!docs.has(k)){ await cloud.col.doc(k).delete(); cloud.hashes.delete(k); }
-    db.syncedOnce = true; localSave();
+    db.syncedOnce = true; if (!cloud.pending && !cloud.dirty) writeDirty(new Set()); localSave();
     cloud.lastSaved = new Date(); cloud.retry = 0; setCloudStatus('saved');
   } catch(e) {
     const msg = { quota_exceeded:'Хранилище аккаунта заполнено. Удалите старые отчёты или проекты.',
@@ -6822,15 +6840,16 @@ function onCloudSnapshot(snap){
     if (!remote){ cloud.ready = false; return; }                  // часть документов ещё в пути
     let saved = null; try { saved = JSON.parse(localStorage.getItem(KEY + '-sync') || 'null'); } catch(e) {}
     docs.forEach((b, k) => cloud.hashes.set(k, cloudCanon(b)));
-    if (db.syncedOnce && saved?.h){
-      // с прошлого раза здесь могли остаться несохранённые правки: сливаем их с облаком, а не перезаписываем облако целиком
-      const n = mergeRemote(remote, new Map(saved.h), saved.m);
+    const dirty = readDirty();
+    if (db.syncedOnce && saved?.h && dirty.size){
+      // с прошлого раза здесь остались несохранённые правки: берём только их, остальное — из облака
+      // (раньше «своими» считались и копии, пересчитанные при открытии, — старое устройство затирало облако)
+      const n = mergeRemote(remote, new Map(saved.h), saved.m, dirty);
       cloud.baseMeta = metaBase(remote.meta); cloudApply(remote); localSave();
       cloud.lastSaved = new Date(remote.meta.savedAt || Date.now()); setCloudStatus('saved');
       if (n) scheduleCloud();
       return;
     }
-    if (db.syncedOnce && (db.savedAt || 0) > (remote.meta.savedAt || 0)){ cloud.baseMeta = metaBase(remote.meta); flushCloud(); return; }   // здесь есть несохранённые правки
     if (!db.syncedOnce && db.onboarded){ try { localStorage.setItem(KEY + '-backup', JSON.stringify(db)); } catch(e) {} }
     cloud.baseMeta = metaBase(remote.meta); cloudApply(remote); db.syncedOnce = true; localSave();
     cloud.lastSaved = new Date(remote.meta.savedAt || Date.now()); setCloudStatus('saved');
@@ -6857,6 +6876,34 @@ function cloudText(){
   return { local:'Данные хранятся только в этом браузере', loading:'Загружаю данные из аккаунта…', saving:'Сохраняю в аккаунт…',
     saved:`Сохранено в аккаунте${t ? ` в ${t}` : ''}`, error:cloud.err || 'Ошибка сохранения' }[cloud.status];
 }
+// «Синхронизировать»: дописываем свои правки и забираем из облака всё заново — облако главнее
+async function syncNow(){
+  if (!cloud.col){ toast('Синхронизация работает, когда вы вошли в аккаунт'); return; }
+  setCloudStatus('saving');
+  try {
+    if (cloud.pending || cloud.writing) await flushCloud();
+    const snap = await cloud.col.get();
+    const docs = new Map(snap.docs.map(d => [d.id, d.data()]));
+    const remote = docs.size ? cloudAssemble(docs) : null;
+    if (!remote){ toast('Данные в облаке ещё записываются, попробуйте через пару секунд'); setCloudStatus('saved'); return; }
+    cloud.hashes = new Map([...docs].map(([k, b]) => [k, cloudCanon(b)]));
+    cloud.baseMeta = metaBase(remote.meta); cloudApply(remote); writeDirty(new Set()); db.syncedOnce = true; localSave();
+    cloud.lastSaved = new Date(); setCloudStatus('saved'); toast('Данные обновлены из облака');
+  } catch(e) { setCloudStatus('error', 'Не удалось синхронизировать, проверьте интернет'); toast('Не удалось синхронизировать, проверьте интернет'); }
+}
+async function saveNow(){
+  if (!cloud.col){ toast('Сохранение в облако работает, когда вы вошли в аккаунт'); return; }
+  try { markDirty(); } catch(e) {}
+  await flushCloud(); if (cloud.dirty || cloud.pending) await flushCloud();
+  toast(cloud.status === 'saved' ? 'Сохранено в облаке' : (cloud.err || 'Не удалось сохранить'));
+}
+const SYNC_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/></svg>';
+const SAVE_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/></svg>';
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-savenow],[data-syncnow]'); if (!b) return;
+  if (b.disabled) return; b.disabled = true;
+  (b.dataset.savenow !== undefined ? saveNow() : syncNow()).finally(() => { b.disabled = false; });
+});
 function setCloudStatus(s, err){
   cloud.status = s; if (err) cloud.err = err;
   const sc = document.querySelector('[data-sidecloud]'); if (sc){ sc.dataset.state = s; sc.title = cloudText(); }
@@ -6870,7 +6917,7 @@ function openCloudInfo(){
     <h3><span class="cdot" data-state="${cloud.status}"></span>${esc(cloudText())}</h3>
     ${ok ? `<p>Проекты, команда, шаблоны, задачи, чек-листы и AI-отчёты сохраняются в вашем аккаунте. Откройте приложение на любом устройстве под этой учётной записью — данные будут на месте.</p>
       <p class="hint">Раздел личный: его не видят другие люди, даже если вы поделитесь приложением. Изменения с другого устройства подтягиваются автоматически.</p>
-      <div class="actions"><button class="ghost" id="cloudNow">Сохранить сейчас</button><button class="ghost" id="kzOut">Выйти</button></div>
+      <div class="actions"><button class="ghost" data-savenow>Сохранить</button><button class="ghost" data-syncnow>Синхронизировать</button><button class="ghost" id="kzOut">Выйти</button></div>
       <p class="hint" style="margin-top:10px">Перенести проекты из прошлой версии (выгрузка .json):</p>
       <label class="ghost file-btn">Импорт данных из файла<input type="file" id="impFile" accept=".json,application/json"></label>`
     : `<p>${cloud.status === 'loading' ? 'Подключаюсь к хранилищу аккаунта…' : 'Сохранение в аккаунт работает, когда вы вошли в свою учётную запись. Сейчас данные хранятся только в этом браузере.'}</p>`}

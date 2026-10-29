@@ -2,7 +2,7 @@
   "name": "kaizenhub-tests",
   "private": true,
   "scripts": {
-    "test": "node api.test.js && node shim.test.js && node google.test.js && node app.test.js && node team.test.js && node plan.test.js && node phone.test.js && node tplcards.test.js && node blocks.test.js && node categories.test.js && node spaces.test.js && node sync.test.js && node lead.test.js && node tasks.test.js && node tplsync.test.js && node maint.test.js && node gate.test.js",
+    "test": "node api.test.js && node shim.test.js && node google.test.js && node app.test.js && node team.test.js && node plan.test.js && node phone.test.js && node tplcards.test.js && node blocks.test.js && node categories.test.js && node spaces.test.js && node sync.test.js && node lead.test.js && node tasks.test.js && node tplsync.test.js && node maint.test.js && node gate.test.js && node stale.test.js",
     "test:db": "sh db/run.sh"
   },
   "devDependencies": {

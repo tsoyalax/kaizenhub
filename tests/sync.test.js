@@ -60,7 +60,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(ids.every(id => wb.eval(`projById('${id}').stages.at(-1).subs.some(x => x.name === 'сайт')`))); ok('вкладка B показывает подэтап во всех проектах');
   // 4) вкладку B закрыли с неотправленной правкой и открыли снова после изменений на A
   wb.eval(`projById('${other}').client = 'Клиент из B'; save(); clearTimeout(cloud.timer);`);
-  const keep = { 'agency-pipeline-demo-v2': wb.localStorage.getItem('agency-pipeline-demo-v2'), 'agency-pipeline-demo-v2-sync': wb.localStorage.getItem('agency-pipeline-demo-v2-sync') };
+  const keep = { 'agency-pipeline-demo-v2': wb.localStorage.getItem('agency-pipeline-demo-v2'), 'agency-pipeline-demo-v2-sync': wb.localStorage.getItem('agency-pipeline-demo-v2-sync'), 'agency-pipeline-demo-v2-dirty': wb.localStorage.getItem('agency-pipeline-demo-v2-dirty') };
   wb.close();
   wa.eval(`projById('${ids[0]}').name = 'Правка во вкладке A'; commit();`); await wait(2500);
   const tc = openApp(be, A, undefined, undefined, keep); await wait(4500);
