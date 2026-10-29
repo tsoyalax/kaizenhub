@@ -2857,7 +2857,7 @@ function matsSection(p, t){
     ${!m.legacy && (mine(m) || canEditProject(p)) ? `<button class="tx" data-matdel="${t.id}|${m.id}" aria-label="Убрать материал ${esc(m.name || '')}" title="Убрать">×</button>` : ''}</li>`;
   return `<section class="tk-sec tk-mats" data-matdrop="${t.id}"><h3>Сдача работы · материалы${list.length ? ` <span class="ntf-n">${list.length}</span>` : ''}</h3>
     ${list.length ? `<ul class="mats">${list.map(row).join('')}</ul>` : '<p class="hint">Прикрепите файлы или ссылки на готовые материалы по этому подэтапу.</p>'}
-    <div class="mat-add">${ui.matUp === t.id ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn">${CLIP_ICO}Прикрепить файлы<input type="file" multiple data-matfile="${t.id}"></label><span class="hint mat-drop-hint">или перетащите сюда, до 25 МБ каждый</span>`}
+    <div class="mat-add">${ui.matUp === t.id ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn">${CLIP_ICO}Прикрепить файлы<input type="file" multiple data-matfile="${t.id}"></label><span class="hint mat-drop-hint">или перетащите сюда, до 50 МБ каждый</span>`}
       <form class="row" data-matlink="${t.id}"><input placeholder="Или ссылка на материал (Google Диск, Figma…)" inputmode="url" aria-label="Ссылка на материал"><button class="ghost">Добавить</button></form></div></section>`;
 }
 function addMat(t, m){
@@ -2872,7 +2872,7 @@ async function uploadMats(t, files){
   const F = window.claude?.use ? await window.claude.use('files').catch(() => null) : null;
   if (!F || !cloud.uid){ toast('Файлы можно прикреплять, когда вы вошли в аккаунт'); return; }
   const big = files.filter(f => f.size > F.maxSize); files = files.filter(f => f.size <= F.maxSize);
-  if (big.length) toast(`Больше 25 МБ: ${big.map(f => f.name).join(', ')}. Загрузите в облако и добавьте ссылку`);
+  if (big.length) toast(`Больше 50 МБ: ${big.map(f => f.name).join(', ')}. Загрузите в облако и добавьте ссылку`);
   const added = [], failed = [];
   ui.matUp = t.id; renderTaskModal();
   for (const file of files){
@@ -2959,17 +2959,17 @@ document.addEventListener('click', e => {
   const [pid, sid] = (q.dataset.gatereq || q.dataset.gatecancel || q.dataset.gateok || q.dataset.gateno).split('|');
   const p = projById(pid); const s = p?.stages.find(x => x.id === sid); if (!s) return;
   if (q.dataset.gatereq) return gateDialog(`Переход с этапа «${esc(s.name)}»`, 'Комментарий для руководителя (необязательно)', 'Отправить запрос', note => {
-    s.req = { status:'pending', by:meKey(), byName:actorName(), at:new Date().toISOString(), note };
+    s.req = ssTouch({ status:'pending', by:meKey(), byName:actorName(), at:new Date().toISOString(), note });
     addLog(p, `${actorName()} запросил переход с этапа «${s.name}» на следующий`); commit(); toast('Запрос отправлен руководителю'); });
-  if (q.dataset.gatecancel){ s.req = null; addLog(p, `Запрос на переход с этапа «${s.name}» отозван`); commit(); return; }
+  if (q.dataset.gatecancel){ s.req = ssTouch({ status:'cancelled' }); addLog(p, `Запрос на переход с этапа «${s.name}» отозван`); commit(); return; }
   if (q.dataset.gateok){
-    const r = s.req || {}; s.req = { ...r, status:'approved', decidedBy:actorName(), decidedAt:new Date().toISOString() };
+    const r = s.req || {}; s.req = ssTouch({ ...r, status:'approved', decidedBy:actorName(), decidedAt:new Date().toISOString() });
     addLog(p, `Переход с этапа «${s.name}» одобрен (запрос: ${r.byName || 'исполнитель'})`);
     if (layer.querySelector('.pop')) layer.innerHTML = '';
     setStatus(p, s, 'done'); toast(`Этап «${s.name}» закрыт, следующий — в работе`); return;
   }
   if (q.dataset.gateno) return gateDialog(`Вернуть этап «${esc(s.name)}»`, 'Что нужно доделать', 'Вернуть исполнителю', reason => {
-    s.req = { ...(s.req || {}), status:'rejected', reason, decidedBy:actorName(), decidedAt:new Date().toISOString() };
+    s.req = ssTouch({ ...(s.req || {}), status:'rejected', reason, decidedBy:actorName(), decidedAt:new Date().toISOString() });
     addLog(p, `Запрос на переход с этапа «${s.name}» возвращён: ${reason}`); commit(); toast('Исполнитель увидит, что нужно доделать'); }, true);
 });
 // ---------- Сдача этапа: исполнитель разом загружает сделанное под этапом, руководитель принимает — этап закрывается ----------
@@ -2996,7 +2996,7 @@ function stageSubmitBox(p, s, mine){
     return `<div class="ss" data-ssdrop="${p.id}|${s.id}"><b>Сдать этап</b>
       ${sub.status === 'rejected' ? `<small class="ss-back">Вернули на доработку${sub.reason ? `: «${esc(sub.reason)}»` : ''}</small>` : ''}
       ${ssItems(p, s, true)}
-      <div class="ss-row">${up ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn" title="Можно несколько, до 25 МБ каждый">${CLIP_ICO}Файлы<input type="file" multiple data-ssfile="${p.id}|${s.id}"></label>`}
+      <div class="ss-row">${up ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn" title="Можно несколько, до 50 МБ каждый">${CLIP_ICO}Файлы<input type="file" multiple data-ssfile="${p.id}|${s.id}"></label>`}
         <form class="ss-link" data-sslink="${p.id}|${s.id}"><input placeholder="Ссылка" inputmode="url" aria-label="Ссылка на результат"></form>
         <button class="primary ss-send" data-sssend="${p.id}|${s.id}">Отправить</button></div></div>`;
   }
@@ -3013,7 +3013,7 @@ async function ssUpload(p, s, files){
   const F = window.claude?.use ? await window.claude.use('files').catch(() => null) : null;
   if (!F || !cloud.uid){ toast('Файлы можно прикреплять, когда вы вошли в аккаунт'); return; }
   const big = files.filter(f => f.size > F.maxSize); files = files.filter(f => f.size <= F.maxSize);
-  if (big.length) toast(`Больше 25 МБ: ${big.map(f => f.name).join(', ')}. Загрузите в облако и добавьте ссылку`);
+  if (big.length) toast(`Больше 50 МБ: ${big.map(f => f.name).join(', ')}. Загрузите в облако и добавьте ссылку`);
   ui.ssUp = s.id; render();
   const added = [], failed = [];
   for (const file of files){
@@ -3022,7 +3022,7 @@ async function ssUpload(p, s, files){
   }
   ui.ssUp = null;
   const q = projById(p.id); const st = q?.stages.find(x => x.id === s.id);
-  if (st && added.length){ const sub = ssEnsure(st); if (sub.status === 'rejected') sub.status = 'draft'; sub.items = [...(sub.items || []), ...added]; commit(); } else render();
+  if (st && added.length){ const sub = ssEnsure(st); if (sub.status === 'rejected') sub.status = 'draft'; sub.items = [...(sub.items || []), ...added]; ssTouch(sub); commit(); } else render();
   if (failed.length) toast(`Не загрузились: ${failed.join('; ')}`);
 }
 document.addEventListener('change', e => { const v = e.target.dataset?.ssfile; if (!v) return; const { p, s } = ssFind(v); const files = [...(e.target.files || [])]; e.target.value = ''; ssUpload(p, s, files); });
@@ -3035,29 +3035,29 @@ document.addEventListener('submit', e => {
   if (!safeUrl(v)){ toast('Ссылка должна начинаться с http:// или https://'); return; }
   const sub = ssEnsure(s); if (sub.status === 'rejected') sub.status = 'draft';
   sub.items = [...(sub.items || []), { id:uid(), kind:'link', url:v, name:v.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60), by:meKey(), byName:actorName(), at:new Date().toISOString() }];
-  commit();
+  ssTouch(sub); commit();
 });
 document.addEventListener('input', e => { const m = /^ssnote-(.+)$/.exec(e.target.id || ''); if (!m) return; const s = (projById(ui.view === 'mine' ? ui.myProject : ui.prodProject)?.stages || []).find(x => x.id === m[1]); if (s) ssEnsure(s).note = e.target.value; });
 document.addEventListener('click', e => {
   const q = e.target.closest?.('[data-ssdel],[data-sssend],[data-sscancel],[data-ssok],[data-ssno]'); if (!q) return;
   const d = q.dataset; const { p, s, mid } = ssFind(d.ssdel || d.sssend || d.sscancel || d.ssok || d.ssno); if (!s) return;
-  if (d.ssdel){ s.sub.items = (s.sub.items || []).filter(m => m.id !== mid); commit(); return; }
+  if (d.ssdel){ s.sub.items = (s.sub.items || []).filter(m => m.id !== mid); ssTouch(s.sub); commit(); return; }
   if (d.sssend){ const sub = ssEnsure(s);
     const li = q.closest('.ss')?.querySelector('[data-sslink] input'); const lv = li?.value.trim() || '';
     if (lv){ if (!safeUrl(lv)){ toast('Ссылка должна начинаться с http:// или https://'); return; }
       sub.items = [...(sub.items || []), { id:uid(), kind:'link', url:lv, name:lv.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60), by:meKey(), byName:actorName(), at:new Date().toISOString() }]; }
     if (!(sub.items || []).length){ toast('Прикрепите файлы или вставьте ссылку'); return; }
     const note = '';
-    Object.assign(sub, { status:'pending', note, by:meKey(), byName:actorName(), at:new Date().toISOString(), reason:'' });
+    Object.assign(sub, { status:'pending', note, by:meKey(), byName:actorName(), at:new Date().toISOString(), reason:'' }); ssTouch(sub);
     addLog(p, `${actorName()} сдал этап «${s.name}» на проверку: ${sub.items.length} ${plural(sub.items.length, 'материал', 'материала', 'материалов')}`); commit(); toast('Этап отправлен на проверку'); return; }
-  if (d.sscancel){ s.sub.status = 'draft'; addLog(p, `Сдача этапа «${s.name}» отозвана`); commit(); return; }
-  if (d.ssok){ const sub = s.sub; Object.assign(sub, { status:'accepted', decidedBy:actorName(), decidedAt:new Date().toISOString() });
-    if (s.req?.status === 'pending') s.req = { ...s.req, status:'approved', decidedBy:actorName(), decidedAt:sub.decidedAt };
+  if (d.sscancel){ s.sub.status = 'draft'; ssTouch(s.sub); addLog(p, `Сдача этапа «${s.name}» отозвана`); commit(); return; }
+  if (d.ssok){ const sub = s.sub; Object.assign(sub, { status:'accepted', decidedBy:actorName(), decidedAt:new Date().toISOString() }); ssTouch(sub);
+    if (s.req?.status === 'pending') s.req = ssTouch({ ...s.req, status:'approved', decidedBy:actorName(), decidedAt:sub.decidedAt });
     addLog(p, `Этап «${s.name}» принят (сдал: ${sub.byName || 'исполнитель'})`);
     if (layer.querySelector('.pop')) layer.innerHTML = '';
     setStatus(p, s, 'done'); toast(`Этап «${s.name}» принят, следующий — в работе`); return; }
   if (d.ssno) return gateDialog(`Вернуть этап «${esc(s.name)}»`, 'Что нужно доделать', 'Вернуть исполнителю', reason => {
-    Object.assign(s.sub, { status:'rejected', reason, decidedBy:actorName(), decidedAt:new Date().toISOString() });
+    Object.assign(s.sub, { status:'rejected', reason, decidedBy:actorName(), decidedAt:new Date().toISOString() }); ssTouch(s.sub);
     addLog(p, `Этап «${s.name}» возвращён на доработку: ${reason}`); commit(); toast('Исполнитель увидит, что нужно доделать'); }, true);
 });
 
@@ -5856,7 +5856,7 @@ const safeFileName = n => {
   return (base || 'file') + ext;
 };
 // понятные сообщения об ошибках загрузки
-const uploadErr = err => err?.code === 'too_large' ? 'файл больше 25 МБ' : err?.code === 'not_granted' ? 'нет доступа: войдите в аккаунт заново' : /invalid key/i.test(err?.message || '') ? 'недопустимое имя файла' : (err?.message || 'ошибка сети');
+const uploadErr = err => err?.code === 'too_large' ? 'файл больше 50 МБ' : err?.code === 'not_granted' ? 'нет доступа: войдите в аккаунт заново' : /invalid key/i.test(err?.message || '') ? 'недопустимое имя файла' : (err?.message || 'ошибка сети');
 function blocksView(list, p, t){
   return (list || []).filter(blkOk).map(b => {
     const h = `<h3>${esc(b.title || BLOCK_T[b.type])}</h3>`;
@@ -5890,7 +5890,7 @@ function blocksEditor(list, ctx){
       <div class="bk-body"><div class="bk-top"><span class="bk-type">${BLOCK_T[b.type]}</span><input data-bkf="title" data-bki="${k}" value="${esc(b.title || '')}" placeholder="Заголовок (необязательно)" aria-label="Заголовок блока ${k + 1}"></div>
         ${b.type === 'text' ? `<textarea data-bkf="value" data-bki="${k}" rows="3" placeholder="Текст" aria-label="Текст блока ${k + 1}">${esc(b.value || '')}</textarea>`
         : b.type === 'msg' ? `<textarea data-bkf="value" data-bki="${k}" rows="4" placeholder="Здравствуйте, {клиент}! …" aria-label="Текст сообщения ${k + 1}">${esc(b.value || '')}</textarea><small class="hint">Исполнитель скопирует сообщение одним нажатием. Можно вставить {клиент}, {проект}, {этап}, {pm} — подставятся сами.</small>`
-        : b.type === 'file' ? `<div class="row bk-file">${b.uploading ? '<span class="hint">Загружаю…</span>' : b.path ? `<span class="fchip static"><span aria-hidden="true">📎</span>${esc(b.name)}<small>${fsize(b.size)}</small></span><label class="link file-btn">Заменить<input type="file" data-bkfile="${k}"></label>` : `<label class="ghost file-btn">Выбрать файл<input type="file" data-bkfile="${k}"></label><span class="hint">до 25 МБ</span>`}</div>`
+        : b.type === 'file' ? `<div class="row bk-file">${b.uploading ? '<span class="hint">Загружаю…</span>' : b.path ? `<span class="fchip static"><span aria-hidden="true">📎</span>${esc(b.name)}<small>${fsize(b.size)}</small></span><label class="link file-btn">Заменить<input type="file" data-bkfile="${k}"></label>` : `<label class="ghost file-btn">Выбрать файл<input type="file" data-bkfile="${k}"></label><span class="hint">до 50 МБ</span>`}</div>`
         : `<input data-bkf="value" data-bki="${k}" value="${esc(b.value || '')}" inputmode="url" placeholder="${b.type === 'video' ? 'YouTube, Vimeo, Google Drive, Loom или MP4' : 'https://…'}" aria-label="Ссылка блока ${k + 1}">`}
       </div>
       <button type="button" class="tx bk-x" data-bkdel="${k}" aria-label="Удалить блок ${k + 1}" title="Удалить блок">×</button></li>`).join('')}</ol>
@@ -5951,7 +5951,7 @@ document.addEventListener('change', async e => {
   const file = e.target.files?.[0]; e.target.value = ''; if (!file) return;
   const F = window.claude?.use ? await window.claude.use('files').catch(() => null) : null;
   if (!F || !cloud.uid){ toast('Файлы можно добавлять, когда вы вошли в аккаунт'); return; }
-  if (file.size > F.maxSize){ toast('Файл больше 25 МБ. Загрузите его в облако и добавьте блок «Ссылка»'); return; }
+  if (file.size > F.maxSize){ toast('Файл больше 50 МБ. Загрузите его в облако и добавьте блок «Ссылка»'); return; }
   let base;
   if (ctx === 'ce'){ if (!ui.draft?.id){ toast('Сначала сохраните шаблон, потом добавляйте файлы'); return; } base = `${cloud.uid}/t/${ui.draft.id}`; }
   else { const t = taskById(ui.taskId); if (!t) return; base = `${cloud.uid}/p/${t.project_id}`; }
@@ -6932,15 +6932,41 @@ function syncSharedSubs(){
     shared.subs.set(pid, uns);
   }
 }
+
+// Общий проект сохраняется целиком, поэтому правки двух людей могли затирать друг друга.
+// Сдачу этапа и запрос на переход сливаем по времени последнего изменения (поле u) — с обеих сторон.
+const stampOf = o => o ? String(o.u || o.decidedAt || o.at || '') : '';
+const ssTouch = o => { if (o) o.u = new Date().toISOString(); return o; };
+function mergeStageFields(target, other){
+  if (!target || !other) return false;
+  let changed = false, accepted = false;
+  (other.stages || []).forEach(os => {
+    const ts = (target.stages || []).find(x => x.id === os.id); if (!ts) return;
+    ['sub', 'req'].forEach(f => { if (os[f] && stampOf(os[f]) > stampOf(ts[f])){ ts[f] = JSON.parse(JSON.stringify(os[f])); changed = true;
+      if (os[f].status === 'accepted' || os[f].status === 'approved') accepted = true; } });
+  });
+  // принятие этапа двигает статусы — берём их вместе с принятием, чтобы закрытый этап не открылся снова
+  if (accepted) (target.stages || []).forEach(ts => { const os = (other.stages || []).find(x => x.id === ts.id); if (!os) return;
+    ['status', 'started_at', 'completed_at', 'planned_start', 'due_date'].forEach(k => { ts[k] = os[k]; }); });
+  if (accepted && other.state) target.state = other.state;
+  return changed;
+}
 function onSharedProject(pid, snap){
   if (!snap.exists || snap.metadata?.hasPendingWrites) return;
   const body = snap.data(); const s = sharedCanon(`sp/${pid}`, body);
   if (shared.hashes.get(`sp/${pid}`) === s) return;
   shared.hashes.set(`sp/${pid}`, s);
-  if (shared.pending || shared.writing) return;                 // свои несохранённые правки уйдут следом
-  const remote = JSON.parse(body.json); const i = db.projects.findIndex(p => p.id === pid); if (i < 0) return;
+  let remote; try { remote = JSON.parse(body.json); } catch(e) { return; } delete remote._reg;
+  const i = db.projects.findIndex(p => p.id === pid); if (i < 0) return;
   const local = db.projects[i];
-  db.projects[i] = { ...remote, share:local.share, log:mergeLogs(local.log, remote.log) };
+  if (shared.pending || shared.writing){                        // свои несохранённые правки уйдут следом — но сдачу этапа подхватываем сразу
+    if (mergeStageFields(local, remote)){ localSave(); scheduleShared(); afterSharedApply(); }
+    return;
+  }
+  const next = { ...remote, share:local.share, log:mergeLogs(local.log, remote.log) };
+  const keepMine = mergeStageFields(next, local);               // у меня новее — оставляем и досылаем
+  db.projects[i] = next;
+  if (keepMine){ localSave(); scheduleShared(); }
   afterSharedApply();
 }
 function onSharedTasks(pid, snap){
@@ -6999,7 +7025,7 @@ function rebuildExt(){
     if (src.has(pid) || !st.b || !st.join || st.b.ownerId === cloud.uid || st.b.ownerId === OWNER()) continue;   // нет проекта или владелец закрыл мне доступ
     src.set(pid, { b:st.b, role:st.join.role || 'worker', link:true });
   }
-  const next = [];
+  const next = []; let resend = false;
   for (const [pid, { b, role, link }] of src){
     const path = `sp/${pid}`; const s = sharedCanon(path, b);
     const old = ext.projects.find(p => p.id === pid);
@@ -7007,11 +7033,12 @@ function rebuildExt(){
     shared.hashes.set(path, s);
     let p; try { p = JSON.parse(b.json); } catch(e) { continue; }
     p._ext = { ownerId:b.ownerId, role, members:b.members || [], link:!!link };
-    if (old) p.log = mergeLogs(old.log, p.log);
+    if (old){ p.log = mergeLogs(old.log, p.log); if (mergeStageFields(p, old)) resend = true; }
     next.push(p);
   }
   const gone = ext.projects.filter(p => !next.some(n => n.id === p.id)).map(p => p.id);
   ext.projects = next; ext.tasks = ext.tasks.filter(t => !gone.includes(t.project_id));
+  if (resend) scheduleShared();
   if (gone.length && ui.view === 'mine' && gone.includes(ui.myProject)) toast('Доступ к проекту закрыт владельцем');
   syncSharedSubs(); afterSharedApply();
   if (ext.projects.length && !ui.mineSeen && !GUEST){ ui.mineSeen = true; toast(`С вами поделились проектами: ${ext.projects.length}. Они во вкладке «Мои проекты»`); }

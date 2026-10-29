@@ -535,10 +535,10 @@
 
   /* ----------------------------------------------------------------- files */
   // Файлы карточек: закрытая корзина kz-files, ссылки на скачивание — временные (1 час)
-  var BUCKET = 'kz-files', MAX_FILE = 25 * 1024 * 1024;
+  var BUCKET = 'kz-files', MAX_FILE = 50 * 1024 * 1024;
   function stErr(e) {
     var m = String((e && (e.message || e.error)) || '');
-    if (/exceed|too large|payload/i.test(m)) return { code: 'too_large', message: 'Файл больше 25 МБ' };
+    if (/exceed|too large|payload/i.test(m)) return { code: 'too_large', message: 'Файл больше 50 МБ' };
     if (/row-level|security|not authorized|unauthorized|403/i.test(m + (e && e.statusCode))) return { code: 'not_granted', message: 'Нет доступа к файлу' };
     if (/not found|404/i.test(m + (e && e.statusCode))) return { code: 'not_found', message: 'Файл не найден' };
     return { code: 'unavailable', message: m };
@@ -547,7 +547,7 @@
     maxSize: MAX_FILE,
     upload: async function (path, file) {
       await ensureSession();
-      if (file.size > MAX_FILE) throw { code: 'too_large', message: 'Файл больше 25 МБ' };
+      if (file.size > MAX_FILE) throw { code: 'too_large', message: 'Файл больше 50 МБ' };
       var r = await sb.storage.from(BUCKET).upload(path, file, { upsert: false, contentType: file.type || 'application/octet-stream' });
       if (r.error) throw stErr(r.error);
       return path;
