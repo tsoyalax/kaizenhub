@@ -2420,8 +2420,31 @@ function toggleSub(p, s, x, checked){
   if (checked && s.status === 'not_started' && currentStage(p)?.id === s.id && p.start_date <= today()){ s.status = 'in_progress'; s.started_at = today(); }
   addLog(p, `Подэтап «${x.name}» (${s.name}): ${checked ? 'выполнен' : 'снова в работе'}`);
   commit();
-  if (checked && s.status !== 'done' && s.subs.every(y => y.done)) toast(`Все подэтапы «${s.name}» выполнены. Этап можно закрыть.`);
+  if (checked) queueAutoClose(p.id);
 }
+// ---------- Автозакрытие этапа: все пункты отмечены → этап закрыт, следующий в работе ----------
+// Этап с приёмкой (переход по запросу или материалы в подэтапах): отметки исполнителя отправляют этап руководителю
+// на приёмку («Приёмка», колокольчик), закрывается он после «Принять этап». Последнюю отметку ставит руководитель — это и есть приёмка.
+const needsAccept = s => !!s.gate || (s.subs || []).some(x => x.files);
+const stageAllDone = (p, s) => (s.subs || []).length > 0 && s.subs.every(x => subDone(p, s, x));
+function autoCloseStages(p){
+  if (!p || p.state === 'archived') return;
+  for (let k = 0; k < p.stages.length; k++){
+    const s = currentStage(p); if (!s || isMaint(s) || s.status === 'done' || !stageAllDone(p, s)) return;
+    if (needsAccept(s) && !canEditProject(p)){
+      const sub = ssEnsure(s); if (sub.status === 'pending') return;
+      Object.assign(sub, { status:'pending', note:sub.note || 'Все пункты этапа выполнены', by:meKey(), byName:actorName(), at:new Date().toISOString(), reason:'' }); ssTouch(sub);
+      addLog(p, `${actorName()} выполнил все пункты этапа «${s.name}» — этап на приёмке`);
+      commit(); toast(`Все пункты «${s.name}» выполнены — этап отправлен руководителю на приёмку`); return;
+    }
+    if (s.sub?.status === 'pending'){ Object.assign(s.sub, { status:'accepted', decidedBy:actorName(), decidedAt:new Date().toISOString() }); ssTouch(s.sub); addLog(p, `Этап «${s.name}» принят (сдал: ${s.sub.byName || 'исполнитель'})`); }
+    if (s.req?.status === 'pending') s.req = ssTouch({ ...s.req, status:'approved', decidedBy:actorName(), decidedAt:new Date().toISOString() });
+    addLog(p, `Все пункты этапа «${s.name}» выполнены — этап закрыт автоматически`);
+    setStatus(p, s, 'done');
+    const nx = currentStage(p); toast(`Этап «${s.name}» закрыт${nx && nx.status !== 'done' ? `, «${nx.name}» — в работе` : ''}`);
+  }
+}
+const queueAutoClose = pid => setTimeout(() => autoCloseStages(projById(pid)), 0);
 function moveToDone(p){
   const t = today();
   p.stages.forEach(s => { if (s.status !== 'done'){ s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; completeStage(p, s); } });
@@ -5475,7 +5498,6 @@ function syncTaskToSub(t){
   x.done = done;
   if (done && s.status === 'not_started' && currentStage(p)?.id === s.id && p.start_date <= today()){ s.status = 'in_progress'; s.started_at = today(); }
   addLog(p, `Подэтап «${x.name}» (${s.name}) ${done ? 'закрыт задачей' : 'снова открыт: в задаче есть невыполненные пункты'}`);
-  if (done && s.status !== 'done' && s.subs.every(y => y.done)) setTimeout(() => toast(`Все подэтапы «${s.name}» выполнены. Этап можно закрыть в карточке проекта.`), 50);
   return true;
 }
 // Создать задачи для подэтапов этапа, у которых их ещё нет
@@ -5748,7 +5770,7 @@ document.addEventListener('change', e => {
     const t = taskById(ids[0]); if (!t) return; const p = projById(t.project_id); const s = p?.stages.find(y => y.id === t.stage_id);
     if (t.checklist.length){ const now = new Date().toISOString();
       t.checklist.forEach(i => { if (i.done !== on){ i.done = on; i.completed_at = on ? now : null; i.completed_by = on ? meName() : null; } });
-      syncTaskToSub(t); save(); render(); if (on) toast(`«${t.title}» — выполнено`); return; }
+      syncTaskToSub(t); save(); render(); if (on){ toast(`«${t.title}» — выполнено`); queueAutoClose(p?.id); } return; }
     const x = s?.subs?.find(y => y.id === t.substage_id); if (x) toggleSub(p, s, x, on); return;
   }
   const p = projById(ids[0]); const s = p?.stages.find(y => y.id === ids[1]); const x = s?.subs?.find(y => y.id === ids[2]); if (x) toggleSub(p, s, x, on);
@@ -6264,7 +6286,7 @@ function saveTaskDraft(){
     const at = i.done ? (o?.done ? o.completed_at : new Date().toISOString()) : null, by = i.done ? (o?.done ? o.completed_by : meName()) : null;
     return o ? { ...o, text:i.text.trim(), position:k, done:!!i.done, completed_at:at, completed_by:by } : { id:uid(), text:i.text.trim(), done:!!i.done, position:k, completed_at:at, completed_by:by };
   });
-  syncTaskToSub(t);
+  syncTaskToSub(t); if (taskProgress(t).done) queueAutoClose(p.id);
   const subX = p.stages.find(x => x.id === t.stage_id)?.subs?.find(x => x.id === t.substage_id);
   let synced = 0;
   // пустая карточка шаблоном не становится — иначе она стёрла бы эту карточку во всех проектах
@@ -6459,7 +6481,7 @@ document.addEventListener('change', e => {
     i.done = el.checked; i.completed_at = el.checked ? new Date().toISOString() : null; i.completed_by = el.checked ? meName() : null;
     const before = taskProgress(t).done; syncTaskToSub(t);
     tSave(t, true, `#ck-${i.id}`);
-    if (!before && taskProgress(t).done) toast(`Подэтап «${t.title}» выполнен`);
+    if (!before && taskProgress(t).done){ toast(`Подэтап «${t.title}» выполнен`); queueAutoClose(t.project_id); }
     return;
   }
   if (el.dataset.tres !== undefined){
