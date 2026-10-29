@@ -86,6 +86,24 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     w1.onSharedProject(q, { exists:true, metadata:{}, data:() => ({ json:JSON.stringify(stale2), memberIds:[] }) });
     assert.equal(E1(`projById('${q}').stages[0].status`), 'done'); ok('копия из старой версии приложения тоже не откатывает этап');
   }
+  { // автозакрытие этапа
+    const r = E1(`db.projects.find(p => p.state === 'active' && currentStage(p) && !isMaint(currentStage(p)) && (currentStage(p).subs || []).length && !db.tasks.some(t => t.project_id === p.id && t.stage_id === currentStage(p).id && t.checklist.length)).id`);
+    const sid = E1(`currentStage(projById('${r}')).id`);
+    E1(`(() => { const p = projById('${r}'), s = p.stages.find(x => x.id === '${sid}'); s.gate = false; s.subs.forEach(x => { x.files = false; }); s.subs.forEach(x => toggleSub(p, s, x, true)); })()`); await wait(100);
+    assert.equal(E1(`projById('${r}').stages.find(x => x.id === '${sid}').status`), 'done'); ok('все пункты отмечены — этап закрылся сам');
+    assert.notEqual(E1(`currentStage(projById('${r}'))?.id`), sid); ok('следующий этап — в работе');
+    // этап с приёмкой: отметки исполнителя отправляют его на приёмку, закрывает руководитель
+    const sid2 = E1(`currentStage(projById('${r}'))?.id`);
+    if (sid2 && E1(`(currentStage(projById('${r}')).subs || []).length > 0 && !isMaint(currentStage(projById('${r}')))`)){
+      E1(`(() => { const p = projById('${r}'); p._ext = { role:'worker' }; const s = p.stages.find(x => x.id === '${sid2}'); s.gate = true; s.subs.forEach(x => toggleSub(p, s, x, true)); })()`); await wait(100);
+      E1(`delete projById('${r}')._ext`);
+      assert.equal(E1(`projById('${r}').stages.find(x => x.id === '${sid2}').status`) !== 'done', true); ok('этап с приёмкой сам не закрылся');
+      assert.equal(E1(`projById('${r}').stages.find(x => x.id === '${sid2}').sub?.status`), 'pending'); ok('этап с приёмкой ушёл руководителю на приёмку');
+      E1(`ui.view = 'review'; ui.revTab = 'pending'; render()`); await wait(30);
+      w1.document.querySelector(`[data-ssok="${r}|${sid2}"]`).click(); await wait(100);
+      assert.equal(E1(`projById('${r}').stages.find(x => x.id === '${sid2}').status`), 'done'); ok('после «Принять этап» этап закрыт');
+    }
+  }
   assert.equal(d1.errors.length + d4.errors.length, 0, d1.errors.concat(d4.errors).join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });
