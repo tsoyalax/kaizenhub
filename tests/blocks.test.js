@@ -54,7 +54,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const fin = $(`.bk-list[data-bkctx="td"] [data-bkfile="${k}"]`); const file = new w.File(['%PDF-1.4 test'], 'Бриф клиента.pdf', { type: 'application/pdf' });
   Object.defineProperty(fin, 'files', { value: [file] }); fire(fin, 'change'); await wait(200);
   const up = [...be.storage.keys()];
-  assert.ok(up.length === 1 && up[0].startsWith(`${A}/p/${pA.id}/`) && up[0].endsWith('Бриф_клиента.pdf')); ok('файл: загружен в закрытое хранилище, в папку проекта');
+  assert.ok(up.length === 1 && up[0].startsWith(`${A}/p/${pA.id}/`) && up[0].endsWith('Brif_klienta.pdf')); ok('файл: загружен в закрытое хранилище, в папку проекта');
   assert.ok(/Бриф клиента\.pdf/.test($('.bk-list .fchip').textContent)); ok('файл: в конструкторе видно имя и размер');
   await add('text');   // пустой блок — не сохранится
   // перестановка: «Макеты» наверх
@@ -97,7 +97,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const cev = $(`.bk-list[data-bkctx="ce"] [data-bkf="value"][data-bki="${ce}"]`); cev.value = 'Новый блок из шаблона'; fire(cev, 'input');
   const cef = $('.bk-add[data-bkctx="ce"] [data-bkadd="file"]'); cef.click(); await wait(50);
   const ceFile = $(`.bk-list[data-bkctx="ce"] [data-bkfile="${ce + 1}"]`); Object.defineProperty(ceFile, 'files', { value: [new w.File(['x'], 'Гайд.pdf', { type: 'application/pdf' })] }); fire(ceFile, 'change'); await wait(200);
-  assert.ok([...be.storage.keys()].some(k2 => k2.startsWith(`${A}/t/${tpl}/`) && k2.endsWith('Гайд.pdf'))); ok('шаблон: файл в карточке шаблона загружается сразу в папку шаблона');
+  assert.ok([...be.storage.keys()].some(k2 => k2.startsWith(`${A}/t/${tpl}/`) && k2.endsWith('Gayd.pdf'))); ok('шаблон: файл в карточке шаблона загружается сразу в папку шаблона');
   fire($('#ceForm'), 'submit'); await wait(100); $('#tSave').click(); await wait(300);
   L = LS();
   assert.ok(L.tasks.filter(t => others.some(x => x.id === t.id)).every(t => t.blocks.length === 6 && t.blocks.some(b => b.value === 'Новый блок из шаблона'))); ok('шаблон → проекты: новые блоки пришли во все проекты процесса');

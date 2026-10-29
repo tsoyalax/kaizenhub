@@ -65,8 +65,26 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const li = $(gw, '[data-matlink] input'); li.value = 'https://drive.google.com/file/xyz';
   li.form.dispatchEvent(new gw.w.Event('submit', { bubbles: true, cancelable: true })); await wait(100);
   assert.equal($(gw, '.tk-mats').querySelectorAll('.mat').length, 1); ok('исполнитель: ссылка на материал прикреплена');
+  // файлы с русскими названиями: хранилище принимает только латиницу — путь переводится, название остаётся
+  assert.equal(E(gw, `safeFileName('Бриф клиента (финал).pdf')`), 'Brif_klienta_final_.pdf'.replace('_.pdf', '.pdf')); ok('имя файла для хранилища — латиницей');
+  assert.ok(/^[A-Za-z0-9._-]+$/.test(E(gw, `safeFileName('Қазақ тілі — ТЗ №2.docx')`))); ok('казахские буквы и знаки тоже переводятся');
+  { const tid = E(gw, `taskFor('${pid}', '${sid}', '${xid}').id`);
+    await E(gw, `uploadMats(taskById('${tid}'), [new File(['a'], 'Бриф клиента.pdf'), new File(['b'], 'Сценарий №1.docx')])`); await wait(100);
+    const names = E(gw, `taskById('${tid}').mats.filter(m => m.kind === 'file').map(m => m.name)`);
+    assert.deepEqual(names, ['Бриф клиента.pdf', 'Сценарий №1.docx']); ok('исполнитель загрузил сразу два файла с русскими названиями');
+    assert.ok(E(gw, `taskById('${tid}').mats.filter(m => m.kind === 'file').every(m => /^[A-Za-z0-9._\/-]+$/.test(m.path))`)); ok('пути файлов в хранилище — латиницей');
+    assert.equal($(gw, '.tk-mats').querySelectorAll('.mat').length, 3); ok('в «Сдаче работы» видны все три материала'); }
   $(gw, '[data-tclose]').click(); await wait(2500);
-  assert.equal(E(own, `(taskFor('${pid}', '${sid}', '${xid}')?.mats || []).length`), 1); ok('руководитель видит материал исполнителя');
+  assert.equal(E(own, `(taskFor('${pid}', '${sid}', '${xid}')?.mats || []).length`), 3); ok('руководитель видит материалы исполнителя');
+  // руководитель принимает файл
+  E(own, `openTask(taskFor('${pid}', '${sid}', '${xid}').id)`); await wait(50);
+  assert.ok($(own, '.tk-mats [data-matok][data-v="1"]')); ok('у руководителя кнопка «Принять» у материала');
+  $(own, '.tk-mats [data-matok][data-v="1"]').click(); await wait(50);
+  assert.ok($(own, '.tk-mats .mat-ok') && E(own, `taskFor('${pid}', '${sid}', '${xid}').mats.some(m => m.ok)`)); ok('материал принят, отметка «Принято»');
+  E(own, 'closeTask()'); await wait(2500);
+  E(gw, `openTask(taskFor('${pid}', '${sid}', '${xid}').id)`); await wait(50);
+  assert.ok($(gw, '.tk-mats .mat-ok') && !$(gw, '.tk-mats [data-matok]')); ok('исполнитель видит «Принято», сам принять не может');
+  E(gw, 'closeTask()'); await wait(50);
   assert.equal(E(own, `taskFor('${pid}', '${sid}', '${xid}').mats[0].byName`), 'Гоша Исполнитель'); ok('у материала подписан автор');
 
   // запрос на переход → руководитель возвращает → снова запрос → одобряет
@@ -87,6 +105,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   $(gw, '#gateF').dispatchEvent(new gw.w.Event('submit', { bubbles: true, cancelable: true })); await wait(3000);
   E(own, `ui.view = 'production'; ui.prodProject = '${pid}'; render()`); await wait(100);
   assert.ok($(own, '.gate.ask [data-gateok]')); ok('запрос виден на доске проекта');
+  assert.ok($(own, '.gate.ask .gate-mats .fchip') && /Сдано материалов: 3/.test($(own, '.gate.ask').textContent)); ok('в запросе на переход видны сданные материалы');
   $(own, '.gate.ask [data-gateok]').click(); await wait(3000);
   assert.equal(E(own, `projById('${pid}').stages.find(s => s.id === '${sid}').status`), 'done'); ok('одобрение закрывает этап');
   assert.notEqual(E(own, `currentStage(projById('${pid}'))?.id`), sid); ok('следующий этап — в работе (или проект завершён)');

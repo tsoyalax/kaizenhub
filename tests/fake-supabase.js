@@ -68,7 +68,7 @@ function makeBackend() {
         },
         from, rpc,
         storage: { from() { const st = self.storage = self.storage || new Map(); return {
-          async upload(path, file) { if (st.has(path)) return { error: { message: 'The resource already exists' } }; st.set(path, { file, by: userId }); return { data: { path }, error: null }; },
+          async upload(path, file) { if (!/^(\w|\/|!|-|\.|\*|'|\(|\)| |&|\$|@|=|;|:|\+|,|\?)*$/.test(path)) return { error: { message: 'Invalid key: ' + path, statusCode: '400' } }; if (st.has(path)) return { error: { message: 'The resource already exists' } }; st.set(path, { file, by: userId }); return { data: { path }, error: null }; },
           async createSignedUrl(path) { return st.has(path) ? { data: { signedUrl: 'https://files.test/' + path + '?token=1' }, error: null } : { data: null, error: { message: 'Object not found', statusCode: '404' } }; },
           async copy(a, b) { if (!st.has(a)) return { error: { message: 'Object not found' } }; st.set(b, { ...st.get(a), by: userId }); self.copies = (self.copies || []).concat([[a, b]]); return { data: { path: b }, error: null }; }
         }; } },
