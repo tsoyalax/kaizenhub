@@ -411,7 +411,12 @@
       .subscribe(function (status) { if (status === 'SUBSCRIBED') pokeAll(); });
   }
   // Страховка: удаления Realtime не присылает, поэтому раз в 20 секунд сверяемся с базой
-  function pollAll() { if (!document.hidden) listeners.forEach(function (L) { refresh(L, true); }); }
+  // Вкладка в фоне тоже сверяется (реже): иначе, вернувшись к ней, человек правил старую копию данных
+  var hiddenTicks = 0;
+  function pollAll(e) {
+    if (document.hidden && !(e && e.type)) { if (++hiddenTicks % 3) return; }
+    hiddenTicks = 0; listeners.forEach(function (L) { refresh(L, true); });
+  }
   setInterval(pollAll, POLL_MS);
   document.addEventListener('visibilitychange', pollAll);
   window.addEventListener('online', pollAll);
