@@ -1964,7 +1964,20 @@ function localSave(){
   try { if (typeof cloud !== 'undefined' && cloud.hashes.size) localStorage.setItem(KEY + '-sync', JSON.stringify({ h:[...cloud.hashes], m:cloud.baseMeta || null })); } catch(e) {}
 }
 // Любое изменение: кэш в браузере + отложенное сохранение в аккаунт Claude
-function save(){ db.savedAt = Date.now(); try { replanAll(); } catch(e) {} try { syncAutoShares(); } catch(e) {} try { ensureSharedTasks(); } catch(e) {} localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
+// Общий проект пишется целиком: старая копия у другого человека откатывала статусы этапов.
+// Каждый этап получает отметку su при изменении — при слиянии побеждает более свежий этап, а не последний записавший.
+const stageSigs = new Map();
+// статус этапа (su) и каждая галочка подэтапа (x.u) — отдельно: исполнитель отметил пункт ≠ исполнитель поменял статус
+const stageSig = s => JSON.stringify([s.status, s.started_at || null, s.completed_at || null, s.assignee_id || null]);
+function stampStages(){
+  const now = new Date().toISOString();
+  [...(db.projects || []), ...((typeof ext !== 'undefined' && ext.projects) || [])].forEach(p => (p.stages || []).forEach(s => {
+    const g = stageSig(s), o = stageSigs.get(s.id); if (o !== undefined && o !== g) s.su = now; stageSigs.set(s.id, g);
+    (s.subs || []).forEach(x => { const k = s.id + '|' + x.id, v = !!x.done, w = stageSigs.get(k); if (w !== undefined && w !== v) x.u = now; stageSigs.set(k, v); });
+  }));
+}
+const rememberStages = list => (list || []).forEach(p => (p.stages || []).forEach(s => { stageSigs.set(s.id, stageSig(s)); (s.subs || []).forEach(x => stageSigs.set(s.id + '|' + x.id, !!x.done)); }));
+function save(){ try { stampStages(); } catch(e) {} db.savedAt = Date.now(); try { replanAll(); } catch(e) {} try { syncAutoShares(); } catch(e) {} try { ensureSharedTasks(); } catch(e) {} localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
 
 const userById = id => db.users.find(u => u.id === id);
 const tplById = id => db.templates.find(t => t.id === id);
@@ -6731,6 +6744,7 @@ function cloudApply(r){
   db.metaRest = Object.fromEntries(Object.entries(r.meta).filter(([k]) => !KNOWN.includes(k)));
   Object.assign(db, { ver:r.meta.ver, onboarded:r.meta.onboarded, users:r.meta.users, templates:r.meta.templates, categories:'categories' in r.meta ? (r.meta.categories || []) : (db.categories || []), prefs:r.meta.prefs, cardTpls:r.meta.cardTpls || {}, cardTplsInit:!!r.meta.cardTplsInit, savedAt:r.meta.savedAt,
     projects:r.projects, tasks:r.tasks, reports:r.reports });
+  rememberStages(db.projects);
   migrate(); if (!db.cardTplsInit){ migrateCardTpls(); scheduleCloud(); }
   (db.reports || []).forEach(fixReport);
   if (ORG && adoptOrgMe()) scheduleCloud();
@@ -7110,11 +7124,20 @@ function syncSharedSubs(){
 // Сдачу этапа и запрос на переход сливаем по времени последнего изменения (поле u) — с обеих сторон.
 const stampOf = o => o ? String(o.u || o.decidedAt || o.at || '') : '';
 const ssTouch = o => { if (o) o.u = new Date().toISOString(); return o; };
+const STAGE_F = ['status', 'started_at', 'completed_at', 'client_at', 'assignee_id', 'planned_start', 'due_date', 'su'];
 function mergeStageFields(target, other){
   if (!target || !other) return false;
   let changed = false, accepted = false;
   (other.stages || []).forEach(os => {
     const ts = (target.stages || []).find(x => x.id === os.id); if (!ts) return;
+    // статус и отметки этапа — от того, кто менял этап позже (копия без отметки — старая)
+    if (String(os.su || '') > String(ts.su || '')){
+      const before = stageSig(ts) + ts.due_date;
+      STAGE_F.forEach(k => { if (k in os) ts[k] = os[k]; else delete ts[k]; });
+      if (stageSig(ts) + ts.due_date !== before) changed = true;
+    }
+    (os.subs || []).forEach(ox => { const tx = (ts.subs || []).find(y => y.id === ox.id);
+      if (tx && String(ox.u || '') > String(tx.u || '')){ if (!!tx.done !== !!ox.done) changed = true; tx.done = !!ox.done; tx.u = ox.u; } });
     ['sub', 'req'].forEach(f => { if (os[f] && stampOf(os[f]) > stampOf(ts[f])){ ts[f] = JSON.parse(JSON.stringify(os[f])); changed = true;
       if (os[f].status === 'accepted' || os[f].status === 'approved') accepted = true; } });
   });
@@ -7133,12 +7156,13 @@ function onSharedProject(pid, snap){
   const i = db.projects.findIndex(p => p.id === pid); if (i < 0) return;
   const local = db.projects[i];
   if (shared.pending || shared.writing){                        // свои несохранённые правки уйдут следом — но сдачу этапа подхватываем сразу
-    if (mergeStageFields(local, remote)){ localSave(); scheduleShared(); afterSharedApply(); }
+    if (mergeStageFields(local, remote)){ syncState(local); rememberStages([local]); localSave(); scheduleShared(); afterSharedApply(); }
     return;
   }
   const next = { ...remote, share:local.share, log:mergeLogs(local.log, remote.log) };
   const keepMine = mergeStageFields(next, local);               // у меня новее — оставляем и досылаем
-  db.projects[i] = next;
+  if (keepMine) syncState(next);
+  db.projects[i] = next; rememberStages([next]);
   if (keepMine){ localSave(); scheduleShared(); }
   afterSharedApply();
 }
@@ -7210,7 +7234,7 @@ function rebuildExt(){
     next.push(p);
   }
   const gone = ext.projects.filter(p => !next.some(n => n.id === p.id)).map(p => p.id);
-  ext.projects = next; ext.tasks = ext.tasks.filter(t => !gone.includes(t.project_id));
+  ext.projects = next; rememberStages(next); ext.tasks = ext.tasks.filter(t => !gone.includes(t.project_id));
   if (resend) scheduleShared();
   if (gone.length && ui.view === 'mine' && gone.includes(ui.myProject)) toast('Доступ к проекту закрыт владельцем');
   syncSharedSubs(); afterSharedApply();

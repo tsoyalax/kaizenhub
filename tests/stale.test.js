@@ -69,6 +69,23 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   w4.eval(`projById('${pid}').name = 'СТАРАЯ КОПИЯ'; cloud.hashes.set('p_${pid}', 'x')`);   // будто вкладка отстала
   w4.document.querySelector('[data-syncnow]').click(); await wait(1500);
   assert.equal(w4.eval(`projById('${pid}').name`), 'С ДРУГОГО УСТРОЙСТВА'); ok('«Синхронизировать» забирает актуальное из облака');
+  { // общий проект: старая копия исполнителя не откатывает закрытый владельцем этап
+    const q = E1(`db.projects.find(p => p.state === 'active' && p.stages.length > 2 && p.stages[0].status !== 'done' && p.stages[1].subs?.length).id`);
+    const stale = JSON.parse(E1(`JSON.stringify(projById('${q}'))`));            // так проект выглядит у исполнителя (вкладка не обновлялась)
+    E1(`(() => { const p = projById('${q}'); setStatus(p, p.stages[0], 'done'); })()`); await wait(50);
+    assert.equal(E1(`projById('${q}').stages[1].status`), 'in_progress'); ok('владелец закрыл первый этап, второй в работе');
+    stale.stages[1].subs[0].done = true; stale.stages[1].subs[0].u = new Date(Date.now() + 1000).toISOString();   // исполнитель отметил пункт во втором этапе
+    E1(`shared.pending = false; shared.writing = false; shared.hashes.delete('sp/${q}')`);
+    w1.onSharedProject(q, { exists:true, metadata:{}, data:() => ({ json:JSON.stringify(stale), memberIds:[] }) });
+    assert.equal(E1(`projById('${q}').stages[0].status`), 'done'); ok('старая копия исполнителя не вернула первый этап');
+    assert.equal(E1(`projById('${q}').stages[1].status`), 'in_progress'); ok('второй этап остался в работе');
+    assert.ok(E1(`projById('${q}').stages[1].subs[0].done`)); ok('отметка исполнителя во втором этапе принята');
+    // старая копия без отметок времени (старая версия приложения) тоже не откатывает
+    const stale2 = JSON.parse(JSON.stringify(stale)); stale2.stages.forEach(x => { delete x.su; (x.subs || []).forEach(y => delete y.u); });
+    E1(`shared.hashes.delete('sp/${q}')`);
+    w1.onSharedProject(q, { exists:true, metadata:{}, data:() => ({ json:JSON.stringify(stale2), memberIds:[] }) });
+    assert.equal(E1(`projById('${q}').stages[0].status`), 'done'); ok('копия из старой версии приложения тоже не откатывает этап');
+  }
   assert.equal(d1.errors.length + d4.errors.length, 0, d1.errors.concat(d4.errors).join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });
