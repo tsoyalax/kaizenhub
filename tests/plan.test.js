@@ -251,7 +251,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   {
     const Lx = LS(); const pr = Lx.projects.find(p => p.state === 'active' && p.stages.some(s => s.status !== 'done' && Lx.tasks.some(t => t.project_id === p.id && t.stage_id === s.id && t.checklist.some(i => !i.done))));
     const st = pr.stages.find(s => s.status !== 'done' && Lx.tasks.some(t => t.project_id === pr.id && t.stage_id === s.id && t.checklist.some(i => !i.done)));
-    w.openProject(pr.id); await wait(100);
+    w.openProject(pr.id); await wait(100); $q('#stEdit').click(); await wait(50);
     const ss = $q(`[data-sstatus="${st.id}"]`); ss.value = 'done'; fire(ss, 'change'); await wait(150);
     const Ly = LS(); const py = Ly.projects.find(p => p.id === pr.id); const sy = py.stages.find(s => s.id === st.id);
     const tks = Ly.tasks.filter(t => t.project_id === pr.id && t.stage_id === st.id);
@@ -270,7 +270,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   {
     const Lx = LS(); const pr = Lx.projects.find(p => p.state === 'active' && p.stages.length >= 4 && p.stages.slice(0, -1).some(s => s.status !== 'done'));
     const at = pr.stages.length - 1; const st = pr.stages[at];
-    w.openProject(pr.id); await wait(100);
+    w.openProject(pr.id); await wait(100); $q('#stEdit').click(); await wait(50);
     const ss = $q(`[data-sstatus="${st.id}"]`); ss.value = 'in_progress'; fire(ss, 'change'); await wait(150);
     const py = LS().projects.find(p => p.id === pr.id);
     assert.ok(py.stages.slice(0, at).every(s => s.status === 'done' && s.completed_at && (s.subs || []).every(x => x.done))); ok('этап в работу: все предыдущие этапы завершены с подэтапами');
@@ -287,7 +287,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     const old = Lx.tasks.find(t => t.project_id === pr.id && t.stage_id === st.id && t.substage_id === x.id);
     const t0 = { ...(old || {}), id: old?.id || 'tkEmpty', project_id: pr.id, stage_id: st.id, substage_id: x.id, title: x.name, checklist: [], blocks: [], description: '', completed_at: null };
     w.mergeSnapshot({ meta: {}, projects: [], tasks: [t0] }, { keepDemo: true }); w.commit(); await wait(50);
-    w.openProject(pr.id); await wait(100);
+    w.openProject(pr.id); await wait(100); $q('#stEdit').click(); await wait(50);
     const ss = $q(`[data-sstatus="${st.id}"]`); if (ss.value !== 'done'){ ss.value = 'done'; fire(ss, 'change'); await wait(150); }
     const b = $q(`.sub-task[data-task="${t0.id}"]`);
     assert.ok(b && b.classList.contains('done')); ok('карточка без чек-листа в завершённом этапе показана выполненной');

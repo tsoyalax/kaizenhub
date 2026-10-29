@@ -1755,6 +1755,38 @@ svg.clip{width:14px;height:14px;flex:none}
 .ss-row .ss-link input{width:100%;height:38px;border:1px solid var(--fbd,var(--line));border-radius:10px;padding:0 12px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px}
 .ss-row .file-btn,.ss-row > .hint{grid-column:1;grid-row:2;display:inline-flex;align-items:center;gap:6px;height:38px}
 .ss-row .ss-send{grid-column:2;grid-row:2;justify-self:end;width:auto;height:38px;padding:0 16px}
+
+/* архив */
+.ar{max-width:880px}
+.ar-n{font-size:15px;color:var(--muted);font-weight:500}
+.fn-head-row #archQ{flex:1 1 220px;max-width:320px;height:38px}
+.ar-card{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--card-bd,var(--line));border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.ar-main{flex:1;min-width:0;display:grid;gap:2px;text-align:left;border:0;background:none;padding:0;font:inherit;color:var(--ink);cursor:pointer}
+.ar-main b{font-size:15.5px;font-weight:600}
+.ar-main small{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ar-card .ghost{flex:none}
+/* этапы в карточке проекта: просмотр */
+.subs-ro{display:flex;flex-wrap:wrap;gap:6px}
+.sub-ro{font-size:13px;padding:3px 9px;border-radius:8px;background:var(--surface-2);color:var(--ink)}
+.sub-ro.done{color:var(--g);background:var(--g-bg)}
+.stg .g.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+/* приёмка: группы по проектам, файлы */
+.rv-grp{margin-bottom:18px}
+.rv-gh{display:flex;align-items:center;gap:8px;margin:18px 2px 10px;font-size:15px;font-weight:700}
+.rv-gh small{color:var(--muted);font-weight:500}
+.rv-gh .link{margin-left:auto;font-size:13px;font-weight:500}
+.rv .fn-head-row select{max-width:260px;height:38px}
+.fl-tools{margin:0 0 6px}.fl-tools input{width:100%;max-width:360px;height:38px}
+.fl-list{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--card-bd,var(--line));border-radius:14px;overflow:hidden}
+.fl-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--line)}
+.fl-row:first-child{border-top:0}
+.fl-row .fchip{display:inline-flex;align-items:center;gap:6px;max-width:100%;min-width:0;padding:5px 10px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font:inherit;font-size:13.5px;cursor:pointer;text-decoration:none}
+.fl-row .fchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:320px}
+.fl-row .fchip svg{width:14px;height:14px;flex:none}.fl-row .fchip small{color:var(--muted)}
+.fl-meta{flex:1;min-width:160px;font-size:12.5px;color:var(--muted)}
+.fl-st{font-size:12px;font-weight:600;padding:3px 9px;border-radius:7px;white-space:nowrap}
+.fl-ok{background:var(--g-bg);color:var(--g)}.fl-wait{background:var(--b-bg);color:var(--b)}.fl-back{background:var(--r-bg);color:var(--r)}.fl-draft{background:var(--surface-2);color:var(--muted)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -1776,6 +1808,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="reports">AI-отчёты</button>
     <button data-view="load">Загрузка</button>
     <button data-view="team">Команда</button>
+    <button data-view="archive">Архив</button>
     <button data-view="templates">Настройки</button>
   </nav>
   <span class="view-name" id="viewName"></span>
@@ -2588,7 +2621,7 @@ function render(){
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
   $('#myTasksTab').hidden = false;
   renderFilters();
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.open) renderDrawer();
   try { paintPage(); } catch(e) {}
   paintSelect();
@@ -2668,7 +2701,7 @@ document.addEventListener('click', e => {
     askConfirm({ title:`Отправить в архив ${ps.length} ${plural(ps.length, 'проект', 'проекта', 'проектов')}?`, text:`${names(ps)}. Проекты пропадут с досок, данные и история сохранятся.`, ok:'В архив', danger:false })
       .then(yes => {
         if (!yes) return;
-        ps.forEach(p => { p.state = 'archived'; addLog(p, 'Проект отправлен в архив'); });
+        ps.forEach(archiveProject);
         commit(); exitSelect(); toast(`В архиве: ${ps.length} ${plural(ps.length, 'проект', 'проекта', 'проектов')}`);
       });
   }
@@ -3087,10 +3120,27 @@ function acceptedHistory(){
   }));
   return out.sort((a, b) => String(b.at).localeCompare(String(a.at)));
 }
+function allFiles(){
+  const all = [...(GUEST ? [] : db.projects), ...ext.projects.filter(p => roleOf(p) === 'lead')];
+  const out = [];
+  all.forEach(p => {
+    p.stages.forEach(s => (s.sub?.items || []).forEach(m => out.push({ p, stage:s, m, where:`этап ${s.position + 1}. ${s.name}`, status:s.sub.status === 'accepted' ? 'ok' : s.sub.status === 'pending' ? 'wait' : s.sub.status === 'rejected' ? 'back' : 'draft' })));
+    ptasks(p).forEach(t => (t.mats || []).forEach(m => { const s = p.stages.find(x => x.id === t.stage_id);
+      out.push({ p, stage:s, t, m, where:`${s ? `этап ${s.position + 1}. ${s.name} · ` : ''}подэтап «${t.title}»`, status:m.ok ? 'ok' : 'wait' }); }));
+  });
+  return out.sort((a, b) => String(b.m.at || '').localeCompare(String(a.m.at || '')));
+}
+const FST = { ok:['Принят', 'ok'], wait:['На проверке', 'wait'], back:['На доработке', 'back'], draft:['Не отправлен', 'draft'] };
 function renderReview(){
   const pend = stageSubmissions(); const gates = gateRequests().filter(({ s }) => s.sub?.status !== 'pending'); const mats = matsToReview(); const hist = reviewHistory();
   const acc = acceptedHistory(), rej = hist.filter(h => h.s.sub.status === 'rejected');
-  const tab = ['pending', 'accepted', 'rejected'].includes(ui.revTab) ? ui.revTab : 'pending';
+  const tab = ['pending', 'accepted', 'rejected', 'files'].includes(ui.revTab) ? ui.revTab : 'pending';
+  // фильтр по проекту — на всех вкладках
+  const files = allFiles();
+  const projs = [...new Map([...pend, ...gates, ...hist, ...mats].map(x => [x.p.id, x.p]).concat(acc.map(h => [h.p.id, h.p]), files.map(f => [f.p.id, f.p]))).values()].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+  const sel = ui.revP && !projs.some(x => x.id === ui.revP) ? projById(ui.revP) : null; if (sel) projs.push(sel);   // проект без сданного — всё равно фильтруем по нему
+  const rp = projs.some(x => x.id === ui.revP) ? ui.revP : '';
+  const byP = x => !rp || x.p.id === rp;
   const head = (p, s) => `<div class="rv-h">${projAva(p, 'sm')}<div><b>${esc(p.name)}</b><small>${esc(p.client || '')} · этап ${s.position + 1}. ${esc(s.name)}</small></div>
     <button class="link" data-open="${p.id}" data-stage="${s.id}">Проект</button></div>`;
   const card = ({ p, s }) => `<article class="rv-card">${head(p, s)}
@@ -3109,21 +3159,35 @@ function renderReview(){
       <button class="link" data-open="${h.p.id}"${s ? ` data-stage="${s.id}"` : ''}>Проект</button></div>
       <p class="rv-who"><span class="rv-ok">${MAT_OK}${h.kind === 'mat' ? `Материал «${esc(h.file)}» принят` : h.kind === 'gate' ? 'Переход одобрен' : 'Этап принят'}</span> · ${ssWhen(h.at)}${h.by && userById(h.by) ? ` · ${esc(short(h.by))}` : ''}${h.from ? ` · сдал ${esc(h.from)}` : ''}</p>
       ${files}</article>`; };
-  const matsByTask = [...mats.reduce((m, i) => { if (!m.has(i.t.id)) m.set(i.t.id, { ...i, list:[] }); m.get(i.t.id).list.push(i.m); return m; }, new Map()).values()];
-  const pendHtml = pend.length || gates.length || matsByTask.length
-    ? `${pend.map(card).join('')}${gates.map(gcard).join('')}
+  const pendF = pend.filter(byP), gatesF = gates.filter(byP), accF = acc.filter(byP), rejF = rej.filter(byP), filesF = files.filter(byP).filter(f => !ui.revQ || norm(f.m.name || f.m.url || '').includes(norm(ui.revQ)));
+  const matsByTask = [...mats.filter(byP).reduce((m, i) => { if (!m.has(i.t.id)) m.set(i.t.id, { ...i, list:[] }); m.get(i.t.id).list.push(i.m); return m; }, new Map()).values()];
+  const pendHtml = pendF.length || gatesF.length || matsByTask.length
+    ? `${pendF.map(card).join('')}${gatesF.map(gcard).join('')}
        ${matsByTask.length ? `<h3 class="rv-sub">Материалы в карточках подэтапов</h3>${matsByTask.map(g => `<button class="rv-mat" data-task="${g.t.id}">${projAva(g.p, 'xs')}<span><b>${esc(g.p.name)}</b><small>${esc(g.t.title)} · ${g.list.length} ${plural(g.list.length, 'материал', 'материала', 'материалов')} от ${esc([...new Set(g.list.map(m => m.byName || 'исполнитель'))].join(', '))}</small></span><span class="link">Открыть</span></button>`).join('')}` : ''}`
     : '<div class="empty">Всё принято — на проверке ничего нет.</div>';
-  const list = tab === 'pending' ? pendHtml : (tab === 'accepted' ? acc : rej).length ? (tab === 'accepted' ? acc.slice(0, 100).map(acard) : rej.slice(0, 60).map(hcard)).join('') : `<div class="empty">${tab === 'accepted' ? 'Принятых этапов и материалов пока нет.' : 'Этапов на доработке нет.'}</div>`;
+  const groups = (items, fn) => { const m = new Map(); items.forEach(i => { if (!m.has(i.p.id)) m.set(i.p.id, { p:i.p, list:[] }); m.get(i.p.id).list.push(i); });
+    return [...m.values()].map(g => `<section class="rv-grp"><h3 class="rv-gh">${projAva(g.p, 'xs')}<span>${esc(g.p.name)}</span><small>${g.list.length}</small>${rp ? '' : `<button class="link" data-revp="${g.p.id}">Только этот проект</button>`}</h3>${fn(g.list)}</section>`).join(''); };
+  const fileRow = f => `<li class="fl-row">${f.m.kind === 'file' ? `<button class="fchip" data-fopen="${esc(f.m.path)}">${CLIP_ICO}<span>${esc(f.m.name)}</span>${f.m.size ? `<small>${fsize(f.m.size)}</small>` : ''}</button>`
+      : `<a class="fchip" href="${esc(safeUrl(f.m.url) || '#')}" target="_blank" rel="noopener noreferrer">${REG_LINK_ICO}<span>${esc(f.m.name || f.m.url)}</span></a>`}
+    <span class="fl-meta">${esc(f.where)} · ${esc(f.m.byName || '')}${f.m.at ? ` · ${ssWhen(f.m.at)}` : ''}</span><span class="fl-st fl-${FST[f.status][1]}">${FST[f.status][0]}</span></li>`;
+  const filesHtml = `<div class="fl-tools"><input type="search" id="revQ" placeholder="Найти файл по названию" value="${esc(ui.revQ || '')}" aria-label="Поиск файла"></div>
+    ${filesF.length ? groups(filesF, l => `<ul class="fl-list">${l.map(fileRow).join('')}</ul>`) : `<div class="empty">${files.length ? 'Ничего не найдено' : 'Сданных файлов пока нет.'}</div>`}`;
+  const list = tab === 'pending' ? pendHtml : tab === 'files' ? filesHtml : (tab === 'accepted' ? accF : rejF).length ? (tab === 'accepted' ? groups(accF.slice(0, 200), l => l.map(acard).join('')) : rejF.slice(0, 60).map(hcard).join('')) : `<div class="empty">${tab === 'accepted' ? 'Принятых этапов и материалов пока нет.' : 'Этапов на доработке нет.'}</div>`;
   app.innerHTML = `<div class="rv">
     <div class="fn-head-row"><h2 class="td-title">Приёмка</h2>
       <div class="seg-toggle" role="group" aria-label="Что показать">
-        <button data-revtab="pending" aria-pressed="${tab === 'pending'}">На проверке${pend.length + gates.length + matsByTask.length ? ` <span class="seg-n">${pend.length + gates.length + matsByTask.length}</span>` : ''}</button>
-        <button data-revtab="accepted" aria-pressed="${tab === 'accepted'}">Принятые${acc.length ? ` <span class="seg-n">${acc.length}</span>` : ''}</button>
-        <button data-revtab="rejected" aria-pressed="${tab === 'rejected'}">На доработке${rej.length ? ` <span class="seg-n">${rej.length}</span>` : ''}</button></div></div>
+        <button data-revtab="pending" aria-pressed="${tab === 'pending'}">На проверке${pendF.length + gatesF.length + matsByTask.length ? ` <span class="seg-n">${pendF.length + gatesF.length + matsByTask.length}</span>` : ''}</button>
+        <button data-revtab="accepted" aria-pressed="${tab === 'accepted'}">Принятые${accF.length ? ` <span class="seg-n">${accF.length}</span>` : ''}</button>
+        <button data-revtab="rejected" aria-pressed="${tab === 'rejected'}">На доработке${rejF.length ? ` <span class="seg-n">${rejF.length}</span>` : ''}</button>
+        <button data-revtab="files" aria-pressed="${tab === 'files'}">Файлы${filesF.length ? ` <span class="seg-n">${filesF.length}</span>` : ''}</button></div>
+      ${projs.length > 1 || rp ? `<select id="revP" aria-label="Проект"><option value="">Все проекты</option>${projs.map(x => `<option value="${x.id}" ${x.id === rp ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>` : ''}</div>
     ${list}</div>`;
 }
-document.addEventListener('click', e => { const t = e.target.closest?.('[data-revtab]'); if (!t) return; ui.revTab = t.dataset.revtab; render(); });
+document.addEventListener('click', e => { const t = e.target.closest?.('[data-revtab]'); if (t){ ui.revTab = t.dataset.revtab; render(); return; }
+  const r = e.target.closest?.('[data-revp]'); if (r){ ui.revP = r.dataset.revp; render(); scrollTo(0, 0); return; }
+  const f = e.target.closest?.('[data-pfiles]'); if (f){ ui.revP = f.dataset.pfiles; ui.revTab = 'files'; ui.open = null; layer.innerHTML = ''; ui.view = 'review'; render(); scrollTo(0, 0); } });
+document.addEventListener('change', e => { if (e.target.id === 'revP'){ ui.revP = e.target.value; render(); } });
+document.addEventListener('input', e => { if (e.target.id !== 'revQ') return; ui.revQ = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#revQ'); q?.focus(); q?.setSelectionRange(pos, pos); });
 // цифра «на проверке» в меню
 function paintReviewBadge(){
   const n = stageSubmissions().length + gateRequests().filter(({ s }) => s.sub?.status !== 'pending').length;
@@ -3131,6 +3195,41 @@ function paintReviewBadge(){
     let i = b.querySelector('.rv-badge'); if (!n){ i?.remove(); return; }
     if (!i){ i = document.createElement('b'); i.className = 'rv-badge'; b.appendChild(i); } i.textContent = n; });
 }
+
+// ---------- Архив проектов: отправить и вернуть в нужный момент ----------
+function archiveProject(p){
+  if (!p || p.state === 'archived') return;
+  p.archivedFrom = p.state; p.archivedAt = new Date().toISOString(); p.state = 'archived';
+  addLog(p, 'Проект отправлен в архив');
+}
+function restoreProject(p){
+  if (!p || p.state !== 'archived') return;
+  const all = p.stages.filter(s => !isMaint(s)).every(s => s.status === 'done');
+  p.state = p.archivedFrom && p.archivedFrom !== 'archived' ? p.archivedFrom : (all && !p.is_maintenance ? 'completed' : 'active');
+  delete p.archivedFrom; delete p.archivedAt;
+  syncState(p); addLog(p, 'Проект возвращён из архива');
+}
+const archivedAt = p => p.archivedAt || (p.log || []).find(l => l.text === 'Проект отправлен в архив')?.at || '';
+function renderArchive(){
+  const q = norm(ui.archQ || '');
+  const all = db.projects.filter(p => p.state === 'archived').sort((a, b) => String(archivedAt(b)).localeCompare(String(archivedAt(a))));
+  const list = all.filter(p => !q || norm(p.name).includes(q) || norm(p.client || '').includes(q));
+  app.innerHTML = `<div class="ar">
+    <div class="fn-head-row"><h2 class="td-title">Архив <span class="ar-n">${all.length}</span></h2>
+      ${all.length > 5 ? `<input type="search" id="archQ" placeholder="Найти проект или клиента" value="${esc(ui.archQ || '')}" aria-label="Поиск по архиву">` : ''}</div>
+    ${all.length ? '' : '<div class="empty">В архиве пусто. Отправить проект в архив — в карточке проекта или выбрав несколько проектов в «Матрице».</div>'}
+    ${list.map(p => { const c = currentStage(p); const n = p.stages.filter(s => s.status === 'done').length;
+      return `<article class="ar-card">${projAva(p, 'sm')}<button class="ar-main" data-open="${p.id}"><b>${esc(p.name)}</b>
+        <small>${esc(p.client || '')}${tplById(p.template_id) ? ` · ${esc(tplById(p.template_id).name)}` : ''} · этапов пройдено ${n} из ${p.stages.length}${archivedAt(p) ? ` · в архиве с ${fmt(archivedAt(p).slice(0, 10))}` : ''}</small></button>
+        <button class="ghost" data-unarch="${p.id}">Вернуть</button></article>`; }).join('')}
+    ${all.length && !list.length ? '<p class="hint">Ничего не найдено</p>' : ''}
+  </div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-unarch]'); if (!b) return;
+  const p = projById(b.dataset.unarch); restoreProject(p); commit(); toast(`Проект «${p.name}» снова в работе`);
+});
+document.addEventListener('input', e => { if (e.target.id !== 'archQ') return; ui.archQ = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#archQ'); q?.focus(); q?.setSelectionRange(pos, pos); });
 // ---------- Производство на телефоне: лента проектов + этапы сверху вниз ----------
 function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage, curSub }){
   const key = mine ? 'myProject' : 'prodProject';
@@ -3610,12 +3709,12 @@ function renderDrawer(){
       <span class="dot">${s.status==='done' ? '✓' : i+1}</span>
       <div class="r1"><b>${esc(s.name)}</b><span class="pill s-${h.key}">${h.label}</span></div>
       <div class="note">${h.note}${h.note.endsWith('.') ? '' : '.'} План: ${fmt(s.planned_start)} – ${fmt(s.due_date)}${s.completed_at ? `, факт ${fmt(s.completed_at)}` : ''}</div>
-      ${s.subs?.length ? `<div class="subs" aria-label="Подэтапы">${s.subs.map(x => subChk(p, s, x)).join('')}</div>` : ''}
-      <div class="g">
+      ${s.subs?.length ? (ui.stEdit ? `<div class="subs" aria-label="Подэтапы">${s.subs.map(x => subChk(p, s, x)).join('')}</div>`
+        : `<div class="subs subs-ro" aria-label="Подэтапы">${s.subs.map(x => `<span class="sub-ro${subDone(p, s, x) ? ' done' : ''}">${subDone(p, s, x) ? '✓ ' : ''}${esc(x.name)}</span>`).join('')}</div>`) : ''}
+      ${ui.stEdit ? `<div class="g g2">
         <div><label for="st-${s.id}">Статус</label><select id="st-${s.id}" data-sstatus="${s.id}">${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('')}</select></div>
-        <div><label for="as-${s.id}">Ответственный</label><select id="as-${s.id}" data-sassign="${s.id}">${opt(db.users, s.assignee_id, execLabel(p))}</select></div>
         <div><label for="du-${s.id}">Дедлайн</label><input type="date" id="du-${s.id}" data-sdue="${s.id}" value="${s.due_date}" ${s.status==='done'?'disabled':''}></div>
-      </div>${isMaint(s) ? '' : execFlags(p, s)}</li>`;
+      </div>${isMaint(s) ? '' : execFlags(p, s)}` : ''}</li>`;
   }).join('');
   const log = p.log.slice(0, 60).map(l => `<li><time>${new Date(l.at).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time><span>${esc(l.text)} <span class="hint">${esc(short(l.user))}</span></span></li>`).join('');
   const html = `<div class="backdrop" data-close></div>
@@ -3645,7 +3744,7 @@ function renderDrawer(){
     </div>
 
     <div class="d-sec-row"><div class="d-sec">Этапы</div>
-      <div class="acts">${tplById(p.template_id) ? '<button class="link" id="openTpl">Редактировать шаблон</button>' : ''}<button class="link" id="chainToggle">${ui.editChain ? 'Готово' : 'Изменить этапы проекта'}</button></div></div>
+      <div class="acts">${tplById(p.template_id) ? '<button class="link" id="openTpl">Редактировать шаблон</button>' : ''}<button class="link" data-pfiles="${p.id}">Файлы проекта</button><button class="link" id="stEdit">${ui.stEdit ? 'Готово' : 'Редактировать'}</button><button class="link" id="chainToggle">${ui.editChain ? 'Готово' : 'Изменить этапы проекта'}</button></div></div>
     <ol class="timeline">${stages}</ol>
     ${ui.editChain ? `<div class="chain-add"><button class="ghost" id="cAdd">Добавить этап</button><span class="hint">Изменения касаются только этого проекта. Переставлять можно этапы, которые ещё не начаты.</span></div>` : ''}
     <div class="d-sec-row"><div class="d-sec">AI-отчёты</div><div class="acts"><button class="link" data-rnew="${p.id}">Создать отчёт</button></div></div>
@@ -3655,7 +3754,7 @@ function renderDrawer(){
         : '<p class="hint">Отчётов по проекту пока нет. Загрузите выгрузку CRM и расходы — метрики и резюме посчитаются автоматически.</p>'; })()}
     <div class="d-sec">История</div>
     <ul class="log">${log || '<li><span></span><span class="hint">Изменений пока нет</span></li>'}</ul>
-    <div class="d-foot"><button class="ghost" id="pArchive">Отправить в архив</button><button class="ghost danger" id="pDelete">Удалить проект</button></div>
+    <div class="d-foot">${p.state === 'archived' ? `<button class="primary" id="pUnarchive">Вернуть из архива</button>` : '<button class="ghost" id="pArchive">Отправить в архив</button>'}<button class="ghost danger" id="pDelete">Удалить проект</button></div>
   </aside>`;
   const scroll = layer.querySelector('.drawer')?.scrollTop;
   layer.innerHTML = html;
@@ -3663,7 +3762,7 @@ function renderDrawer(){
   if (scroll != null) d.scrollTop = scroll;
   else if (ui.focusStage) document.getElementById('stg-'+ui.focusStage)?.scrollIntoView({ block:'center' });
 }
-function openProject(id, stageId){ ui.open = id; ui.focusStage = stageId || null; ui.editChain = false; layer.innerHTML = ''; renderDrawer(); }
+function openProject(id, stageId){ ui.open = id; ui.focusStage = stageId || null; ui.editChain = false; ui.stEdit = false; layer.innerHTML = ''; renderDrawer(); }
 function closeLayer(){ if (!db.onboarded && !GUEST) return; ui.open = null; ui.focusStage = null; layer.innerHTML = ''; }
 
 // ---------- Быстрое создание ----------
@@ -4583,9 +4682,11 @@ document.addEventListener('click', e => {
   if (e.target.id === 'pArchive'){
     const p = projById(ui.open);
     askConfirm({ title:`Отправить «${p.name}» в архив?`, text:'Проект пропадёт с досок, данные и история сохранятся.', ok:'В архив', danger:false })
-      .then(yes => { if (yes){ p.state='archived'; addLog(p,'Проект отправлен в архив'); closeLayer(); commit(); toast('Проект в архиве'); } });
+      .then(yes => { if (yes){ archiveProject(p); closeLayer(); commit(); toast('Проект в архиве. Вернуть можно в разделе «Архив»'); } });
     return;
   }
+  if (e.target.id === 'pUnarchive'){ const p = projById(ui.open); restoreProject(p); commit(); renderDrawer(); toast(`Проект «${p.name}» снова в работе`); return; }
+  if (e.target.id === 'stEdit'){ ui.stEdit = !ui.stEdit; renderDrawer(); return; }
   // шаблоны
   const ti = e.target.closest('[data-tpl]');
   if (ti){ ui.tplSel = ti.dataset.tpl; ui.draftDirty = false; ui.draft = ti.dataset.tpl === 'new' ? { id:null, name:'', stages:[{ id:uid(), name:'Бриф', days:2, approval:false, subs:[] }] } : null; renderTemplates(); return; }
@@ -7528,6 +7629,7 @@ const MNAV = {
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
   assign:['Поручения', MI('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2 2 4-4M8.5 17h7"/>')],
+  archive:['Архив', MI('<rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/>')],
   review:['Приёмка', MI('<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>')],
   mytasks:['Мои задачи', MI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5 2.5-2.5"/>')],
   reports:['AI-отчёты', MI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')],
@@ -7571,7 +7673,7 @@ document.addEventListener('click', e => {
   const k = c.dataset.kdrisk; ui.risk = ui.risk === k ? '' : k; render();
 });
 const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>');
-const moreViews = () => ['review', 'mytasks', 'assign', 'mine', 'reports', 'team', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
+const moreViews = () => ['review', 'mytasks', 'assign', 'mine', 'reports', 'team', 'archive', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
 function renderMobileNav(){
   const nav = $('#mnav'); if (!nav) return;
   if (GUEST){ nav.innerHTML = guestViews().map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }

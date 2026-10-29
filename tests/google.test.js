@@ -75,12 +75,13 @@ function boot(backend, userId, extra, url, session) {
   const be7 = makeBackend();
   const w7 = boot(be7, N, {}, 'https://kz.test/', { 'kz-who': 'worker' });
   assert.equal((await (await w7.claude.use('user')).me()).isOwner, false); ok('вход: исполнитель через Google получил версию исполнителя');
-  // вкладка «Руководитель» без доступа руководителя: не выкидывает, а открывает версию исполнителя
+  // вкладка «Руководитель» без доступа руководителя: не пускает, предлагает вкладку исполнителя
   const be8 = makeBackend();
   const w8 = boot(be8, N, {}, 'https://kz.test/', { 'kz-who': 'lead' });
-  assert.equal((await (await w8.claude.use('user')).me()).isOwner, false); ok('вход: новый аккаунт на вкладке «Руководитель» попадает в версию исполнителя');
-  assert.ok(!(be8.signOuts || []).length); ok('вход: из аккаунта не выкидывает');
-  assert.ok(/нет доступа руководителя/.test(w8.kzLoginNote || '')); ok('вход: объясняем, почему открыта версия исполнителя');
+  let entered8 = false; w8.claude.use('user').then(() => { entered8 = true; }); await wait(100);
+  assert.ok(!entered8 && /нет доступа руководителя/.test(w8.document.getElementById('kzNote').textContent)); ok('вход: новый аккаунт на вкладке «Руководитель» не пускается');
+  assert.equal(w8.document.querySelector('[data-who="worker"]').getAttribute('aria-selected'), 'true'); ok('вход: после отказа открыта вкладка «Исполнитель»');
+  assert.equal((be8.updateCalls || []).length, 0); ok('вход: отказ ничего не меняет в профиле');
   // действующий руководитель (есть своё пространство) входит как обычно
   const be9 = makeBackend(); be9.put('data/users/' + A + '/meta', { json: '{}' });
   const w9 = boot(be9, A, {}, 'https://kz.test/', { 'kz-who': 'lead' });
@@ -88,8 +89,8 @@ function boot(backend, userId, extra, url, session) {
   // исполнитель (role guest) на вкладке «Руководитель» тоже не проходит
   const be10 = makeBackend();
   const w10 = boot(be10, N, { meta: { role: 'guest' } }, 'https://kz.test/', { 'kz-who': 'lead' });
-  assert.equal((await (await w10.claude.use('user')).me()).isOwner, false); ok('вход: исполнитель на вкладке «Руководитель» получает версию исполнителя, а не руководителя');
-  assert.ok(!(be10.signOuts || []).length); ok('вход: исполнителя не выкидывает');
+  let entered10 = false; w10.claude.use('user').then(() => { entered10 = true; }); await wait(100);
+  assert.ok(!entered10 && /нет доступа руководителя/.test(w10.document.getElementById('kzNote').textContent)); ok('вход: исполнитель не может войти как руководитель');
   // роль lead в профиле — доступ руководителя есть и без данных
   const w11 = boot(makeBackend(), N, { meta: { role: 'lead' } }, 'https://kz.test/', { 'kz-who': 'lead' });
   assert.equal((await (await w11.claude.use('user')).me()).isOwner, true); ok('вход: роль руководителя из профиля пускает');
