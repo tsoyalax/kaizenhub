@@ -1,5 +1,9 @@
 {
   "functions": { "api/sample.js": { "maxDuration": 60 } },
+  "rewrites": [
+    { "source": "/funnel", "destination": "https://analitika-five.vercel.app/funnel" },
+    { "source": "/funnel/:path*", "destination": "https://analitika-five.vercel.app/funnel/:path*" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
