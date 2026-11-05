@@ -167,6 +167,7 @@
 - Отдельное Next.js-приложение: репозиторий tsoyalax/Analitika, проект Vercel `analitika` (https://analitika-five.vercel.app, `basePath: /funnel`). `vercel.json` проксирует `/funnel` и `/funnel/*` туда, поэтому раздел открывается на домене KaizenHub.
 - Вход общий: тот же Supabase и ключ сессии в браузере (`sb-<проект>-auth-token`), домен один. Периоды воронки — таблица `funnel_periods` (миграция `20261105000000_funnel_periods.sql`, каждый видит только свои строки).
 - AI-разбор (`/funnel/api/analyze`) пускает только вошедших; `ANTHROPIC_API_KEY` задаётся в проекте Vercel `analitika`, не здесь.
+- Instagram: таблицы `instagram_connections` (токен зашифрован ключом `INSTAGRAM_TOKEN_SECRET` из Vercel `analitika`) и `instagram_media` (миграция `20261105100000_funnel_instagram.sql`). Адрес возврата для приложения Meta: `https://kaizenhub-nu.vercel.app/funnel/instagram/callback`.
 
 ## Лендинг
 - `landing/index.html` — отдельная промо-страница по адресу `/landing/`, приложение не трогает. Один файл, без библиотек (только шрифт Golos Text). Стиль и токены — как в приложении (подложка #F4F5F7, белые блоки, пастельные статусы, тёмная тема по системе).
