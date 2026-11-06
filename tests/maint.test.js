@@ -75,8 +75,11 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   chk.checked = true; fire(chk, 'change'); await wait(150);
   assert.equal(romi().due_date, E(`addDays('${due0}', 7)`)); ok('отметили — срок переехал на следующую неделю');
   assert.ok(romi().done_count === 1 && romi().last_done === E('today()') && romi().status === 'todo'); ok('цикл засчитан, задача снова «к выполнению»');
+  const mBefore = E(`projById('${pid}').stages.at(-1).rtasks.find(r => r.frequency === 'monthly').due_date`);
+  const mWant = E(`nextCycle('${mBefore}', 'monthly')`);   // раньше здесь была жёсткая дата — тест ломался со сменой дня
   E(`(() => { const r = projById('${pid}').stages.at(-1).rtasks.find(r => r.frequency === 'monthly'); completeRtask(projById('${pid}'), r); })()`);
-  assert.equal(P().stages.at(-1).rtasks.find(r => r.frequency === 'monthly').due_date, '2026-11-30'); ok('ежемесячная — на месяц вперёд');
+  assert.equal(P().stages.at(-1).rtasks.find(r => r.frequency === 'monthly').due_date, mWant);
+  assert.ok(E(`(() => { const a = parse('${mBefore}' < today() ? today() : '${mBefore}'), b = parse('${mWant}'); return (b.getFullYear() * 12 + b.getMonth()) - (a.getFullYear() * 12 + a.getMonth()) === 1; })()`)); ok('ежемесячная — на месяц вперёд');
   // 6) регулярные задачи в задачах исполнителя и в «Поручениях»
   E(`(() => { const p = projById('${pid}'); p.stages.at(-1).rtasks.forEach(r => r.assignee_id = ME); commit(); })()`);
   D.querySelector('.tabs [data-view="mytasks"]').click(); await wait(150);
