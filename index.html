@@ -1825,6 +1825,9 @@ svg.clip{width:14px;height:14px;flex:none}
 .sb-dots i{width:4px;height:4px;border-radius:50%;background:currentColor}
 .sb-dots i:nth-child(2){opacity:.65}.sb-dots i:nth-child(3){opacity:.35}
 .more-sheet .side-brand{justify-content:center;padding:4px 0 8px}
+
+.ss.ss-ret{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ss.ss-ret .ss-send{margin:0}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2007,6 +2010,33 @@ function stampStages(){
     (s.subs || []).forEach(x => { const k = s.id + '|' + x.id, v = !!x.done, w = stageSigs.get(k); if (w !== undefined && w !== v) x.u = now; stageSigs.set(k, v); });
   }));
 }
+// Карточки подэтапов тоже пишутся целиком: пункт чек-листа получает i.u при отметке/снятии, карточка — t.u при прочих правках
+const taskSig = t => JSON.stringify([t.title, t.description || '', t.assignee_id || null, t.result_link || '', t.video_url || '', t.regulation_link || '',
+  (t.checklist || []).map(i => [i.id, i.text]), (t.mats || []).map(m => [m.id, !!m.ok])]);
+function stampTasks(){
+  const now = new Date().toISOString();
+  [...(db.tasks || []), ...((typeof ext !== 'undefined' && ext.tasks) || [])].forEach(t => {
+    const g = taskSig(t), o = stageSigs.get('t|' + t.id); if (o !== undefined && o !== g) t.u = now; stageSigs.set('t|' + t.id, g);
+    (t.checklist || []).forEach(i => { const k = 'ck|' + t.id + '|' + i.id, v = !!i.done, w = stageSigs.get(k); if (w !== undefined && w !== v) i.u = now; stageSigs.set(k, v); });
+  });
+}
+const rememberTasks = list => (list || []).forEach(t => { stageSigs.set('t|' + t.id, taskSig(t)); (t.checklist || []).forEach(i => stageSigs.set('ck|' + t.id + '|' + i.id, !!i.done)); });
+const ckStamp = i => String(i?.u || (i?.done && i.completed_at) || '');
+// Слияние двух версий карточки: поля — от того, кто правил карточку позже; каждая галочка — от более свежей отметки;
+// материалы, добавленные другой стороной, и их «Принято» не теряются
+function mergeTask(L, R){
+  const base = String(L.u || '') > String(R.u || '') ? L : R, other = base === L ? R : L;
+  const out = JSON.parse(JSON.stringify(base));
+  const om = new Map((other.checklist || []).map(i => [i.id, i]));
+  (out.checklist || []).forEach(i => { const o = om.get(i.id); if (o && ckStamp(o) > ckStamp(i)){ i.done = !!o.done; i.completed_at = o.completed_at || null; i.completed_by = o.completed_by || null; if (o.u) i.u = o.u; } });
+  const mine = new Map((out.mats || []).map(m => [m.id, m]));
+  (other.mats || []).forEach(m => { const x = mine.get(m.id);
+    if (!x){ if (String(m.at || '') > String(base.u || '')) (out.mats = out.mats || []).push(JSON.parse(JSON.stringify(m))); return; }
+    if (String(m.okAt || '') > String(x.okAt || '')){ x.ok = m.ok; x.okBy = m.okBy; x.okAt = m.okAt; } });
+  const done = (out.checklist || []).length && out.checklist.every(i => i.done);
+  out.completed_at = done ? (out.completed_at || other.completed_at || new Date().toISOString()) : null;
+  return out;
+}
 const rememberStages = list => (list || []).forEach(p => (p.stages || []).forEach(s => { stageSigs.set(s.id, stageSig(s)); (s.subs || []).forEach(x => stageSigs.set(s.id + '|' + x.id, !!x.done)); }));
 // Старт проекта — не день создания, а день, когда первый этап взяли в работу (p.started_at). До этого проект «не начат»,
 // а p.start_date — плановая дата; с началом работы она становится фактической, и от неё считаются день проекта и сроки.
@@ -2019,7 +2049,7 @@ function markStarted(p){
   if (p.start_date !== first){ addLog(p, `Работа по проекту началась ${fmt(first)} — это дата старта`); p.start_date = first; }
   return true;
 }
-function save(){ try { stampStages(); } catch(e) {} try { (db.projects || []).forEach(markStarted); } catch(e) {} db.savedAt = Date.now(); try { replanAll(); } catch(e) {} try { syncAutoShares(); } catch(e) {} try { ensureSharedTasks(); } catch(e) {} localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
+function save(){ try { stampStages(); stampTasks(); } catch(e) {} try { (db.projects || []).forEach(markStarted); } catch(e) {} db.savedAt = Date.now(); try { replanAll(); } catch(e) {} try { syncAutoShares(); } catch(e) {} try { ensureSharedTasks(); } catch(e) {} localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
 
 const userById = id => db.users.find(u => u.id === id);
 const tplById = id => db.templates.find(t => t.id === id);
@@ -3109,16 +3139,11 @@ function stageSubmitBox(p, s, mine){
   if (s.status === 'done') return sub.status === 'accepted' ? `<div class="ss ss-ok">${MAT_OK}<span>Этап принят${sub.decidedBy ? ` · ${esc(sub.decidedBy)}` : ''}</span></div>` : '';
   const lead = canEditProject(p); const cur = currentStage(p)?.id === s.id;
   if (mine && !lead){
-    if (sub.status === 'pending') return `<div class="ss ss-wait"><b>Этап сдан на проверку</b><small>${ssWhen(sub.at)} · ждём решения руководителя</small>${ssItems(p, s, false)}${sub.note ? `<small class="ss-note">«${esc(sub.note)}»</small>` : ''}
-      <button class="link" data-sscancel="${p.id}|${s.id}">Отозвать и дополнить</button></div>`;
-    if (!cur && !items.length) return '';
-    const up = ui.ssUp === s.id;
-    return `<div class="ss" data-ssdrop="${p.id}|${s.id}"><b>Сдать этап</b>
-      ${sub.status === 'rejected' ? `<small class="ss-back">Вернули на доработку${sub.reason ? `: «${esc(sub.reason)}»` : ''}</small>` : ''}
-      ${ssItems(p, s, true)}
-      <div class="ss-row">${up ? '<span class="hint">Загружаю…</span>' : `<label class="ghost file-btn" title="Можно несколько, до 50 МБ каждый">${CLIP_ICO}Файлы<input type="file" multiple data-ssfile="${p.id}|${s.id}"></label>`}
-        <form class="ss-link" data-sslink="${p.id}|${s.id}"><input placeholder="Ссылка" inputmode="url" aria-label="Ссылка на результат"></form>
-        <button class="primary ss-send" data-sssend="${p.id}|${s.id}">Отправить</button></div></div>`;
+    // исполнитель сдаёт материалы в карточках подэтапов; этап уходит на приёмку сам, когда отмечены все пункты
+    if (sub.status === 'pending') return `<div class="ss ss-wait"><b>Этап на приёмке у руководителя</b><small>${ssWhen(sub.at)}</small></div>`;
+    if (sub.status === 'rejected') return `<div class="ss ss-ret"><small class="ss-back">Руководитель вернул этап${sub.reason ? `: «${esc(sub.reason)}»` : ''}</small>
+      <button class="primary ss-send" data-ssresend="${p.id}|${s.id}">Отправить снова</button></div>`;
+    return '';
   }
   if (sub.status === 'pending') return `<div class="ss ss-ask"><b>${esc(sub.byName || 'Исполнитель')} сдал этап</b><small>${ssWhen(sub.at)}</small>
       ${sub.note ? `<small class="ss-note">«${esc(sub.note)}»</small>` : ''}${ssItems(p, s, false)}
@@ -3126,6 +3151,12 @@ function stageSubmitBox(p, s, mine){
   return '';
 }
 const REG_LINK_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
+// сдать этап на приёмку (без отдельной загрузки: материалы — в карточках подэтапов)
+function ssSubmit(p, s, note = ''){
+  const sub = ssEnsure(s);
+  Object.assign(sub, { status:'pending', note:note || sub.note || '', by:meKey(), byName:actorName(), at:new Date().toISOString(), reason:'' }); ssTouch(sub);
+  addLog(p, `${actorName()} сдал этап «${s.name}» на проверку`); commit();
+}
 const ssFind = v => { const [pid, sid, mid] = String(v).split('|'); const p = projById(pid); const s = p?.stages.find(x => x.id === sid); return { p, s, mid }; };
 const ssEnsure = s => (s.sub = s.sub && s.sub.status !== 'accepted' ? s.sub : { status:'draft', items:[] });
 async function ssUpload(p, s, files){
@@ -3159,6 +3190,8 @@ document.addEventListener('submit', e => {
 });
 document.addEventListener('input', e => { const m = /^ssnote-(.+)$/.exec(e.target.id || ''); if (!m) return; const s = (projById(ui.view === 'mine' ? ui.myProject : ui.prodProject)?.stages || []).find(x => x.id === m[1]); if (s) ssEnsure(s).note = e.target.value; });
 document.addEventListener('click', e => {
+  const rs = e.target.closest?.('[data-ssresend]');
+  if (rs){ const { p, s } = ssFind(rs.dataset.ssresend); if (s){ ssSubmit(p, s); toast('Этап снова отправлен на приёмку'); } return; }
   const q = e.target.closest?.('[data-ssdel],[data-sssend],[data-sscancel],[data-ssok],[data-ssno]'); if (!q) return;
   const d = q.dataset; const { p, s, mid } = ssFind(d.ssdel || d.sssend || d.sscancel || d.ssok || d.ssno); if (!s) return;
   if (d.ssdel){ s.sub.items = (s.sub.items || []).filter(m => m.id !== mid); ssTouch(s.sub); commit(); return; }
@@ -6810,7 +6843,7 @@ function cloudApply(r){
   db.metaRest = Object.fromEntries(Object.entries(r.meta).filter(([k]) => !KNOWN.includes(k)));
   Object.assign(db, { ver:r.meta.ver, onboarded:r.meta.onboarded, users:r.meta.users, templates:r.meta.templates, categories:'categories' in r.meta ? (r.meta.categories || []) : (db.categories || []), prefs:r.meta.prefs, cardTpls:r.meta.cardTpls || {}, cardTplsInit:!!r.meta.cardTplsInit, savedAt:r.meta.savedAt,
     projects:r.projects, tasks:r.tasks, reports:r.reports });
-  rememberStages(db.projects);
+  rememberStages(db.projects); rememberTasks(db.tasks);
   migrate(); if (!db.cardTplsInit){ migrateCardTpls(); scheduleCloud(); }
   (db.reports || []).forEach(fixReport);
   if (ORG && adoptOrgMe()) scheduleCloud();
@@ -7237,14 +7270,29 @@ function onSharedTasks(pid, snap){
   const p = projById(pid); if (!p) return;
   const list = p._ext ? ext.tasks : db.tasks;
   const remote = snap.docs.map(d => ({ path:`sp/${pid}/tasks/${d.id}`, body:d.data() }));
+  const known = new Set([...shared.hashes.keys()].filter(k => k.startsWith(`sp/${pid}/tasks/`)));
   let changed = false;
   for (const r of remote){ const s = sharedCanon(r.path, r.body); if (shared.hashes.get(r.path) !== s){ shared.hashes.set(r.path, s); changed = true; } }
   const ids = new Set(remote.map(r => r.path));
   for (const k of [...shared.hashes.keys()]) if (k.startsWith(`sp/${pid}/tasks/`) && !ids.has(k)){ shared.hashes.delete(k); changed = true; }
-  if (!changed || shared.pending || shared.writing) return;
-  const tasks = remote.map(r => JSON.parse(r.body.json));
+  if (!changed) return;
+  // раньше чужие изменения пропускались, если у меня были свои несохранённые, — и моя запись затирала отметки исполнителя
+  const local = new Map(list.filter(t => t.project_id === pid).map(t => [t.id, t]));
+  let resend = false;
+  const merged = [];
+  for (const r of remote){
+    let R; try { R = JSON.parse(r.body.json); } catch(e) { continue; }
+    const L = local.get(R.id); local.delete(R.id);
+    if (!L){ merged.push(R); continue; }
+    const m = mergeTask(L, R); if (JSON.stringify(m) !== JSON.stringify(R)) resend = true; merged.push(m);
+  }
+  // своих карточек нет в облаке: новые (ещё не отправлены) оставляем, удалённые там — убираем
+  for (const L of local.values()) if (!known.has(`sp/${pid}/tasks/${L.id}`)){ merged.push(L); resend = true; }
   const rest = list.filter(t => t.project_id !== pid);
-  if (p._ext) ext.tasks = [...rest, ...tasks]; else db.tasks = [...rest, ...tasks];
+  if (p._ext) ext.tasks = [...rest, ...merged]; else db.tasks = [...rest, ...merged];
+  rememberTasks(merged);
+  merged.forEach(t => { try { syncTaskToSub(t); } catch(e) {} });
+  if (resend) scheduleShared();
   afterSharedApply();
 }
 function afterSharedApply(){

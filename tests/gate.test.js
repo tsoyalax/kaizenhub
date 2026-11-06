@@ -63,7 +63,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E(gw, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(150);
   const stSel = $(gw, `select[data-mstatus="${pid}|${sid}"]`);
   assert.ok(stSel && ![...stSel.options].some(o => o.value === 'done')); ok('исполнитель: на этапе с запросом нельзя самому поставить «Завершён»');
-  assert.ok($(gw, `[data-ssfile="${pid}|${sid}"]`) && $(gw, `[data-sssend="${pid}|${sid}"]`) && !$(gw, '[data-gatereq]')); ok('исполнитель: под текущим этапом блок «Сдать этап»');
+  assert.ok(!$(gw, `[data-ssfile="${pid}|${sid}"]`) && !$(gw, `[data-sssend="${pid}|${sid}"]`) && !$(gw, '[data-gatereq]')); ok('исполнитель: под этапом нет блока «Сдать этап» — материалы только в карточках');
   assert.ok(!$(gw, '.pf-mat')); ok('на доске исполнителя нет ссылок «Прикрепить материалы» у подэтапов');
   // отметка «материалы» через интерфейс шаблона: галочка → «Сохранить шаблон» → исполнитель может прикрепить файлы
   { const tId = E(own, `projById('${pid}').template_id`);
@@ -131,15 +131,11 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
 
   // сдача этапа: исполнитель разом загружает сделанное → руководитель возвращает → снова сдаёт → «Принять этап»
   E(gw, `ui.view = 'mine'; ui.myProject = '${pid}'; render()`); await wait(50);
-  $(gw, `[data-sssend="${pid}|${sid}"]`).click(); await wait(50);
-  assert.ok(!E(gw, `projById('${pid}').stages.find(s => s.id === '${sid}').sub?.status === 'pending'`) && !$(gw, '.ss textarea')); ok('без файлов и ссылки этап не отправляется; поля комментария нет');
   await E(gw, `ssUpload(projById('${pid}'), projById('${pid}').stages.find(s => s.id === '${sid}'), [new File(['a'], 'Итог этапа.pdf'), new File(['b'], 'Видео монтаж.mp4')])`); await wait(100);
-  assert.equal(gw.w.document.querySelectorAll(`[data-ssdrop="${pid}|${sid}"] .ss-items li`).length, 2); ok('в «Сдать этап» два файла с русскими названиями');
-  $(gw, `[data-sslink="${pid}|${sid}"] input`).value = 'https://drive.google.com/folder/abc';
-  $(gw, `[data-sssend="${pid}|${sid}"]`).click(); await wait(100);
+  E(gw, `(() => { const p = projById('${pid}'), s = p.stages.find(x => x.id === '${sid}'); s.sub.items.push({ id:uid(), kind:'link', url:'https://drive.google.com/folder/abc', name:'drive', by:meKey(), byName:actorName(), at:new Date().toISOString() }); ssSubmit(p, s); })()`); await wait(100);
   // в ту же секунду владелец тоже сохраняет проект (гонка): сдача этапа не должна потеряться
   E(own, `(() => { const p = projById('${pid}'); addLog(p, 'параллельная правка владельца'); commit(); })()`);
-  assert.ok($(gw, '.ss-wait') && E(gw, `projById('${pid}').stages.find(s => s.id === '${sid}').sub.items.length`) === 3); ok('исполнитель: «Этап сдан на проверку», вставленная ссылка ушла вместе с файлами');
+  assert.ok($(gw, '.ss-wait') && E(gw, `projById('${pid}').stages.find(s => s.id === '${sid}').sub.items.length`) === 3); ok('исполнитель: «Этап на приёмке у руководителя», материалы ушли вместе со сдачей');
   await wait(3000);
   await wait(2500);
   assert.equal(E(own, 'stageSubmissions().length'), 1); ok('руководитель получил сдачу этапа');
@@ -158,8 +154,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   $(own, '#gateTx').value = 'Нужна ещё одна версия';
   $(own, '#gateF').dispatchEvent(new own.w.Event('submit', { bubbles: true, cancelable: true })); await wait(3000);
   E(gw, 'render()'); await wait(100);
-  assert.ok($(gw, '.ss-back') && /ещё одна версия/.test($(gw, '.ss-back').textContent) && $(gw, `[data-sssend="${pid}|${sid}"]`)); ok('исполнитель видит, что этап вернули и почему, и может сдать снова');
-  $(gw, `[data-sssend="${pid}|${sid}"]`).click(); await wait(3000);
+  assert.ok($(gw, '.ss-back') && /ещё одна версия/.test($(gw, '.ss-back').textContent) && $(gw, `[data-ssresend="${pid}|${sid}"]`)); ok('исполнитель видит, что этап вернули и почему, и может отправить снова');
+  $(gw, `[data-ssresend="${pid}|${sid}"]`).click(); await wait(3000);
   E(own, 'render()'); await wait(100);
   $(own, '.ss-ask [data-ssok]').click(); await wait(3000);
   assert.equal(E(own, `projById('${pid}').stages.find(s => s.id === '${sid}').status`), 'done'); ok('«Принять этап» закрывает этап');

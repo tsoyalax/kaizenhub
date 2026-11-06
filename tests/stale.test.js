@@ -113,6 +113,30 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     assert.equal(E1(`projById('${np}').started_at`), E1('today()')); ok('отметка начала работы сохранена');
     assert.ok(/1-й день/.test(E1(`startTxt(projById('${np}'))`))); ok('день проекта считается от начала работы');
   }
+  { // отметки исполнителя в карточке подэтапа не теряются, даже если у руководителя в этот момент свои несохранённые правки
+    const tp = E1(`db.tasks.find(t => t.checklist.length >= 3 && projById(t.project_id)?.state === 'active').project_id`);
+    const tid = E1(`db.tasks.find(t => t.project_id === '${tp}' && t.checklist.length >= 3).id`);
+    const remoteT = JSON.parse(E1(`JSON.stringify(taskById('${tid}'))`));
+    const later = new Date(Date.now() + 2000).toISOString();
+    remoteT.checklist[0].done = true; remoteT.checklist[0].completed_at = later; remoteT.checklist[0].u = later;   // исполнитель отметил пункт 1
+    E1(`(() => { const t = taskById('${tid}'); t.checklist[1].done = true; t.checklist[1].completed_at = new Date().toISOString(); save(); shared.pending = true; })()`);   // руководитель отметил пункт 2 и ещё не отправил
+    const others = E1(`JSON.stringify(db.tasks.filter(t => t.project_id === '${tp}' && t.id !== '${tid}'))`);
+    const docs = [remoteT, ...JSON.parse(others)].map(t => ({ id:t.id, data:() => ({ json:JSON.stringify(t) }) }));
+    w1.onSharedTasks(tp, { metadata:{}, docs });
+    E1(`shared.pending = false`);
+    assert.ok(E1(`taskById('${tid}').checklist[0].done`)); ok('отметка исполнителя применилась, хотя у руководителя были свои правки');
+    assert.ok(E1(`taskById('${tid}').checklist[1].done`)); ok('своя отметка руководителя тоже на месте');
+    // старая копия карточки (без отметки) не снимает галочку исполнителя
+    const old = JSON.parse(JSON.stringify(remoteT)); old.checklist[0].done = false; old.checklist[0].completed_at = null; delete old.checklist[0].u;
+    E1(`shared.hashes.clear()`);
+    w1.onSharedTasks(tp, { metadata:{}, docs:[old, ...JSON.parse(others)].map(t => ({ id:t.id, data:() => ({ json:JSON.stringify(t) }) })) });
+    assert.ok(E1(`taskById('${tid}').checklist[0].done`)); ok('старая копия карточки не сняла отметку исполнителя');
+    // исполнитель снял отметку позже — снимается
+    const un = JSON.parse(JSON.stringify(remoteT)); un.checklist[0].done = false; un.checklist[0].completed_at = null; un.checklist[0].u = new Date(Date.now() + 5000).toISOString();
+    E1(`shared.hashes.clear()`);
+    w1.onSharedTasks(tp, { metadata:{}, docs:[un, ...JSON.parse(others)].map(t => ({ id:t.id, data:() => ({ json:JSON.stringify(t) }) })) });
+    assert.ok(!E1(`taskById('${tid}').checklist[0].done`)); ok('снятая позже отметка снимается');
+  }
   assert.equal(d1.errors.length + d4.errors.length, 0, d1.errors.concat(d4.errors).join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });
