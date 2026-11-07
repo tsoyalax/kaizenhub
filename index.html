@@ -6837,13 +6837,41 @@ function cloudAssemble(docs){
   byOrder(out.projects, out.meta.order?.projects || []); byOrder(out.reports, out.meta.order?.reports || []);
   return out;
 }
+// У руководителя проект приходит из двух мест: из своего облака (его пишут и компьютер, и телефон) и из общего документа,
+// куда пишут исполнители. Копия из своего облака раньше подменяла проект целиком — и устройство, не успевшее получить
+// отметки исполнителя, откатывало статусы этапов только у руководителя. Теперь этапы, подэтапы и пункты карточек
+// сверяются по отметкам времени: остаётся более свежее — из прежней копии, из облака или из общего документа.
+function keepFreshStages(prevP, prevT){
+  let fixed = false;
+  const sr = (() => { try { return shared; } catch(e) { return null; } })();
+  (db.projects || []).forEach(p => {
+    let ch = false;
+    const a = prevP.get(p.id), b = sr?.remote?.get(p.id);
+    if (a && a !== p && mergeStageFields(p, a)) ch = true;
+    if (b && mergeStageFields(p, b)) ch = true;
+    if (ch){ syncState(p); fixed = true; }
+  });
+  const changed = [];
+  db.tasks = (db.tasks || []).map(t => {
+    let m = t; const a = prevT.get(t.id), b = sr?.rtasks?.get(t.id);
+    if (a && a !== t) m = mergeTask(a, m);
+    if (b) m = mergeTask(b, m);
+    if (m !== t && JSON.stringify(m) !== JSON.stringify(t)){ changed.push(m); return m; }
+    return t;
+  });
+  changed.forEach(t => { try { if (syncTaskToSub(t)) fixed = true; } catch(e) {} });
+  return fixed || changed.length > 0;
+}
 function cloudApply(r){
+  const prevP = new Map((db?.projects || []).map(p => [p.id, p])), prevT = new Map((db?.tasks || []).map(t => [t.id, t]));
   // поля, которых эта версия не знает, бережём и записываем обратно; данные от старой версии без категорий их не стирают
   const KNOWN = ['ver','onboarded','users','templates','categories','prefs','cardTpls','cardTplsInit','savedAt','order'];
   db.metaRest = Object.fromEntries(Object.entries(r.meta).filter(([k]) => !KNOWN.includes(k)));
   Object.assign(db, { ver:r.meta.ver, onboarded:r.meta.onboarded, users:r.meta.users, templates:r.meta.templates, categories:'categories' in r.meta ? (r.meta.categories || []) : (db.categories || []), prefs:r.meta.prefs, cardTpls:r.meta.cardTpls || {}, cardTplsInit:!!r.meta.cardTplsInit, savedAt:r.meta.savedAt,
     projects:r.projects, tasks:r.tasks, reports:r.reports });
+  const fixed = keepFreshStages(prevP, prevT);
   rememberStages(db.projects); rememberTasks(db.tasks);
+  if (fixed){ scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
   migrate(); if (!db.cardTplsInit){ migrateCardTpls(); scheduleCloud(); }
   (db.reports || []).forEach(fixReport);
   if (ORG && adoptOrgMe()) scheduleCloud();
@@ -7143,7 +7171,7 @@ function bootOwner(){ if (ownerBooted) return; ownerBooted = true; render(); if 
 //  Права ролей проверяет интерфейс; строгая проверка на уровне базы — в Supabase-версии (RLS).
 // =====================================================================
 const ext = { projects:[], tasks:[] };                       // проекты, которыми поделились со мной
-const shared = { subs:new Map(), hashes:new Map(), timer:null, writing:false, dirty:false, pending:false, ready:false };
+const shared = { subs:new Map(), hashes:new Map(), remote:new Map(), rtasks:new Map(), timer:null, writing:false, dirty:false, pending:false, ready:false };
 const ROLES_SHARE = [['worker','Исполнитель'], ['lead','Руководитель']];
 // сравниваем содержимое, а не порядок ключей, в котором хранилище вернуло документ
 const sharedCanon = (path, b) => path.includes('/tasks/') ? String(b.json) : JSON.stringify([b.ownerId ?? null, (b.members || []).map(m => `${m.id}:${m.role}`).sort(), b.json]);
@@ -7252,6 +7280,7 @@ function onSharedProject(pid, snap){
   if (shared.hashes.get(`sp/${pid}`) === s) return;
   shared.hashes.set(`sp/${pid}`, s);
   let remote; try { remote = JSON.parse(body.json); } catch(e) { return; } delete remote._reg;
+  shared.remote.set(pid, JSON.parse(body.json));            // отдельная копия: next ниже делит этапы с remote
   const i = db.projects.findIndex(p => p.id === pid); if (i < 0) return;
   const local = db.projects[i];
   if (shared.pending || shared.writing){                        // свои несохранённые правки уйдут следом — но сдачу этапа подхватываем сразу
@@ -7282,6 +7311,7 @@ function onSharedTasks(pid, snap){
   const merged = [];
   for (const r of remote){
     let R; try { R = JSON.parse(r.body.json); } catch(e) { continue; }
+    shared.rtasks.set(R.id, JSON.parse(r.body.json));
     const L = local.get(R.id); local.delete(R.id);
     if (!L){ merged.push(R); continue; }
     const m = mergeTask(L, R); if (JSON.stringify(m) !== JSON.stringify(R)) resend = true; merged.push(m);
