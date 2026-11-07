@@ -69,6 +69,44 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.equal(stOf(O), 'done'); ok('уже откатившийся этап восстанавливается из общего документа');
   await wait(3000);
   assert.equal(stOf(W), 'done'); ok('у исполнителя по-прежнему закрыт');
+  { // руководитель принял все материалы этапа — этап закрыт, следующий в работе
+    const q = O(`db.projects.find(p => p.id !== '${pid}' && p.state === 'active' && currentStage(p) && !isMaint(currentStage(p)) && (currentStage(p).subs || []).length >= 2 && p.stages.indexOf(currentStage(p)) < p.stages.length - 2).id`);
+    const qs = O(`currentStage(projById('${q}')).id`);
+    O(`(() => { const p = projById('${q}'), s = p.stages.find(x => x.id === '${qs}'); s.gate = true;
+      s.subs.forEach((x, i) => { x.files = true; let t = taskFor(p.id, s.id, x.id);
+        if (!t){ t = makeTask({ project_id:p.id, stage_id:s.id, substage_id:x.id, title:x.name, checklist:[{ id:'c'+i, text:'Сделать', done:false }] }); db.tasks.push(t); }
+        t.mats = [{ id:'m'+i, kind:'link', url:'https://x.y/'+i, name:'Файл '+i, by:'w', byName:'Влад', at:new Date().toISOString() }]; });
+      save(); })()`);
+    const tids = JSON.parse(O(`JSON.stringify(db.tasks.filter(t => t.project_id === '${q}' && t.stage_id === '${qs}').map(t => t.id + '|' + t.mats[0].id))`));
+    for (const k of tids){ const b = D.createElement('button'); b.dataset.matok = k; b.dataset.v = '1'; D.body.appendChild(b); b.click(); b.remove(); await wait(30); }
+    await wait(200);
+    assert.equal(O(`projById('${q}').stages.find(x => x.id === '${qs}').status`), 'done'); ok('приняты все материалы этапа — этап закрыт');
+    assert.notEqual(O(`currentStage(projById('${q}')).id`), '${qs}'); ok('следующий этап — в работе');
+  }
+  { // материалы приняты раньше (до обновления), этап остался открытым — закрывается, когда придут данные
+    const q = O(`db.projects.find(p => p.state === 'active' && shareCount(p) && currentStage(p) && !isMaint(currentStage(p)) && (currentStage(p).subs || []).length && p.stages.indexOf(currentStage(p)) < p.stages.length - 2)?.id || ''`);
+    if (q){
+      const qs = O(`currentStage(projById('${q}')).id`);
+      O(`(() => { const p = projById('${q}'), s = p.stages.find(x => x.id === '${qs}'); s.gate = true;
+        s.subs.forEach((x, i) => { x.files = true; x.done = true; let t = taskFor(p.id, s.id, x.id);
+          if (!t){ t = makeTask({ project_id:p.id, stage_id:s.id, substage_id:x.id, title:x.name, checklist:[] }); db.tasks.push(t); }
+          t.mats = [{ id:'n'+i, kind:'link', url:'https://x.y/'+i, name:'Ф'+i, at:new Date().toISOString(), ok:true, okBy:'Я', okAt:new Date().toISOString() }]; });
+        localSave(); })()`);
+      O(`autoCloseStages(projById('${q}'), true)`); await wait(100);
+      assert.equal(O(`projById('${q}').stages.find(x => x.id === '${qs}').status`), 'done'); ok('принятые раньше материалы закрывают этап');
+    }
+  }
+  { // у исполнителя старое приложение: отметил всё, но этап не закрыл — у руководителя этап закрывается сам или уходит в «Приёмку»
+    const sid2 = O(`currentStage(projById('${pid}')).id`);
+    if (O(`!isMaint(currentStage(projById('${pid}'))) && (currentStage(projById('${pid}')).subs || []).length > 0`)){
+      W(`(() => { const p = projById('${pid}'), s = p.stages.find(x => x.id === '${sid2}'); s.gate = true;
+        ext.tasks.filter(t => t.project_id === p.id && t.stage_id === s.id).forEach(t => { t.checklist.forEach(i => { i.done = true; i.completed_at = new Date().toISOString(); }); syncTaskToSub(t); });
+        s.subs.forEach(x => { x.done = true; }); save(); })()`);
+      await wait(5000);
+      assert.equal(O(`projById('${pid}').stages.find(x => x.id === '${sid2}').sub?.status`), 'pending'); ok('этап с приёмкой: у руководителя он в «Приёмке»');
+      assert.notEqual(O(`projById('${pid}').stages.find(x => x.id === '${sid2}').status`), 'done'); ok('и без приёмки сам не закрылся');
+    }
+  }
   assert.equal(own.errors.length + wk.errors.length, 0, own.errors.concat(wk.errors).join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });
