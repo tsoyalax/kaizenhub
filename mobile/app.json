@@ -34,7 +34,9 @@
           "imageWidth": 120,
           "backgroundColor": "#17171C"
         }
-      ]
-    ]
+      ],
+      "expo-web-browser"
+    ],
+    "scheme": "kaizenhub"
   }
 }

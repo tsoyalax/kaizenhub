@@ -4,25 +4,43 @@ import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { WebView } from 'react-native-webview';
+import * as WebBrowser from 'expo-web-browser';
 
 const SITE = 'https://kaizenhub-nu.vercel.app';
 const HOST = new URL(SITE).host;
 const BG = '#17171C';
 
-// Google не пускает вход внутри встроенных браузеров приложений — в приложении входим по почте и паролю
+// Google не пускает вход во встроенном браузере (WebView). Поэтому вход через Google идёт в системном окне входа iOS:
+// перехватываем переход сайта на Supabase …/auth/v1/authorize, возвращаемся по адресу kaizenhub://auth
+// и отдаём токены обратно сайту — supabase-js сам подхватит их из адреса (detectSessionInUrl).
+const APP_RETURN = 'kaizenhub://auth';
 const isGoogleLogin = url => /^https:\/\/accounts\.google\.com\//.test(url);
+const isOAuthStart = url => /^https:\/\/[^/]+\.supabase\.co\/auth\/v1\/authorize\?/.test(url);
 
 export default function App() {
   const web = useRef(null);
   const [failed, setFailed] = useState(false);
 
+  const googleLogin = async url => {
+    const u = new URL(url);
+    const back = u.searchParams.get('redirect_to') || SITE + '/';
+    u.searchParams.set('redirect_to', APP_RETURN);
+    const r = await WebBrowser.openAuthSessionAsync(u.toString(), APP_RETURN);
+    if (r.type !== 'success' || !r.url) { web.current?.reload(); return; }        // закрыли окно — возвращаем экран входа
+    const tail = r.url.slice(APP_RETURN.length);                                     // ?code=… или #access_token=…
+    let target = back;
+    if (tail.startsWith('?')) target = back + (back.includes('?') ? '&' : '?') + tail.slice(1).split('#')[0];
+    const hash = tail.includes('#') ? tail.slice(tail.indexOf('#')) : '';
+    web.current?.injectJavaScript(`location.href = ${JSON.stringify(target + hash)}; setTimeout(function(){ location.reload(); }, 80); true;`);
+  };
+
   const onNav = req => {
     const { url } = req;
+    if (isOAuthStart(url)) { googleLogin(url); return false; }
     if (/^(mailto|tel|sms|tg|whatsapp|itms-apps):/i.test(url)) { Linking.openURL(url).catch(() => {}); return false; }   // почта, телефон, Telegram, WhatsApp
     if (!/^https?:/.test(url)) return /^(about|blob|data):/i.test(url);                     // служебные адреса страницы — внутри, остальное не открываем
     if (isGoogleLogin(url)) {
-      Alert.alert('Вход через Google', 'Google не разрешает вход внутри приложений. Войдите по почте и паролю — или откройте KaizenHub в Safari.',
-        [{ text: 'Понятно' }, { text: 'Открыть в Safari', onPress: () => Linking.openURL(SITE) }]);
+      Alert.alert('Вход через Google', 'Не получилось открыть окно входа Google. Попробуйте ещё раз или войдите по почте и паролю.');
       return false;
     }
     const host = new URL(url).host;
