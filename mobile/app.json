@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "KaizenHub",
+    "slug": "kaizenhub",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#17171C",
+    "ios": {
+      "bundleIdentifier": "com.tsoyalax.kaizenhub",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Чтобы сфотографировать и прикрепить материалы к задаче",
+        "NSPhotoLibraryUsageDescription": "Чтобы прикрепить фото и видео к задаче",
+        "NSMicrophoneUsageDescription": "Чтобы снять видео для задачи",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.tsoyalax.kaizenhub",
+      "adaptiveIcon": {
+        "backgroundColor": "#17171C",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 120,
+          "backgroundColor": "#17171C"
+        }
+      ],
+      "expo-web-browser"
+    ],
+    "scheme": "kaizenhub"
+  }
+}

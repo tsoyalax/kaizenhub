@@ -3,7 +3,20 @@
 <head>
 <meta charset="utf-8">
 <script>try{var t=localStorage.getItem("agency-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<script>
+// вход через Google начат из приложения для iPhone (app-auth.html): возвращаем результат в приложение, а не входим здесь
+try{var kzA=+sessionStorage.getItem("kz-app-auth");if(kzA){sessionStorage.removeItem("kz-app-auth");
+if(Date.now()-kzA<6e5&&/(access_token|error|code)=/.test(location.hash+location.search))location.replace("kaizenhub://auth"+location.search+location.hash);}}catch(e){}
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- приложение на телефоне: «На экран Домой» открывает на весь экран, со своей иконкой -->
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="KaizenHub">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#17171C">
 <title>KaizenHub – Конвейер проектов БЕТА (deploy))</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
