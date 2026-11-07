@@ -2498,14 +2498,18 @@ function toggleSub(p, s, x, checked){
 // на приёмку («Приёмка», колокольчик), закрывается он после «Принять этап». Последнюю отметку ставит руководитель — это и есть приёмка.
 const needsAccept = s => !!s.gate || (s.subs || []).some(x => x.files);
 const stageAllDone = (p, s) => (s.subs || []).length > 0 && s.subs.every(x => subDone(p, s, x));
-function autoCloseStages(p){
+// passive — отметки пришли от исполнителя (руководитель сам ничего не нажимал): этап с приёмкой не закрываем, а отправляем в «Приёмку»
+function autoCloseStages(p, passive = false){
   if (!p || p.state === 'archived') return;
   for (let k = 0; k < p.stages.length; k++){
     const s = currentStage(p); if (!s || isMaint(s) || s.status === 'done' || !stageAllDone(p, s)) return;
-    if (needsAccept(s) && !canEditProject(p)){
+    // руководитель уже принял все сданные материалы этапа — это и есть приёмка
+    const accepted = canEditProject(p) && s.subs.some(x => matsAccepted(taskFor(p.id, s.id, x.id))) && s.subs.every(x => !x.files || matsAccepted(taskFor(p.id, s.id, x.id)));
+    if (needsAccept(s) && !accepted && (passive || !canEditProject(p))){
       const sub = ssEnsure(s); if (sub.status === 'pending') return;
-      Object.assign(sub, { status:'pending', note:sub.note || 'Все пункты этапа выполнены', by:meKey(), byName:actorName(), at:new Date().toISOString(), reason:'' }); ssTouch(sub);
-      addLog(p, `${actorName()} выполнил все пункты этапа «${s.name}» — этап на приёмке`);
+      const who = passive ? (s.assignee_id ? short(s.assignee_id) : 'Исполнитель') : actorName();
+      Object.assign(sub, { status:'pending', note:sub.note || 'Все пункты этапа выполнены', by:passive ? (s.assignee_id || '') : meKey(), byName:who, at:new Date().toISOString(), reason:'' }); ssTouch(sub);
+      addLog(p, `${who} выполнил все пункты этапа «${s.name}» — этап на приёмке`);
       commit(); toast(`Все пункты «${s.name}» выполнены — этап отправлен руководителю на приёмку`); return;
     }
     if (s.sub?.status === 'pending'){ Object.assign(s.sub, { status:'accepted', decidedBy:actorName(), decidedAt:new Date().toISOString() }); ssTouch(s.sub); addLog(p, `Этап «${s.name}» принят (сдал: ${s.sub.byName || 'исполнитель'})`); }
@@ -2515,7 +2519,7 @@ function autoCloseStages(p){
     const nx = currentStage(p); toast(`Этап «${s.name}» закрыт${nx && nx.status !== 'done' ? `, «${nx.name}» — в работе` : ''}`);
   }
 }
-const queueAutoClose = pid => setTimeout(() => autoCloseStages(projById(pid)), 0);
+const queueAutoClose = (pid, passive = false) => setTimeout(() => autoCloseStages(projById(pid), passive), 0);
 function moveToDone(p){
   const t = today();
   p.stages.forEach(s => { if (s.status !== 'done'){ s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; completeStage(p, s); } });
@@ -3050,7 +3054,11 @@ document.addEventListener('click', e => {
   const [tid, mid] = b.dataset.matok.split('|'); const t = taskById(tid); const m = t?.mats?.find(x => x.id === mid); if (!m) return;
   if (b.dataset.v === '1'){ m.ok = true; m.okBy = actorName(); m.okAt = new Date().toISOString(); } else { delete m.ok; delete m.okBy; delete m.okAt; }
   const p = projById(t.project_id); if (p) addLog(p, `Подэтап «${t.title}»: материал «${m.name}» ${m.ok ? 'принят' : 'снова на проверке'}`);
-  commit(); renderTaskModal();
+  // приняты все материалы подэтапа — подэтап выполнен; если это был последний, этап закрывается (это и есть приёмка)
+  const x = p?.stages.find(z => z.id === t.stage_id)?.subs?.find(y => y.id === t.substage_id);
+  if (x && matsAccepted(t) && !x.done){ x.done = true; addLog(p, `Подэтап «${x.name}» выполнен: материалы приняты`); }
+  commit(); if (ui.taskId) renderTaskModal();
+  if (p) queueAutoClose(p.id);
 });
 document.addEventListener('submit', e => {
   const f = e.target.closest?.('[data-matlink]'); if (!f) return; e.preventDefault();
@@ -6590,7 +6598,9 @@ function productionCursor(p){
   return { stageId:s.id, subId:sub?.id || null };
 }
 // Подэтап закрыт: если у него есть задача — по её чек-листу, иначе по отметке в воронке
-function subDone(p, s, x){ const t = taskFor(p.id, s.id, x.id); return t && t.checklist.length ? taskProgress(t).done : !!x.done; }
+// подэтап сделан: выполнен чек-лист карточки (или отмечен сам подэтап), либо руководитель принял все сданные материалы
+const matsAccepted = t => !!(t?.mats || []).length && t.mats.every(m => m.ok);
+function subDone(p, s, x){ const t = taskFor(p.id, s.id, x.id); if (matsAccepted(t)) return true; return t && t.checklist.length ? taskProgress(t).done : !!x.done; }
 // на каком подэтапе сейчас проект: первый невыполненный подэтап текущего этапа
 function curSub(p){
   const c = currentStage(p); const subs = c?.subs || [];
@@ -7285,7 +7295,7 @@ function onSharedProject(pid, snap){
   const local = db.projects[i];
   if (shared.pending || shared.writing){                        // свои несохранённые правки уйдут следом — но сдачу этапа подхватываем сразу
     if (mergeStageFields(local, remote)){ syncState(local); rememberStages([local]); localSave(); scheduleShared(); afterSharedApply(); }
-    return;
+    queueAutoClose(pid, true); return;
   }
   const next = { ...remote, share:local.share, log:mergeLogs(local.log, remote.log) };
   const keepMine = mergeStageFields(next, local);               // у меня новее — оставляем и досылаем
@@ -7293,6 +7303,7 @@ function onSharedProject(pid, snap){
   db.projects[i] = next; rememberStages([next]);
   if (keepMine){ localSave(); scheduleShared(); }
   afterSharedApply();
+  queueAutoClose(pid, true);                                    // исполнитель отметил всё — этап закрывается или уходит в «Приёмку»
 }
 function onSharedTasks(pid, snap){
   if (snap.metadata?.hasPendingWrites) return;
@@ -7324,6 +7335,7 @@ function onSharedTasks(pid, snap){
   merged.forEach(t => { try { syncTaskToSub(t); } catch(e) {} });
   if (resend) scheduleShared();
   afterSharedApply();
+  if (!p._ext) queueAutoClose(pid, true);
 }
 function afterSharedApply(){
   localSave(); if (typeof scheduleCloud === 'function') scheduleCloud();
