@@ -22,10 +22,10 @@ export default function App() {
   const [failed, setFailed] = useState(false);
 
   const googleLogin = async url => {
-    const u = new URL(url);
-    const back = u.searchParams.get('redirect_to') || SITE + '/';
-    u.searchParams.set('redirect_to', APP_RETURN);
-    const r = await WebBrowser.openAuthSessionAsync(u.toString(), APP_RETURN);
+    // окно входа открываем через app-auth.html: она отмечает, что вход из приложения, и после Google сайт вернёт нас сюда
+    // (так не нужен отдельный адрес возврата в настройках Supabase)
+    const back = new URL(url).searchParams.get('redirect_to') || SITE + '/';
+    const r = await WebBrowser.openAuthSessionAsync(`${SITE}/app-auth.html?go=${encodeURIComponent(url)}`, APP_RETURN);
     if (r.type !== 'success' || !r.url) { web.current?.reload(); return; }        // закрыли окно — возвращаем экран входа
     const tail = r.url.slice(APP_RETURN.length);                                     // ?code=… или #access_token=…
     let target = back;

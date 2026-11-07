@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Вход в KaizenHub</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#17171C;color:#EDEDEF;font:16px -apple-system,system-ui,sans-serif}</style>
+</head>
+<body>
+<p>Открываю вход через Google…</p>
+<script>
+// Вход через Google из приложения для iPhone (mobile/): приложение открывает эту страницу в системном окне входа iOS.
+// Запоминаем, что вход начат из приложения, и идём к Supabase; когда Google вернёт на сайт, index.html
+// увидит отметку и передаст вход обратно в приложение (kaizenhub://auth).
+(function () {
+  var go = new URLSearchParams(location.search).get('go') || '';
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/auth\/v1\/authorize\?/.test(go)) { document.body.textContent = 'Неверная ссылка входа'; return; }
+  try { sessionStorage.setItem('kz-app-auth', String(Date.now())); } catch (e) {}
+  location.replace(go);
+})();
+</script>
+</body>
+</html>
