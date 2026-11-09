@@ -439,7 +439,7 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .space-name{margin-left:10px;border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:2px 10px;font:inherit;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .space-name:hover{color:var(--ink);border-color:var(--line-strong)}
 .sp-list{list-style:none;margin:12px 0;padding:0;display:grid;gap:4px}
-.sp-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto 28px;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line)}
+.sp-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto auto;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line)}
 .sp-row b{padding:0 8px}
 .sp-name{display:flex;align-items:center;gap:4px;min-width:0}.sp-name input{flex:1}
 .sp-dot{width:26px;height:26px;border-radius:8px;flex:none;margin-left:2px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
@@ -451,7 +451,7 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .sp-colors{display:flex;gap:4px;flex-wrap:wrap}
 .sp-c{width:18px;height:18px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
 .sp-c.on{border-color:var(--ink)}
-@media (max-width:640px){.sp-row{grid-template-columns:1fr auto auto 28px}.sp-colors{grid-column:1/-1;order:3}}
+@media (max-width:640px){.sp-row{grid-template-columns:1fr auto auto auto}.sp-colors{grid-column:1/-1;order:3}}
 .sp-row:hover .tx{opacity:1}
 .sp-row input{height:34px;border:1px solid transparent;border-radius:8px;background:transparent;padding:0 8px;font-weight:600;font-size:14.5px;min-width:0}
 .sp-row input:hover{border-color:var(--line)}.sp-row input:focus{border-color:var(--line-strong);outline:0;background:var(--surface)}
@@ -758,6 +758,10 @@ body.side-pinned .side-btn{color:var(--ink)}
 .sp-kbadge{display:inline-flex;align-items:center;gap:5px;height:28px;font-size:12.5px;font-weight:600;padding:0 10px;border-radius:99px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
 .sp-kbadge svg,.kind-seg svg{width:14px;height:14px}
 /* переключатель-чипы: тип пространства и выбор при создании */
+.sp-del{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--r,#ef4444);font:inherit;font-size:13px;cursor:pointer}
+.sp-del svg{width:15px;height:15px}
+.sp-del:hover{background:color-mix(in srgb,var(--r,#ef4444) 12%,transparent);border-color:color-mix(in srgb,var(--r,#ef4444) 40%,transparent)}
+@media (max-width:640px){.sp-del span{display:none}}
 .kind-seg{display:inline-flex;gap:2px;padding:3px;border-radius:11px;background:var(--surface-2)}
 .kind-seg button{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border:0;border-radius:8px;background:none;font:inherit;font-size:13px;color:var(--muted);cursor:pointer;white-space:nowrap}
 .kind-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.12)}
@@ -4944,6 +4948,7 @@ function switchSpace(id){
   if (cloud.pending) flushCloud();
   setTimeout(() => (window.kzReloadHook || (() => location.reload()))(), cloud.writing ? 900 : 150);
 }
+const TRASH_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>';
 function renderSpaces(){
   const online = !!(cloud.store && cloud.uid);
   const row = (id, name, cur, extra) => `<li class="sp-row${cur ? ' cur' : ''}">
@@ -4962,7 +4967,7 @@ function renderSpaces(){
       <h3 class="sh-h">Мои пространства</h3>` : ''}
     ${online && !ORG ? `<div class="ws-row"><label>Область <input data-areaname="${curArea()}" value="${esc(areaById(curArea()).name)}" maxlength="60" aria-label="Название области"></label></div>
 ` : ''}
-    <ol class="sp-list">${spacesOfArea(curArea() || AREA0).map(x => x.id ? row(x.id, x.name, x.id === SPACE && !ORG, `<button type="button" class="tx" data-spdel="${x.id}" aria-label="Удалить пространство ${esc(x.name)}" title="Удалить пространство">×</button>`) : row('', mainName(), !SPACE && !ORG)).join('')}</ol>
+    <ol class="sp-list">${spacesOfArea(curArea() || AREA0).map(x => x.id ? row(x.id, x.name, x.id === SPACE && !ORG, `<button type="button" class="sp-del" data-spdel="${x.id}" aria-label="Удалить пространство ${esc(x.name)}">${TRASH_ICO}<span>Удалить</span></button>`) : row('', mainName(), !SPACE && !ORG)).join('')}</ol>
     ${online ? `<form class="sp-new" id="spNew"><input id="spNewName" placeholder="Название нового пространства" maxlength="60" aria-label="Название нового пространства">
       <div class="sp-kind" role="radiogroup" aria-label="Тип пространства">${Object.entries(KINDS).map(([k, [a, b]]) => `<label><input type="radio" name="spKind" value="${k}"${k === 'agency' ? ' checked' : ''}> ${a}: ${b}</label>`).join('')}</div>
       <label class="check"><input type="checkbox" id="spCopy" checked> Взять из текущего пространства шаблоны, категории и команду</label>
@@ -5014,14 +5019,21 @@ document.addEventListener('click', e => {
   const sp = spaces.list.find(x => x.id === d.dataset.spdel); if (!sp) return;
   askConfirm({ title:`Удалить пространство «${sp.name}»?`, text:'Все его проекты, задачи, команда и шаблоны удалятся из аккаунта навсегда. Восстановить их будет нельзя.', ok:'Удалить навсегда' }).then(async yes => {
     if (!yes) return;
+    const cur = sp.id === SPACE && !ORG;
+    // открытое пространство больше не пишем в облако — иначе сохранение вернёт удалённые данные
+    if (cur){ clearTimeout(cloud.timer); cloud.pending = false; cloud.col = null; }
     try {
-      const col = cloud.store.collection(spacePath(cloud.uid, sp.id)); const snap = await col.get();
-      for (const doc of snap.docs) await col.doc(doc.id).delete();
+      // сначала запись о пространстве: оно сразу пропадает из списка и панели
       await cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${sp.id}`).delete();
-      try { localStorage.removeItem(`agency-pipeline-demo-v2-${sp.id}`); } catch(x) {}
-      spaces.list = spaces.list.filter(x => x.id !== sp.id); toast(`Пространство «${sp.name}» удалено`);
-      if (sp.id === SPACE) switchSpace(''); else renderSpaces();
-    } catch(err) { toast('Не удалось удалить пространство. Попробуйте ещё раз.'); }
+    } catch(err) { toast('Не удалось удалить пространство. Проверьте связь и попробуйте ещё раз.'); return; }
+    spaces.list = spaces.list.filter(x => x.id !== sp.id);
+    try { localStorage.removeItem(`agency-pipeline-demo-v2-${sp.id}`); localStorage.removeItem(`agency-pipeline-demo-v2-${sp.id}-sync`); localStorage.removeItem(`agency-pipeline-demo-v2-${sp.id}-dirty`); } catch(x) {}
+    // потом его данные — по одному, ошибка одного документа не останавливает остальные
+    try { const col = cloud.store.collection(spacePath(cloud.uid, sp.id)); const snap = await col.get();
+      await Promise.allSettled(snap.docs.map(doc => col.doc(doc.id).delete())); } catch(err) {}
+    toast(`Пространство «${sp.name}» удалено`);
+    if (cur){ try { localStorage.removeItem(SPACE_KEY); } catch(x) {} markPicked(); setTimeout(() => (window.kzReloadHook || (() => location.reload()))(), 150); }
+    else { renderSpaces(); renderSide(); }
   });
 });
 document.addEventListener('change', e => {
