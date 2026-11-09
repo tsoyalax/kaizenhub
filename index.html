@@ -4712,15 +4712,14 @@ function paintSpace(){
 }
 // переключение: запоминаем пространство и перезагружаем страницу (в тестах — подменяемая функция)
 // ---------- Выбор пространства после входа руководителя ----------
-// Один раз за вкладку: «Где работаем?» — пространства аккаунта (агентство, SMM, другая команда) и команды, где вы руководитель.
+// Каждый вход руководителя (раз за вкладку): «Где работаем?» — пространства аккаунта (агентство, SMM, другая команда),
+// команды, где вы руководитель, и «+ Новое пространство». Показывается и при одном пространстве — чтобы сразу создать SMM или другую команду.
 const PICK_KEY = 'kz-picked', PICK_SEEN = 'kz-pick-seen';
 const markPicked = () => { try { sessionStorage.setItem(PICK_KEY, '1'); localStorage.setItem(PICK_SEEN, '1'); } catch(e) {} };
 const picked = () => { try { return sessionStorage.getItem(PICK_KEY) === '1'; } catch(e) { return true; } };
 function maybePick(){
   if (GUEST || !cloud.uid || !spaces.ready || picked() || $('#spPick')) return;
   if (typeof ownerBooted === 'undefined' || !ownerBooted || !db?.onboarded) return;
-  let seen = true; try { seen = localStorage.getItem(PICK_SEEN) === '1'; } catch(e) {}
-  if (!spaces.list.length && !spaces.orgs.length && seen) return;      // одно пространство — сразу в него
   document.body.insertAdjacentHTML('beforeend', '<div class="sp-pick" id="spPick" role="dialog" aria-modal="true" aria-labelledby="spPickT"></div>');
   paintPick();
 }

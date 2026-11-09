@@ -38,7 +38,7 @@ function openApp(backend, userId, keepStorage, session) {
   const w = o.w, D = w.document, $ = s => D.querySelector(s);
   const fire = (el, t) => el.dispatchEvent(new w.Event(t, { bubbles: true, cancelable: true }));
   const ls = () => JSON.parse(w.localStorage.getItem('agency-pipeline-demo-v2'));
-  assert.ok(!$('#spPick')); ok('одно пространство и выбор уже видели — экран выбора не мешает');
+  assert.ok(!$('#spPick')); ok('до приветственной анкеты экран выбора не мешает');
 
   // 1) тип пространства → SMM
   D.querySelector('.tabs [data-view="templates"]').click(); await wait(100);
