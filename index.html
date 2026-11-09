@@ -730,6 +730,12 @@ body.side-pinned .side-btn{color:var(--ink)}
 .tg-pick input{width:150px;padding:6px 10px;font-size:13px}
 .smm-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .smm-tags span{font-size:13px}
+.side-ws{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;margin:0 0 6px;padding:6px 10px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;text-align:left}
+.side-ws:hover{background:var(--line);color:var(--ink)}
+.ws-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.ws-row label{display:inline-flex;align-items:center;gap:8px;font-weight:600}
+.ws-new{display:grid;gap:10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--panel)}
+.ws-new-act{display:flex;justify-content:flex-end;gap:8px}
 .sp-kbadge{font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--line);color:var(--muted);white-space:nowrap}
 .cx-name{gap:12px}
 .mc-r1 .pava{margin-right:2px}
@@ -4565,7 +4571,20 @@ document.addEventListener('input', e => {
   const row = el.closest('.tsub'); const x = ui.draft.stages[+row.dataset.i].subs[+row.dataset.j]; x.name = el.value; ui.draftDirty = true;
 });
 // ---------- Пространства ----------
-const spaces = { list:[], orgs:[], ready:false, mainColor:'', mainIcon:'', mainName:'', mainKind:'' };
+const spaces = { list:[], orgs:[], ws:[], ready:false, mainColor:'', mainIcon:'', mainName:'', mainKind:'' };
+// ---------- Разделы (верхний уровень): «Агентство Icon», «SMM», «Другой бизнес»… ----------
+// Раздел — data/users/<id>/spaces/ws/<w…> { name, kind, at }. Пространство раздела — spaces/list/<s…>.ws (нет — основной раздел 'w0').
+// Основное пространство (data/users/<id>) всегда в разделе 'w0'. На экране «Где работаем?» выбирают раздел,
+// в левой панели — только пространства текущего раздела.
+const WS0 = 'w0';
+const wsList = () => { const d0 = spaces.ws.find(x => x.id === WS0);
+  return [{ id:WS0, name:d0?.name || 'Агентство', kind:d0?.kind || 'agency', at:'' }, ...spaces.ws.filter(x => x.id !== WS0)]; };
+const wsById = id => wsList().find(x => x.id === id) || wsList()[0];
+const spWs = sp => sp?.ws && sp.ws !== WS0 && spaces.ws.some(x => x.id === sp.ws) ? sp.ws : WS0;
+const curWs = () => ORG ? '' : SPACE ? spWs(spaces.list.find(x => x.id === SPACE)) : WS0;
+// пространства раздела: у основного раздела первым идёт «Основное» (id '')
+const spacesOf = w => [...(w === WS0 ? [{ id:'', name:mainName() }] : []), ...spaces.list.filter(x => spWs(x) === w)];
+const WS_LAST = w => `kz-ws-last-${w}`;
 // документ основного пространства: цвет, иконка, название и тип (agency | smm)
 const mainDoc = (patch = {}) => ({ color:spColor(''), icon:spIcon(''), name:spaces.mainName || '', kind:spaces.mainKind || '', ...patch });
 const mainName = () => spaces.mainName || 'Основное';
@@ -4627,9 +4646,13 @@ function watchSpaces(){
     paintPick(); paintSpace(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
   }, () => {})]);
   shared.subs.set('__spaces', [cloud.store.collection(`data/users/${cloud.uid}/spaces/list`).onSnapshot(snap => {
-    spaces.list = snap.docs.map(d => ({ id:d.id, name:d.data().name || 'Пространство', at:d.data().at || '', color:d.data().color || '', icon:d.data().icon || '', kind:d.data().kind || '' })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    spaces.list = snap.docs.map(d => ({ id:d.id, name:d.data().name || 'Пространство', at:d.data().at || '', color:d.data().color || '', icon:d.data().icon || '', kind:d.data().kind || '', ws:d.data().ws || '' })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
     spaces.ready = true; applySpaceColor(); paintSpace(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
     maybePick();
+  }, () => {})]);
+  shared.subs.set('__spws', [cloud.store.collection(`data/users/${cloud.uid}/spaces/ws`).onSnapshot(snap => {
+    spaces.ws = snap.docs.map(d => ({ id:d.id, name:d.data().name || 'Раздел', kind:d.data().kind || 'agency', at:d.data().at || '' })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    paintPick(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
   }, () => {})]);
   shared.subs.set('__spmain', [cloud.store.doc(`data/users/${cloud.uid}/spaces/main`).onSnapshot(x => {
     spaces.mainColor = x.exists ? (x.data().color || '') : ''; spaces.mainIcon = x.exists ? (x.data().icon || '') : '';
@@ -4648,6 +4671,12 @@ function sideViews(){
   if (GUEST) return guestViews();
   return [...document.querySelectorAll('.tabs [data-view]')].filter(b => !b.hidden).map(b => b.dataset.view);
 }
+// кружки в панели: пространства текущего раздела (у руководителя чужой команды — раздел его владельца) и команды руководителей
+function sideSpaces(){
+  const w = curWs() || WS0;
+  return [...spacesOf(w).map(x => ({ id:x.id, name:x.name, color:spColor(x.id), icon:spIcon(x.id), cur:!ORG && (x.id || '') === SPACE })),
+    ...spaces.orgs.map(o => ({ id:'o:' + o.id, name:`Проекты: ${o.name}`, color:spColorsCache()['o:' + o.id] || hashColor(o.id), icon:'users', cur:ORG === o.id }))];
+}
 function renderSide(){
   const el = $('#side'); if (!el) return;
   const pinned = sidePinned(); document.body.classList.toggle('side-pinned', pinned);
@@ -4655,11 +4684,9 @@ function renderSide(){
   $('#sideBtn')?.setAttribute('aria-expanded', String(pinned || sideOpen));
   if (el.hidden) return;
   const label = v => v === 'production' ? 'Производство' : v === 'templates' ? 'Настройки' : (MNAV[v]?.[0] || v);
-  const all = GUEST ? [] : [{ id:'', name:mainName(), color:spColor(''), icon:spIcon(''), cur:!SPACE && !ORG },
-    ...spaces.list.map(x => ({ id:x.id, name:x.name, color:spColor(x.id), icon:spIcon(x.id), cur:x.id === SPACE })),
-    ...spaces.orgs.map(o => ({ id:'o:' + o.id, name:`Проекты: ${o.name}`, color:spColorsCache()['o:' + o.id] || hashColor(o.id), icon:'users', cur:ORG === o.id }))];
+  const all = GUEST ? [] : sideSpaces();
   const cur = all.find(x => x.cur) || { name:mainName(), color:spColor(''), icon:spIcon('') };
-  el.innerHTML = `<div class="side-head"><span class="side-sp" style="--c:${cur.color}"><span class="side-sp-ico">${spIco(GUEST ? 'briefcase' : cur.icon)}</span><b>${esc(GUEST ? 'Мои проекты' : cur.name)}</b></span>
+  el.innerHTML = `${GUEST ? '' : `<button class="side-ws" data-sidews title="Сменить раздел">${ORG ? 'Команда руководителя' : esc(wsById(curWs()).name)}<span aria-hidden="true">⇅</span></button>`}<div class="side-head"><span class="side-sp" style="--c:${cur.color}"><span class="side-sp-ico">${spIco(GUEST ? 'briefcase' : cur.icon)}</span><b>${esc(GUEST ? 'Мои проекты' : cur.name)}</b></span>
       ${innerWidth > 1100 ? `<button class="icon-btn side-pin" data-sidepin aria-pressed="${pinned}" title="${pinned ? 'Открепить панель' : 'Закрепить панель'}" aria-label="${pinned ? 'Открепить панель' : 'Закрепить панель'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${pinned ? '<path d="M15 6l-6 6 6 6"/>' : '<path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3z"/>'}</svg></button>` : ''}
       ${pinned ? '' : '<button class="icon-btn" data-sideclose aria-label="Закрыть меню">×</button>'}</div>
     <nav class="side-nav" aria-label="Разделы">${sideViews().map(v => `<button data-sideview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v]?.[1] || ''}<span>${label(v)}</span></button>`).join('')}</nav>
@@ -4686,6 +4713,7 @@ document.addEventListener('click', e => {
   if (e.target.closest?.('#sideBtn')){ if (sidePinned()){ setPin(false); sideOpen = false; renderSide(); render(); } else { sideOpen = !sideOpen; renderSide(); } return; }
   if (e.target.closest?.('#sideBack') || e.target.closest?.('[data-sideclose]')){ closeSide(); return; }
   if (e.target.closest?.('[data-sideme]')){ if (!sidePinned()) closeSide(); openProfile(false); return; }
+  if (e.target.closest?.('[data-sidews]')){ if (!sidePinned()) closeSide(); if (layer.querySelector('.more-sheet')) layer.innerHTML = ''; openPick(); return; }
   if (e.target.closest?.('[data-sidetheme]')){ $('#themeBtn').click(); renderSide(); if (layer.querySelector('.more-sheet')) openMore(); return; }
   if (e.target.closest?.('[data-sidecloud]')){ if (!sidePinned()) closeSide(); openCloudInfo(); return; }
   const pin = e.target.closest?.('[data-sidepin]'); if (pin){ setPin(!sidePinned()); sideOpen = false; renderSide(); render(); return; }
@@ -4718,6 +4746,7 @@ const PICK_KEY = 'kz-picked', PICK_SEEN = 'kz-pick-seen';
 const markPicked = () => { try { sessionStorage.setItem(PICK_KEY, '1'); localStorage.setItem(PICK_SEEN, '1'); } catch(e) {} };
 const picked = () => { try { return sessionStorage.getItem(PICK_KEY) === '1'; } catch(e) { return true; } };
 function maybePick(){
+  if (spaces.ready && !ORG) try { localStorage.setItem(WS_LAST(curWs()), SPACE); } catch(e) {}
   if (GUEST || !cloud.uid || !spaces.ready || picked() || $('#spPick')) return;
   if (typeof ownerBooted === 'undefined' || !ownerBooted || !db?.onboarded) return;
   document.body.insertAdjacentHTML('beforeend', '<div class="sp-pick" id="spPick" role="dialog" aria-modal="true" aria-labelledby="spPickT"></div>');
@@ -4725,28 +4754,40 @@ function maybePick(){
 }
 function paintPick(){
   const el = $('#spPick'); if (!el) return;
-  const card = (attr, name, color, icon, kind, cur) => `<button class="sp-pick-card" ${attr} style="--c:${color}"><span class="side-sp-ico">${spIco(icon)}</span>
-    <span><b>${esc(name)}</b><small>${kind}</small></span>${cur ? '<em>Открыто сейчас</em>' : ''}</button>`;
-  const kindTxt = id => { const [a, b] = KINDS[spKindOf(id)]; return `${a} · ${b}`; };
+  const card = (attr, name, color, icon, sub, cur) => `<button class="sp-pick-card" ${attr} style="--c:${color}"><span class="side-sp-ico">${icon}</span>
+    <span><b>${esc(name)}</b><small>${sub}</small></span>${cur ? '<em>Открыто сейчас</em>' : ''}</button>`;
+  const wsIco = w => w.kind === 'smm' ? VIDEO_ICO : spIco('briefcase');
+  const wsColor = w => w.kind === 'smm' ? '#E1306C' : w.id === WS0 ? spColor('') : hashColor(w.id);
+  const sub = w => { const n = spacesOf(w.id).length; return `${KINDS[w.kind]?.[0] || 'Агентство'} · ${n} ${plural(n, 'пространство', 'пространства', 'пространств')}`; };
   el.innerHTML = `<div class="sp-pick-in"><h1 id="spPickT">Где работаем?</h1>
-    <p>Выберите пространство: у каждого свои ${W('проекты', 'видео')}, команда и шаблоны. Сменить можно в любой момент — кружками внизу панели слева.</p>
+    <p>Выберите раздел. Внутри раздела — свои пространства (кружки в панели слева), у каждого свои проекты, команда и шаблоны.</p>
     <div class="sp-pick-list">
-      ${card('data-pick=""', mainName(), spColor(''), spIcon(''), kindTxt(''), !SPACE && !ORG)}
-      ${spaces.list.map(x => card(`data-pick="${x.id}"`, x.name, spColor(x.id), spIcon(x.id), kindTxt(x.id), x.id === SPACE && !ORG)).join('')}
-      ${spaces.orgs.map(o => card(`data-pickorg="${o.id}"`, `Проекты: ${o.name}`, spColorsCache()['o:' + o.id] || hashColor(o.id), 'users', 'Команда, где вы руководитель', ORG === o.id)).join('')}
+      ${wsList().map(w => card(`data-pickws="${w.id}"`, w.name, wsColor(w), wsIco(w), sub(w), curWs() === w.id)).join('')}
+      ${spaces.orgs.map(o => card(`data-pickorg="${o.id}"`, `Проекты: ${o.name}`, spColorsCache()['o:' + o.id] || hashColor(o.id), spIco('users'), 'Команда, где вы руководитель', ORG === o.id)).join('')}
     </div>
-    <button class="ghost" data-picknew>+ Новое пространство: агентство, SMM или другая команда</button></div>`;
+    ${ui.wsNew ? `<form class="ws-new" id="wsNew"><input id="wsNewName" placeholder="Название раздела, например «SMM»" maxlength="60" aria-label="Название раздела">
+      <div class="sp-kind" role="radiogroup" aria-label="Тип раздела">${Object.entries(KINDS).map(([k, [a, b]]) => `<label><input type="radio" name="wsKind" value="${k}"${k === (ui.wsNewKind || 'agency') ? ' checked' : ''}> ${a}: ${b}</label>`).join('')}</div>
+      <div class="ws-new-act"><button type="button" class="ghost" data-wsnewcancel>Отмена</button><button class="primary">Создать раздел</button></div></form>`
+      : `<button class="ghost" data-picknew>+ Новый раздел: агентство, SMM или другой бизнес</button>`}</div>`;
+  if (ui.wsNew) setTimeout(() => $('#wsNewName')?.focus(), 0);
 }
 document.addEventListener('click', e => {
   const el = $('#spPick'); if (!el || !el.contains(e.target)) return;
-  const a = e.target.closest('[data-pick]'), o = e.target.closest('[data-pickorg]');
-  if (a){ const id = a.dataset.pick; markPicked();
-    if (id === SPACE && !ORG){ el.remove(); return; }
-    if (ORG){ try { localStorage.removeItem(ORG_KEY); localStorage.setItem(ORG_OWN_KEY, '1'); } catch(x) {} }
-    switchSpace(id); return; }
+  const a = e.target.closest('[data-pickws]'), o = e.target.closest('[data-pickorg]');
+  if (a){ openWs(a.dataset.pickws); return; }
   if (o){ markPicked(); if (ORG === o.dataset.pickorg){ el.remove(); return; } switchOrg(o.dataset.pickorg); return; }
-  if (e.target.closest('[data-picknew]')){ markPicked(); el.remove(); ui.view = 'templates'; ui.setTab = 'spaces'; render(); setTimeout(() => $('#spNewName')?.focus(), 50); }
+  if (e.target.closest('[data-picknew]')){ ui.wsNew = true; paintPick(); return; }
+  if (e.target.closest('[data-wsnewcancel]')){ ui.wsNew = false; paintPick(); }
 });
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'wsNew') return; e.preventDefault();
+  const name = $('#wsNewName').value.trim(); if (!name){ toast('Назовите раздел'); return; }
+  const kind = document.querySelector('[name="wsKind"]:checked')?.value === 'smm' ? 'smm' : 'agency';
+  ui.wsNew = false; createWs(name, kind);
+});
+// показать «Где работаем?» снова (из панели)
+function openPick(){ $('#spPick')?.remove(); try { sessionStorage.removeItem(PICK_KEY); } catch(e) {}
+  document.body.insertAdjacentHTML('beforeend', '<div class="sp-pick" id="spPick" role="dialog" aria-modal="true" aria-labelledby="spPickT"></div>'); paintPick(); }
 // тип открытого пространства: Агентство ↔ SMM (данные не меняются, только вид; для SMM добавляется шаблон «SMM: видео»)
 document.addEventListener('change', e => {
   if (!e.target.matches?.('[data-spkind]')) return;
@@ -4779,9 +4820,11 @@ function renderSpaces(){
     ${spaces.orgs.length ? `<h3 class="sh-h">Проекты руководителей</h3><p class="hint">Команды, где вы руководитель: открываются их проекты, шаблоны и команда.</p>
       <ol class="sp-list">${spaces.orgs.map(o => `<li class="sp-row${ORG === o.id ? ' cur' : ''}"><b>${esc(o.name)}</b>${ORG === o.id ? '<span class="pill s-green"><i class="sw green"></i>Открыто</span>' : `<button class="ghost" data-orgopen="${o.id}">Открыть</button>`}<span></span></li>`).join('')}</ol>
       <h3 class="sh-h">Мои пространства</h3>` : ''}
-    <ol class="sp-list">${row('', mainName(), !SPACE && !ORG)}${spaces.list.map(x => row(x.id, x.name, x.id === SPACE, `<button type="button" class="tx" data-spdel="${x.id}" aria-label="Удалить пространство ${esc(x.name)}" title="Удалить пространство">×</button>`)).join('')}</ol>
+    ${online && !ORG ? `<div class="ws-row"><label>Раздел <input data-wsname="${curWs()}" value="${esc(wsById(curWs()).name)}" maxlength="60" aria-label="Название раздела"></label>
+      <span class="sp-kbadge">${KINDS[wsById(curWs()).kind]?.[0] || 'Агентство'}</span><button type="button" class="ghost" data-sidews>Другие разделы</button></div>` : ''}
+    <ol class="sp-list">${spacesOf(curWs() || WS0).map(x => x.id ? row(x.id, x.name, x.id === SPACE && !ORG, `<button type="button" class="tx" data-spdel="${x.id}" aria-label="Удалить пространство ${esc(x.name)}" title="Удалить пространство">×</button>`) : row('', mainName(), !SPACE && !ORG)).join('')}</ol>
     ${online ? `<form class="sp-new" id="spNew"><input id="spNewName" placeholder="Название нового пространства" maxlength="60" aria-label="Название нового пространства">
-      <div class="sp-kind" role="radiogroup" aria-label="Тип пространства">${Object.entries(KINDS).map(([k, [a, b]], i) => `<label><input type="radio" name="spKind" value="${k}"${i ? '' : ' checked'}> ${a}: ${b}</label>`).join('')}</div>
+      <div class="sp-kind" role="radiogroup" aria-label="Тип пространства">${Object.entries(KINDS).map(([k, [a, b]]) => `<label><input type="radio" name="spKind" value="${k}"${k === (wsById(curWs()).kind || 'agency') ? ' checked' : ''}> ${a}: ${b}</label>`).join('')}</div>
       <label class="check"><input type="checkbox" id="spCopy" checked> Взять из текущего пространства шаблоны, категории и команду</label>
       <button class="primary">Создать и открыть</button></form>` : ''}
   </div>`;
@@ -4790,22 +4833,50 @@ document.addEventListener('submit', async e => {
   if (e.target.id !== 'spNew') return; e.preventDefault();
   const name = $('#spNewName').value.trim(); if (!name){ toast('Назовите пространство'); return; }
   if (!cloud.store || !cloud.uid){ toast('Пространства работают, когда вы вошли в аккаунт'); return; }
+  const kind = document.querySelector('[name="spKind"]:checked')?.value === 'smm' ? 'smm' : 'agency';
+  const id = await createSpace({ name, kind, ws:curWs() || WS0, copy:$('#spCopy').checked });
+  if (!id) return;
+  toast(`Пространство «${name}» создано, открываю`); markPicked(); switchSpace(id);
+});
+// новое пространство в разделе ws: пустое (или с шаблонами, категориями и командой текущего), тип agency | smm
+async function createSpace({ name, kind, ws, copy }){
   const id = 's' + uid().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12);
   const fresh = emptySpace();
-  if ($('#spCopy').checked){ Object.assign(fresh, clone({ templates:db.templates, categories:db.categories || [], cardTpls:db.cardTpls || {}, prefs:db.prefs || {} }));
+  if (copy){ Object.assign(fresh, clone({ templates:db.templates, categories:db.categories || [], cardTpls:db.cardTpls || {}, prefs:db.prefs || {} }));
     fresh.users = clone(db.users.map(u => { const { invite, ...rest } = u; return rest; })); }
   else { const me = userById(ME); if (me) fresh.users = [clone(me)]; }
-  const kind = document.querySelector('[name="spKind"]:checked')?.value === 'smm' ? 'smm' : 'agency';
   fresh.prefs = { ...(fresh.prefs || {}), kind }; if (kind === 'smm') ensureSmmTemplate(fresh);
+  if (copy && kind !== 'smm') delete fresh.prefs.smmPlans;
   fresh.savedAt = Date.now();
   try {
     const used = new Set([spColor(''), ...spaces.list.map(x => spColor(x.id))]); const color = SP_COLORS.find(c => !used.has(c)) || hashColor(id);
     const usedI = new Set([spIcon(''), ...spaces.list.map(x => spIcon(x.id))]); const icon = SP_ICON_KEYS.find(k => !usedI.has(k)) || hashIcon(id);
-    await cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).set({ name, at:new Date().toISOString(), color, icon, kind });
+    await cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).set({ name, at:new Date().toISOString(), color, icon, kind, ws:ws || WS0 });
     localStorage.setItem(`agency-pipeline-demo-v2-${id}`, JSON.stringify(fresh));
-  } catch(err) { toast('Не удалось создать пространство. Проверьте связь и попробуйте ещё раз.'); return; }
-  toast(`Пространство «${name}» создано, открываю`); markPicked(); switchSpace(id);
-});
+    try { localStorage.setItem(WS_LAST(ws || WS0), id); } catch(x) {}
+    return id;
+  } catch(err) { toast('Не удалось создать пространство. Проверьте связь и попробуйте ещё раз.'); return null; }
+}
+// новый раздел: документ раздела + его первое пространство «Основное»
+async function createWs(name, kind){
+  if (!cloud.store || !cloud.uid){ toast('Разделы работают, когда вы вошли в аккаунт'); return; }
+  const w = 'w' + uid().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12);
+  try { await cloud.store.doc(`data/users/${cloud.uid}/spaces/ws/${w}`).set({ name, kind, at:new Date().toISOString() }); }
+  catch(err) { toast('Не удалось создать раздел. Проверьте связь и попробуйте ещё раз.'); return; }
+  const id = await createSpace({ name:kind === 'smm' ? 'Видео' : 'Основное', kind, ws:w, copy:false });
+  if (!id) return;
+  toast(`Раздел «${name}» создан, открываю`); markPicked(); switchSpace(id);
+}
+// открыть раздел: последнее открытое в нём пространство, иначе первое
+function openWs(w){
+  const list = spacesOf(w); let last = null; try { last = localStorage.getItem(WS_LAST(w)); } catch(e) {}
+  const target = list.find(x => x.id === last) || list[0];
+  markPicked();
+  if (!target){ const ws = wsById(w); createSpace({ name:'Основное', kind:ws.kind, ws:w, copy:false }).then(id => id && switchSpace(id)); return; }
+  if (target.id === SPACE && !ORG){ $('#spPick')?.remove(); return; }
+  if (ORG){ try { localStorage.removeItem(ORG_KEY); localStorage.setItem(ORG_OWN_KEY, '1'); } catch(x) {} }
+  switchSpace(target.id);
+}
 document.addEventListener('click', e => {
   const og = e.target.closest?.('[data-orgopen]'); if (og){ switchOrg(og.dataset.orgopen); return; }
   const o = e.target.closest?.('[data-spopen]'); if (o){ if (ORG){ try { localStorage.removeItem(ORG_KEY); localStorage.setItem(ORG_OWN_KEY, '1'); } catch(x) {} } switchSpace(o.dataset.spopen); return; }
@@ -4832,6 +4903,12 @@ document.addEventListener('change', e => {
   cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).update({ name:v }).then(() => { sp.name = v; paintSpace(); toast('Название сохранено'); }, () => toast('Не удалось переименовать'));
 });
 document.addEventListener('click', e => { if (e.target.closest?.('#spaceName')){ openSide(); } });
+document.addEventListener('change', e => {
+  const w = e.target.dataset?.wsname; if (!w || !cloud.store || !cloud.uid) return; const v = e.target.value.trim(); const ws = wsById(w);
+  if (!v){ e.target.value = ws.name; return; }
+  cloud.store.doc(`data/users/${cloud.uid}/spaces/ws/${w}`).set({ name:v, kind:ws.kind, at:ws.at || new Date().toISOString() })
+    .then(() => toast('Название раздела сохранено'), () => toast('Не удалось переименовать раздел'));
+});
 // иконка пространства
 document.addEventListener('click', e => {
   const b = e.target.closest?.('[data-spicon]'); if (!b || !cloud.store || !cloud.uid) return;
@@ -8211,12 +8288,11 @@ function renderMobileNav(){
   const f = $('#fToggle'); if (f){ const k = ui.pms.length + ui.clients.length; f.classList.toggle('on', !!k); const nb = f.querySelector('.f-n'); if (nb) nb.textContent = k || ''; }
 }
 function openMore(){
-  const all = GUEST ? [] : [{ id:'', name:mainName(), color:spColor(''), icon:spIcon(''), cur:!SPACE && !ORG },
-    ...spaces.list.map(x => ({ id:x.id, name:x.name, color:spColor(x.id), icon:spIcon(x.id), cur:x.id === SPACE })),
-    ...spaces.orgs.map(o => ({ id:'o:' + o.id, name:`Проекты: ${o.name}`, color:spColorsCache()['o:' + o.id] || hashColor(o.id), icon:'users', cur:ORG === o.id }))];
+  const all = GUEST ? [] : sideSpaces();
   layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal more-sheet" role="dialog" aria-modal="true" aria-label="Меню">
     ${sideFoot()}
     <div class="mlist">${moreViews().map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')}</div>
+    ${GUEST ? '' : `<button class="side-ws" data-sidews>Раздел: ${ORG ? 'команда руководителя' : esc(wsById(curWs()).name)}<span aria-hidden="true">⇅</span></button>`}
     ${all.length > 1 || (cloud.store && cloud.uid) ? `<div class="m-spaces"><div class="side-spl"><span>Пространства</span><button class="link" data-sidespset>Настроить</button></div>
       <div class="m-splist">${all.map(x => `<button class="m-sp${x.cur ? ' cur' : ''}" data-sidesp="${x.id}" style="--c:${x.color}" aria-pressed="${x.cur}"><span class="side-sp-ico">${spIco(x.icon)}</span><span>${esc(x.name)}</span></button>`).join('')}</div></div>` : ''}
   </div>`;

@@ -95,18 +95,39 @@ function openApp(backend, userId, keepStorage, session) {
   w.eval('db.onboarded = true; save();'); await wait(2500);   // анкета пройдена
   o.w.close();
 
-  // 7) экран выбора пространства после входа, когда пространств больше одного
-  be.put(`data/users/${A}/spaces/list/sabcde1`, { name: 'Другая команда', at: '2026-11-01', kind: 'agency' });
-  const o2 = openApp(be, A, { 'kz-pick-seen': '1', 'agency-mode': 'owner' }); await wait(4500);
-  const D2 = o2.w.document;
-  const pick = D2.getElementById('spPick');
-  assert.ok(pick && /Где работаем/.test(pick.textContent) && /Другая команда/.test(pick.textContent) && /SMM/.test(pick.textContent)); ok('после входа — «Где работаем?» со всеми пространствами и их типом');
-  let reloaded = 0; o2.w.kzReloadHook = () => { reloaded++; };
-  pick.querySelector('[data-pick="sabcde1"]').click(); await wait(400);
-  assert.ok(reloaded === 1 && o2.w.localStorage.getItem('kz-space') === 'sabcde1' && o2.w.sessionStorage.getItem('kz-picked') === '1'); ok('выбор открывает пространство и больше не спрашивает в этой вкладке');
+  // 7) «Где работаем?» — разделы: «Агентство» (основной) и «SMM» со своим пространством
+  be.put(`data/users/${A}/spaces/ws/wsmm1`, { name: 'SMM', kind: 'smm', at: '2026-11-01' });
+  be.put(`data/users/${A}/spaces/list/sabcde1`, { name: 'Клиника', at: '2026-11-01', kind: 'smm', ws: 'wsmm1' });
+  be.put(`data/users/${A}/spaces/list/sabcde2`, { name: 'Разработка', at: '2026-11-02', kind: 'agency' });
+  const o2 = openApp(be, A, { 'agency-mode': 'owner' }); await wait(4500);
+  const w2 = o2.w, D2 = w2.document, $2 = s => D2.querySelector(s);
+  const pick = $2('#spPick');
+  assert.ok(pick && /Где работаем/.test(pick.textContent)); ok('после входа — «Где работаем?»');
+  const cards = [...pick.querySelectorAll('[data-pickws]')].map(b => b.textContent.replace(/\s+/g, ' '));
+  assert.equal(cards.length, 2); assert.ok(/Агентство · 2 пространства/.test(cards[0]) && /SMM · 1 пространство/.test(cards[1])); ok('на экране разделы, а не пространства: «Агентство» (2) и «SMM» (1)');
+  pick.querySelector('[data-pickws="w0"]').click(); await wait(100);
+  assert.ok(!$2('#spPick')); ok('выбор текущего раздела просто закрывает экран');
+  $2('#sideBtn').click(); await wait(80);
+  const dots = [...D2.querySelectorAll('.side-dots [data-sidesp]')].map(b => b.dataset.sidesp);
+  assert.deepEqual(dots, ['', 'sabcde2']); assert.ok(/Агентство/.test($2('.side-ws').textContent)); ok('в панели — только пространства раздела «Агентство», сверху название раздела');
+  let reloaded = 0; w2.kzReloadHook = () => { reloaded++; };
+  $2('.side-ws').click(); await wait(100);
+  assert.ok($2('#spPick')); ok('название раздела в панели снова открывает «Где работаем?»');
+  $2('#spPick [data-pickws="wsmm1"]').click(); await wait(400);
+  assert.ok(reloaded === 1 && w2.localStorage.getItem('kz-space') === 'sabcde1'); ok('раздел SMM открывает своё пространство «Клиника»');
+  // новый раздел прямо с экрана выбора
+  w2.eval('openPick()'); await wait(50);
+  $2('[data-picknew]').click(); await wait(50);
+  $2('#wsNewName').value = 'Другой бизнес'; $2('[name="wsKind"][value="agency"]').checked = true;
+  $2('#wsNew').dispatchEvent(new w2.Event('submit', { bubbles: true, cancelable: true })); await wait(600);
+  const wsKeys = [...be.rows.keys()].filter(k => k.startsWith(`data/users/${A}/spaces/ws/`));
+  const newWs = wsKeys.find(k => be.rows.get(k).data.name === 'Другой бизнес');
+  assert.ok(newWs); const wid = newWs.split('/').pop();
+  const first = [...be.rows.values()].find(r => r.path.startsWith(`data/users/${A}/spaces/list/`) && r.data.ws === wid);
+  assert.ok(first && reloaded === 2 && w2.localStorage.getItem('kz-space') === first.path.split('/').pop()); ok('«+ Новый раздел» создаёт раздел и его первое пространство и открывает его');
   const errs = [...o.errors, ...o2.errors].filter(e => !/Not implemented/.test(e));
   assert.deepEqual(errs, []); ok('ошибок на странице нет');
-  o2.w.close();
+  w2.close();
   console.log(`\nИтого: ${n} проверок прошло`);
   process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });
