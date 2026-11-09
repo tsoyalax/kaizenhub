@@ -439,7 +439,7 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .space-name{margin-left:10px;border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:2px 10px;font:inherit;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .space-name:hover{color:var(--ink);border-color:var(--line-strong)}
 .sp-list{list-style:none;margin:12px 0;padding:0;display:grid;gap:4px}
-.sp-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto 28px;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line)}
+.sp-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto auto;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line)}
 .sp-row b{padding:0 8px}
 .sp-name{display:flex;align-items:center;gap:4px;min-width:0}.sp-name input{flex:1}
 .sp-dot{width:26px;height:26px;border-radius:8px;flex:none;margin-left:2px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
@@ -451,7 +451,7 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .sp-colors{display:flex;gap:4px;flex-wrap:wrap}
 .sp-c{width:18px;height:18px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
 .sp-c.on{border-color:var(--ink)}
-@media (max-width:640px){.sp-row{grid-template-columns:1fr auto 28px}.sp-colors{grid-column:1/-1;order:3}}
+@media (max-width:640px){.sp-row{grid-template-columns:1fr auto auto auto}.sp-colors{grid-column:1/-1;order:3}}
 .sp-row:hover .tx{opacity:1}
 .sp-row input{height:34px;border:1px solid transparent;border-radius:8px;background:transparent;padding:0 8px;font-weight:600;font-size:14.5px;min-width:0}
 .sp-row input:hover{border-color:var(--line)}.sp-row input:focus{border-color:var(--line-strong);outline:0;background:var(--surface)}
@@ -685,6 +685,96 @@ body.side-pinned .side-btn{color:var(--ink)}
 .pava.xs{width:22px;height:22px;font-size:9.5px;border-radius:7px;margin-right:8px}
 .pava.sm{width:34px;height:34px;font-size:12.5px;border-radius:10px}
 .pava.lg{display:inline-grid;width:64px;height:64px;font-size:22px;border-radius:18px}
+.pava.vid svg{width:56%;height:56%}
+/* SMM: план / факт за месяц */
+.smm-pf{margin:0 0 16px;padding:16px 18px;border-radius:16px;background:var(--fbg,var(--surface));border:1px solid var(--fbd,var(--line))}
+.smm-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.smm-hd h2{margin:0;font-size:16px}
+.smm-hd .smm-m{display:inline-flex;align-items:center;gap:4px}
+.smm-hd .smm-m b{min-width:120px;text-align:center;text-transform:capitalize}
+.smm-hd label{margin-left:auto;display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.smm-hd input{width:72px}
+.smm-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.smm-kpi div{padding:10px 12px;border-radius:12px;background:var(--bg)}
+.smm-kpi b{display:block;font-size:22px;line-height:1.2}
+.smm-kpi small{color:var(--muted);font-size:12px}
+.smm-bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-bottom:12px}
+.smm-bar i{display:block;height:100%;background:var(--g,#22c55e);border-radius:99px}
+.smm-wk{width:100%;border-collapse:collapse;font-size:13px}
+.smm-wk th,.smm-wk td{padding:6px 8px;text-align:left;border-top:1px solid var(--line)}
+.smm-wk th{font-weight:600;color:var(--muted)}
+.smm-wk tr.now td{font-weight:600}
+@media (max-width:640px){.smm-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}.smm-hd label{margin-left:0}}
+/* выбор пространства после входа */
+.sp-pick{position:fixed;inset:0;z-index:60;background:var(--bg);overflow:auto;display:grid;place-items:center;padding:24px 16px}
+.sp-pick-in{width:min(560px,100%)}
+.sp-pick h1{font-size:24px;margin:0 0 6px}
+.sp-pick p{color:var(--muted);margin:0 0 18px}
+.sp-pick-list{display:grid;gap:10px;margin-bottom:16px}
+.sp-pick-card{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.sp-pick-card:hover{border-color:var(--c)}
+.sp-pick-card .side-sp-ico{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--c);color:#fff;flex:none}
+.sp-pick-card .side-sp-ico svg{width:20px;height:20px}
+.sp-pick-card b{display:block;font-size:15px}
+.sp-pick-card small{color:var(--muted)}
+.sp-pick-card em{margin-left:auto;font-style:normal;font-size:12px;color:var(--muted)}
+.ptags{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:6px;vertical-align:middle}
+.ptag{display:inline-flex;align-items:center;font-size:11px;line-height:1;font-weight:600;padding:3px 7px;border-radius:99px;color:hsl(var(--th) 60% 32%);background:hsl(var(--th) 80% 92%);white-space:nowrap}
+:root[data-theme="dark"] .ptag{color:hsl(var(--th) 80% 78%);background:hsl(var(--th) 40% 22%)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ptag{color:hsl(var(--th) 80% 78%);background:hsl(var(--th) 40% 22%)}}
+.tg-pick{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tg-pick button.ptag{border:1px solid transparent;cursor:pointer;font-size:12.5px;padding:6px 10px;opacity:.55}
+.tg-pick button.ptag[aria-pressed="true"]{opacity:1;border-color:currentColor}
+.tg-pick input{width:150px;padding:6px 10px;font-size:13px}
+.smm-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.smm-tags span{font-size:13px}
+.side-ws{position:relative;display:flex;align-items:center;gap:4px;width:100%;margin:0 0 6px}
+.side-ws .am-car{margin-left:6px;font-size:11px}
+.area-menu{position:absolute;z-index:30;top:100%;left:0;right:0;margin-top:4px;padding:6px;border-radius:12px;border:1px solid var(--line);background:var(--surface);box-shadow:0 12px 32px rgba(0,0,0,.35);display:grid;gap:2px;max-height:60vh;overflow:auto}
+.area-menu .am-i:hover{background:var(--line)}
+.side-ws .area-menu .am-i{display:grid;gap:2px;padding:8px 10px;text-align:left;text-transform:none;letter-spacing:0;font-size:13.5px;color:var(--ink);border-radius:8px}
+.area-menu .am-i small{color:var(--muted);font-weight:400;font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.area-menu .am-i.cur{background:var(--line)}
+.side-ws .area-menu .am-new{color:var(--muted)}
+.side-ws button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:600;cursor:pointer;border-radius:8px}
+.side-ws .side-ws-n{flex:1;min-width:0;padding:6px 8px;text-align:left;text-transform:uppercase;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.side-ws button:hover{background:var(--line);color:var(--ink)}
+.ws-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.ws-row label{display:inline-flex;align-items:center;gap:8px;font-weight:600}
+.ws-new{display:grid;gap:10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--surface)}
+.ws-new-act{display:flex;justify-content:flex-end;gap:8px}
+.smm-edit{margin-left:auto;display:inline-flex;align-items:center;gap:6px}
+.smm-edit svg{width:15px;height:15px}
+.smm-ed{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin:0 0 12px;padding:12px;border-radius:12px;background:var(--bg)}
+.smm-ed label{display:grid;gap:4px;font-size:12.5px;color:var(--muted)}
+.smm-ed input[type=number]{width:90px}
+.smm-ed .hint{flex-basis:100%}
+.smm-ed-act{display:flex;gap:8px;margin-left:auto}
+.side-wsl{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.ws-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer}
+.ws-chip svg{width:14px;height:14px}
+.ws-chip.cur{background:var(--brand,#3b82f6);border-color:transparent;color:#fff}
+.ws-chip.add{padding:5px 9px;color:var(--muted)}
+.sp-kbadge{display:inline-flex;align-items:center;gap:5px;height:28px;font-size:12.5px;font-weight:600;padding:0 10px;border-radius:99px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.sp-kbadge svg,.kind-seg svg{width:14px;height:14px}
+/* переключатель-чипы: тип пространства и выбор при создании */
+.sp-del{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--r,#ef4444);font:inherit;font-size:13px;cursor:pointer}
+.sp-del svg{width:15px;height:15px}
+.sp-del:hover{background:color-mix(in srgb,var(--r,#ef4444) 12%,transparent);border-color:color-mix(in srgb,var(--r,#ef4444) 40%,transparent)}
+@media (max-width:640px){.sp-del span{display:none}}
+.kind-seg{display:inline-flex;gap:2px;padding:3px;border-radius:11px;background:var(--surface-2)}
+.kind-seg button{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border:0;border-radius:8px;background:none;font:inherit;font-size:13px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.kind-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.sp-kind{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:11px;background:var(--surface-2);justify-self:start;margin:0}
+.sp-kind label{position:relative;display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:8px;font-size:13px;color:var(--muted);cursor:pointer}
+.sp-kind input{position:absolute;opacity:0;pointer-events:none}
+.sp-kind label:has(input:checked){background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.sp-kind label:has(input:focus-visible){outline:2px solid var(--brand);outline-offset:1px}
+/* поля ввода в новых блоках — как в остальном приложении */
+.ws-row input,.ws-new input:not([type=radio]),.smm-ed input,.tg-pick input{height:34px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);padding:0 10px;font:inherit;font-size:13.5px;min-width:0}
+.ws-row input:focus,.ws-new input:focus,.smm-ed input:focus,.tg-pick input:focus{border-color:var(--line-strong);outline:0}
+.ws-row input{width:260px;font-weight:600}
+.ws-new input:not([type=radio]){height:38px;font-size:14.5px}
 .cx-name{gap:12px}
 .mc-r1 .pava{margin-right:2px}
 .pm-cn,.pf-name{display:flex;align-items:center;min-width:0}
@@ -1988,7 +2078,137 @@ const pInitials = n => { const w = String(n || '?').replace(/[«»"'()]/g, ' ').
 const pHue = p => [...String(p?.id || p?.name || '')].reduce((a, c) => (a * 33 + c.charCodeAt(0)) >>> 0, 11) % 360;
 const projAva = (p, size = 'sm') => p?.image
   ? `<span class="pava ${size}"><img src="${esc(p.image)}" alt="" loading="lazy"></span>`
+  : isSMM() ? `<span class="pava ${size} none vid" style="--h:${pHue(p)}" aria-hidden="true">${VIDEO_ICO}</span>`
   : `<span class="pava ${size} none" style="--h:${pHue(p)}" aria-hidden="true">${esc(pInitials(p?.name))}</span>`;
+// ---------- Тип пространства: «Агентство» (проекты) или «SMM» (видео) ----------
+// Тип хранится в настройках пространства (db.prefs.kind = 'smm'); интерфейс тот же, но вместо проектов — видео,
+// группировка по неделям месяца и блок «План / Факт» (сколько снято и опубликовано за месяц против плана).
+const VIDEO_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3"/></svg>';
+const KINDS = { agency:['Агентство', 'проекты'], smm:['SMM', 'видео'] };
+const isSMM = () => (typeof db !== 'undefined' && db?.prefs?.kind === 'smm');
+const W = (agency, smm) => isSMM() ? smm : agency;           // подпись: «проект» в агентстве, «видео» в SMM
+const SMM_TPL_ID = 'tsmm';
+function smmTemplate(){
+  return { id:SMM_TPL_ID, name:'SMM: видео', stages:[['Идея и сценарий',2],['Съёмка',2],['Монтаж',2],['Согласование',1,1],['Опубликовано',1]]
+    .map(([n, d, a]) => ({ id:uid(), name:n, days:d, approval:!!a, subs:[] })) };
+}
+function ensureSmmTemplate(d){ d.templates = d.templates || []; if (!d.templates.some(t => t.id === SMM_TPL_ID || /smm/i.test(t.name))) d.templates.unshift(smmTemplate()); }
+// дата видео — день публикации (дедлайн), по ней видео попадает в «Неделю 1–4» месяца
+const RX_SHOT = /съ[её]мк|сня[тл]/i, RX_PUB = /опубликов|публикац|выложен|постинг/i;
+const vidDate = p => p.deadline || plannedEnd(p) || '';
+const weekNo = d => Math.min(4, Math.ceil(+d.slice(8, 10) / 7));
+const MON_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const MON_NOM = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const monthDays = ym => new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate();
+const weekRange = (ym, w) => { const m = MON_GEN[+ym.slice(5, 7) - 1]; const a = (w - 1) * 7 + 1, b = w === 4 ? monthDays(ym) : w * 7; return `${a}–${b} ${m}`; };
+// когда этап завершён (дата YYYY-MM-DD) — для «снято» и «опубликовано»
+function stageDoneAt(p, rx){
+  const s = p.stages.find(x => !isMaint(x) && rx.test(x.name));
+  if (s) return s.status === 'done' ? String(s.completed_at || s.due_date || '').slice(0, 10) : '';
+  if (rx !== RX_PUB) return '';
+  const last = p.stages.filter(x => !isMaint(x)).at(-1);      // нет этапа «Опубликовано» — считаем по последнему этапу
+  return last?.status === 'done' ? String(last.completed_at || last.due_date || '').slice(0, 10) : '';
+}
+// ---------- Циклы SMM: 4 недели от даты старта пачки видео ----------
+// У видео p.cycle — дата старта цикла (YYYY-MM-DD), p.week — неделя 1–4. Неделя 1 = дни 0–6 от старта, неделя 2 = 7–13 и т. д.
+// План цикла — db.prefs.smmCyclePlans[start] (по умолчанию — сколько видео в цикле), по неделям делится поровну: 45 → 12, 11, 11, 11.
+const CYCLE_WEEKS = 4;
+const cycleOf = p => p.cycle && /^\d{4}-\d{2}-\d{2}$/.test(p.cycle) ? p.cycle : '';
+const cycles = () => [...new Set(db.projects.filter(p => p.state !== 'archived' || cycleOf(p)).map(cycleOf).filter(Boolean))].sort();
+const cycleEnd = c => addDays(c, CYCLE_WEEKS * 7 - 1);
+const weekStart = (c, w) => addDays(c, (w - 1) * 7);
+const weekOfDate = (c, d) => Math.max(1, Math.min(CYCLE_WEEKS, Math.floor(diffDays(d, c) / 7) + 1));
+const cycleRange = c => `${fmt(c)} – ${fmt(cycleEnd(c))}`;
+const weekRangeC = (c, w) => `${fmt(weekStart(c, w))} – ${fmt(addDays(weekStart(c, w), 6))}`;
+// цикл, в который попадает дата (для одиночного видео), иначе ''
+const cycleFor = d => cycles().filter(c => d >= c && d <= cycleEnd(c)).at(-1) || '';
+const splitPlan = (n, k = CYCLE_WEEKS) => Array.from({ length:k }, (_, i) => Math.floor(n / k) + (i < n % k ? 1 : 0));
+function curCycle(){
+  const cs = cycles(); if (!cs.length) return '';
+  if (ui.smmCycle && cs.includes(ui.smmCycle)) return ui.smmCycle;
+  const t = today(); return cs.filter(c => c <= t && t <= cycleEnd(c)).at(-1) || cs.filter(c => c <= t).at(-1) || cs[0];
+}
+function smmStats(c){
+  const vids = db.projects.filter(p => cycleOf(p) === c && p.state !== 'archived');
+  const set = db.prefs?.smmCyclePlans?.[c];
+  const plan = set != null ? +set || 0 : vids.length;
+  const planW = splitPlan(plan);
+  const weeks = planW.map((n, i) => ({ w:i + 1, plan:n, videos:0, shot:0, pub:0 }));
+  let shot = 0, pub = 0;
+  vids.forEach(p => {
+    weeks[Math.min(CYCLE_WEEKS, Math.max(1, +p.week || weekOfDate(c, vidDate(p) || c))) - 1].videos++;
+    const sd = stageDoneAt(p, RX_SHOT); if (sd){ shot++; weeks[weekOfDate(c, sd) - 1].shot++; }
+    const pd = stageDoneAt(p, RX_PUB); if (pd){ pub++; weeks[weekOfDate(c, pd) - 1].pub++; }
+  });
+  return { plan, videos:vids.length, shot, pub, weeks, custom:set != null };
+}
+function smmPanelHtml(){
+  const c = curCycle();
+  if (!c) return `<section class="smm-pf" aria-label="План и факт"><div class="smm-hd"><h2>План / Факт</h2></div>
+    <p class="hint">Создайте пачку видео: «Новое видео» → «Количество видео», например 45. Они распределятся на 4 недели от даты старта, и здесь появится план и факт по неделям.</p></section>`;
+  const st = smmStats(c); const cs = cycles(); const i = cs.indexOf(c);
+  const pct = st.plan ? Math.min(100, Math.round(st.pub / st.plan * 100)) : 0;
+  const t = today(); const live = t >= c && t <= cycleEnd(c); const nowW = live ? weekOfDate(c, t) : 0;
+  // сколько должно быть опубликовано к концу текущей недели
+  const due = live ? st.weeks.slice(0, nowW).reduce((m, x) => m + x.plan, 0) : t > cycleEnd(c) ? st.plan : 0;
+  const paceTxt = !st.plan || (!live && t < c) ? '' : st.pub >= due ? 'идём по плану' : `отстаём на ${due - st.pub}`;
+  return `<section class="smm-pf" aria-label="План и факт за 4 недели">
+    <div class="smm-hd"><h2>План / Факт</h2>
+      <span class="smm-m"><button class="icon-btn" data-smmcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-smmcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>
+      ${ui.smmEdit === c ? '' : `<button class="ghost smm-edit" data-smmedit>${ICON_EDIT}Редактировать</button>`}</div>
+    ${ui.smmEdit === c ? `<form class="smm-ed" id="smmEd" data-cyc="${c}">
+      <label>Старт 4 недель <input type="date" id="smmStart" value="${c}" required></label>
+      <label>План на 4 недели, видео <input type="number" id="smmPlan" min="0" max="999" value="${st.plan}"></label>
+      <small class="hint">Новая дата старта сдвигает все видео цикла вместе с датами публикации; план делится по неделям поровну.</small>
+      <span class="smm-ed-act"><button type="button" class="ghost" data-smmeditcancel>Отмена</button><button class="primary">Сохранить</button></span></form>` : ''}
+    <div class="smm-kpi">
+      <div><b>${st.plan}</b><small>План</small></div>
+      <div><b>${st.shot}</b><small>Снято</small></div>
+      <div><b>${st.pub} <small>из ${st.plan}</small></b><small>Опубликовано${paceTxt ? ' · ' + paceTxt : ''}</small></div>
+      <div><b>${Math.max(0, st.plan - st.pub)}</b><small>Осталось опубликовать</small></div>
+    </div>
+    <div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>
+    <table class="smm-wk"><thead><tr><th>Неделя</th><th>План</th><th>Снято</th><th>Факт: опубликовано</th></tr></thead><tbody>
+      ${st.weeks.map(x => `<tr class="${x.w === nowW ? 'now' : ''}"><td>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></td><td>${x.plan}</td><td>${x.shot}</td><td>${x.pub} <small class="hint">из ${x.plan}</small></td></tr>`).join('')}
+    </tbody></table>
+    ${smmTagRows(c)}</section>`;
+}
+// по тегам (формат / KPI): сколько видео этого формата в цикле и сколько уже опубликовано
+function smmTagRows(c){
+  const rows = tagList().map(t => { const ps = db.projects.filter(p => cycleOf(p) === c && p.state !== 'archived' && (p.tags || []).includes(t.id));
+    const pub = ps.filter(p => stageDoneAt(p, RX_PUB)).length;
+    return ps.length ? `<span>${tagChip(t)} опубликовано <b>${pub}</b> из ${ps.length}</span>` : ''; }).join('');
+  return rows ? `<div class="smm-tags" aria-label="По тегам">${rows}</div>` : '';
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-smmcyc]'); if (!b) return;
+  const cs = cycles(); const i = cs.indexOf(curCycle()) + +b.dataset.smmcyc; if (cs[i]){ ui.smmCycle = cs[i]; render(); }
+});
+document.addEventListener('click', e => {
+  if (e.target.closest?.('[data-smmedit]')){ ui.smmEdit = curCycle(); render(); setTimeout(() => { const d = $('#smmStart'); d?.focus(); try { d?.showPicker?.(); } catch(x) {} }, 0); return; }
+  if (e.target.closest?.('[data-smmeditcancel]')){ ui.smmEdit = null; render(); }
+});
+// сдвиг цикла на новую дату старта: у видео цикла переезжают дата публикации и несданные этапы, номер недели сохраняется
+function moveCycle(c, to){
+  const delta = diffDays(to, c); if (!delta) return 0;
+  const vids = db.projects.filter(p => cycleOf(p) === c);
+  vids.forEach(p => {
+    p.cycle = to; if (p.deadline) p.deadline = addDays(p.deadline, delta);
+    if (!projStarted(p) && p.start_date) p.start_date = addDays(p.start_date, delta);
+    p.stages.forEach(s => { if (s.status !== 'done'){ if (s.planned_start) s.planned_start = addDays(s.planned_start, delta); if (s.due_date) s.due_date = addDays(s.due_date, delta); } });
+    addLog(p, `Старт цикла: ${fmt(c)} → ${fmt(to)}, публикация ${fmt(p.deadline)}`);
+  });
+  const plans = { ...(db.prefs?.smmCyclePlans || {}) }; if (c in plans){ plans[to] = plans[c]; delete plans[c]; }
+  db.prefs = { ...(db.prefs || {}), smmCyclePlans:plans };
+  return vids.length;
+}
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'smmEd') return; e.preventDefault();
+  let c = e.target.dataset.cyc; const to = $('#smmStart').value; const n = Math.max(0, Math.min(999, Math.round(+$('#smmPlan').value || 0)));
+  if (to && to !== c){ if (cycles().includes(to)){ toast('С этой даты уже начинается другой цикл'); return; } moveCycle(c, to); c = to; ui.smmCycle = to; }
+  db.prefs = db.prefs || {}; db.prefs.smmCyclePlans = { ...(db.prefs.smmCyclePlans || {}), [c]:n };
+  ui.smmEdit = null; commit(); toast(`4 недели: ${cycleRange(c)} · план ${n} — по неделям ${splitPlan(n).join(' / ')}`);
+});
 const plannedEnd = p => p.stages.reduce((m,s) => !isMaint(s) && s.due_date > m ? s.due_date : m, '');
 const isMaint = s => s?.system === 'maint';
 const FREQ = { weekly:['Раз в неделю', 7], biweekly:['Раз в 2 недели', 14], monthly:['Раз в месяц', 0] };
@@ -2249,6 +2469,27 @@ function createProject(data){
   addLog(p, `Проект создан по шаблону «${tplById(data.template_id).name}»`);
   db.projects.unshift(p); copyCards(p); commit(); return p;
 }
+// SMM: сразу много видео по одному шаблону — цикл из 4 недель от даты старта. Видео делятся по неделям поровну
+// (45 → 12, 11, 11, 11), публикации — внутри своей недели (в первой — не раньше, чем успевают пройти этапы).
+// Старт каждого видео — за длину цепочки до публикации (не раньше даты старта). Одна запись в облако.
+function createVideos({ name, client, template_id, start, count, pm_id, worker_id, priority, category_id, image, tags }){
+  const tpl = tplById(template_id); const span = tpl.stages.reduce((m, s) => m + stageDaysFor(s), 0);
+  const c = start; const per = splitPlan(count); const made = []; let i = 0;
+  per.forEach((nw, wi) => {
+    const lo = wi === 0 ? Math.min(6, tpl.stages.length) : 0;
+    for (let j = 0; j < nw; j++, i++){
+      const pub = addDays(weekStart(c, wi + 1), lo + (nw > 1 ? Math.round(j * (6 - lo) / (nw - 1)) : 6 - lo));
+      const st = [start, addDays(pub, -span)].reduce((m, d) => d > m ? d : m);
+      const p = makeProject({ name:`${name} ${i + 1}`, client, template_id, start_date:st, pm_id, worker_id, priority });
+      p.deadline = pub; p.cycle = c; p.week = wi + 1;
+      if (category_id) p.category_id = category_id; if (image) p.image = image; if (tags?.length) p.tags = [...tags];
+      addLog(p, `Видео создано по шаблону «${tpl.name}» (пачка из ${count}, неделя ${wi + 1})`);
+      made.push(p);
+    }
+  });
+  made.forEach(p => { if (plannedEnd(p) > p.deadline) fitToDeadline(p, true); });   // цепочка не длиннее, чем до публикации
+  db.projects.unshift(...made); made.forEach(copyCards); commit(); return made;
+}
 // PATCH /api/stages/:id { due_date }
 function setDue(p, s, value){
   if (!value || value === s.due_date) return;
@@ -2386,21 +2627,22 @@ function setStart(p, value){
   toast(`Старт перенесён на ${fmt(value)}, финиш ${fmt(plannedEnd(p))}`);
 }
 // Уместить план в финальный дедлайн: оставшиеся этапы сжимаются пропорционально (минимум 1 день на этап)
-function fitToDeadline(p){
+function fitToDeadline(p, quiet){
+  const say = quiet ? () => {} : toast;
   if (!p.deadline) return;
   const left = p.stages.filter(s => s.status !== 'done').sort((a, b) => a.position - b.position);
   if (!left.length) return;
   const anchor = left[0].status === 'not_started' ? [left[0].planned_start, today()].reduce((m, d) => d > m ? d : m) : left[0].planned_start;
   const avail = diffDays(p.deadline, anchor), durs = left.map(stageDur), total = durs.reduce((a, b) => a + b, 0);
-  if (avail < left.length){ toast(`До дедлайна ${days(Math.max(0, avail))}, а этапов ${left.length}: даже по дню на этап не уложиться. Перенесите дедлайн.`); return; }
-  if (avail >= total){ toast('План уже укладывается в дедлайн'); return; }
+  if (avail < left.length){ say(`До дедлайна ${days(Math.max(0, avail))}, а этапов ${left.length}: даже по дню на этап не уложиться. Перенесите дедлайн.`); return; }
+  if (avail >= total){ say('План уже укладывается в дедлайн'); return; }
   const next = durs.map(d => Math.max(1, Math.floor(d * avail / total)));
   for (let i = next.length - 1, extra = avail - next.reduce((a, b) => a + b, 0); extra > 0; i = (i - 1 + next.length) % next.length){ next[i]++; extra--; }
   for (let i = next.length - 1, over = next.reduce((a, b) => a + b, 0) - avail; over > 0; i = (i - 1 + next.length) % next.length){ if (next[i] > 1){ next[i]--; over--; } }
   let cur = anchor;
   left.forEach((s, i) => { if (s.status === 'not_started') s.planned_start = cur; s.due_date = addDays(s.status === 'not_started' ? cur : s.planned_start, next[i]); s.days = next[i]; cur = s.due_date; });
-  addLog(p, `План уложен в дедлайн ${fmt(p.deadline)}`); commit();
-  toast(`Этапы сжаты: финиш ${fmt(plannedEnd(p))}`);
+  addLog(p, `План уложен в дедлайн ${fmt(p.deadline)}`); if (quiet) return;
+  commit(); say(`Этапы сжаты: финиш ${fmt(plannedEnd(p))}`);
 }
 // PATCH /api/stages/:id { name }
 function renameStage(p, s, name){
@@ -2671,6 +2913,7 @@ function baseOk(p){
   if (p.state === 'archived') return false;
   if (ui.pms.length && !ui.pms.includes(p.pm_id)) return false;
   if (ui.clients.length && !ui.clients.includes(p.client)) return false;
+  if (ui.tagF?.length && !(p.tags || []).some(t => ui.tagF.includes(t))) return false;
   if (ui.q){
     const q = ui.q.toLowerCase();
     const hay = [p.name, p.client, nameOf(p.pm_id), p.worker_id ? nameOf(p.worker_id) : '', ...p.stages.map(s => s.assignee_id ? nameOf(s.assignee_id) : '')].join(' ').toLowerCase();
@@ -2693,7 +2936,7 @@ const SORTS = {
   name:     (a,b) => a.name.localeCompare(b.name, 'ru')
 };
 const visible = () => db.projects.filter(p => baseOk(p) && riskOk(p)).sort(SORTS[ui.sort]);
-const anyFilter = () => ui.q || ui.pms.length || ui.clients.length || ui.risk;
+const anyFilter = () => ui.q || ui.pms.length || ui.clients.length || ui.risk || ui.tagF?.length;
 
 function renderFilters(){
   const show = ui.view === 'matrix' || ui.view === 'kanban';
@@ -2707,6 +2950,8 @@ function renderFilters(){
   if (!['risk', 'deadline', 'name'].includes(ui.sort)) ui.sort = 'risk';          // убранные варианты сортировки
   if (['client', 'priority'].includes(ui.group)) ui.group = 'auto';               // и группировки
   $('#density').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.density === density()));
+  const gs = $('#group'); let wk = gs.querySelector('option[value="week"]');
+  if (isSMM() && !wk) gs.insertAdjacentHTML('afterbegin', '<option value="week">По неделям</option>'); else if (!isSMM() && wk) wk.remove();
   $('#sort').value = ui.sort; $('#group').value = groupMode();
   if ($('#q').value !== ui.q) $('#q').value = ui.q;
   $('#reset').hidden = !anyFilter();
@@ -2726,8 +2971,11 @@ function renderFilters(){
   const clientsSorted = Object.keys(clientCounts).sort((a,b) => clientCounts[b] - clientCounts[a]);
   $('#tags').innerHTML =
     (pmIds.length ? `<span class="tlabel">PM:</span>` + pmIds.map(id => `<button class="tag" data-tag-pm="${id}" aria-pressed="${ui.pms.includes(id)}">${esc(short(id))}<small>${live.filter(p=>p.pm_id===id).length}</small></button>`).join('') : '') +
+    (tagList().some(t => live.some(p => (p.tags || []).includes(t.id))) ? `<span class="tlabel">Теги:</span>` + tagList().map(t => { const n = live.filter(p => (p.tags || []).includes(t.id)).length;
+      return n ? `<button class="tag" data-tag-tg="${t.id}" aria-pressed="${(ui.tagF || []).includes(t.id)}">${esc(t.name)}<small>${n}</small></button>` : ''; }).join('') : '') +
     (clientsSorted.length ? `<span class="tlabel">Клиенты:</span>` + clientsSorted.map(c => `<button class="tag" data-tag-client="${esc(c)}" aria-pressed="${ui.clients.includes(c)}">${esc(c)}<small>${clientCounts[c]}</small></button>`).join('') : '');
   $('#activeF').innerHTML = [...ui.pms.map(id => `<button class="tag on-x" data-tag-pm="${id}" title="Убрать фильтр">PM: ${esc(short(id))} <span aria-hidden="true">×</span></button>`),
+    ...(ui.tagF || []).map(id => `<button class="tag on-x" data-tag-tg="${id}" title="Убрать фильтр">${esc(tagById(id)?.name || 'тег')} <span aria-hidden="true">×</span></button>`),
     ...ui.clients.map(c => `<button class="tag on-x" data-tag-client="${esc(c)}" title="Убрать фильтр">${esc(c)} <span aria-hidden="true">×</span></button>`)].join('');
 }
 
@@ -2755,11 +3003,14 @@ function render(){
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
   $('#myTasksTab').hidden = false;
   renderFilters();
+  const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео');
   ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
   if (ui.open) renderDrawer();
   try { paintPage(); } catch(e) {}
   paintSelect();
   renderMobileNav(); paintMeBtn();
+  if (!GUEST && !$('#spPick')) try { maybePick(); } catch(e) {}
 }
 
 // ---------- Выбор нескольких проектов: архив и удаление пачкой ----------
@@ -2784,10 +3035,18 @@ function paintSelect(){
   bar.innerHTML = `<b>${n ? `Выбрано: ${n}` : 'Отметьте проекты'}</b>
     <button class="ghost" data-selall>${all ? 'Снять все' : `Выбрать все (${vis.length})`}</button>
     <span class="sel-sp"></span>
+    ${tagList().length ? `<select data-seltag ${n ? '' : 'disabled'} aria-label="Назначить тег выбранным"><option value="">Тег…</option>${tagList().map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select>` : ''}
     <button class="ghost" data-selarch ${n ? '' : 'disabled'}>В архив</button>
     <button class="ghost danger" data-seldel ${n ? '' : 'disabled'}>Удалить</button>
     <button class="primary" data-seldone>Готово</button>`;
 }
+// тег сразу всем выбранным
+document.addEventListener('change', e => {
+  if (!e.target.matches?.('[data-seltag]') || !e.target.value) return;
+  const t = tagById(e.target.value); const ps = db.projects.filter(p => ui.sel?.has(p.id)); if (!t || !ps.length) return;
+  ps.forEach(p => { p.tags = [...new Set([...(p.tags || []), t.id])]; });
+  commit(); toast(`Тег «${t.name}»: ${ps.length} ${plural(ps.length, W('проект', 'видео'), W('проекта', 'видео'), W('проектов', 'видео'))}`);
+});
 function exitSelect(){ ui.selMode = false; ui.sel = new Set(); render(); }
 // клик по проекту в режиме выбора — отметить (перехватываем раньше, чем откроется карточка)
 document.addEventListener('click', e => {
@@ -2843,8 +3102,18 @@ document.addEventListener('click', e => {
 
 // ---------- Матрица ----------
 // по умолчанию главная группирует по категориям (если они заведены), иначе по процессу
-const groupMode = () => ui.group === 'auto' ? ((db.categories || []).length ? 'category' : 'template') : ui.group;
+const groupMode = () => ui.group === 'week' && !isSMM() ? 'template' : ui.group === 'auto' ? (isSMM() ? 'week' : (db.categories || []).length ? 'category' : 'template') : ui.group;
 function groupsFor(list){
+  if (groupMode() === 'week'){
+    // SMM: «Неделя 1–4» цикла — 4 недели от даты старта пачки видео
+    const multi = cycles().length > 1;
+    const key = p => { const c = cycleOf(p); return c ? `${c}|${Math.min(CYCLE_WEEKS, Math.max(1, +p.week || weekOfDate(c, vidDate(p) || c)))}` : '~'; };
+    const keys = [...new Set(list.map(key))].sort();
+    return keys.map(k => { const [c, w] = k.split('|');
+      const items = list.filter(p => key(p) === k); const tids = [...new Set(items.map(p => p.template_id))];
+      return { title:k === '~' ? 'Вне плана по неделям' : `${multi ? `Цикл с ${fmt(c)} · ` : ''}Неделя ${w} · ${weekRangeC(c, +w)}`,
+        tpl:tids.length === 1 ? tplById(tids[0]) : null, items }; });
+  }
   if (groupMode() === 'category'){
     const cats = db.categories || [];
     const gs = cats.map(c => ({ title:c.name, cat:c, items:list.filter(p => p.category_id === c.id) }));
@@ -2861,7 +3130,7 @@ function groupsFor(list){
 }
 function renderMatrix(){
   const list = visible();
-  if (!db.projects.some(p => p.state !== 'archived')){ app.innerHTML = `<div class="empty">Проектов пока нет. Запустите первый по готовому шаблону.<br><button class="primary" id="emptyCreate">Новый проект</button></div>`; return; }
+  if (!db.projects.some(p => p.state !== 'archived')){ app.innerHTML = `<div class="empty">${W('Проектов пока нет. Запустите первый по готовому шаблону.', 'Видео пока нет. Добавьте первое — оно пойдёт по шаблону SMM.')}<br><button class="primary" id="emptyCreate">${W('Новый проект', 'Новое видео')}</button></div>`; return; }
   if (IS_PHONE.matches) return renderPhoneList(list);
   if (!list.length){ app.innerHTML = `<div class="empty">Под фильтры не попал ни один проект.<br><button class="primary" id="emptyReset">Сбросить фильтры</button></div>`; return; }
   if (density() === 'compact') return renderCompact(list);
@@ -2882,7 +3151,7 @@ function renderMatrix(){
           ${cellWho(p, s)}</button>
           <select class="cell-as" data-qassign="${p.id}|${s.id}" aria-label="Ответственный за этап «${esc(s.name)}», проект ${esc(p.name)}" title="Сменить ответственного">${peopleOpts(s.assignee_id, p.worker_id ? `Как у проекта: ${short(p.worker_id)}` : 'Не назначен')}</select></div></td>`;
       }).join('');
-      return `<tr><th class="pcol"><button class="prow" data-open="${p.id}"><b>${projAva(p, 'xs')}${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</b>
+      return `<tr><th class="pcol"><button class="prow" data-open="${p.id}"><b>${projAva(p, 'xs')}${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</b>${tagsHtml(p)}
         <small>${esc(p.client)}</small>
         <small>${startTxt(p)}</small>
         <small class="${late ? 'late' : p.state === 'completed' ? '' : 'ut-' + urg(p.deadline || end).k}">Финиш ${fmt(end)}${late ? `, позже дедлайна ${fmt(p.deadline)}` : p.state === 'completed' ? '' : `, ${urg(p.deadline || end).txt}`}</small></button>
@@ -2892,7 +3161,7 @@ function renderMatrix(){
         </div></th>${cells}</tr>`;
     }).join('');
     return `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2>
-      <div class="scroll"><table class="mx"><thead><tr><th class="pcol">Проект</th>${head}</tr></thead><tbody>${body}</tbody></table></div></section>`;
+      <div class="scroll"><table class="mx"><thead><tr><th class="pcol">${W('Проект', 'Видео')}</th>${head}</tr></thead><tbody>${body}</tbody></table></div></section>`;
   }).join('');
 }
 
@@ -2922,7 +3191,7 @@ function renderPhoneList(list){
     const onStage = m.daysAtCurrentStage && !m.maint ? `<small class="mc-age${m.plannedStage && m.daysAtCurrentStage > m.plannedStage ? ' slow' : ''}">(${m.daysAtCurrentStage}-й день на этапе)</small>` : '';
     return `<article class="pc mc">
       <button class="mc-main" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''}>
-        <span class="mc-top">${projAva(p, 'm36')}<span class="mc-tt"><b>${esc(p.name)}</b><small>PM ${esc(short(p.pm_id))} · ${esc(p.client)}${p.priority === 'high' ? ' · <em class="mc-hp">высокий</em>' : ''}</small></span>${stPill(risk, risk === 'green' ? 'В работе' : risk === 'red' ? 'Просрочен' : RISK_RU[risk])}</span>
+        <span class="mc-top">${projAva(p, 'm36')}<span class="mc-tt"><b>${esc(p.name)}</b>${tagsHtml(p)}<small>PM ${esc(short(p.pm_id))} · ${esc(p.client)}${p.priority === 'high' ? ' · <em class="mc-hp">высокий</em>' : ''}</small></span>${stPill(risk, risk === 'green' ? 'В работе' : risk === 'red' ? 'Просрочен' : RISK_RU[risk])}</span>
         <span class="mc-mid">${ticksHtml(p, risk)}${onStage}</span>
         ${dl ? `<span class="mc-bot ${dl.cls}">${FLAG}${dl.html}</span>` : ''}
       </button>
@@ -2952,7 +3221,7 @@ document.addEventListener('click', e => { if (!e.target.closest('[data-msearchcl
 const FILT_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>';
 $('#bell').insertAdjacentHTML('beforebegin', `<button class="icon-btn m-only m-list" id="mSearch" aria-label="Поиск"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
   <button class="icon-btn m-only m-list" id="mFilt" aria-label="Фильтры" aria-haspopup="dialog">${FILT_ICO}<b class="m-badge" hidden></b></button>`);
-const mFilterCount = () => (ui.risk ? 1 : 0) + ui.pms.length + ui.clients.length;
+const mFilterCount = () => (ui.risk ? 1 : 0) + ui.pms.length + ui.clients.length + (ui.tagF?.length || 0);
 function paintPhoneHead(){
   const b = $('#mFilt .m-badge'); if (!b) return; const n = mFilterCount(); b.hidden = !n; b.textContent = n || '';
   $('#mSearch')?.setAttribute('aria-pressed', String(!!(ui.mSearch || ui.q)));
@@ -2971,8 +3240,9 @@ function openFilterSheet(){
     <div class="fs-body">
       <section><h3>Статус</h3><div class="fs-chips">${chip('data-fsrisk=""', !ui.risk, `${chipIco('')}Все активные`)}${RISK.map(([k, l]) => { const n = pool.filter(p => projectRisk(p) === k).length; return n || ui.risk === k ? chip(`data-fsrisk="${k}"`, ui.risk === k, `${chipIco(k)}${l} <small>${n}</small>`) : ''; }).join('')}</div></section>
       <section><h3>Сортировка</h3>${seg('fssort', ui.sort, [['risk', 'Срочность'], ['deadline', 'Дедлайн'], ['name', 'Название']])}</section>
-      ${ui.view === 'matrix' ? `<section><h3>Группировка</h3>${seg('fsgroup', groupMode(), [['category', 'Категории'], ['template', 'Процесс'], ['pm', 'PM'], ['none', 'Без групп']])}</section>` : ''}
+      ${ui.view === 'matrix' ? `<section><h3>Группировка</h3>${seg('fsgroup', groupMode(), [...(isSMM() ? [['week', 'Недели']] : []), ['category', 'Категории'], ['template', 'Процесс'], ['pm', 'PM'], ['none', 'Без групп']])}</section>` : ''}
       ${pmIds.length ? `<section><h3>PM</h3><div class="fs-chips">${pmIds.map(id => chip(`data-fspm="${id}"`, ui.pms.includes(id), `${esc(short(id))} <small>${live.filter(p => p.pm_id === id).length}</small>`)).join('')}</div></section>` : ''}
+      ${tagList().length ? `<section><h3>Теги</h3><div class="fs-chips">${tagList().map(t => chip(`data-fstg="${t.id}"`, (ui.tagF || []).includes(t.id), `${esc(t.name)} <small>${live.filter(p => (p.tags || []).includes(t.id)).length}</small>`)).join('')}</div></section>` : ''}
       ${clients.length ? `<section><h3>Клиенты</h3><div class="fs-chips">${clients.map(c => chip(`data-fsclient="${esc(c)}"`, ui.clients.includes(c), `${esc(c)} <small>${cc[c]}</small>`)).join('')}</div></section>` : ''}
     </div>
     <div class="fs-foot"><button class="primary" data-close>Показать ${visible().length} ${plural(visible().length, 'проект', 'проекта', 'проектов')}</button></div></div>`;
@@ -2981,13 +3251,14 @@ function openFilterSheet(){
 document.addEventListener('click', e => {
   if (e.target.closest('#mSearch')){ ui.mSearch = !(ui.mSearch || ui.q); if (!ui.mSearch) ui.q = ''; else ui.mSearchFocus = true; render(); scrollTo(0, 0); return; }
   if (e.target.closest('#mFilt')){ openFilterSheet(); return; }
-  const t = e.target.closest('[data-fsrisk],[data-fssort],[data-fsgroup],[data-fspm],[data-fsclient],[data-fsreset]'); if (!t || !t.closest('.fs-sheet')) return;
+  const t = e.target.closest('[data-fsrisk],[data-fssort],[data-fsgroup],[data-fspm],[data-fsclient],[data-fstg],[data-fsreset]'); if (!t || !t.closest('.fs-sheet')) return;
   const d = t.dataset;
   if (d.fsrisk !== undefined) ui.risk = ui.risk === d.fsrisk ? '' : d.fsrisk;
   if (d.fssort) ui.sort = d.fssort;
   if (d.fsgroup) ui.group = d.fsgroup;
   if (d.fspm) ui.pms = toggle(ui.pms, d.fspm);
   if (d.fsclient !== undefined) ui.clients = toggle(ui.clients, d.fsclient);
+  if (d.fstg) ui.tagF = toggle(ui.tagF || [], d.fstg);
   if (d.fsreset !== undefined){ ui.risk = ''; ui.pms = []; ui.clients = []; }
   render(); openFilterSheet();
 });
@@ -3500,7 +3771,7 @@ function renderCompact(list){
       const progress = ticksHtml(p, !c ? 'done' : h.key);
       const tm = getProjectTimeMetrics(p);
       return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
-        <td title="${esc(p.name)}"><span class="cx-name">${projAva(p, 'sm')}<span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}<small>${esc(p.client)}</small></span></span></td>
+        <td title="${esc(p.name)}"><span class="cx-name">${projAva(p, 'sm')}<span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}${tagsHtml(p)}<small>${esc(p.client)}</small></span></span></td>
         <td>${tm.isOverdue && h.key !== 'red' ? stPill('red', 'Просрочен') : stPill(h.key, h.label)}</td>
         <td>${progress}</td>
         <td class="start">${startCell(p, tm)}</td>
@@ -3508,7 +3779,7 @@ function renderCompact(list){
     }).join('');
     return `<section class="grp"><h2>${catDot(g.cat)}${esc(g.title)} <span>${g.items.length}</span></h2>
       <div class="scroll"><table class="cx"><colgroup><col class="c1"><col class="c3"><col class="c7"><col class="c6"><col class="c4"></colgroup>
-      <thead><tr><th>Проект</th><th>Статус</th><th>Этап</th><th>Старт</th><th>Срок</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+      <thead><tr><th>${W('Проект', 'Видео')}</th><th>Статус</th><th>Этап</th><th>Старт</th><th>${W('Срок', 'Публикация')}</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
   }).join('');
 }
 
@@ -3813,7 +4084,7 @@ async function openProfile(first){
     if (!GUEST){
       Object.assign(me, { name:f.name, title:f.title, contact:f.contact, email:acc ? acc.email : $('#mEmail').value.trim() });
       if (acc?.avatar) me.avatar = acc.avatar;
-      if (first){ if (!$('#mDemo').checked) db.projects = db.projects.filter(p => !p.demo); db.onboarded = true; }
+      if (first){ if (!$('#mDemo').checked) db.projects = db.projects.filter(p => !p.demo); db.onboarded = true; setTimeout(maybePick, 300); }
     }
     layer.innerHTML = ''; commit(); if (!first) toast('Профиль сохранён');
   };
@@ -3867,6 +4138,7 @@ function renderDrawer(){
       <section class="d-box"><h3>Проект</h3><div class="d-g">
         <div class="field"><label>Клиент</label><div class="val">${esc(p.client)}</div></div>
         <div class="field"><label for="pCat">Категория</label><select id="pCat">${catOpts(p.category_id)}</select></div>
+        <div class="field d-tags"><label>Теги</label>${tagPicker(p.tags || [], p.id)}</div>
         <div class="field"><label for="pTpl">Шаблон процесса</label><select id="pTpl">${tplById(p.template_id) ? '' : '<option value="" selected>Шаблон удалён</option>'}${db.templates.map(t => `<option value="${t.id}" ${t.id===p.template_id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></div>
         <div class="field"><label for="pPri">Приоритет</label><select id="pPri">${Object.entries(PRI).map(([k,[v]]) => `<option value="${k}" ${p.priority===k?'selected':''}>${v}</option>`).join('')}</select></div>
         <label class="check maint-check p-maint"><input type="checkbox" id="pMaint" ${p.is_maintenance ? 'checked' : ''}> <span>${RT_ICO}<b>На ведении после воронки</b><small>Проект не закроется, а перейдёт на этап «Ведение / Поддержка» с регулярными задачами.</small></span></label>
@@ -3912,27 +4184,30 @@ function openCreate(){
   if (!db.templates.length){ toast('Сначала создайте шаблон процесса'); ui.view = 'templates'; ui.setTab = 'templates'; render(); return; }
   layer.innerHTML = `<div class="backdrop" data-close></div>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cTitle">
-    <h2 id="cTitle">Новый проект</h2>
+    <h2 id="cTitle">${W('Новый проект', 'Новое видео')}</h2>
     <form class="form" id="cForm" novalidate>
       <div class="c-head"><label class="pava-edit" title="Фото проекта (необязательно)"><span id="cImgPrev">${projAva({ id:'new', name:'' }, 'lg')}</span><span class="pava-cam" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></span><input type="file" id="cImg" accept="image/*" aria-label="Фото проекта"></label>
         <div class="field"><label for="cName">Название</label><input id="cName" autocomplete="off"><small class="hint">Фото — нажмите на квадрат слева (необязательно)</small></div></div>
       <div class="field"><label for="cClient">Клиент</label><input id="cClient" list="cClients" autocomplete="off">
         <datalist id="cClients">${[...new Set(db.projects.map(p => p.client))].map(c => `<option value="${esc(c)}">`).join('')}</datalist></div>
       ${(db.categories || []).length ? `<div class="field"><label for="cCat">Категория</label><select id="cCat">${catOpts('')}</select></div>` : ''}
-      <div class="field"><label for="cTpl">Шаблон процесса</label><select id="cTpl">${db.templates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>Теги <small class="hint">— формат, KPI; можно несколько</small></label>${tagPicker((ui.cTags = []), 'c')}</div>
+      <div class="field"><label for="cTpl">Шаблон процесса</label><select id="cTpl">${db.templates.map(t => `<option value="${t.id}"${isSMM() && (t.id === SMM_TPL_ID || /smm/i.test(t.name)) ? ' selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div>
       <div class="two">
         <div class="field"><label for="cStart">Дата старта</label><input type="date" id="cStart" value="${today()}"></div>
-        <div class="field"><label for="cDl">Финальный дедлайн</label><input type="date" id="cDl"></div>
+        <div class="field"><label for="cDl">${W('Финальный дедлайн', 'Дата публикации')}</label><input type="date" id="cDl"></div>
         <div class="field"><label for="cPm">Ответственный (PM)</label><select id="cPm">${pms().map(u => `<option value="${u.id}">${esc(u.name || 'Вы')}</option>`).join('')}</select></div>
       </div>
       <div class="two">
         <div class="field"><label for="cWorker">Ответственный (Исп)</label><select id="cWorker"><option value="">Не назначен</option>${db.users.map(u => `<option value="${u.id}">${esc(u.name || 'Вы')}</option>`).join('')}</select></div>
         <div class="field"><label for="cPri">Приоритет</label><select id="cPri"><option value="high">Высокий</option><option value="medium" selected>Средний</option><option value="low">Низкий</option></select></div>
       </div>
-      <label class="check maint-check"><input type="checkbox" id="cMaint"> <span>${RT_ICO}<b>Перевести проект на этап абонентского ведения после запуска</b><small>После завершения воронки проект перейдёт на этап регулярных задач и поддержки.</small></span></label>
+      ${isSMM() ? `<div class="field"><label for="cCount">Количество видео</label><input type="number" id="cCount" min="1" max="200" value="1" inputmode="numeric">
+        <small class="hint">Например, 45 — сразу создадутся «Название 1»… «Название 45» и распределятся на 4 недели от даты старта: 12 / 11 / 11 / 11. Дата публикации у каждого — внутри его недели.</small></div>` : ''}
+      <label class="check maint-check"${isSMM() ? ' hidden' : ''}><input type="checkbox" id="cMaint"> <span>${RT_ICO}<b>Перевести проект на этап абонентского ведения после запуска</b><small>После завершения воронки проект перейдёт на этап регулярных задач и поддержки.</small></span></label>
       <div class="preview" id="cPrev"></div>
       <div class="err" id="cErr"></div>
-      <div class="actions"><button type="button" class="ghost" data-close>Отмена</button><button class="primary">Создать проект</button></div>
+      <div class="actions"><button type="button" class="ghost" data-close>Отмена</button><button class="primary">${W('Создать проект', 'Создать')}</button></div>
     </form></div>`;
   const prev = () => {
     const t = tplById($('#cTpl').value); let cur = $('#cStart').value || today();
@@ -3942,6 +4217,8 @@ function openCreate(){
       ${over ? `<label class="check" style="margin-top:6px"><input type="checkbox" id="cFit" checked> Уместить этапы в дедлайн</label>` : ''}`;
   };
   $('#cTpl').onchange = prev; $('#cStart').oninput = prev; $('#cDl').oninput = prev; prev();
+  // пачка видео: дата публикации у каждого своя (внутри его недели) — общее поле прячем
+  $('#cCount')?.addEventListener('input', e => { const many = +e.target.value > 1; const f = $('#cDl').closest('.field'); f.hidden = many; if (many) $('#cDl').value = ''; $('#cPrev').hidden = many; });
   ui.cImg = null;
   const paintC = () => { const pv = $('#cImgPrev'); if (pv) pv.innerHTML = projAva({ id:'new', name:$('#cName').value || '', image:ui.cImg }, 'lg'); };
   $('#cName').addEventListener('input', () => { if (!ui.cImg) paintC(); });
@@ -3956,9 +4233,18 @@ function openCreate(){
     const dl = $('#cDl').value;
     if (dl && dl < start){ $('#cErr').textContent = 'Дедлайн не может быть раньше старта'; return; }
     const fit = $('#cFit')?.checked;
+    const count = Math.max(1, Math.min(200, Math.round(+($('#cCount')?.value || 1))));
+    if (count > 1){
+      const made = createVideos({ name, client, template_id:$('#cTpl').value, start, first:dl, count, pm_id:$('#cPm').value, worker_id:$('#cWorker').value || null,
+        priority:$('#cPri').value, category_id:$('#cCat')?.value || '', image:ui.cImg, tags:[...(ui.cTags || [])] });
+      ui.smmCycle = start;
+      ui.cImg = null; layer.innerHTML = ''; toast(`Создано видео: ${made.length} — на 4 недели: ${splitPlan(made.length).join(' / ')}`); return;
+    }
     const p = createProject({ name, client, template_id:$('#cTpl').value, start_date:start, pm_id:$('#cPm').value, worker_id:$('#cWorker').value || null,
       priority:$('#cPri').value });
     const cat = $('#cCat')?.value; if (cat){ p.category_id = cat; save(); }
+    if ((ui.cTags || []).length){ p.tags = [...ui.cTags]; save(); }
+    if (isSMM()){ const c = cycleFor(dl || plannedEnd(p)); if (c){ p.cycle = c; p.week = weekOfDate(c, dl || plannedEnd(p)); save(); } }
     if (ui.cImg){ p.image = ui.cImg; ui.cImg = null; save(); }
     if ($('#cMaint')?.checked){ p.is_maintenance = true; syncState(p); addLog(p, 'Проект на ведении: после воронки — этап «Ведение / Поддержка»'); save(); }
     if (dl){ p.deadline = dl; if (fit) fitToDeadline(p); else commit(); }
@@ -4372,7 +4658,34 @@ document.addEventListener('input', e => {
   const row = el.closest('.tsub'); const x = ui.draft.stages[+row.dataset.i].subs[+row.dataset.j]; x.name = el.value; ui.draftDirty = true;
 });
 // ---------- Пространства ----------
-const spaces = { list:[], orgs:[], ready:false, mainColor:'', mainIcon:'' };
+const spaces = { list:[], orgs:[], ws:[], areas:[], ready:false, mainColor:'', mainIcon:'', mainName:'', mainKind:'' };
+// ---------- Разделы (верхний уровень): «Агентство Icon», «SMM», «Другой бизнес»… ----------
+// Раздел — data/users/<id>/spaces/ws/<w…> { name, kind, at }. Пространство раздела — spaces/list/<s…>.ws (нет — основной раздел 'w0').
+// Основное пространство (data/users/<id>) всегда в разделе 'w0'. На экране «Где работаем?» выбирают раздел,
+// в левой панели — только пространства текущего раздела.
+const WS0 = 'w0', AREA0 = 'a0';
+// Области — уровень над разделами: data/users/<id>/spaces/area/<a…> { name, at }; у раздела .area (нет — основная область 'a0').
+const areaList = () => { const d0 = spaces.areas.find(x => x.id === AREA0);
+  return [{ id:AREA0, name:d0?.name || 'Мой бизнес', at:'' }, ...spaces.areas.filter(x => x.id !== AREA0)]; };
+const areaById = id => areaList().find(x => x.id === id) || areaList()[0];
+const wsArea = w => w && w.id !== WS0 && w.area && spaces.areas.some(x => x.id === w.area) ? w.area : AREA0;
+const wsOfArea = a => wsList().filter(w => wsArea(w) === a);
+// область пространства: своё поле .area, иначе — область его раздела (старые данные), основное — 'a0'
+const spArea = sp => sp?.area && spaces.areas.some(x => x.id === sp.area) ? sp.area : wsArea(wsById(spWs(sp)));
+const curArea = () => ORG ? '' : SPACE ? spArea(spaces.list.find(x => x.id === SPACE)) : AREA0;
+const spacesOfArea = a => [...(a === AREA0 ? [{ id:'', name:mainName() }] : []), ...spaces.list.filter(x => spArea(x) === a)];
+const wsList = () => { const d0 = spaces.ws.find(x => x.id === WS0);
+  return [{ id:WS0, name:d0?.name || 'Агентство', kind:d0?.kind || 'agency', at:'' }, ...spaces.ws.filter(x => x.id !== WS0)]; };
+const wsById = id => wsList().find(x => x.id === id) || wsList()[0];
+const spWs = sp => sp?.ws && sp.ws !== WS0 && spaces.ws.some(x => x.id === sp.ws) ? sp.ws : WS0;
+const curWs = () => ORG ? '' : SPACE ? spWs(spaces.list.find(x => x.id === SPACE)) : WS0;
+// пространства раздела: у основного раздела первым идёт «Основное» (id '')
+const spacesOf = w => [...(w === WS0 ? [{ id:'', name:mainName() }] : []), ...spaces.list.filter(x => spWs(x) === w)];
+const WS_LAST = w => `kz-ws-last-${w}`, AREA_LAST = a => `kz-area-last-${a}`;
+// документ основного пространства: цвет, иконка, название и тип (agency | smm)
+const mainDoc = (patch = {}) => ({ color:spColor(''), icon:spIcon(''), name:spaces.mainName || '', kind:spaces.mainKind || '', ...patch });
+const mainName = () => spaces.mainName || 'Основное';
+const spKindOf = id => id === SPACE && !ORG ? (isSMM() ? 'smm' : 'agency') : (id ? spaces.list.find(x => x.id === id)?.kind : spaces.mainKind) || 'agency';
 // Пространства как в Arc: у каждого свой цвет — им окрашены логотип, панель и акценты
 const SP_COLORS = ['#7C6CF6', '#3B82F6', '#06B6D4', '#10B981', '#84CC16', '#F59E0B', '#F97316', '#EF4444', '#EC4899', '#A855F7'];
 const SPC_KEY = 'kz-space-colors';
@@ -4416,7 +4729,7 @@ function applySpaceColor(){
   try { const m = spColorsCache(); m[curSpaceKey()] = c; if (!ORG) { m[''] = spColor(''); spaces.list.forEach(x => { m[x.id] = spColor(x.id); }); } localStorage.setItem(SPC_KEY, JSON.stringify(m)); } catch(e) {}
 }
 try { applySpaceColor(); } catch(e) {}
-const spaceName = () => ORG ? `Проекты: ${spaces.orgs.find(x => x.id === ORG)?.name || 'руководителя'}` : SPACE ? (spaces.list.find(x => x.id === SPACE)?.name || 'Пространство') : 'Основное';
+const spaceName = () => ORG ? `Проекты: ${spaces.orgs.find(x => x.id === ORG)?.name || 'руководителя'}` : SPACE ? (spaces.list.find(x => x.id === SPACE)?.name || 'Пространство') : mainName();
 function emptySpace(){
   return { users:[{ id:ME, name:'', email:'', role:'admin', dept:'Руководство', capacity:4, status:'active' }], templates:[], categories:[], projects:[], tasks:[], reports:[],
     cardTpls:{}, cardTplsInit:true, onboarded:true, ver:3, prefs:{} };
@@ -4427,14 +4740,24 @@ function watchSpaces(){
   shared.subs.set('__orgs', [cloud.store.collection(`data/users/${cloud.uid}/links/lead`).onSnapshot(async snap => {
     const ids = snap.docs.map(d => d.id); const prof = ids.length ? await cloud.user.profiles(ids).catch(() => ({})) : {};
     spaces.orgs = ids.map(id => ({ id, name:prof[id]?.name || prof[id]?.email || 'Руководитель' }));
-    paintSpace(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
+    paintPick(); paintSpace(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
   }, () => {})]);
   shared.subs.set('__spaces', [cloud.store.collection(`data/users/${cloud.uid}/spaces/list`).onSnapshot(snap => {
-    spaces.list = snap.docs.map(d => ({ id:d.id, name:d.data().name || 'Пространство', at:d.data().at || '', color:d.data().color || '', icon:d.data().icon || '' })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    spaces.list = snap.docs.map(d => ({ id:d.id, name:d.data().name || 'Пространство', at:d.data().at || '', color:d.data().color || '', icon:d.data().icon || '', kind:d.data().kind || '', ws:d.data().ws || '', area:d.data().area || '' })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
     spaces.ready = true; applySpaceColor(); paintSpace(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
+    maybePick();
+  }, () => {})]);
+  shared.subs.set('__sparea', [cloud.store.collection(`data/users/${cloud.uid}/spaces/area`).onSnapshot(snap => {
+    spaces.areas = snap.docs.map(d => ({ id:d.id, name:d.data().name || 'Область', at:d.data().at || '' })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    paintPick(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
+  }, () => {})]);
+  shared.subs.set('__spws', [cloud.store.collection(`data/users/${cloud.uid}/spaces/ws`).onSnapshot(snap => {
+    spaces.ws = snap.docs.map(d => ({ id:d.id, name:d.data().name || 'Раздел', kind:d.data().kind || 'agency', at:d.data().at || '', area:d.data().area || '' })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    paintPick(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
   }, () => {})]);
   shared.subs.set('__spmain', [cloud.store.doc(`data/users/${cloud.uid}/spaces/main`).onSnapshot(x => {
-    spaces.mainColor = x.exists ? (x.data().color || '') : ''; spaces.mainIcon = x.exists ? (x.data().icon || '') : ''; applySpaceColor(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
+    spaces.mainColor = x.exists ? (x.data().color || '') : ''; spaces.mainIcon = x.exists ? (x.data().icon || '') : '';
+    spaces.mainName = x.exists ? (x.data().name || '') : ''; spaces.mainKind = x.exists ? (x.data().kind || '') : ''; paintSpace(); paintPick(); applySpaceColor(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
   }, () => {})]);
 }
 // =====================================================================
@@ -4449,6 +4772,22 @@ function sideViews(){
   if (GUEST) return guestViews();
   return [...document.querySelectorAll('.tabs [data-view]')].filter(b => !b.hidden).map(b => b.dataset.view);
 }
+// кружки в панели: пространства текущего раздела (у руководителя чужой команды — раздел его владельца) и команды руководителей
+// область в панели: название со стрелкой ▾ — выпадающий список областей (и команд, где вы руководитель) + «Новая область»
+function areaBar(){
+  const name = ORG ? `Проекты: ${spaces.orgs.find(x => x.id === ORG)?.name || 'руководителя'}` : areaById(curArea()).name;
+  const open = !!ui.areaMenu;
+  const items = [...areaList().map(a => `<button role="menuitem" class="am-i${!ORG && a.id === curArea() ? ' cur' : ''}" data-areaopen="${a.id}">${esc(a.name)}<small>${esc(spacesOfArea(a.id).map(x => x.name).join(' · ') || 'пусто')}</small></button>`),
+    ...spaces.orgs.map(o => `<button role="menuitem" class="am-i${ORG === o.id ? ' cur' : ''}" data-areaorg="${o.id}">Проекты: ${esc(o.name)}<small>команда, где вы руководитель</small></button>`)].join('');
+  return `<div class="side-ws"><button class="side-ws-n" data-areamenu aria-haspopup="menu" aria-expanded="${open}">${esc(name)}<span class="am-car" aria-hidden="true">▾</span></button>
+    ${open ? `<div class="area-menu" role="menu">${items}${cloud.store && cloud.uid ? '<button role="menuitem" class="am-i am-new" data-areamnew>+ Новая область</button>' : ''}</div>` : ''}</div>`;
+}
+function sideSpaces(){
+  // все пространства текущей области (всех её разделов — агентство, SMM…)
+  const all = ORG ? spacesOfArea(AREA0) : spacesOfArea(curArea());
+  return [...all.map(x => ({ id:x.id, name:x.name, color:spColor(x.id), icon:spIcon(x.id), cur:!ORG && (x.id || '') === SPACE })),
+    ...spaces.orgs.map(o => ({ id:'o:' + o.id, name:`Проекты: ${o.name}`, color:spColorsCache()['o:' + o.id] || hashColor(o.id), icon:'users', cur:ORG === o.id }))];
+}
 function renderSide(){
   const el = $('#side'); if (!el) return;
   const pinned = sidePinned(); document.body.classList.toggle('side-pinned', pinned);
@@ -4456,11 +4795,9 @@ function renderSide(){
   $('#sideBtn')?.setAttribute('aria-expanded', String(pinned || sideOpen));
   if (el.hidden) return;
   const label = v => v === 'production' ? 'Производство' : v === 'templates' ? 'Настройки' : (MNAV[v]?.[0] || v);
-  const all = GUEST ? [] : [{ id:'', name:'Основное', color:spColor(''), icon:spIcon(''), cur:!SPACE && !ORG },
-    ...spaces.list.map(x => ({ id:x.id, name:x.name, color:spColor(x.id), icon:spIcon(x.id), cur:x.id === SPACE })),
-    ...spaces.orgs.map(o => ({ id:'o:' + o.id, name:`Проекты: ${o.name}`, color:spColorsCache()['o:' + o.id] || hashColor(o.id), icon:'users', cur:ORG === o.id }))];
-  const cur = all.find(x => x.cur) || { name:'Основное', color:spColor(''), icon:spIcon('') };
-  el.innerHTML = `<div class="side-head"><span class="side-sp" style="--c:${cur.color}"><span class="side-sp-ico">${spIco(GUEST ? 'briefcase' : cur.icon)}</span><b>${esc(GUEST ? 'Мои проекты' : cur.name)}</b></span>
+  const all = GUEST ? [] : sideSpaces();
+  const cur = all.find(x => x.cur) || { name:mainName(), color:spColor(''), icon:spIcon('') };
+  el.innerHTML = `${GUEST ? '' : areaBar()}<div class="side-head"><span class="side-sp" style="--c:${cur.color}"><span class="side-sp-ico">${spIco(GUEST ? 'briefcase' : cur.icon)}</span><b>${esc(GUEST ? 'Мои проекты' : cur.name)}</b></span>
       ${innerWidth > 1100 ? `<button class="icon-btn side-pin" data-sidepin aria-pressed="${pinned}" title="${pinned ? 'Открепить панель' : 'Закрепить панель'}" aria-label="${pinned ? 'Открепить панель' : 'Закрепить панель'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${pinned ? '<path d="M15 6l-6 6 6 6"/>' : '<path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3z"/>'}</svg></button>` : ''}
       ${pinned ? '' : '<button class="icon-btn" data-sideclose aria-label="Закрыть меню">×</button>'}</div>
     <nav class="side-nav" aria-label="Разделы">${sideViews().map(v => `<button data-sideview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v]?.[1] || ''}<span>${label(v)}</span></button>`).join('')}</nav>
@@ -4487,6 +4824,13 @@ document.addEventListener('click', e => {
   if (e.target.closest?.('#sideBtn')){ if (sidePinned()){ setPin(false); sideOpen = false; renderSide(); render(); } else { sideOpen = !sideOpen; renderSide(); } return; }
   if (e.target.closest?.('#sideBack') || e.target.closest?.('[data-sideclose]')){ closeSide(); return; }
   if (e.target.closest?.('[data-sideme]')){ if (!sidePinned()) closeSide(); openProfile(false); return; }
+  if (e.target.closest?.('[data-areamenu]')){ ui.areaMenu = !ui.areaMenu; renderSide(); if (layer.querySelector('.more-sheet')) openMore(); return; }
+  const ao = e.target.closest?.('[data-areaopen]'), ag = e.target.closest?.('[data-areaorg]');
+  if (ao || ag || e.target.closest?.('[data-areamnew]')){ ui.areaMenu = false; if (layer.querySelector('.more-sheet')) layer.innerHTML = '';
+    if (ao){ if (ORG || ao.dataset.areaopen !== curArea()) openArea(ao.dataset.areaopen); else renderSide(); return; }
+    if (ag){ if (ORG !== ag.dataset.areaorg) switchOrg(ag.dataset.areaorg); else renderSide(); return; }
+    if (!sidePinned()) closeSide(); openPick(); ui.areaNew = true; paintPick(); return; }
+  if (e.target.closest?.('[data-sidews]')){ if (!sidePinned()) closeSide(); if (layer.querySelector('.more-sheet')) layer.innerHTML = ''; openPick(); return; }
   if (e.target.closest?.('[data-sidetheme]')){ $('#themeBtn').click(); renderSide(); if (layer.querySelector('.more-sheet')) openMore(); return; }
   if (e.target.closest?.('[data-sidecloud]')){ if (!sidePinned()) closeSide(); openCloudInfo(); return; }
   const pin = e.target.closest?.('[data-sidepin]'); if (pin){ setPin(!sidePinned()); sideOpen = false; renderSide(); render(); return; }
@@ -4512,28 +4856,120 @@ function paintSpace(){
   b.textContent = spaceName(); b.hidden = GUEST || (!SPACE && !ORG && !spaces.list.length && !spaces.orgs.length);
 }
 // переключение: запоминаем пространство и перезагружаем страницу (в тестах — подменяемая функция)
+// ---------- Выбор пространства после входа руководителя ----------
+// Каждый вход руководителя (раз за вкладку): «Где работаем?» — пространства аккаунта (агентство, SMM, другая команда),
+// команды, где вы руководитель, и «+ Новое пространство». Показывается и при одном пространстве — чтобы сразу создать SMM или другую команду.
+const PICK_KEY = 'kz-picked', PICK_SEEN = 'kz-pick-seen';
+const markPicked = () => { try { sessionStorage.setItem(PICK_KEY, '1'); localStorage.setItem(PICK_SEEN, '1'); } catch(e) {} };
+const picked = () => { try { return sessionStorage.getItem(PICK_KEY) === '1'; } catch(e) { return true; } };
+function maybePick(){
+  if (spaces.ready && !ORG) try { localStorage.setItem(AREA_LAST(curArea()), SPACE); } catch(e) {}
+  if (GUEST || !cloud.uid || !spaces.ready || picked() || $('#spPick')) return;
+  if (typeof ownerBooted === 'undefined' || !ownerBooted || !db?.onboarded) return;
+  document.body.insertAdjacentHTML('beforeend', '<div class="sp-pick" id="spPick" role="dialog" aria-modal="true" aria-labelledby="spPickT"></div>');
+  paintPick();
+}
+function paintPick(){
+  const el = $('#spPick'); if (!el) return;
+  const card = (attr, name, color, icon, sub, cur) => `<button class="sp-pick-card" ${attr} style="--c:${color}"><span class="side-sp-ico">${icon}</span>
+    <span><b>${esc(name)}</b><small>${sub}</small></span>${cur ? '<em>Открыто сейчас</em>' : ''}</button>`;
+  const area = ui.pickArea && areaList().some(x => x.id === ui.pickArea) ? ui.pickArea : '';
+  if (area){
+    // пустая (новая) область: первое пространство — название и тип
+    el.innerHTML = `<div class="sp-pick-in"><button class="link" data-pickback>← Все области</button><h1 id="spPickT">${esc(areaById(area).name)}</h1>
+      <p>Создайте первое пространство области: у него свои проекты, команда и шаблоны.</p>
+      <form class="ws-new" id="spFirst"><input id="spFirstName" placeholder="Название пространства, например «Клиника»" maxlength="60" aria-label="Название пространства">
+        <div class="sp-kind" role="radiogroup" aria-label="Тип пространства">${Object.entries(KINDS).map(([k, [a, b]], i) => `<label><input type="radio" name="spFirstKind" value="${k}"${i ? '' : ' checked'}> ${a}: ${b}</label>`).join('')}</div>
+        <div class="ws-new-act"><button class="primary">Создать и открыть</button></div></form></div>`;
+    setTimeout(() => $('#spFirstName')?.focus(), 0);
+    return;
+  }
+  const aSub = a => { const l = spacesOfArea(a.id); return l.length ? l.map(x => x.name).join(' · ') : 'Пока без пространств'; };
+  el.innerHTML = `<div class="sp-pick-in"><h1 id="spPickT">Где работаем?</h1>
+    <p>Выберите область. Внутри — пространства (кружки в панели слева), у каждого свои проекты, команда и шаблоны.</p>
+    <div class="sp-pick-list">
+      ${areaList().map((a, i) => card(`data-pickarea="${a.id}"`, a.name, hashColor(a.id + 'area'), spIco(SP_ICON_KEYS[i % SP_ICON_KEYS.length]), esc(aSub(a)), curArea() === a.id)).join('')}
+      ${spaces.orgs.map(o => card(`data-pickorg="${o.id}"`, `Проекты: ${o.name}`, spColorsCache()['o:' + o.id] || hashColor(o.id), spIco('users'), 'Команда, где вы руководитель', ORG === o.id)).join('')}
+    </div>
+    ${ui.areaNew ? `<form class="ws-new" id="areaNew"><input id="areaNewName" placeholder="Название области, например «Второй бизнес»" maxlength="60" aria-label="Название области">
+      <div class="ws-new-act"><button type="button" class="ghost" data-areanewcancel>Отмена</button><button class="primary">Создать область</button></div></form>`
+      : `<button class="ghost" data-areanew>+ Новая область</button>`}</div>`;
+  if (ui.areaNew) setTimeout(() => $('#areaNewName')?.focus(), 0);
+}
+// открыть область: последнее открытое в ней пространство, иначе первое; пустая — форма первого пространства
+function openArea(a){
+  const list = spacesOfArea(a);
+  if (!list.length){ if (!$('#spPick')) openPick(); ui.pickArea = a; paintPick(); return; }
+  let last = null; try { last = localStorage.getItem(AREA_LAST(a)); } catch(x) {}
+  const target = list.find(x => x.id === last) || list[0];
+  markPicked();
+  if (target.id === SPACE && !ORG){ $('#spPick')?.remove(); return; }
+  if (ORG){ try { localStorage.removeItem(ORG_KEY); localStorage.setItem(ORG_OWN_KEY, '1'); } catch(x) {} }
+  switchSpace(target.id);
+}
+document.addEventListener('click', e => {
+  const el = $('#spPick'); if (!el || !el.contains(e.target)) return;
+  const ar = e.target.closest('[data-pickarea]'); if (ar){ openArea(ar.dataset.pickarea); return; }
+  if (e.target.closest('[data-pickback]')){ ui.pickArea = ''; paintPick(); return; }
+  if (e.target.closest('[data-areanew]')){ ui.areaNew = true; paintPick(); return; }
+  if (e.target.closest('[data-areanewcancel]')){ ui.areaNew = false; paintPick(); return; }
+  const o = e.target.closest('[data-pickorg]');
+  if (o){ markPicked(); if (ORG === o.dataset.pickorg){ el.remove(); return; } switchOrg(o.dataset.pickorg); }
+});
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'spFirst') return; e.preventDefault();
+  const name = $('#spFirstName').value.trim(); if (!name){ toast('Назовите пространство'); return; }
+  const kind = document.querySelector('[name="spFirstKind"]:checked')?.value === 'smm' ? 'smm' : 'agency';
+  const id = await createSpace({ name, kind, area:ui.pickArea || AREA0, copy:false }); if (!id) return;
+  toast(`Пространство «${name}» создано, открываю`); markPicked(); switchSpace(id);
+});
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'areaNew') return; e.preventDefault();
+  const name = $('#areaNewName').value.trim(); if (!name){ toast('Назовите область'); return; }
+  const a = await createArea(name); if (!a) return;
+  ui.areaNew = false; ui.pickArea = a; paintPick(); toast(`Область «${name}» создана — добавьте в неё пространство`);
+});
+// показать «Где работаем?» снова (из панели)
+function openPick(){ ui.pickArea = ''; ui.areaNew = false; $('#spPick')?.remove(); try { sessionStorage.removeItem(PICK_KEY); } catch(e) {}
+  document.body.insertAdjacentHTML('beforeend', '<div class="sp-pick" id="spPick" role="dialog" aria-modal="true" aria-labelledby="spPickT"></div>'); paintPick(); }
+// тип открытого пространства: Агентство ↔ SMM (данные не меняются, только вид; для SMM добавляется шаблон «SMM: видео»)
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-spkind]'); if (!b || b.getAttribute('aria-pressed') === 'true') return;
+  const k = b.dataset.spkind === 'smm' ? 'smm' : 'agency';
+  db.prefs = db.prefs || {}; db.prefs.kind = k; if (k === 'smm') ensureSmmTemplate(db); ui.group = 'auto';
+  commit(); toast(k === 'smm' ? 'Тип: SMM — вместо проектов видео, недели и план / факт' : 'Тип: Агентство — проекты');
+  if (!cloud.store || !cloud.uid || ORG) return;
+  if (SPACE){ const x = spaces.list.find(v => v.id === SPACE); if (x) x.kind = k; cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${SPACE}`).update({ kind:k }).catch(() => {}); }
+  else { spaces.mainKind = k; cloud.store.doc(`data/users/${cloud.uid}/spaces/main`).set(mainDoc()).catch(() => {}); }
+});
 function switchSpace(id){
+  markPicked();
   try { if (id) localStorage.setItem(SPACE_KEY, id); else localStorage.removeItem(SPACE_KEY); } catch(e) {}
   if (cloud.pending) flushCloud();
   setTimeout(() => (window.kzReloadHook || (() => location.reload()))(), cloud.writing ? 900 : 150);
 }
+const TRASH_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>';
 function renderSpaces(){
   const online = !!(cloud.store && cloud.uid);
   const row = (id, name, cur, extra) => `<li class="sp-row${cur ? ' cur' : ''}">
-      <span class="sp-name"><i class="sp-dot" style="--c:${spColor(id)}">${spIco(spIcon(id))}</i>${id ? `<input data-spname="${id}" value="${esc(name)}" maxlength="60" aria-label="Название пространства">` : `<b>${esc(name)}</b>`}</span>
+      <span class="sp-name"><i class="sp-dot" style="--c:${spColor(id)}">${spIco(spIcon(id))}</i>${online ? `<input data-spname="${id || 'main'}" value="${esc(name)}" maxlength="60" aria-label="Название пространства">` : `<b>${esc(name)}</b>`}</span>
+      ${cur && !ORG ? `<span class="kind-seg" role="group" aria-label="Тип пространства «${esc(name)}»">${Object.entries(KINDS).map(([k, [a]]) => `<button type="button" data-spkind="${k}" aria-pressed="${spKindOf(id) === k}">${k === 'smm' ? VIDEO_ICO : ''}${a}</button>`).join('')}</span>` : `<span class="sp-kbadge">${spKindOf(id) === 'smm' ? VIDEO_ICO : ''}${KINDS[spKindOf(id)][0]}</span>`}
       ${online ? `<span class="sp-icons" role="group" aria-label="Иконка пространства «${esc(name)}»" style="--c:${spColor(id)}">${SP_ICON_KEYS.map(k => `<button type="button" class="sp-i${k === spIcon(id) ? ' on' : ''}" data-spicon="${id}|${k}" title="${k}" aria-pressed="${k === spIcon(id)}">${spIco(k)}</button>`).join('')}</span>` : ''}
       ${online ? `<span class="sp-colors" role="group" aria-label="Цвет пространства «${esc(name)}»">${SP_COLORS.map(c => `<button type="button" class="sp-c${c === spColor(id) ? ' on' : ''}" data-spcolor="${id}|${c}" style="background:${c}" aria-label="Цвет ${c}" aria-pressed="${c === spColor(id)}"></button>`).join('')}</span>` : ''}
       ${cur ? '<span class="pill s-green"><i class="sw green"></i>Открыто</span>' : `<button class="ghost" data-spopen="${id}">Открыть</button>`}
       ${extra || ''}</li>`;
   app.innerHTML = `${setNav()}<div class="panel set-panel">
     <h2>Пространства</h2>
-    <p class="hint">Отдельное пустое поле для проектов в этом же аккаунте: свои проекты, задачи, команда, шаблоны, категории и настройки. Удобно, чтобы развести, например, агентство и личные проекты. Переключаются кружками внизу панели слева; у каждого — своя иконка и цвет.</p>
+    <p class="hint">Отдельное пустое поле для проектов в этом же аккаунте: свои проекты, задачи, команда, шаблоны, категории и настройки. Удобно, чтобы развести, например, агентство и другую команду. Тип «SMM» — то же самое, но вместо проектов видео: 4 недели и план / факт публикаций. Переключаются кружками внизу панели слева; у каждого — своя иконка и цвет.</p>
     ${online ? '' : '<p class="warn">Пространства работают, когда вы вошли в аккаунт.</p>'}
     ${spaces.orgs.length ? `<h3 class="sh-h">Проекты руководителей</h3><p class="hint">Команды, где вы руководитель: открываются их проекты, шаблоны и команда.</p>
       <ol class="sp-list">${spaces.orgs.map(o => `<li class="sp-row${ORG === o.id ? ' cur' : ''}"><b>${esc(o.name)}</b>${ORG === o.id ? '<span class="pill s-green"><i class="sw green"></i>Открыто</span>' : `<button class="ghost" data-orgopen="${o.id}">Открыть</button>`}<span></span></li>`).join('')}</ol>
       <h3 class="sh-h">Мои пространства</h3>` : ''}
-    <ol class="sp-list">${row('', 'Основное', !SPACE && !ORG)}${spaces.list.map(x => row(x.id, x.name, x.id === SPACE, `<button type="button" class="tx" data-spdel="${x.id}" aria-label="Удалить пространство ${esc(x.name)}" title="Удалить пространство">×</button>`)).join('')}</ol>
+    ${online && !ORG ? `<div class="ws-row"><label>Область <input data-areaname="${curArea()}" value="${esc(areaById(curArea()).name)}" maxlength="60" aria-label="Название области"></label></div>
+` : ''}
+    <ol class="sp-list">${spacesOfArea(curArea() || AREA0).map(x => x.id ? row(x.id, x.name, x.id === SPACE && !ORG, `<button type="button" class="sp-del" data-spdel="${x.id}" aria-label="Удалить пространство ${esc(x.name)}">${TRASH_ICO}<span>Удалить</span></button>`) : row('', mainName(), !SPACE && !ORG)).join('')}</ol>
     ${online ? `<form class="sp-new" id="spNew"><input id="spNewName" placeholder="Название нового пространства" maxlength="60" aria-label="Название нового пространства">
+      <div class="sp-kind" role="radiogroup" aria-label="Тип пространства">${Object.entries(KINDS).map(([k, [a, b]]) => `<label><input type="radio" name="spKind" value="${k}"${k === 'agency' ? ' checked' : ''}> ${a}: ${b}</label>`).join('')}</div>
       <label class="check"><input type="checkbox" id="spCopy" checked> Взять из текущего пространства шаблоны, категории и команду</label>
       <button class="primary">Создать и открыть</button></form>` : ''}
   </div>`;
@@ -4542,20 +4978,40 @@ document.addEventListener('submit', async e => {
   if (e.target.id !== 'spNew') return; e.preventDefault();
   const name = $('#spNewName').value.trim(); if (!name){ toast('Назовите пространство'); return; }
   if (!cloud.store || !cloud.uid){ toast('Пространства работают, когда вы вошли в аккаунт'); return; }
+  const kind = document.querySelector('[name="spKind"]:checked')?.value === 'smm' ? 'smm' : 'agency';
+  const id = await createSpace({ name, kind, area:curArea() || AREA0, copy:$('#spCopy').checked });
+  if (!id) return;
+  toast(`Пространство «${name}» создано, открываю`); markPicked(); switchSpace(id);
+});
+// новое пространство в разделе ws: пустое (или с шаблонами, категориями и командой текущего), тип agency | smm
+async function createSpace({ name, kind, area, copy }){
   const id = 's' + uid().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12);
   const fresh = emptySpace();
-  if ($('#spCopy').checked){ Object.assign(fresh, clone({ templates:db.templates, categories:db.categories || [], cardTpls:db.cardTpls || {}, prefs:db.prefs || {} }));
+  if (copy){ Object.assign(fresh, clone({ templates:db.templates, categories:db.categories || [], cardTpls:db.cardTpls || {}, prefs:db.prefs || {} }));
     fresh.users = clone(db.users.map(u => { const { invite, ...rest } = u; return rest; })); }
   else { const me = userById(ME); if (me) fresh.users = [clone(me)]; }
+  fresh.prefs = { ...(fresh.prefs || {}), kind }; if (kind === 'smm') ensureSmmTemplate(fresh);
+  if (copy && kind !== 'smm') delete fresh.prefs.smmPlans;
   fresh.savedAt = Date.now();
   try {
     const used = new Set([spColor(''), ...spaces.list.map(x => spColor(x.id))]); const color = SP_COLORS.find(c => !used.has(c)) || hashColor(id);
     const usedI = new Set([spIcon(''), ...spaces.list.map(x => spIcon(x.id))]); const icon = SP_ICON_KEYS.find(k => !usedI.has(k)) || hashIcon(id);
-    await cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).set({ name, at:new Date().toISOString(), color, icon });
+    await cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).set({ name, at:new Date().toISOString(), color, icon, kind, area:area || AREA0 });
     localStorage.setItem(`agency-pipeline-demo-v2-${id}`, JSON.stringify(fresh));
-  } catch(err) { toast('Не удалось создать пространство. Проверьте связь и попробуйте ещё раз.'); return; }
-  toast(`Пространство «${name}» создано, открываю`); switchSpace(id);
-});
+    try { localStorage.setItem(AREA_LAST(area || AREA0), id); } catch(x) {}
+    return id;
+  } catch(err) { toast('Не удалось создать пространство. Проверьте связь и попробуйте ещё раз.'); return null; }
+}
+// новый раздел: документ раздела + его первое пространство «Основное»
+// новая область: документ области; дальше на экране выбора сразу открывается «+ Новый раздел» в ней
+async function createArea(name){
+  if (!cloud.store || !cloud.uid){ toast('Области работают, когда вы вошли в аккаунт'); return null; }
+  const a = 'a' + uid().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12);
+  try { await cloud.store.doc(`data/users/${cloud.uid}/spaces/area/${a}`).set({ name, at:new Date().toISOString() }); }
+  catch(err) { toast('Не удалось создать область. Проверьте связь и попробуйте ещё раз.'); return null; }
+  if (!spaces.areas.some(x => x.id === a)) spaces.areas.push({ id:a, name, at:new Date().toISOString() });
+  return a;
+}
 document.addEventListener('click', e => {
   const og = e.target.closest?.('[data-orgopen]'); if (og){ switchOrg(og.dataset.orgopen); return; }
   const o = e.target.closest?.('[data-spopen]'); if (o){ if (ORG){ try { localStorage.removeItem(ORG_KEY); localStorage.setItem(ORG_OWN_KEY, '1'); } catch(x) {} } switchSpace(o.dataset.spopen); return; }
@@ -4563,28 +5019,52 @@ document.addEventListener('click', e => {
   const sp = spaces.list.find(x => x.id === d.dataset.spdel); if (!sp) return;
   askConfirm({ title:`Удалить пространство «${sp.name}»?`, text:'Все его проекты, задачи, команда и шаблоны удалятся из аккаунта навсегда. Восстановить их будет нельзя.', ok:'Удалить навсегда' }).then(async yes => {
     if (!yes) return;
+    const cur = sp.id === SPACE && !ORG;
+    // открытое пространство больше не пишем в облако — иначе сохранение вернёт удалённые данные
+    if (cur){ clearTimeout(cloud.timer); cloud.pending = false; cloud.col = null; }
     try {
-      const col = cloud.store.collection(spacePath(cloud.uid, sp.id)); const snap = await col.get();
-      for (const doc of snap.docs) await col.doc(doc.id).delete();
+      // сначала запись о пространстве: оно сразу пропадает из списка и панели
       await cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${sp.id}`).delete();
-      try { localStorage.removeItem(`agency-pipeline-demo-v2-${sp.id}`); } catch(x) {}
-      spaces.list = spaces.list.filter(x => x.id !== sp.id); toast(`Пространство «${sp.name}» удалено`);
-      if (sp.id === SPACE) switchSpace(''); else renderSpaces();
-    } catch(err) { toast('Не удалось удалить пространство. Попробуйте ещё раз.'); }
+    } catch(err) { toast('Не удалось удалить пространство. Проверьте связь и попробуйте ещё раз.'); return; }
+    spaces.list = spaces.list.filter(x => x.id !== sp.id);
+    try { localStorage.removeItem(`agency-pipeline-demo-v2-${sp.id}`); localStorage.removeItem(`agency-pipeline-demo-v2-${sp.id}-sync`); localStorage.removeItem(`agency-pipeline-demo-v2-${sp.id}-dirty`); } catch(x) {}
+    // потом его данные — по одному, ошибка одного документа не останавливает остальные
+    try { const col = cloud.store.collection(spacePath(cloud.uid, sp.id)); const snap = await col.get();
+      await Promise.allSettled(snap.docs.map(doc => col.doc(doc.id).delete())); } catch(err) {}
+    toast(`Пространство «${sp.name}» удалено`);
+    if (cur){ try { localStorage.removeItem(SPACE_KEY); } catch(x) {} markPicked(); setTimeout(() => (window.kzReloadHook || (() => location.reload()))(), 150); }
+    else { renderSpaces(); renderSide(); }
   });
 });
 document.addEventListener('change', e => {
-  const id = e.target.dataset?.spname; if (!id) return; const v = e.target.value.trim(); const sp = spaces.list.find(x => x.id === id);
+  const id = e.target.dataset?.spname; if (!id) return; const v = e.target.value.trim();
+  if (id === 'main'){ if (!v){ e.target.value = mainName(); return; } spaces.mainName = v;
+    cloud.store.doc(`data/users/${cloud.uid}/spaces/main`).set(mainDoc()).then(() => { paintSpace(); renderSide(); toast('Название сохранено'); }, () => toast('Не удалось переименовать')); return; }
+  const sp = spaces.list.find(x => x.id === id);
   if (!sp) return; if (!v){ e.target.value = sp.name; return; }
   cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).update({ name:v }).then(() => { sp.name = v; paintSpace(); toast('Название сохранено'); }, () => toast('Не удалось переименовать'));
 });
 document.addEventListener('click', e => { if (e.target.closest?.('#spaceName')){ openSide(); } });
+// выпадающий список областей закрывается кликом мимо него
+document.addEventListener('click', e => { if (ui.areaMenu && !e.target.closest?.('.side-ws')){ ui.areaMenu = false; renderSide(); } }, true);
+document.addEventListener('change', e => {
+  const a = e.target.dataset?.areaname; if (!a || !cloud.store || !cloud.uid) return; const v = e.target.value.trim(); const ar = areaById(a);
+  if (!v){ e.target.value = ar.name; return; }
+  cloud.store.doc(`data/users/${cloud.uid}/spaces/area/${a}`).set({ name:v, at:ar.at || new Date().toISOString() })
+    .then(() => toast('Название области сохранено'), () => toast('Не удалось переименовать область'));
+});
+document.addEventListener('change', e => {
+  const w = e.target.dataset?.wsname; if (!w || !cloud.store || !cloud.uid) return; const v = e.target.value.trim(); const ws = wsById(w);
+  if (!v){ e.target.value = ws.name; return; }
+  cloud.store.doc(`data/users/${cloud.uid}/spaces/ws/${w}`).set({ name:v, kind:ws.kind, at:ws.at || new Date().toISOString(), area:ws.area || AREA0 })
+    .then(() => toast('Название раздела сохранено'), () => toast('Не удалось переименовать раздел'));
+});
 // иконка пространства
 document.addEventListener('click', e => {
   const b = e.target.closest?.('[data-spicon]'); if (!b || !cloud.store || !cloud.uid) return;
   const [id, k] = b.dataset.spicon.split('|');
   const done = () => { renderSpaces(); renderSide(); };
-  if (!id){ spaces.mainIcon = k; done(); cloud.store.doc(`data/users/${cloud.uid}/spaces/main`).set({ color:spColor(''), icon:k }).catch(() => toast('Не удалось сохранить иконку')); return; }
+  if (!id){ spaces.mainIcon = k; done(); cloud.store.doc(`data/users/${cloud.uid}/spaces/main`).set(mainDoc({ icon:k })).catch(() => toast('Не удалось сохранить иконку')); return; }
   const x = spaces.list.find(v => v.id === id); if (x) x.icon = k; done();
   cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).update({ icon:k }).catch(() => toast('Не удалось сохранить иконку'));
 });
@@ -4593,7 +5073,7 @@ document.addEventListener('click', e => {
   const b = e.target.closest?.('[data-spcolor]'); if (!b || !cloud.store || !cloud.uid) return;
   const [id, c] = b.dataset.spcolor.split('|');
   const done = () => { applySpaceColor(); renderSpaces(); renderSide(); };
-  if (!id){ spaces.mainColor = c; done(); cloud.store.doc(`data/users/${cloud.uid}/spaces/main`).set({ color:c, icon:spIcon('') }).catch(() => toast('Не удалось сохранить цвет')); return; }
+  if (!id){ spaces.mainColor = c; done(); cloud.store.doc(`data/users/${cloud.uid}/spaces/main`).set(mainDoc({ color:c })).catch(() => toast('Не удалось сохранить цвет')); return; }
   const x = spaces.list.find(v => v.id === id); if (x) x.color = c; done();
   cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${id}`).update({ color:c }).catch(() => toast('Не удалось сохранить цвет'));
 });
@@ -4601,6 +5081,39 @@ document.addEventListener('click', e => {
 // ---------- Категории проектов ----------
 const catById = id => (db.categories || []).find(c => c.id === id) || null;
 const catDot = () => '';   // категории без цветовой маркировки
+// ---------- Теги проекта / видео ----------
+// Список тегов — db.prefs.tags [{id,name,h}] (например «Главврач», «Экспертное», «Отзыв»), у проекта p.tags = [id].
+// Назначаются кнопками в окне создания и в карточке; новый тег — поле «+ тег» и Enter. Фильтр «Теги» над списком.
+const TAG_HUES = [212, 152, 28, 280, 350, 190, 48, 100];
+const tagList = () => db.prefs?.tags || [];
+const tagById = id => tagList().find(t => t.id === id);
+const tagChip = t => `<span class="ptag" style="--th:${t.h}">${esc(t.name)}</span>`;
+const tagsHtml = p => { const ts = (p.tags || []).map(tagById).filter(Boolean); return ts.length ? `<span class="ptags">${ts.map(tagChip).join('')}</span>` : ''; };
+function addTag(name){
+  const v = String(name || '').trim().slice(0, 40); if (!v) return null;
+  db.prefs = db.prefs || {}; const list = db.prefs.tags = [...tagList()];
+  const had = list.find(t => norm(t.name) === norm(v)); if (had) return had;
+  const t = { id:'g' + uid(), name:v, h:TAG_HUES[list.length % TAG_HUES.length] }; list.push(t); return t;
+}
+// выбор тегов кнопками: scope — 'c' (окно создания) или id проекта
+const tagPicker = (sel, scope) => `<div class="tg-pick" data-tgscope="${scope}">${tagList().map(t => `<button type="button" class="ptag" style="--th:${t.h}" data-tgtoggle="${t.id}" aria-pressed="${sel.includes(t.id)}">${esc(t.name)}</button>`).join('')}
+  <input data-tgnew placeholder="+ тег и Enter" maxlength="40" aria-label="Новый тег"></div>`;
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-tgtoggle]'); if (!b) return;
+  const scope = b.closest('[data-tgscope]').dataset.tgscope; const id = b.dataset.tgtoggle;
+  if (scope === 'c'){ ui.cTags = toggle(ui.cTags || [], id); b.setAttribute('aria-pressed', ui.cTags.includes(id)); return; }
+  const p = projById(scope); if (!p) return;
+  p.tags = toggle(p.tags || [], id); addLog(p, `Теги: ${(p.tags).map(x => tagById(x)?.name).filter(Boolean).join(', ') || 'нет'}`); commit();
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || !e.target.matches?.('[data-tgnew]')) return; e.preventDefault();
+  const t = addTag(e.target.value); if (!t) return;
+  const box = e.target.closest('[data-tgscope]'); const scope = box.dataset.tgscope;
+  if (scope === 'c'){ ui.cTags = [...new Set([...(ui.cTags || []), t.id])]; save(); box.outerHTML = tagPicker(ui.cTags, 'c'); $('[data-tgscope="c"] [data-tgnew]')?.focus(); return; }
+  const p = projById(scope); if (!p) return;
+  p.tags = [...new Set([...(p.tags || []), t.id])]; addLog(p, `Тег «${t.name}» добавлен`); commit();
+  setTimeout(() => document.querySelector(`[data-tgscope="${scope}"] [data-tgnew]`)?.focus(), 0);
+});
 const catOpts = val => `<option value="">Без категории</option>` + (db.categories || []).map(c => `<option value="${c.id}" ${c.id === val ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 function renderCategories(){
   const cats = db.categories || [];
@@ -4750,6 +5263,7 @@ $('#tags').onclick = $('#activeF').onclick = e => {
   const t = e.target.closest('.tag'); if (!t) return;
   if (t.dataset.tagPm) ui.pms = toggle(ui.pms, t.dataset.tagPm);
   if (t.dataset.tagClient !== undefined) ui.clients = toggle(ui.clients, t.dataset.tagClient);
+  if (t.dataset.tagTg) ui.tagF = toggle(ui.tagF || [], t.dataset.tagTg);
   render();
 };
 document.addEventListener('keydown', e => {
@@ -6944,6 +7458,7 @@ function adoptOrgMe(){
   return changed;
 }
 function switchOrg(owner){
+  markPicked();
   try {
     if (owner){ localStorage.setItem(ORG_KEY, owner); localStorage.removeItem(ORG_OWN_KEY); localStorage.removeItem(SPACE_KEY); }
     else { localStorage.removeItem(ORG_KEY); localStorage.setItem(ORG_OWN_KEY, '1'); }
@@ -7183,7 +7698,7 @@ async function initCloud(){
   } catch(e) { setCloudStatus('local'); if (!GUEST){ setMode('owner'); bootOwner(); } }
 }
 let ownerBooted = false;
-function bootOwner(){ if (ownerBooted) return; ownerBooted = true; render(); if (!db.onboarded) openProfile(true); }
+function bootOwner(){ if (ownerBooted) return; ownerBooted = true; render(); if (!db.onboarded) openProfile(true); else setTimeout(maybePick, 0); }
 
 // =====================================================================
 //  ОБЩИЙ ДОСТУП К ПРОЕКТАМ (шеринг и роли) + Realtime между владельцем и исполнителем
@@ -7923,12 +8438,11 @@ function renderMobileNav(){
   const f = $('#fToggle'); if (f){ const k = ui.pms.length + ui.clients.length; f.classList.toggle('on', !!k); const nb = f.querySelector('.f-n'); if (nb) nb.textContent = k || ''; }
 }
 function openMore(){
-  const all = GUEST ? [] : [{ id:'', name:'Основное', color:spColor(''), icon:spIcon(''), cur:!SPACE && !ORG },
-    ...spaces.list.map(x => ({ id:x.id, name:x.name, color:spColor(x.id), icon:spIcon(x.id), cur:x.id === SPACE })),
-    ...spaces.orgs.map(o => ({ id:'o:' + o.id, name:`Проекты: ${o.name}`, color:spColorsCache()['o:' + o.id] || hashColor(o.id), icon:'users', cur:ORG === o.id }))];
+  const all = GUEST ? [] : sideSpaces();
   layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal more-sheet" role="dialog" aria-modal="true" aria-label="Меню">
     ${sideFoot()}
     <div class="mlist">${moreViews().map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')}</div>
+    ${GUEST ? '' : areaBar()}
     ${all.length > 1 || (cloud.store && cloud.uid) ? `<div class="m-spaces"><div class="side-spl"><span>Пространства</span><button class="link" data-sidespset>Настроить</button></div>
       <div class="m-splist">${all.map(x => `<button class="m-sp${x.cur ? ' cur' : ''}" data-sidesp="${x.id}" style="--c:${x.color}" aria-pressed="${x.cur}"><span class="side-sp-ico">${spIco(x.icon)}</span><span>${esc(x.name)}</span></button>`).join('')}</div></div>` : ''}
   </div>`;
