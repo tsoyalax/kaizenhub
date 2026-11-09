@@ -109,43 +109,41 @@ function openApp(backend, userId, keepStorage, session) {
   w.eval('db.onboarded = true; save();'); await wait(2500);   // анкета пройдена
   o.w.close();
 
-  // 7) «Где работаем?» — разделы: «Агентство» (основной) и «SMM» со своим пространством
-  be.put(`data/users/${A}/spaces/ws/wsmm1`, { name: 'SMM', kind: 'smm', at: '2026-11-01' });
-  be.put(`data/users/${A}/spaces/list/sabcde1`, { name: 'Клиника', at: '2026-11-01', kind: 'smm', ws: 'wsmm1' });
+  // 7) «Где работаем?» — области; внутри области — пространства (агентство и SMM вперемешку)
+  be.put(`data/users/${A}/spaces/list/sabcde1`, { name: 'Клиника', at: '2026-11-01', kind: 'smm' });
   be.put(`data/users/${A}/spaces/list/sabcde2`, { name: 'Разработка', at: '2026-11-02', kind: 'agency' });
+  be.put(`data/users/${A}/spaces/area/abiz2`, { name: 'Второй бизнес', at: '2026-11-03' });
+  be.put(`data/users/${A}/spaces/list/sabcde3`, { name: 'Кофейня', at: '2026-11-03', kind: 'agency', area: 'abiz2' });
   const o2 = openApp(be, A, { 'agency-mode': 'owner' }); await wait(4500);
   const w2 = o2.w, D2 = w2.document, $2 = s => D2.querySelector(s);
   const pick = $2('#spPick');
   assert.ok(pick && /Где работаем/.test(pick.textContent)); ok('после входа — «Где работаем?»');
   const areas = [...pick.querySelectorAll('[data-pickarea]')];
-  assert.equal(areas.length, 1); assert.ok(/Мой бизнес/.test(areas[0].textContent) && /Агентство · SMM/.test(areas[0].textContent)); ok('шаг 1 — области: «Мой бизнес» с разделами «Агентство · SMM»');
+  assert.equal(areas.length, 2); assert.ok(/Мой бизнес/.test(areas[0].textContent) && /Клиника · Разработка/.test(areas[0].textContent) && /Кофейня/.test(areas[1].textContent)); ok('на экране — области со списком их пространств');
+  assert.ok(!pick.querySelector('[data-pickws]')); ok('разделов больше нет');
   areas[0].click(); await wait(100);
-  assert.ok(!$2('#spPick')); ok('нажатие на область сразу открывает рабочий экран (последний раздел), без списка разделов');
+  assert.ok(!$2('#spPick')); ok('нажатие на текущую область сразу открывает рабочий экран');
   $2('#sideBtn').click(); await wait(80);
-  const chips = [...D2.querySelectorAll('.side-wsl [data-sidewsopen]')].map(b => b.textContent.trim());
-  assert.deepEqual(chips, ['Агентство', 'SMM']); assert.ok($2('.ws-chip.cur').dataset.sidewsopen === 'w0'); ok('разделы области — переключателем в левой панели');
   const dots = [...D2.querySelectorAll('.side-dots [data-sidesp]')].map(b => b.dataset.sidesp);
-  assert.deepEqual(dots, ['', 'sabcde2']); assert.ok(/Мой бизнес · Агентство/.test($2('.side-ws').textContent)); ok('в панели — пространства раздела «Агентство», сверху «Область · Раздел»');
+  assert.deepEqual(dots, ['', 'sabcde1', 'sabcde2']); ok('в панели кружками все пространства области «Мой бизнес»');
+  $2('[data-areamenu]').click(); await wait(50);
+  const items = [...D2.querySelectorAll('.area-menu [data-areaopen]')].map(b => b.firstChild.textContent);
+  assert.deepEqual(items, ['Мой бизнес', 'Второй бизнес']); assert.ok($2('.area-menu [data-areamnew]')); ok('▾ у названия области — выпадающий список областей и «+ Новая область»');
   let reloaded = 0; w2.kzReloadHook = () => { reloaded++; };
-  $2('.side-wsl [data-sidewsopen="wsmm1"]').click(); await wait(400);
-  assert.ok(reloaded === 1 && w2.localStorage.getItem('kz-space') === 'sabcde1'); ok('раздел SMM в панели открывает своё пространство «Клиника»');
-  $2('.side-ws').click(); await wait(100);
-  assert.ok($2('#spPick [data-pickarea]')); ok('кнопка «Область · Раздел» снова открывает «Где работаем?» с областями');
-  // новая область → сразу форма нового раздела в ней
+  $2('.area-menu [data-areaopen="abiz2"]').click(); await wait(400);
+  assert.ok(reloaded === 1 && w2.localStorage.getItem('kz-space') === 'sabcde3'); ok('выбор области в списке открывает её пространство');
+  $2('.side-dots [data-sidesp="sabcde1"]')?.click(); await wait(10);
+  // новая область → сразу форма первого пространства
   w2.eval('openPick()'); await wait(50);
   $2('[data-areanew]').click(); await wait(50);
-  $2('#areaNewName').value = 'Второй бизнес';
+  $2('#areaNewName').value = 'Третий бизнес';
   $2('#areaNew').dispatchEvent(new w2.Event('submit', { bubbles: true, cancelable: true })); await wait(400);
-  const areaRow = [...be.rows.values()].find(r => r.path.startsWith(`data/users/${A}/spaces/area/`) && r.data.name === 'Второй бизнес');
-  assert.ok(areaRow && /Второй бизнес/.test($2('#spPickT').textContent) && $2('#wsNew')); ok('«+ Новая область» создаёт область и сразу предлагает её первый раздел');
-  $2('#wsNewName').value = 'Другой бизнес'; $2('[name="wsKind"][value="agency"]').checked = true;
-  $2('#wsNew').dispatchEvent(new w2.Event('submit', { bubbles: true, cancelable: true })); await wait(600);
-  const wsKeys = [...be.rows.keys()].filter(k => k.startsWith(`data/users/${A}/spaces/ws/`));
-  const newWs = wsKeys.find(k => be.rows.get(k).data.name === 'Другой бизнес');
-  assert.ok(newWs); const wid = newWs.split('/').pop();
-  assert.equal(be.rows.get(newWs).data.area, areaRow.path.split('/').pop()); ok('раздел создан в новой области');
-  const first = [...be.rows.values()].find(r => r.path.startsWith(`data/users/${A}/spaces/list/`) && r.data.ws === wid);
-  assert.ok(first && reloaded === 2 && w2.localStorage.getItem('kz-space') === first.path.split('/').pop()); ok('«+ Новый раздел» создаёт раздел и его первое пространство и открывает его');
+  const areaRow = [...be.rows.values()].find(r => r.path.startsWith(`data/users/${A}/spaces/area/`) && r.data.name === 'Третий бизнес');
+  assert.ok(areaRow && /Третий бизнес/.test($2('#spPickT').textContent) && $2('#spFirst')); ok('«+ Новая область» создаёт область и сразу предлагает её первое пространство');
+  $2('#spFirstName').value = 'Ролики'; $2('[name="spFirstKind"][value="smm"]').checked = true;
+  $2('#spFirst').dispatchEvent(new w2.Event('submit', { bubbles: true, cancelable: true })); await wait(600);
+  const first = [...be.rows.values()].find(r => r.path.startsWith(`data/users/${A}/spaces/list/`) && r.data.name === 'Ролики');
+  assert.ok(first && first.data.area === areaRow.path.split('/').pop() && first.data.kind === 'smm' && w2.localStorage.getItem('kz-space') === first.path.split('/').pop()); ok('первое пространство (SMM) создано в новой области и открыто');
   const errs = [...o.errors, ...o2.errors].filter(e => !/Not implemented/.test(e));
   assert.deepEqual(errs, []); ok('ошибок на странице нет');
   w2.close();
