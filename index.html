@@ -2071,65 +2071,81 @@ function stageDoneAt(p, rx){
   const last = p.stages.filter(x => !isMaint(x)).at(-1);      // нет этапа «Опубликовано» — считаем по последнему этапу
   return last?.status === 'done' ? String(last.completed_at || last.due_date || '').slice(0, 10) : '';
 }
-function smmMonthPlan(ym){
-  const m = db.prefs?.smmPlans || {};
-  if (m[ym] != null) return +m[ym] || 0;
-  const prev = Object.keys(m).filter(k => k < ym).sort().at(-1);   // план переходит на следующие месяцы, пока его не поменяют
-  return prev ? +m[prev] || 0 : 0;
+// ---------- Циклы SMM: 4 недели от даты старта пачки видео ----------
+// У видео p.cycle — дата старта цикла (YYYY-MM-DD), p.week — неделя 1–4. Неделя 1 = дни 0–6 от старта, неделя 2 = 7–13 и т. д.
+// План цикла — db.prefs.smmCyclePlans[start] (по умолчанию — сколько видео в цикле), по неделям делится поровну: 45 → 12, 11, 11, 11.
+const CYCLE_WEEKS = 4;
+const cycleOf = p => p.cycle && /^\d{4}-\d{2}-\d{2}$/.test(p.cycle) ? p.cycle : '';
+const cycles = () => [...new Set(db.projects.filter(p => p.state !== 'archived' || cycleOf(p)).map(cycleOf).filter(Boolean))].sort();
+const cycleEnd = c => addDays(c, CYCLE_WEEKS * 7 - 1);
+const weekStart = (c, w) => addDays(c, (w - 1) * 7);
+const weekOfDate = (c, d) => Math.max(1, Math.min(CYCLE_WEEKS, Math.floor(diffDays(d, c) / 7) + 1));
+const cycleRange = c => `${fmt(c)} – ${fmt(cycleEnd(c))}`;
+const weekRangeC = (c, w) => `${fmt(weekStart(c, w))} – ${fmt(addDays(weekStart(c, w), 6))}`;
+// цикл, в который попадает дата (для одиночного видео), иначе ''
+const cycleFor = d => cycles().filter(c => d >= c && d <= cycleEnd(c)).at(-1) || '';
+const splitPlan = (n, k = CYCLE_WEEKS) => Array.from({ length:k }, (_, i) => Math.floor(n / k) + (i < n % k ? 1 : 0));
+function curCycle(){
+  const cs = cycles(); if (!cs.length) return '';
+  if (ui.smmCycle && cs.includes(ui.smmCycle)) return ui.smmCycle;
+  const t = today(); return cs.filter(c => c <= t && t <= cycleEnd(c)).at(-1) || cs.filter(c => c <= t).at(-1) || cs[0];
 }
-function smmStats(ym){
-  const all = db.projects;
-  const inM = d => d && d.slice(0, 7) === ym;
-  const weeks = [1, 2, 3, 4].map(w => ({ w, planned:0, shot:0, pub:0 }));
-  let shot = 0, pub = 0, planned = 0;
-  all.forEach(p => {
-    const d = vidDate(p); if (p.state !== 'archived' && inM(d)){ planned++; weeks[weekNo(d) - 1].planned++; }
-    const s = stageDoneAt(p, RX_SHOT); if (inM(s)){ shot++; weeks[weekNo(s) - 1].shot++; }
-    const u = stageDoneAt(p, RX_PUB); if (inM(u)){ pub++; weeks[weekNo(u) - 1].pub++; }
+function smmStats(c){
+  const vids = db.projects.filter(p => cycleOf(p) === c && p.state !== 'archived');
+  const set = db.prefs?.smmCyclePlans?.[c];
+  const plan = set != null ? +set || 0 : vids.length;
+  const planW = splitPlan(plan);
+  const weeks = planW.map((n, i) => ({ w:i + 1, plan:n, videos:0, shot:0, pub:0 }));
+  let shot = 0, pub = 0;
+  vids.forEach(p => {
+    weeks[Math.min(CYCLE_WEEKS, Math.max(1, +p.week || weekOfDate(c, vidDate(p) || c))) - 1].videos++;
+    const sd = stageDoneAt(p, RX_SHOT); if (sd){ shot++; weeks[weekOfDate(c, sd) - 1].shot++; }
+    const pd = stageDoneAt(p, RX_PUB); if (pd){ pub++; weeks[weekOfDate(c, pd) - 1].pub++; }
   });
-  return { plan:smmMonthPlan(ym), planned, shot, pub, weeks };
+  return { plan, videos:vids.length, shot, pub, weeks, custom:set != null };
 }
 function smmPanelHtml(){
-  const ym = ui.smmMonth || today().slice(0, 7); const st = smmStats(ym);
+  const c = curCycle();
+  if (!c) return `<section class="smm-pf" aria-label="План и факт"><div class="smm-hd"><h2>План / Факт</h2></div>
+    <p class="hint">Создайте пачку видео: «Новое видео» → «Количество видео», например 45. Они распределятся на 4 недели от даты старта, и здесь появится план и факт по неделям.</p></section>`;
+  const st = smmStats(c); const cs = cycles(); const i = cs.indexOf(c);
   const pct = st.plan ? Math.min(100, Math.round(st.pub / st.plan * 100)) : 0;
-  const cur = today().slice(0, 7) === ym; const nowW = cur ? weekNo(today()) : 0;
-  const left = Math.max(0, st.plan - st.pub);
-  const pace = cur && st.plan ? Math.round(st.plan * (+today().slice(8, 10)) / monthDays(ym)) : null;
-  const paceTxt = pace === null ? '' : st.pub >= pace ? 'идём по плану' : `отстаём на ${pace - st.pub}`;
-  return `<section class="smm-pf" aria-label="План и факт за месяц">
+  const t = today(); const live = t >= c && t <= cycleEnd(c); const nowW = live ? weekOfDate(c, t) : 0;
+  // сколько должно быть опубликовано к концу текущей недели
+  const due = live ? st.weeks.slice(0, nowW).reduce((m, x) => m + x.plan, 0) : t > cycleEnd(c) ? st.plan : 0;
+  const paceTxt = !st.plan || (!live && t < c) ? '' : st.pub >= due ? 'идём по плану' : `отстаём на ${due - st.pub}`;
+  return `<section class="smm-pf" aria-label="План и факт за 4 недели">
     <div class="smm-hd"><h2>План / Факт</h2>
-      <span class="smm-m"><button class="icon-btn" data-smmmon="-1" aria-label="Предыдущий месяц">‹</button><b>${MON_NOM[+ym.slice(5, 7) - 1]} ${ym.slice(0, 4)}</b><button class="icon-btn" data-smmmon="1" aria-label="Следующий месяц">›</button></span>
-      <label>План на месяц, видео <input type="number" id="smmPlan" min="0" max="999" value="${st.plan || ''}" placeholder="0" data-ym="${ym}"></label></div>
+      <span class="smm-m"><button class="icon-btn" data-smmcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-smmcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>
+      <label>План на 4 недели, видео <input type="number" id="smmPlan" min="0" max="999" value="${st.plan}" data-cyc="${c}"></label></div>
     <div class="smm-kpi">
-      <div><b>${st.plan || '—'}</b><small>План</small></div>
+      <div><b>${st.plan}</b><small>План</small></div>
       <div><b>${st.shot}</b><small>Снято</small></div>
-      <div><b>${st.pub}${st.plan ? ` <small>из ${st.plan}</small>` : ''}</b><small>Опубликовано${paceTxt ? ' · ' + paceTxt : ''}</small></div>
-      <div><b>${st.plan ? left : st.planned}</b><small>${st.plan ? 'Осталось опубликовать' : 'Видео на этот месяц'}</small></div>
+      <div><b>${st.pub} <small>из ${st.plan}</small></b><small>Опубликовано${paceTxt ? ' · ' + paceTxt : ''}</small></div>
+      <div><b>${Math.max(0, st.plan - st.pub)}</b><small>Осталось опубликовать</small></div>
     </div>
-    ${st.plan ? `<div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>` : ''}
-    <table class="smm-wk"><thead><tr><th>Неделя</th><th>По плану</th><th>Снято</th><th>Опубликовано</th></tr></thead><tbody>
-      ${st.weeks.map(x => `<tr class="${x.w === nowW ? 'now' : ''}"><td>Неделя ${x.w} <small class="hint">${weekRange(ym, x.w)}</small></td><td>${x.planned}</td><td>${x.shot}</td><td>${x.pub}</td></tr>`).join('')}
+    <div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>
+    <table class="smm-wk"><thead><tr><th>Неделя</th><th>План</th><th>Снято</th><th>Факт: опубликовано</th></tr></thead><tbody>
+      ${st.weeks.map(x => `<tr class="${x.w === nowW ? 'now' : ''}"><td>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></td><td>${x.plan}</td><td>${x.shot}</td><td>${x.pub} <small class="hint">из ${x.plan}</small></td></tr>`).join('')}
     </tbody></table>
-    ${smmTagRows(ym)}</section>`;
+    ${smmTagRows(c)}</section>`;
 }
-// по тегам (формат / KPI): сколько видео этого формата на месяц и сколько уже опубликовано
-function smmTagRows(ym){
-  const inM = d => d && d.slice(0, 7) === ym;
-  const rows = tagList().map(t => { const ps = db.projects.filter(p => (p.tags || []).includes(t.id));
-    const plan = ps.filter(p => p.state !== 'archived' && inM(vidDate(p))).length, pub = ps.filter(p => inM(stageDoneAt(p, RX_PUB))).length;
-    return plan || pub ? `<span>${tagChip(t)} опубликовано <b>${pub}</b> из ${plan}</span>` : ''; }).join('');
+// по тегам (формат / KPI): сколько видео этого формата в цикле и сколько уже опубликовано
+function smmTagRows(c){
+  const rows = tagList().map(t => { const ps = db.projects.filter(p => cycleOf(p) === c && p.state !== 'archived' && (p.tags || []).includes(t.id));
+    const pub = ps.filter(p => stageDoneAt(p, RX_PUB)).length;
+    return ps.length ? `<span>${tagChip(t)} опубликовано <b>${pub}</b> из ${ps.length}</span>` : ''; }).join('');
   return rows ? `<div class="smm-tags" aria-label="По тегам">${rows}</div>` : '';
 }
 document.addEventListener('click', e => {
-  const b = e.target.closest?.('[data-smmmon]'); if (!b) return;
-  const ym = ui.smmMonth || today().slice(0, 7); const d = new Date(+ym.slice(0, 4), +ym.slice(5, 7) - 1 + +b.dataset.smmmon, 1);
-  ui.smmMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; render();
+  const b = e.target.closest?.('[data-smmcyc]'); if (!b) return;
+  const cs = cycles(); const i = cs.indexOf(curCycle()) + +b.dataset.smmcyc; if (cs[i]){ ui.smmCycle = cs[i]; render(); }
 });
 document.addEventListener('change', e => {
   if (e.target.id !== 'smmPlan') return;
   const n = Math.max(0, Math.min(999, Math.round(+e.target.value || 0)));
-  db.prefs = db.prefs || {}; db.prefs.smmPlans = { ...(db.prefs.smmPlans || {}), [e.target.dataset.ym]:n };
-  commit(); toast(`План на месяц: ${n} видео`);
+  db.prefs = db.prefs || {}; db.prefs.smmCyclePlans = { ...(db.prefs.smmCyclePlans || {}), [e.target.dataset.cyc]:n };
+  commit(); toast(`План на 4 недели: ${n} видео — по неделям ${splitPlan(n).join(' / ')}`);
 });
 const plannedEnd = p => p.stages.reduce((m,s) => !isMaint(s) && s.due_date > m ? s.due_date : m, '');
 const isMaint = s => s?.system === 'maint';
@@ -2391,20 +2407,24 @@ function createProject(data){
   addLog(p, `Проект создан по шаблону «${tplById(data.template_id).name}»`);
   db.projects.unshift(p); copyCards(p); commit(); return p;
 }
-// SMM: сразу много видео по одному шаблону. Публикации — равномерно от первой даты до конца её месяца,
-// старт каждого видео — за длину цепочки до публикации (не раньше даты старта из формы). Одна запись в облако.
-function createVideos({ name, client, template_id, start, first, count, pm_id, worker_id, priority, category_id, image, tags }){
+// SMM: сразу много видео по одному шаблону — цикл из 4 недель от даты старта. Видео делятся по неделям поровну
+// (45 → 12, 11, 11, 11), публикации — внутри своей недели (в первой — не раньше, чем успевают пройти этапы).
+// Старт каждого видео — за длину цепочки до публикации (не раньше даты старта). Одна запись в облако.
+function createVideos({ name, client, template_id, start, count, pm_id, worker_id, priority, category_id, image, tags }){
   const tpl = tplById(template_id); const span = tpl.stages.reduce((m, s) => m + stageDaysFor(s), 0);
-  const a = first || addDays(start, span); const ym = a.slice(0, 7); const last = `${ym}-${String(monthDays(ym)).padStart(2, '0')}`;
-  const gap = Math.max(0, diffDays(last, a)); const made = [];
-  for (let i = 0; i < count; i++){
-    const pub = addDays(a, count > 1 ? Math.round(i * gap / (count - 1)) : 0);
-    const st = [start, addDays(pub, -span)].reduce((m, d) => d > m ? d : m);
-    const p = makeProject({ name:`${name} ${i + 1}`, client, template_id, start_date:st, pm_id, worker_id, priority });
-    p.deadline = pub; if (category_id) p.category_id = category_id; if (image) p.image = image; if (tags?.length) p.tags = [...tags];
-    addLog(p, `Видео создано по шаблону «${tpl.name}» (пачка из ${count})`);
-    made.push(p);
-  }
+  const c = start; const per = splitPlan(count); const made = []; let i = 0;
+  per.forEach((nw, wi) => {
+    const lo = wi === 0 ? Math.min(6, tpl.stages.length) : 0;
+    for (let j = 0; j < nw; j++, i++){
+      const pub = addDays(weekStart(c, wi + 1), lo + (nw > 1 ? Math.round(j * (6 - lo) / (nw - 1)) : 6 - lo));
+      const st = [start, addDays(pub, -span)].reduce((m, d) => d > m ? d : m);
+      const p = makeProject({ name:`${name} ${i + 1}`, client, template_id, start_date:st, pm_id, worker_id, priority });
+      p.deadline = pub; p.cycle = c; p.week = wi + 1;
+      if (category_id) p.category_id = category_id; if (image) p.image = image; if (tags?.length) p.tags = [...tags];
+      addLog(p, `Видео создано по шаблону «${tpl.name}» (пачка из ${count}, неделя ${wi + 1})`);
+      made.push(p);
+    }
+  });
   made.forEach(p => { if (plannedEnd(p) > p.deadline) fitToDeadline(p, true); });   // цепочка не длиннее, чем до публикации
   db.projects.unshift(...made); made.forEach(copyCards); commit(); return made;
 }
@@ -3023,12 +3043,13 @@ document.addEventListener('click', e => {
 const groupMode = () => ui.group === 'week' && !isSMM() ? 'template' : ui.group === 'auto' ? (isSMM() ? 'week' : (db.categories || []).length ? 'category' : 'template') : ui.group;
 function groupsFor(list){
   if (groupMode() === 'week'){
-    // SMM: «Неделя 1–4» месяца по дате публикации видео
-    const key = p => { const d = vidDate(p); return d ? `${d.slice(0, 7)}|${weekNo(d)}` : '~'; };
+    // SMM: «Неделя 1–4» цикла — 4 недели от даты старта пачки видео
+    const multi = cycles().length > 1;
+    const key = p => { const c = cycleOf(p); return c ? `${c}|${Math.min(CYCLE_WEEKS, Math.max(1, +p.week || weekOfDate(c, vidDate(p) || c)))}` : '~'; };
     const keys = [...new Set(list.map(key))].sort();
-    return keys.map(k => { const [ym, w] = k.split('|');
+    return keys.map(k => { const [c, w] = k.split('|');
       const items = list.filter(p => key(p) === k); const tids = [...new Set(items.map(p => p.template_id))];
-      return { title:k === '~' ? 'Без даты публикации' : `Неделя ${w} · ${weekRange(ym, +w)}${ym.slice(0, 4) !== today().slice(0, 4) ? ' ' + ym.slice(0, 4) : ''}`,
+      return { title:k === '~' ? 'Вне плана по неделям' : `${multi ? `Цикл с ${fmt(c)} · ` : ''}Неделя ${w} · ${weekRangeC(c, +w)}`,
         tpl:tids.length === 1 ? tplById(tids[0]) : null, items }; });
   }
   if (groupMode() === 'category'){
@@ -4120,7 +4141,7 @@ function openCreate(){
         <div class="field"><label for="cPri">Приоритет</label><select id="cPri"><option value="high">Высокий</option><option value="medium" selected>Средний</option><option value="low">Низкий</option></select></div>
       </div>
       ${isSMM() ? `<div class="field"><label for="cCount">Количество видео</label><input type="number" id="cCount" min="1" max="200" value="1" inputmode="numeric">
-        <small class="hint">Например, 45 — сразу создадутся «Название 1», «Название 2»… «Название 45». Публикации распределятся от даты публикации до конца месяца.</small></div>` : ''}
+        <small class="hint">Например, 45 — сразу создадутся «Название 1»… «Название 45» и распределятся на 4 недели от даты старта: 12 / 11 / 11 / 11. Дата публикации у каждого — внутри его недели.</small></div>` : ''}
       <label class="check maint-check"${isSMM() ? ' hidden' : ''}><input type="checkbox" id="cMaint"> <span>${RT_ICO}<b>Перевести проект на этап абонентского ведения после запуска</b><small>После завершения воронки проект перейдёт на этап регулярных задач и поддержки.</small></span></label>
       <div class="preview" id="cPrev"></div>
       <div class="err" id="cErr"></div>
@@ -4134,6 +4155,8 @@ function openCreate(){
       ${over ? `<label class="check" style="margin-top:6px"><input type="checkbox" id="cFit" checked> Уместить этапы в дедлайн</label>` : ''}`;
   };
   $('#cTpl').onchange = prev; $('#cStart').oninput = prev; $('#cDl').oninput = prev; prev();
+  // пачка видео: дата публикации у каждого своя (внутри его недели) — общее поле прячем
+  $('#cCount')?.addEventListener('input', e => { const many = +e.target.value > 1; const f = $('#cDl').closest('.field'); f.hidden = many; if (many) $('#cDl').value = ''; $('#cPrev').hidden = many; });
   ui.cImg = null;
   const paintC = () => { const pv = $('#cImgPrev'); if (pv) pv.innerHTML = projAva({ id:'new', name:$('#cName').value || '', image:ui.cImg }, 'lg'); };
   $('#cName').addEventListener('input', () => { if (!ui.cImg) paintC(); });
@@ -4152,12 +4175,14 @@ function openCreate(){
     if (count > 1){
       const made = createVideos({ name, client, template_id:$('#cTpl').value, start, first:dl, count, pm_id:$('#cPm').value, worker_id:$('#cWorker').value || null,
         priority:$('#cPri').value, category_id:$('#cCat')?.value || '', image:ui.cImg, tags:[...(ui.cTags || [])] });
-      ui.cImg = null; layer.innerHTML = ''; toast(`Создано видео: ${made.length}`); return;
+      ui.smmCycle = start;
+      ui.cImg = null; layer.innerHTML = ''; toast(`Создано видео: ${made.length} — на 4 недели: ${splitPlan(made.length).join(' / ')}`); return;
     }
     const p = createProject({ name, client, template_id:$('#cTpl').value, start_date:start, pm_id:$('#cPm').value, worker_id:$('#cWorker').value || null,
       priority:$('#cPri').value });
     const cat = $('#cCat')?.value; if (cat){ p.category_id = cat; save(); }
     if ((ui.cTags || []).length){ p.tags = [...ui.cTags]; save(); }
+    if (isSMM()){ const c = cycleFor(dl || plannedEnd(p)); if (c){ p.cycle = c; p.week = weekOfDate(c, dl || plannedEnd(p)); save(); } }
     if (ui.cImg){ p.image = ui.cImg; ui.cImg = null; save(); }
     if ($('#cMaint')?.checked){ p.is_maintenance = true; syncState(p); addLog(p, 'Проект на ведении: после воронки — этап «Ведение / Поддержка»'); save(); }
     if (dl){ p.deadline = dl; if (fit) fitToDeadline(p); else commit(); }

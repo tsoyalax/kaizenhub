@@ -60,27 +60,32 @@ function openApp(backend, userId, keepStorage, session) {
   const tn = $('[data-tgscope="c"] [data-tgnew]'); tn.value = 'Главврач';
   tn.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await wait(50);
   assert.equal($('[data-tgscope="c"] [data-tgtoggle]').getAttribute('aria-pressed'), 'true'); ok('новый тег создаётся из поля и сразу выбран');
-  const t = new Date(); const ym = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`;
-  $('#cName').value = 'Ролик'; $('#cClient').value = 'Клиника'; $('#cStart').value = `${ym}-01`; $('#cDl').value = `${ym}-08`;
-  $('#cCount').value = '15'; fire($('#cForm'), 'submit'); await wait(400);
+  const t = new Date(); const T = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+  $('#cName').value = 'Ролик'; $('#cClient').value = 'Клиника'; $('#cStart').value = T;
+  $('#cCount').value = '45'; fire($('#cCount'), 'input'); await wait(20);
+  assert.ok($('#cDl').closest('.field').hidden); ok('при пачке общее поле «Дата публикации» прячется');
+  fire($('#cForm'), 'submit'); await wait(500);
   const vids = ls().projects.filter(p => /^Ролик \d+$/.test(p.name));
-  assert.equal(vids.length, 15); ok('создано сразу 15 видео');
+  assert.equal(vids.length, 45); ok('создано сразу 45 видео');
   assert.ok(vids.every(p => p.tags?.length === 1 && ls().prefs.tags.find(x => x.id === p.tags[0]).name === 'Главврач')); ok('у всех тег «Главврач»');
-  const dates = vids.map(p => p.deadline).sort();
-  assert.ok(dates[0] === `${ym}-08` && dates.at(-1).slice(0, 7) === ym && dates.at(-1) > `${ym}-27`); ok('публикации распределены от 8-го до конца месяца');
+  const perW = [1, 2, 3, 4].map(k => vids.filter(p => p.week === k).length);
+  assert.deepEqual(perW, [12, 11, 11, 11]); assert.ok(vids.every(p => p.cycle === T)); ok('45 видео поровну на 4 недели от сегодня: 12 / 11 / 11 / 11');
+  const inWeek = p => { const d = (Date.parse(p.deadline) - Date.parse(T)) / 864e5; return d >= (p.week - 1) * 7 && d <= (p.week - 1) * 7 + 6; };
+  assert.ok(vids.every(inWeek)); ok('публикация каждого видео — внутри его недели');
+  const lateN = w.eval('db.projects.filter(p => p.cycle && plannedEnd(p) > p.deadline).length');
+  assert.equal(lateN, 0); ok('этапы каждого видео укладываются в его дату публикации');
 
   // 4) недели и план / факт
-  assert.ok([...D.querySelectorAll('.grp h2')].some(h => /^Неделя 2/.test(h.textContent))); ok('видео сгруппированы по неделям месяца');
+  const heads = [...D.querySelectorAll('.grp h2')].map(h => h.textContent);
+  assert.ok(heads.some(h => /^Неделя 1/.test(h)) && heads.some(h => /^Неделя 4/.test(h))); ok('список сгруппирован: Неделя 1…4 от даты старта');
   assert.ok(/Главврач/.test($('#tags').textContent)); ok('фильтр по тегу над списком');
-  const pl = $('#smmPlan'); pl.value = '45'; fire(pl, 'change'); await wait(200);
-  assert.equal(ls().prefs.smmPlans[ym], 45); assert.ok(/45/.test($('.smm-kpi').textContent)); ok('план на месяц сохраняется');
-  // «опубликовать» одно видео: все этапы завершены сегодня
-  const db = ls(); const v = db.projects.find(p => p.name === 'Ролик 1'); const today = `${ym}-${String(t.getDate()).padStart(2, '0')}`;
-  v.stages.forEach(s => { s.status = 'done'; s.completed_at = today; });
-  w.localStorage.setItem('agency-pipeline-demo-v2', JSON.stringify(db));
-  const kpi = w.eval('(() => { db.projects.find(p => p.name === "Ролик 1").stages.forEach(s => { s.status = "done"; s.completed_at = today(); }); return smmStats(today().slice(0, 7)); })()');
-  assert.equal(kpi.pub, 1); assert.equal(kpi.shot, 1); assert.equal(kpi.plan, 45); assert.ok(kpi.planned >= 15); ok("факт: снято 1, опубликовано 1 из плана 45");
-  assert.ok(/опубликовано 1 из 15/.test(w.eval('smmTagRows(today().slice(0, 7))').replace(/<[^>]+>/g, ''))); ok('по тегу: «Главврач» опубликовано 1 из 15');
+  const rows = [...D.querySelectorAll('.smm-wk tbody tr')].map(r => r.children[1].textContent);
+  assert.deepEqual(rows, ['12', '11', '11', '11']); ok('«План / Факт»: план по неделям 12 / 11 / 11 / 11');
+  const pl = $('#smmPlan'); pl.value = '40'; fire(pl, 'change'); await wait(200);
+  assert.equal(ls().prefs.smmCyclePlans[T], 40); assert.deepEqual([...D.querySelectorAll('.smm-wk tbody tr')].map(r => r.children[1].textContent), ['10', '10', '10', '10']); ok('свой план на 4 недели (40) делится по неделям: 10 / 10 / 10 / 10');
+  const kpi = w.eval('(() => { db.projects.find(p => p.name === "Ролик 1").stages.forEach(s => { s.status = "done"; s.completed_at = today(); }); return smmStats(curCycle()); })()');
+  assert.equal(kpi.pub, 1); assert.equal(kpi.shot, 1); assert.equal(kpi.plan, 40); assert.equal(kpi.weeks[0].pub, 1); ok('факт: снято 1, опубликовано 1 — в неделе 1');
+  assert.ok(/опубликовано 1 из 45/.test(w.eval('smmTagRows(curCycle())').replace(/<[^>]+>/g, ''))); ok('по тегу: «Главврач» опубликовано 1 из 45');
 
   // 5) у видео без фото — иконка видео
   assert.ok($('.pava.vid svg')); ok('у видео иконка видео вместо букв');
