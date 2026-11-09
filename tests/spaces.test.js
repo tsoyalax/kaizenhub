@@ -43,7 +43,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   // 1) раздел «Пространства»
   D.querySelector('.tabs [data-view="templates"]').click(); await wait(100);
   $('[data-settab="spaces"]').click(); await wait(200);
-  assert.ok($('#spNew') && /Основное/.test($('.sp-list').textContent)); ok('настройки: раздел «Пространства», открыто «Основное»');
+  assert.ok($('#spNew') && $('.sp-list [data-spname="main"]').value === 'Основное' && $('.sp-list .sp-row.cur [data-spname="main"]')); ok('настройки: раздел «Пространства», открыто «Основное»');
   let reloaded = 0; w.kzReloadHook = () => { reloaded++; };
   $('#spNewName').value = 'Личные проекты'; fire($('#spNew'), 'submit'); await wait(500);
   const sid = w.localStorage.getItem('kz-space');
