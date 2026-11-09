@@ -736,6 +736,13 @@ body.side-pinned .side-btn{color:var(--ink)}
 .ws-row label{display:inline-flex;align-items:center;gap:8px;font-weight:600}
 .ws-new{display:grid;gap:10px;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--panel)}
 .ws-new-act{display:flex;justify-content:flex-end;gap:8px}
+.smm-edit{margin-left:auto;display:inline-flex;align-items:center;gap:6px}
+.smm-edit svg{width:15px;height:15px}
+.smm-ed{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin:0 0 12px;padding:12px;border-radius:12px;background:var(--bg)}
+.smm-ed label{display:grid;gap:4px;font-size:12.5px;color:var(--muted)}
+.smm-ed input[type=number]{width:90px}
+.smm-ed .hint{flex-basis:100%}
+.smm-ed-act{display:flex;gap:8px;margin-left:auto}
 .sp-kbadge{font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--line);color:var(--muted);white-space:nowrap}
 .cx-name{gap:12px}
 .mc-r1 .pava{margin-right:2px}
@@ -2117,7 +2124,12 @@ function smmPanelHtml(){
   return `<section class="smm-pf" aria-label="План и факт за 4 недели">
     <div class="smm-hd"><h2>План / Факт</h2>
       <span class="smm-m"><button class="icon-btn" data-smmcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-smmcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>
-      <label>План на 4 недели, видео <input type="number" id="smmPlan" min="0" max="999" value="${st.plan}" data-cyc="${c}"></label></div>
+      ${ui.smmEdit === c ? '' : `<button class="ghost smm-edit" data-smmedit>${ICON_EDIT}Редактировать</button>`}</div>
+    ${ui.smmEdit === c ? `<form class="smm-ed" id="smmEd" data-cyc="${c}">
+      <label>Старт 4 недель <input type="date" id="smmStart" value="${c}" required></label>
+      <label>План на 4 недели, видео <input type="number" id="smmPlan" min="0" max="999" value="${st.plan}"></label>
+      <small class="hint">Новая дата старта сдвигает все видео цикла вместе с датами публикации; план делится по неделям поровну.</small>
+      <span class="smm-ed-act"><button type="button" class="ghost" data-smmeditcancel>Отмена</button><button class="primary">Сохранить</button></span></form>` : ''}
     <div class="smm-kpi">
       <div><b>${st.plan}</b><small>План</small></div>
       <div><b>${st.shot}</b><small>Снято</small></div>
@@ -2141,11 +2153,30 @@ document.addEventListener('click', e => {
   const b = e.target.closest?.('[data-smmcyc]'); if (!b) return;
   const cs = cycles(); const i = cs.indexOf(curCycle()) + +b.dataset.smmcyc; if (cs[i]){ ui.smmCycle = cs[i]; render(); }
 });
-document.addEventListener('change', e => {
-  if (e.target.id !== 'smmPlan') return;
-  const n = Math.max(0, Math.min(999, Math.round(+e.target.value || 0)));
-  db.prefs = db.prefs || {}; db.prefs.smmCyclePlans = { ...(db.prefs.smmCyclePlans || {}), [e.target.dataset.cyc]:n };
-  commit(); toast(`План на 4 недели: ${n} видео — по неделям ${splitPlan(n).join(' / ')}`);
+document.addEventListener('click', e => {
+  if (e.target.closest?.('[data-smmedit]')){ ui.smmEdit = curCycle(); render(); setTimeout(() => { const d = $('#smmStart'); d?.focus(); try { d?.showPicker?.(); } catch(x) {} }, 0); return; }
+  if (e.target.closest?.('[data-smmeditcancel]')){ ui.smmEdit = null; render(); }
+});
+// сдвиг цикла на новую дату старта: у видео цикла переезжают дата публикации и несданные этапы, номер недели сохраняется
+function moveCycle(c, to){
+  const delta = diffDays(to, c); if (!delta) return 0;
+  const vids = db.projects.filter(p => cycleOf(p) === c);
+  vids.forEach(p => {
+    p.cycle = to; if (p.deadline) p.deadline = addDays(p.deadline, delta);
+    if (!projStarted(p) && p.start_date) p.start_date = addDays(p.start_date, delta);
+    p.stages.forEach(s => { if (s.status !== 'done'){ if (s.planned_start) s.planned_start = addDays(s.planned_start, delta); if (s.due_date) s.due_date = addDays(s.due_date, delta); } });
+    addLog(p, `Старт цикла: ${fmt(c)} → ${fmt(to)}, публикация ${fmt(p.deadline)}`);
+  });
+  const plans = { ...(db.prefs?.smmCyclePlans || {}) }; if (c in plans){ plans[to] = plans[c]; delete plans[c]; }
+  db.prefs = { ...(db.prefs || {}), smmCyclePlans:plans };
+  return vids.length;
+}
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'smmEd') return; e.preventDefault();
+  let c = e.target.dataset.cyc; const to = $('#smmStart').value; const n = Math.max(0, Math.min(999, Math.round(+$('#smmPlan').value || 0)));
+  if (to && to !== c){ if (cycles().includes(to)){ toast('С этой даты уже начинается другой цикл'); return; } moveCycle(c, to); c = to; ui.smmCycle = to; }
+  db.prefs = db.prefs || {}; db.prefs.smmCyclePlans = { ...(db.prefs.smmCyclePlans || {}), [c]:n };
+  ui.smmEdit = null; commit(); toast(`4 недели: ${cycleRange(c)} · план ${n} — по неделям ${splitPlan(n).join(' / ')}`);
 });
 const plannedEnd = p => p.stages.reduce((m,s) => !isMaint(s) && s.due_date > m ? s.due_date : m, '');
 const isMaint = s => s?.system === 'maint';

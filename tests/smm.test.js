@@ -81,8 +81,17 @@ function openApp(backend, userId, keepStorage, session) {
   assert.ok(/Главврач/.test($('#tags').textContent)); ok('фильтр по тегу над списком');
   const rows = [...D.querySelectorAll('.smm-wk tbody tr')].map(r => r.children[1].textContent);
   assert.deepEqual(rows, ['12', '11', '11', '11']); ok('«План / Факт»: план по неделям 12 / 11 / 11 / 11');
-  const pl = $('#smmPlan'); pl.value = '40'; fire(pl, 'change'); await wait(200);
+  assert.ok(!$('#smmPlan') && $('[data-smmedit]')); ok('поле плана скрыто, есть кнопка «Редактировать»');
+  $('[data-smmedit]').click(); await wait(50);
+  assert.ok($('#smmStart') && $('#smmStart').type === 'date' && $('#smmStart').value === T); ok('«Редактировать» открывает календарь даты старта и план');
+  $('#smmPlan').value = '40'; fire($('#smmEd'), 'submit'); await wait(200);
   assert.equal(ls().prefs.smmCyclePlans[T], 40); assert.deepEqual([...D.querySelectorAll('.smm-wk tbody tr')].map(r => r.children[1].textContent), ['10', '10', '10', '10']); ok('свой план на 4 недели (40) делится по неделям: 10 / 10 / 10 / 10');
+  // сдвиг старта на 3 дня: цикл и публикации переезжают, недели те же
+  const before = ls().projects.find(p => p.name === 'Ролик 5').deadline;
+  $('[data-smmedit]').click(); await wait(50);
+  const T3 = w.eval(`addDays('${T}', 3)`); $('#smmStart').value = T3; fire($('#smmEd'), 'submit'); await wait(200);
+  const after = ls().projects.find(p => p.name === 'Ролик 5');
+  assert.ok(after.cycle === T3 && after.deadline === w.eval(`addDays('${before}', 3)`) && ls().prefs.smmCyclePlans[T3] === 40 && !$('#smmEd')); ok('новая дата старта сдвигает цикл и публикации, план сохраняется');
   const kpi = w.eval('(() => { db.projects.find(p => p.name === "Ролик 1").stages.forEach(s => { s.status = "done"; s.completed_at = today(); }); return smmStats(curCycle()); })()');
   assert.equal(kpi.pub, 1); assert.equal(kpi.shot, 1); assert.equal(kpi.plan, 40); assert.equal(kpi.weeks[0].pub, 1); ok('факт: снято 1, опубликовано 1 — в неделе 1');
   assert.ok(/опубликовано 1 из 45/.test(w.eval('smmTagRows(curCycle())').replace(/<[^>]+>/g, ''))); ok('по тегу: «Главврач» опубликовано 1 из 45');
