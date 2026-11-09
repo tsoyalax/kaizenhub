@@ -103,6 +103,9 @@ function openApp(backend, userId, keepStorage, session) {
   const w2 = o2.w, D2 = w2.document, $2 = s => D2.querySelector(s);
   const pick = $2('#spPick');
   assert.ok(pick && /Где работаем/.test(pick.textContent)); ok('после входа — «Где работаем?»');
+  const areas = [...pick.querySelectorAll('[data-pickarea]')];
+  assert.equal(areas.length, 1); assert.ok(/Мой бизнес/.test(areas[0].textContent) && /Агентство · SMM/.test(areas[0].textContent)); ok('шаг 1 — области: «Мой бизнес» с разделами «Агентство · SMM»');
+  areas[0].click(); await wait(50);
   const cards = [...pick.querySelectorAll('[data-pickws]')].map(b => b.textContent.replace(/\s+/g, ' '));
   assert.equal(cards.length, 2); assert.ok(/Агентство · 2 пространства/.test(cards[0]) && /SMM · 1 пространство/.test(cards[1])); ok('на экране разделы, а не пространства: «Агентство» (2) и «SMM» (1)');
   pick.querySelector('[data-pickws="w0"]').click(); await wait(100);
@@ -111,18 +114,25 @@ function openApp(backend, userId, keepStorage, session) {
   const dots = [...D2.querySelectorAll('.side-dots [data-sidesp]')].map(b => b.dataset.sidesp);
   assert.deepEqual(dots, ['', 'sabcde2']); assert.ok(/Агентство/.test($2('.side-ws').textContent)); ok('в панели — только пространства раздела «Агентство», сверху название раздела');
   let reloaded = 0; w2.kzReloadHook = () => { reloaded++; };
+  assert.ok(/Мой бизнес · Агентство/.test($2('.side-ws').textContent)); ok('в панели сверху «Область · Раздел»');
   $2('.side-ws').click(); await wait(100);
-  assert.ok($2('#spPick')); ok('название раздела в панели снова открывает «Где работаем?»');
+  assert.ok($2('#spPick [data-pickarea]')); ok('кнопка в панели снова открывает «Где работаем?» с областями');
+  $2('#spPick [data-pickarea="a0"]').click(); await wait(50);
   $2('#spPick [data-pickws="wsmm1"]').click(); await wait(400);
   assert.ok(reloaded === 1 && w2.localStorage.getItem('kz-space') === 'sabcde1'); ok('раздел SMM открывает своё пространство «Клиника»');
-  // новый раздел прямо с экрана выбора
+  // новая область → сразу форма нового раздела в ней
   w2.eval('openPick()'); await wait(50);
-  $2('[data-picknew]').click(); await wait(50);
+  $2('[data-areanew]').click(); await wait(50);
+  $2('#areaNewName').value = 'Второй бизнес';
+  $2('#areaNew').dispatchEvent(new w2.Event('submit', { bubbles: true, cancelable: true })); await wait(400);
+  const areaRow = [...be.rows.values()].find(r => r.path.startsWith(`data/users/${A}/spaces/area/`) && r.data.name === 'Второй бизнес');
+  assert.ok(areaRow && /Второй бизнес/.test($2('#spPickT').textContent) && $2('#wsNew')); ok('«+ Новая область» создаёт область и сразу предлагает её первый раздел');
   $2('#wsNewName').value = 'Другой бизнес'; $2('[name="wsKind"][value="agency"]').checked = true;
   $2('#wsNew').dispatchEvent(new w2.Event('submit', { bubbles: true, cancelable: true })); await wait(600);
   const wsKeys = [...be.rows.keys()].filter(k => k.startsWith(`data/users/${A}/spaces/ws/`));
   const newWs = wsKeys.find(k => be.rows.get(k).data.name === 'Другой бизнес');
   assert.ok(newWs); const wid = newWs.split('/').pop();
+  assert.equal(be.rows.get(newWs).data.area, areaRow.path.split('/').pop()); ok('раздел создан в новой области');
   const first = [...be.rows.values()].find(r => r.path.startsWith(`data/users/${A}/spaces/list/`) && r.data.ws === wid);
   assert.ok(first && reloaded === 2 && w2.localStorage.getItem('kz-space') === first.path.split('/').pop()); ok('«+ Новый раздел» создаёт раздел и его первое пространство и открывает его');
   const errs = [...o.errors, ...o2.errors].filter(e => !/Not implemented/.test(e));
