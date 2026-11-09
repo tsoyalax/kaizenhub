@@ -43,8 +43,8 @@ function openApp(backend, userId, keepStorage, session) {
   // 1) тип пространства → SMM
   D.querySelector('.tabs [data-view="templates"]').click(); await wait(100);
   $('[data-settab="spaces"]').click(); await wait(200);
-  const kind = $('[data-spkind]'); assert.ok(kind && kind.value === 'agency'); ok('у открытого пространства есть выбор типа, по умолчанию «Агентство»');
-  kind.value = 'smm'; fire(kind, 'change'); await wait(300);
+  assert.equal($('.kind-seg [aria-pressed="true"]')?.dataset.spkind, 'agency'); ok('у открытого пространства — переключатель типа, выбрано «Агентство»');
+  $('.kind-seg [data-spkind="smm"]').click(); await wait(300);
   assert.equal(ls().prefs.kind, 'smm'); assert.ok(ls().templates.some(t => t.name === 'SMM: видео')); ok('тип SMM сохранён, добавлен шаблон «SMM: видео»');
   assert.equal(be.rows.get(`data/users/${A}/spaces/main`)?.data?.kind, 'smm'); ok('тип записан в аккаунт');
 

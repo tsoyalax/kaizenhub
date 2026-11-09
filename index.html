@@ -439,7 +439,7 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .space-name{margin-left:10px;border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:2px 10px;font:inherit;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .space-name:hover{color:var(--ink);border-color:var(--line-strong)}
 .sp-list{list-style:none;margin:12px 0;padding:0;display:grid;gap:4px}
-.sp-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto 28px;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line)}
+.sp-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto 28px;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line)}
 .sp-row b{padding:0 8px}
 .sp-name{display:flex;align-items:center;gap:4px;min-width:0}.sp-name input{flex:1}
 .sp-dot{width:26px;height:26px;border-radius:8px;flex:none;margin-left:2px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
@@ -451,7 +451,7 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .sp-colors{display:flex;gap:4px;flex-wrap:wrap}
 .sp-c{width:18px;height:18px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
 .sp-c.on{border-color:var(--ink)}
-@media (max-width:640px){.sp-row{grid-template-columns:1fr auto 28px}.sp-colors{grid-column:1/-1;order:3}}
+@media (max-width:640px){.sp-row{grid-template-columns:1fr auto auto 28px}.sp-colors{grid-column:1/-1;order:3}}
 .sp-row:hover .tx{opacity:1}
 .sp-row input{height:34px;border:1px solid transparent;border-radius:8px;background:transparent;padding:0 8px;font-weight:600;font-size:14.5px;min-width:0}
 .sp-row input:hover{border-color:var(--line)}.sp-row input:focus{border-color:var(--line-strong);outline:0;background:var(--surface)}
@@ -718,8 +718,6 @@ body.side-pinned .side-btn{color:var(--ink)}
 .sp-pick-card b{display:block;font-size:15px}
 .sp-pick-card small{color:var(--muted)}
 .sp-pick-card em{margin-left:auto;font-style:normal;font-size:12px;color:var(--muted)}
-.sp-kind{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
-.sp-kind label{display:inline-flex;align-items:center;gap:6px}
 .ptags{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:6px;vertical-align:middle}
 .ptag{display:inline-flex;align-items:center;font-size:11px;line-height:1;font-weight:600;padding:3px 7px;border-radius:99px;color:hsl(var(--th) 60% 32%);background:hsl(var(--th) 80% 92%);white-space:nowrap}
 :root[data-theme="dark"] .ptag{color:hsl(var(--th) 80% 78%);background:hsl(var(--th) 40% 22%)}
@@ -757,7 +755,22 @@ body.side-pinned .side-btn{color:var(--ink)}
 .ws-chip svg{width:14px;height:14px}
 .ws-chip.cur{background:var(--brand,#3b82f6);border-color:transparent;color:#fff}
 .ws-chip.add{padding:5px 9px;color:var(--muted)}
-.sp-kbadge{font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--line);color:var(--muted);white-space:nowrap}
+.sp-kbadge{display:inline-flex;align-items:center;gap:5px;height:28px;font-size:12.5px;font-weight:600;padding:0 10px;border-radius:99px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.sp-kbadge svg,.kind-seg svg{width:14px;height:14px}
+/* переключатель-чипы: тип пространства и выбор при создании */
+.kind-seg{display:inline-flex;gap:2px;padding:3px;border-radius:11px;background:var(--surface-2)}
+.kind-seg button{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border:0;border-radius:8px;background:none;font:inherit;font-size:13px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.kind-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.sp-kind{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:11px;background:var(--surface-2);justify-self:start;margin:0}
+.sp-kind label{position:relative;display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:8px;font-size:13px;color:var(--muted);cursor:pointer}
+.sp-kind input{position:absolute;opacity:0;pointer-events:none}
+.sp-kind label:has(input:checked){background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.sp-kind label:has(input:focus-visible){outline:2px solid var(--brand);outline-offset:1px}
+/* поля ввода в новых блоках — как в остальном приложении */
+.ws-row input,.ws-new input:not([type=radio]),.smm-ed input,.tg-pick input{height:34px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);padding:0 10px;font:inherit;font-size:13.5px;min-width:0}
+.ws-row input:focus,.ws-new input:focus,.smm-ed input:focus,.tg-pick input:focus{border-color:var(--line-strong);outline:0}
+.ws-row input{width:260px;font-weight:600}
+.ws-new input:not([type=radio]){height:38px;font-size:14.5px}
 .cx-name{gap:12px}
 .mc-r1 .pava{margin-right:2px}
 .pm-cn,.pf-name{display:flex;align-items:center;min-width:0}
@@ -4916,9 +4929,9 @@ document.addEventListener('submit', async e => {
 function openPick(){ ui.pickArea = ''; ui.areaNew = false; $('#spPick')?.remove(); try { sessionStorage.removeItem(PICK_KEY); } catch(e) {}
   document.body.insertAdjacentHTML('beforeend', '<div class="sp-pick" id="spPick" role="dialog" aria-modal="true" aria-labelledby="spPickT"></div>'); paintPick(); }
 // тип открытого пространства: Агентство ↔ SMM (данные не меняются, только вид; для SMM добавляется шаблон «SMM: видео»)
-document.addEventListener('change', e => {
-  if (!e.target.matches?.('[data-spkind]')) return;
-  const k = e.target.value === 'smm' ? 'smm' : 'agency';
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-spkind]'); if (!b || b.getAttribute('aria-pressed') === 'true') return;
+  const k = b.dataset.spkind === 'smm' ? 'smm' : 'agency';
   db.prefs = db.prefs || {}; db.prefs.kind = k; if (k === 'smm') ensureSmmTemplate(db); ui.group = 'auto';
   commit(); toast(k === 'smm' ? 'Тип: SMM — вместо проектов видео, недели и план / факт' : 'Тип: Агентство — проекты');
   if (!cloud.store || !cloud.uid || ORG) return;
@@ -4935,14 +4948,14 @@ function renderSpaces(){
   const online = !!(cloud.store && cloud.uid);
   const row = (id, name, cur, extra) => `<li class="sp-row${cur ? ' cur' : ''}">
       <span class="sp-name"><i class="sp-dot" style="--c:${spColor(id)}">${spIco(spIcon(id))}</i>${online ? `<input data-spname="${id || 'main'}" value="${esc(name)}" maxlength="60" aria-label="Название пространства">` : `<b>${esc(name)}</b>`}</span>
-      ${cur && !ORG ? `<select data-spkind aria-label="Тип пространства «${esc(name)}»">${Object.entries(KINDS).map(([k, [a, b]]) => `<option value="${k}"${spKindOf(id) === k ? ' selected' : ''}>${a}: ${b}</option>`).join('')}</select>` : `<span class="sp-kbadge">${KINDS[spKindOf(id)][0]}</span>`}
+      ${cur && !ORG ? `<span class="kind-seg" role="group" aria-label="Тип пространства «${esc(name)}»">${Object.entries(KINDS).map(([k, [a]]) => `<button type="button" data-spkind="${k}" aria-pressed="${spKindOf(id) === k}">${k === 'smm' ? VIDEO_ICO : ''}${a}</button>`).join('')}</span>` : `<span class="sp-kbadge">${spKindOf(id) === 'smm' ? VIDEO_ICO : ''}${KINDS[spKindOf(id)][0]}</span>`}
       ${online ? `<span class="sp-icons" role="group" aria-label="Иконка пространства «${esc(name)}»" style="--c:${spColor(id)}">${SP_ICON_KEYS.map(k => `<button type="button" class="sp-i${k === spIcon(id) ? ' on' : ''}" data-spicon="${id}|${k}" title="${k}" aria-pressed="${k === spIcon(id)}">${spIco(k)}</button>`).join('')}</span>` : ''}
       ${online ? `<span class="sp-colors" role="group" aria-label="Цвет пространства «${esc(name)}»">${SP_COLORS.map(c => `<button type="button" class="sp-c${c === spColor(id) ? ' on' : ''}" data-spcolor="${id}|${c}" style="background:${c}" aria-label="Цвет ${c}" aria-pressed="${c === spColor(id)}"></button>`).join('')}</span>` : ''}
       ${cur ? '<span class="pill s-green"><i class="sw green"></i>Открыто</span>' : `<button class="ghost" data-spopen="${id}">Открыть</button>`}
       ${extra || ''}</li>`;
   app.innerHTML = `${setNav()}<div class="panel set-panel">
     <h2>Пространства</h2>
-    <p class="hint">Отдельное пустое поле для проектов в этом же аккаунте: свои проекты, задачи, команда, шаблоны, категории и настройки. Удобно, чтобы развести, например, агентство и другую команду. Тип «SMM» — то же самое, но вместо проектов видео: недели месяца и план / факт публикаций. Переключаются кружками внизу панели слева; у каждого — своя иконка и цвет.</p>
+    <p class="hint">Отдельное пустое поле для проектов в этом же аккаунте: свои проекты, задачи, команда, шаблоны, категории и настройки. Удобно, чтобы развести, например, агентство и другую команду. Тип «SMM» — то же самое, но вместо проектов видео: 4 недели и план / факт публикаций. Переключаются кружками внизу панели слева; у каждого — своя иконка и цвет.</p>
     ${online ? '' : '<p class="warn">Пространства работают, когда вы вошли в аккаунт.</p>'}
     ${spaces.orgs.length ? `<h3 class="sh-h">Проекты руководителей</h3><p class="hint">Команды, где вы руководитель: открываются их проекты, шаблоны и команда.</p>
       <ol class="sp-list">${spaces.orgs.map(o => `<li class="sp-row${ORG === o.id ? ' cur' : ''}"><b>${esc(o.name)}</b>${ORG === o.id ? '<span class="pill s-green"><i class="sw green"></i>Открыто</span>' : `<button class="ghost" data-orgopen="${o.id}">Открыть</button>`}<span></span></li>`).join('')}</ol>
