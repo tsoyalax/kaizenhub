@@ -743,6 +743,11 @@ body.side-pinned .side-btn{color:var(--ink)}
 .smm-ed input[type=number]{width:90px}
 .smm-ed .hint{flex-basis:100%}
 .smm-ed-act{display:flex;gap:8px;margin-left:auto}
+.side-wsl{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.ws-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer}
+.ws-chip svg{width:14px;height:14px}
+.ws-chip.cur{background:var(--brand,#3b82f6);border-color:transparent;color:#fff}
+.ws-chip.add{padding:5px 9px;color:var(--muted)}
 .sp-kbadge{font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--line);color:var(--muted);white-space:nowrap}
 .cx-name{gap:12px}
 .mc-r1 .pava{margin-right:2px}
@@ -4647,7 +4652,7 @@ const spWs = sp => sp?.ws && sp.ws !== WS0 && spaces.ws.some(x => x.id === sp.ws
 const curWs = () => ORG ? '' : SPACE ? spWs(spaces.list.find(x => x.id === SPACE)) : WS0;
 // пространства раздела: у основного раздела первым идёт «Основное» (id '')
 const spacesOf = w => [...(w === WS0 ? [{ id:'', name:mainName() }] : []), ...spaces.list.filter(x => spWs(x) === w)];
-const WS_LAST = w => `kz-ws-last-${w}`;
+const WS_LAST = w => `kz-ws-last-${w}`, AREA_LAST = a => `kz-area-last-${a}`;
 // документ основного пространства: цвет, иконка, название и тип (agency | smm)
 const mainDoc = (patch = {}) => ({ color:spColor(''), icon:spIcon(''), name:spaces.mainName || '', kind:spaces.mainKind || '', ...patch });
 const mainName = () => spaces.mainName || 'Основное';
@@ -4739,6 +4744,13 @@ function sideViews(){
   return [...document.querySelectorAll('.tabs [data-view]')].filter(b => !b.hidden).map(b => b.dataset.view);
 }
 // кружки в панели: пространства текущего раздела (у руководителя чужой команды — раздел его владельца) и команды руководителей
+// разделы текущей области — переключатель в панели (вместо отдельного шага на экране выбора)
+function wsChips(){
+  if (GUEST || ORG) return '';
+  const list = wsOfArea(curArea());
+  return `<div class="side-wsl" role="group" aria-label="Разделы">${list.map(w => `<button class="ws-chip${w.id === curWs() ? ' cur' : ''}" data-sidewsopen="${w.id}" aria-pressed="${w.id === curWs()}">${w.kind === 'smm' ? VIDEO_ICO : ''}${esc(w.name)}</button>`).join('')}
+    ${cloud.store && cloud.uid ? '<button class="ws-chip add" data-sidewsnew title="Новый раздел" aria-label="Новый раздел">+</button>' : ''}</div>`;
+}
 function sideSpaces(){
   const w = curWs() || WS0;
   return [...spacesOf(w).map(x => ({ id:x.id, name:x.name, color:spColor(x.id), icon:spIcon(x.id), cur:!ORG && (x.id || '') === SPACE })),
@@ -4757,6 +4769,7 @@ function renderSide(){
       ${innerWidth > 1100 ? `<button class="icon-btn side-pin" data-sidepin aria-pressed="${pinned}" title="${pinned ? 'Открепить панель' : 'Закрепить панель'}" aria-label="${pinned ? 'Открепить панель' : 'Закрепить панель'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${pinned ? '<path d="M15 6l-6 6 6 6"/>' : '<path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3z"/>'}</svg></button>` : ''}
       ${pinned ? '' : '<button class="icon-btn" data-sideclose aria-label="Закрыть меню">×</button>'}</div>
     <nav class="side-nav" aria-label="Разделы">${sideViews().map(v => `<button data-sideview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v]?.[1] || ''}<span>${label(v)}</span></button>`).join('')}</nav>
+    ${wsChips()}
     ${all.length ? `<div class="side-spaces"><div class="side-spl"><span>Пространства</span><button class="link" data-sidespset>Настроить</button></div>
       <div class="side-dots" role="group" aria-label="Пространства">${all.map(x => `<button class="side-dot${x.cur ? ' cur' : ''}" data-sidesp="${x.id}" style="--c:${x.color}" title="${esc(x.name)}" aria-label="Пространство ${esc(x.name)}" aria-pressed="${x.cur}">${spIco(x.icon)}</button>`).join('')}
         ${cloud.store && cloud.uid ? '<button class="side-dot add" data-sidespnew title="Новое пространство" aria-label="Новое пространство">+</button>' : ''}</div></div>` : ''}
@@ -4780,6 +4793,8 @@ document.addEventListener('click', e => {
   if (e.target.closest?.('#sideBtn')){ if (sidePinned()){ setPin(false); sideOpen = false; renderSide(); render(); } else { sideOpen = !sideOpen; renderSide(); } return; }
   if (e.target.closest?.('#sideBack') || e.target.closest?.('[data-sideclose]')){ closeSide(); return; }
   if (e.target.closest?.('[data-sideme]')){ if (!sidePinned()) closeSide(); openProfile(false); return; }
+  const wo = e.target.closest?.('[data-sidewsopen]'); if (wo){ if (layer.querySelector('.more-sheet')) layer.innerHTML = ''; if (wo.dataset.sidewsopen !== curWs()) openWs(wo.dataset.sidewsopen); return; }
+  if (e.target.closest?.('[data-sidewsnew]')){ if (!sidePinned()) closeSide(); if (layer.querySelector('.more-sheet')) layer.innerHTML = ''; openPick(); ui.pickArea = curArea(); ui.wsNew = true; paintPick(); return; }
   if (e.target.closest?.('[data-sidews]')){ if (!sidePinned()) closeSide(); if (layer.querySelector('.more-sheet')) layer.innerHTML = ''; openPick(); return; }
   if (e.target.closest?.('[data-sidetheme]')){ $('#themeBtn').click(); renderSide(); if (layer.querySelector('.more-sheet')) openMore(); return; }
   if (e.target.closest?.('[data-sidecloud]')){ if (!sidePinned()) closeSide(); openCloudInfo(); return; }
@@ -4813,7 +4828,7 @@ const PICK_KEY = 'kz-picked', PICK_SEEN = 'kz-pick-seen';
 const markPicked = () => { try { sessionStorage.setItem(PICK_KEY, '1'); localStorage.setItem(PICK_SEEN, '1'); } catch(e) {} };
 const picked = () => { try { return sessionStorage.getItem(PICK_KEY) === '1'; } catch(e) { return true; } };
 function maybePick(){
-  if (spaces.ready && !ORG) try { localStorage.setItem(WS_LAST(curWs()), SPACE); } catch(e) {}
+  if (spaces.ready && !ORG) try { localStorage.setItem(WS_LAST(curWs()), SPACE); localStorage.setItem(AREA_LAST(curArea()), curWs()); } catch(e) {}
   if (GUEST || !cloud.uid || !spaces.ready || picked() || $('#spPick')) return;
   if (typeof ownerBooted === 'undefined' || !ownerBooted || !db?.onboarded) return;
   document.body.insertAdjacentHTML('beforeend', '<div class="sp-pick" id="spPick" role="dialog" aria-modal="true" aria-labelledby="spPickT"></div>');
@@ -4856,7 +4871,11 @@ function paintPick(){
 }
 document.addEventListener('click', e => {
   const el = $('#spPick'); if (!el || !el.contains(e.target)) return;
-  const ar = e.target.closest('[data-pickarea]'); if (ar){ ui.pickArea = ar.dataset.pickarea; ui.wsNew = !wsOfArea(ui.pickArea).length; paintPick(); return; }
+  // область → сразу рабочий экран: последний открытый в ней раздел (или первый); пустая область — форма первого раздела
+  const ar = e.target.closest('[data-pickarea]'); if (ar){ const a = ar.dataset.pickarea; const list = wsOfArea(a);
+    if (!list.length){ ui.pickArea = a; ui.wsNew = true; paintPick(); return; }
+    let last = null; try { last = localStorage.getItem(AREA_LAST(a)); } catch(x) {}
+    openWs((list.find(w => w.id === last) || list[0]).id); return; }
   if (e.target.closest('[data-pickback]')){ ui.pickArea = ''; ui.wsNew = false; paintPick(); return; }
   if (e.target.closest('[data-areanew]')){ ui.areaNew = true; paintPick(); return; }
   if (e.target.closest('[data-areanewcancel]')){ ui.areaNew = false; paintPick(); return; }
@@ -8402,6 +8421,7 @@ function openMore(){
     ${sideFoot()}
     <div class="mlist">${moreViews().map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')}</div>
     ${GUEST ? '' : `<button class="side-ws" data-sidews>${ORG ? 'Команда руководителя' : `${esc(areaById(curArea()).name)} · ${esc(wsById(curWs()).name)}`}<span aria-hidden="true">⇅</span></button>`}
+    ${wsChips()}
     ${all.length > 1 || (cloud.store && cloud.uid) ? `<div class="m-spaces"><div class="side-spl"><span>Пространства</span><button class="link" data-sidespset>Настроить</button></div>
       <div class="m-splist">${all.map(x => `<button class="m-sp${x.cur ? ' cur' : ''}" data-sidesp="${x.id}" style="--c:${x.color}" aria-pressed="${x.cur}"><span class="side-sp-ico">${spIco(x.icon)}</span><span>${esc(x.name)}</span></button>`).join('')}</div></div>` : ''}
   </div>`;
