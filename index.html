@@ -2093,12 +2093,15 @@ const SPACE_KEY = 'kz-space';
 // Руководитель в чужой команде работает в основном пространстве владельца (data/users/<владелец>).
 // Какое открыто — помнит браузер (kz-org); «свои проекты» выбраны явно — kz-org-own.
 const ORG_KEY = 'kz-org', ORG_OWN_KEY = 'kz-org-own';
-const ORG = (() => { try { const v = localStorage.getItem(ORG_KEY) || ''; return /^[0-9a-f-]{36}$/i.test(v) ? v : ''; } catch(e) { return ''; } })();
+// Руководитель одной области: kz-org = '<владелец>:<пространство>' — открыто пространство владельца из этой области
+// (data/users/<владелец>/spaces/list/<пр>/items), основное пространство и другие области ему недоступны.
+const ORGK = (() => { try { const v = localStorage.getItem(ORG_KEY) || ''; return /^[0-9a-f-]{36}(:s[a-z0-9]{4,24})?$/i.test(v) ? v : ''; } catch(e) { return ''; } })();
+const ORG = ORGK.split(':')[0], ORGSP = ORGK.split(':')[1] || '';
 const SPACE = (() => { if (ORG) return ''; try { const v = localStorage.getItem(SPACE_KEY) || ''; return /^s[a-z0-9]{4,24}$/.test(v) ? v : ''; } catch(e) { return ''; } })();
-const KEY = ORG ? `agency-pipeline-demo-v2-o-${ORG}` : SPACE ? `agency-pipeline-demo-v2-${SPACE}` : 'agency-pipeline-demo-v2';
+const KEY = ORG ? `agency-pipeline-demo-v2-o-${ORGK}` : SPACE ? `agency-pipeline-demo-v2-${SPACE}` : 'agency-pipeline-demo-v2';
 const spacePath = (uid, sp) => sp ? `data/users/${uid}/spaces/list/${sp}/items` : `data/users/${uid}`;
 // «Я» в данных: у владельца — запись 'me', у руководителя — его запись в команде владельца
-let ME = (() => { try { return (ORG && localStorage.getItem(`agency-pipeline-demo-v2-o-${ORG}-me`)) || 'me'; } catch(e) { return 'me'; } })();
+let ME = (() => { try { return (ORG && localStorage.getItem(`agency-pipeline-demo-v2-o-${ORGK}-me`)) || 'me'; } catch(e) { return 'me'; } })();
 const STATUS = { not_started:'Не начат', in_progress:'В работе', client_review:'На согласовании у клиента', done:'Завершён' };
 const RISK = [['red','Просрочено'],['yellow','Горит'],['blue','У клиента'],['green','В графике'],['maint','На ведении'],['gray','Не стартовали'],['done','Завершены']];
 const WEIGHT = { red:5, yellow:4, blue:3, green:2, maint:1.5, gray:1, done:0 };
@@ -3142,7 +3145,8 @@ function removeMember(u){
   if (cloud.store){
     if (u.invite?.code) cloud.store.doc(`inv/${u.invite.code}`).delete().catch(() => {});
     if (u.account_id) cloud.store.doc(`team/${OWNER()}/members/${u.account_id}`).delete().catch(() => {});
-    if (u.account_id && u.lead && !ORG) cloud.store.doc(`team/${cloud.uid}/managers/${u.account_id}`).delete().catch(() => {});
+    if (u.account_id && u.lead && !ORG && !u.area) cloud.store.doc(`team/${cloud.uid}/managers/${u.account_id}`).delete().catch(() => {});
+    if (u.account_id && u.lead && !ORG && u.area) cloud.store.doc(`team/${cloud.uid}/areas/${u.area}/${u.account_id}`).delete().catch(() => {});
   }
   ui.pms = ui.pms.filter(id => id !== u.id); commit();
 }
@@ -4247,19 +4251,19 @@ function renderTeam(){
       <div><span class="mlabel">Статус</span>${memberStatus(u, isMe)}<br><span class="hint">в ${r.cur} ${plural(r.cur,'проекте','проектах','проектах')} из ${u.capacity}</span></div>
       <div class="acts">
         ${isMe ? `<button class="ghost" data-editme>Изменить профиль</button>` : ''}
-        ${!isMe && !u.account_id && online ? `<button class="ghost" data-tlink="${u.id}">${u.invite?.code ? 'Ссылка-приглашение' : 'Пригласить по ссылке'}</button>` : ''}
+        ${!isMe && !u.account_id && online && !ORGSP ? `<button class="ghost" data-tlink="${u.id}">${u.invite?.code ? 'Ссылка-приглашение' : 'Пригласить по ссылке'}</button>` : ''}
         ${u.status === 'invited' && !online ? `<button class="ghost" data-accept="${u.id}">Отметить принявшим</button>` : ''}
         ${!isMe ? `<button class="ghost danger" data-remove="${u.id}">${u.status === 'invited' ? 'Отозвать' : 'Удалить'}</button>` : ''}
       </div></div>`;
   }).join('');
-  app.innerHTML = `<div class="team-head"><h2>Команда <span>${db.users.length}</span></h2><div class="team-acts">${cloud.store && cloud.uid ? `<button class="ghost" id="commonLink">${db.prefs?.teamLink?.code ? 'Ссылка для исполнителей' : 'Общая ссылка для исполнителей'}</button>` : ''}<button class="primary" data-invite>Пригласить</button></div></div>
+  app.innerHTML = `<div class="team-head"><h2>Команда <span>${db.users.length}</span></h2><div class="team-acts">${cloud.store && cloud.uid && !ORGSP ? `<button class="ghost" id="commonLink">${db.prefs?.teamLink?.code ? 'Ссылка для исполнителей' : 'Общая ссылка для исполнителей'}</button>` : ''}<button class="primary" data-invite>Пригласить</button></div></div>
     <div class="members"><div class="mrow headr"><span>Сотрудник</span><span>Роль</span><span>Отдел</span><span>Норма</span><span>Статус</span><span></span></div>${rows}</div>
     <p class="hint">Норма — в скольких проектах человек может быть назначен одновременно без перегрузки. По ней считается вкладка «Загрузка».</p>
     ${demoCount ? `<div class="note-box"><p>В системе ${demoCount} демо-${plural(demoCount,'проект','проекта','проектов')} с выдуманными клиентами. Удалите их, когда будете готовы завести реальные.</p><button class="ghost danger" id="clearDemo">Удалить демо-проекты</button></div>` : ''}`;
 }
 
 // статус сотрудника: вошёл в приложение / ждём входа по ссылке / только в списке
-const memberStatus = (u, isMe) => (u.lead ? '<span class="st-lead">Руководитель</span><br>' : '') + (isMe || u.account_id ? '<span class="st-act">В команде</span>' + (u.account_id ? `<br><span class="hint">${u.viaLink ? 'вошёл по ссылке на доску' : 'вошёл в приложение'}</span>` : '')
+const memberStatus = (u, isMe) => (u.lead ? `<span class="st-lead">${u.area ? 'Руководитель области' : 'Руководитель'}</span><br>` : '') + (isMe || u.account_id ? '<span class="st-act">В команде</span>' + (u.account_id ? `<br><span class="hint">${u.viaLink ? 'вошёл по ссылке на доску' : 'вошёл в приложение'}</span>` : '')
   : u.invite?.code ? '<span class="st-inv">Ждём входа по ссылке</span>' : u.status === 'invited' ? '<span class="st-inv">Приглашён</span>' : '<span class="st-act">В команде</span><br><span class="hint">без входа в приложение</span>');
 function openInvite(){
   ui.open = null;
@@ -4275,7 +4279,8 @@ function openInvite(){
         <div class="field"><label for="iDept">Отдел</label><select id="iDept">${DEPTS.map(d => `<option ${d==='Креатив'?'selected':''}>${d}</option>`).join('')}</select></div>
       </div>
       <div class="field"><label for="iCap">Норма: проектов одновременно</label><input id="iCap" type="number" min="1" max="20" value="3"></div>
-      ${cloud.store && !ORG ? `<label class="check lead-check"><input type="checkbox" id="iLead"> <span><b>Доступ руководителя</b><small>Видит и редактирует все ваши проекты, шаблоны и команду, назначает людей. Отдельные пространства и ваши личные ссылки остаются только вашими.</small></span></label>` : ''}
+      ${cloud.store && !ORG && SPACE ? `<label class="check lead-check"><input type="checkbox" id="iLead"> <span><b>Доступ к области «${esc(areaById(curArea()).name)}»</b><small>Видит и редактирует только пространства этой области: ${esc(spacesOfArea(curArea()).filter(x => x.id).map(x => x.name).join(', '))}. Основное пространство, другие области и ваши личные ссылки ему недоступны.</small></span></label>`
+        : cloud.store && !ORG ? `<label class="check lead-check"><input type="checkbox" id="iLead"> <span><b>Доступ руководителя</b><small>Видит и редактирует все проекты основного пространства «${esc(mainName())}», шаблоны и команду, назначает людей. Отдельные пространства и области и ваши личные ссылки остаются только вашими. Чтобы дать доступ только к одной области — приглашайте из пространства этой области.</small></span></label>` : ''}
       <p class="hint" style="margin:0">${cloud.store ? 'После добавления появится ссылка-приглашение: отправьте её человеку. Войдя по ней, он увидит проекты, где вы его назначите.' : 'Письма приложение не отправляет. Чтобы человек увидел свои проекты, откройте нужный проект, нажмите «Поделиться» → «Создать ссылку» и пришлите ему эту ссылку.'}</p>
       <div class="err" id="iErr"></div>
       <div class="actions"><button type="button" class="ghost" data-close>Отмена</button><button class="primary">Добавить в команду</button></div>
@@ -4291,7 +4296,7 @@ function openInvite(){
     if (!(cap >= 1)) return $('#iErr').textContent = 'Норма — от 1 проекта';
     const lead = !!$('#iLead')?.checked;
     const u = inviteMember({ name, email, role:lead && $('#iRole').value === 'specialist' ? 'pm' : $('#iRole').value, dept:lead && $('#iDept').value === 'Креатив' ? 'Аккаунтинг (PM)' : $('#iDept').value, capacity:cap });
-    if (lead){ u.lead = true; commit(); }
+    if (lead){ u.lead = true; if (SPACE) u.area = curArea(); commit(); }
     layer.innerHTML = '';
     if (cloud.store && cloud.uid) teamLinkFor(u, true);
     else toast(`${name} в команде. Доступ к проекту откройте ссылкой через «Поделиться»`);
@@ -4974,26 +4979,51 @@ function spColor(id){
   if (!id) return spaces.mainColor || spColorsCache()[''] || SP_COLORS[0];
   const x = spaces.list.find(v => v.id === id); return x?.color || spColorsCache()[id] || hashColor(id);
 }
-const curSpaceKey = () => ORG ? 'o:' + ORG : SPACE || '';
+const curSpaceKey = () => ORG ? 'o:' + ORGK : SPACE || '';
 function applySpaceColor(){
-  const c = ORG ? (spColorsCache()['o:' + ORG] || hashColor(ORG)) : spColor(SPACE);
+  const c = ORG ? (spaces.orgs.find(x => x.id === ORGK)?.color || spColorsCache()['o:' + ORGK] || hashColor(ORGK)) : spColor(SPACE);
   document.documentElement.style.setProperty('--brand', c);
   document.documentElement.style.setProperty('--space', c);
   try { const m = spColorsCache(); m[curSpaceKey()] = c; if (!ORG) { m[''] = spColor(''); spaces.list.forEach(x => { m[x.id] = spColor(x.id); }); } localStorage.setItem(SPC_KEY, JSON.stringify(m)); } catch(e) {}
 }
 try { applySpaceColor(); } catch(e) {}
-const spaceName = () => ORG ? `Проекты: ${spaces.orgs.find(x => x.id === ORG)?.name || 'руководителя'}` : SPACE ? (spaces.list.find(x => x.id === SPACE)?.name || 'Пространство') : mainName();
+const spaceName = () => ORG ? (spaces.orgs.find(x => x.id === ORGK)?.label || (ORGSP ? 'Пространство' : 'Проекты руководителя')) : SPACE ? (spaces.list.find(x => x.id === SPACE)?.name || 'Пространство') : mainName();
 function emptySpace(){
   return { users:[{ id:ME, name:'', email:'', role:'admin', dept:'Руководство', capacity:4, status:'active' }], templates:[], categories:[], projects:[], tasks:[], reports:[],
     cardTpls:{}, cardTplsInit:true, onboarded:true, ver:3, prefs:{} };
 }
+// пространства владельцев в областях, где я руководитель (база отдаёт только пространства этих областей)
+async function areaOrgs(links){
+  const list = links.filter(l => /^[0-9a-f-]{36}$/i.test(l.owner || '') && l.area);
+  const owners = [...new Set(list.map(l => l.owner))];
+  const prof = owners.length ? await cloud.user.profiles(owners).catch(() => ({})) : {};
+  const out = [];
+  for (const owner of owners){
+    const snap = await cloud.store.collection(`data/users/${owner}/spaces/list`).get().catch(() => null);
+    const who = prof[owner]?.name || prof[owner]?.email || 'Владелец';
+    for (const l of list.filter(x => x.owner === owner)){
+      const an = await cloud.store.doc(`data/users/${owner}/spaces/area/${l.area}`).get().then(x => x.exists ? x.data().name : '', () => '');
+      (snap?.docs || []).filter(d => d.data()?.area === l.area).sort((a, b) => String(a.data().at || '').localeCompare(String(b.data().at || '')))
+        .forEach(d => out.push({ id:`${owner}:${d.id}`, owner, sp:d.id, area:l.area, name:who, label:d.data().name || 'Пространство',
+          sub:`${who}${an ? ` · область «${an}»` : ''}`, color:d.data().color || '', icon:d.data().icon || '', memberId:l.memberId || '' }));
+    }
+  }
+  return out;
+}
 function watchSpaces(){
   if (!cloud.store || !cloud.uid || GUEST || shared.subs.has('__spaces')) return;
   // команды, где я руководитель: имена владельцев — из профилей
+  const paintOrgs = () => { spaces.orgs = [...orgLeads, ...orgAreas]; applySpaceColor(); paintPick(); paintSpace(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces(); };
+  let orgLeads = [], orgAreas = [];
   shared.subs.set('__orgs', [cloud.store.collection(`data/users/${cloud.uid}/links/lead`).onSnapshot(async snap => {
     const ids = snap.docs.map(d => d.id); const prof = ids.length ? await cloud.user.profiles(ids).catch(() => ({})) : {};
-    spaces.orgs = ids.map(id => ({ id, name:prof[id]?.name || prof[id]?.email || 'Руководитель' }));
-    paintPick(); paintSpace(); renderSide(); if (ui.view === 'templates' && ui.setTab === 'spaces') renderSpaces();
+    orgLeads = ids.map(id => { const name = prof[id]?.name || prof[id]?.email || 'Руководитель'; return { id, owner:id, name, label:`Проекты: ${name}`, sub:'команда, где вы руководитель' }; });
+    paintOrgs();
+  }, () => {}),
+  // области, где я руководитель: каждое пространство области — отдельный пункт
+  cloud.store.collection(`data/users/${cloud.uid}/links/area`).onSnapshot(async snap => {
+    orgAreas = await areaOrgs(snap.docs.map(d => d.data() || {}));
+    paintOrgs();
   }, () => {})]);
   shared.subs.set('__spaces', [cloud.store.collection(`data/users/${cloud.uid}/spaces/list`).onSnapshot(snap => {
     spaces.list = snap.docs.map(d => ({ id:d.id, name:d.data().name || 'Пространство', at:d.data().at || '', color:d.data().color || '', icon:d.data().icon || '', kind:d.data().kind || '', ws:d.data().ws || '', area:d.data().area || '' })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
@@ -5028,10 +5058,10 @@ function sideViews(){
 // кружки в панели: пространства текущего раздела (у руководителя чужой команды — раздел его владельца) и команды руководителей
 // область в панели: название со стрелкой ▾ — выпадающий список областей (и команд, где вы руководитель) + «Новая область»
 function areaBar(){
-  const name = ORG ? `Проекты: ${spaces.orgs.find(x => x.id === ORG)?.name || 'руководителя'}` : areaById(curArea()).name;
+  const name = ORG ? (spaces.orgs.find(x => x.id === ORGK)?.label || (ORGSP ? 'Пространство' : 'Проекты руководителя')) : areaById(curArea()).name;
   const open = !!ui.areaMenu;
   const items = [...areaList().map(a => `<button role="menuitem" class="am-i${!ORG && a.id === curArea() ? ' cur' : ''}" data-areaopen="${a.id}">${esc(a.name)}<small>${esc(spacesOfArea(a.id).map(x => x.name).join(' · ') || 'пусто')}</small></button>`),
-    ...spaces.orgs.map(o => `<button role="menuitem" class="am-i${ORG === o.id ? ' cur' : ''}" data-areaorg="${o.id}">Проекты: ${esc(o.name)}<small>команда, где вы руководитель</small></button>`)].join('');
+    ...spaces.orgs.map(o => `<button role="menuitem" class="am-i${ORGK === o.id ? ' cur' : ''}" data-areaorg="${o.id}">${esc(o.label)}<small>${esc(o.sub)}</small></button>`)].join('');
   return `<div class="side-ws"><button class="side-ws-n" data-areamenu aria-haspopup="menu" aria-expanded="${open}">${esc(name)}<span class="am-car" aria-hidden="true">▾</span></button>
     ${open ? `<div class="area-menu" role="menu">${items}${cloud.store && cloud.uid ? '<button role="menuitem" class="am-i am-new" data-areamnew>+ Новая область</button>' : ''}</div>` : ''}</div>`;
 }
@@ -5039,7 +5069,7 @@ function sideSpaces(){
   // все пространства текущей области (всех её разделов — агентство, SMM…)
   const all = ORG ? spacesOfArea(AREA0) : spacesOfArea(curArea());
   return [...all.map(x => ({ id:x.id, name:x.name, color:spColor(x.id), icon:spIcon(x.id), cur:!ORG && (x.id || '') === SPACE })),
-    ...spaces.orgs.map(o => ({ id:'o:' + o.id, name:`Проекты: ${o.name}`, color:spColorsCache()['o:' + o.id] || hashColor(o.id), icon:'users', cur:ORG === o.id }))];
+    ...spaces.orgs.map(o => ({ id:'o:' + o.id, name:o.label, color:o.color || spColorsCache()['o:' + o.id] || hashColor(o.id), icon:o.icon || 'users', cur:ORGK === o.id }))];
 }
 function renderSide(){
   const el = $('#side'); if (!el) return;
@@ -5081,7 +5111,7 @@ document.addEventListener('click', e => {
   const ao = e.target.closest?.('[data-areaopen]'), ag = e.target.closest?.('[data-areaorg]');
   if (ao || ag || e.target.closest?.('[data-areamnew]')){ ui.areaMenu = false; if (layer.querySelector('.more-sheet')) layer.innerHTML = '';
     if (ao){ if (ORG || ao.dataset.areaopen !== curArea()) openArea(ao.dataset.areaopen); else renderSide(); return; }
-    if (ag){ if (ORG !== ag.dataset.areaorg) switchOrg(ag.dataset.areaorg); else renderSide(); return; }
+    if (ag){ if (ORGK !== ag.dataset.areaorg) switchOrg(ag.dataset.areaorg); else renderSide(); return; }
     if (!sidePinned()) closeSide(); openPick(); ui.areaNew = true; paintPick(); return; }
   if (e.target.closest?.('[data-sidews]')){ if (!sidePinned()) closeSide(); if (layer.querySelector('.more-sheet')) layer.innerHTML = ''; openPick(); return; }
   if (e.target.closest?.('[data-sidetheme]')){ $('#themeBtn').click(); renderSide(); if (layer.querySelector('.more-sheet')) openMore(); return; }
@@ -5089,7 +5119,7 @@ document.addEventListener('click', e => {
   const pin = e.target.closest?.('[data-sidepin]'); if (pin){ setPin(!sidePinned()); sideOpen = false; renderSide(); render(); return; }
   const v = e.target.closest?.('[data-sideview]'); if (v){ ui.view = v.dataset.sideview; ui.draft = null; if (!sidePinned()) sideOpen = false; render(); renderSide(); scrollTo(0, 0); return; }
   const sp = e.target.closest?.('[data-sidesp]'); if (sp){ const id = sp.dataset.sidesp;
-    if (id.startsWith('o:')){ if (ORG !== id.slice(2)) switchOrg(id.slice(2)); }
+    if (id.startsWith('o:')){ if (ORGK !== id.slice(2)) switchOrg(id.slice(2)); }
     else if (id !== SPACE || ORG){ if (ORG){ try { localStorage.removeItem(ORG_KEY); localStorage.setItem(ORG_OWN_KEY, '1'); } catch(x) {} } switchSpace(id); }
     return; }
   if (e.target.closest?.('[data-sidespset]') || e.target.closest?.('[data-sidespnew]')){ ui.view = 'templates'; ui.setTab = 'spaces'; if (!sidePinned()) sideOpen = false; render(); renderSide();
@@ -5142,7 +5172,7 @@ function paintPick(){
     <p>Выберите область. Внутри — пространства (кружки в панели слева), у каждого свои проекты, команда и шаблоны.</p>
     <div class="sp-pick-list">
       ${areaList().map((a, i) => card(`data-pickarea="${a.id}"`, a.name, hashColor(a.id + 'area'), spIco(SP_ICON_KEYS[i % SP_ICON_KEYS.length]), esc(aSub(a)), curArea() === a.id)).join('')}
-      ${spaces.orgs.map(o => card(`data-pickorg="${o.id}"`, `Проекты: ${o.name}`, spColorsCache()['o:' + o.id] || hashColor(o.id), spIco('users'), 'Команда, где вы руководитель', ORG === o.id)).join('')}
+      ${spaces.orgs.map(o => card(`data-pickorg="${o.id}"`, o.label, o.color || spColorsCache()['o:' + o.id] || hashColor(o.id), spIco(o.icon || 'users'), esc(o.sub[0].toUpperCase() + o.sub.slice(1)), ORGK === o.id)).join('')}
     </div>
     ${ui.areaNew ? `<form class="ws-new" id="areaNew"><input id="areaNewName" placeholder="Название области, например «Второй бизнес»" maxlength="60" aria-label="Название области">
       <div class="ws-new-act"><button type="button" class="ghost" data-areanewcancel>Отмена</button><button class="primary">Создать область</button></div></form>`
@@ -5167,7 +5197,7 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-areanew]')){ ui.areaNew = true; paintPick(); return; }
   if (e.target.closest('[data-areanewcancel]')){ ui.areaNew = false; paintPick(); return; }
   const o = e.target.closest('[data-pickorg]');
-  if (o){ markPicked(); if (ORG === o.dataset.pickorg){ el.remove(); return; } switchOrg(o.dataset.pickorg); }
+  if (o){ markPicked(); if (ORGK === o.dataset.pickorg){ el.remove(); return; } switchOrg(o.dataset.pickorg); }
 });
 document.addEventListener('submit', async e => {
   if (e.target.id !== 'spFirst') return; e.preventDefault();
@@ -5217,8 +5247,8 @@ function renderSpaces(){
     <h2>Пространства</h2>
     <p class="hint">Отдельное пустое поле для проектов в этом же аккаунте: свои проекты, задачи, команда, шаблоны, категории и настройки. Удобно, чтобы развести, например, агентство и другую команду. Тип «SMM» — то же самое, но вместо проектов видео: 4 недели и план / факт публикаций. Переключаются кружками внизу панели слева; у каждого — своя иконка и цвет.</p>
     ${online ? '' : '<p class="warn">Пространства работают, когда вы вошли в аккаунт.</p>'}
-    ${spaces.orgs.length ? `<h3 class="sh-h">Проекты руководителей</h3><p class="hint">Команды, где вы руководитель: открываются их проекты, шаблоны и команда.</p>
-      <ol class="sp-list">${spaces.orgs.map(o => `<li class="sp-row${ORG === o.id ? ' cur' : ''}"><b>${esc(o.name)}</b>${ORG === o.id ? '<span class="pill s-green"><i class="sw green"></i>Открыто</span>' : `<button class="ghost" data-orgopen="${o.id}">Открыть</button>`}<span></span></li>`).join('')}</ol>
+    ${spaces.orgs.length ? `<h3 class="sh-h">Проекты руководителей</h3><p class="hint">Команды и области, где вы руководитель: открываются их проекты, шаблоны и команда.</p>
+      <ol class="sp-list">${spaces.orgs.map(o => `<li class="sp-row${ORGK === o.id ? ' cur' : ''}"><b>${esc(o.label)}<small class="hint"> · ${esc(o.sub)}</small></b>${ORGK === o.id ? '<span class="pill s-green"><i class="sw green"></i>Открыто</span>' : `<button class="ghost" data-orgopen="${o.id}">Открыть</button>`}<span></span></li>`).join('')}</ol>
       <h3 class="sh-h">Мои пространства</h3>` : ''}
     ${online && !ORG ? `<div class="ws-row"><label>Область <input data-areaname="${curArea()}" value="${esc(areaById(curArea()).name)}" maxlength="60" aria-label="Название области"></label></div>
 ` : ''}
@@ -7787,6 +7817,7 @@ function adoptOrgMe(){
   if (!u && mid){ u = db.users.find(x => x.id === mid && !x.account_id); if (u){ u.account_id = cloud.uid; u.status = 'active'; u.joined_at = new Date().toISOString(); u.invite = null; changed = true; } }
   if (!u){ u = { id:'u' + uid(), name:cloud.org?.name || 'Руководитель', email:cloud.org?.email || '', role:'pm', dept:'Аккаунтинг (PM)', capacity:5, status:'active', account_id:cloud.uid, joined_at:new Date().toISOString() }; db.users.push(u); changed = true; }
   if (!u.lead){ u.lead = true; changed = true; }
+  if (ORGSP && cloud.org?.area && u.area !== cloud.org.area){ u.area = cloud.org.area; changed = true; }
   ME = u.id; try { localStorage.setItem(KEY + '-me', ME); } catch(e) {}
   return changed;
 }
@@ -8009,12 +8040,15 @@ async function initCloud(){
     if (!store || !id){ setCloudStatus('local'); if (GUEST) render(); return; }
     cloud.store = store; cloud.user = user; cloud.uid = id; cloud.owner = ORG || id;
     if (ORG){
-      // руководитель: доступ ещё есть? (владелец мог убрать) + своя запись в команде владельца
-      const ok = await store.doc(`team/${ORG}/managers/${id}`).get().then(x => x.exists, () => true);
-      if (!ok){ try { localStorage.removeItem(ORG_KEY); } catch(e) {} toast('Доступ руководителя к этим проектам закрыт. Открываю ваши проекты.'); setTimeout(() => (window.kzReloadHook || (() => location.reload()))(), 1500); return; }
-      const lk = await store.doc(`data/users/${id}/links/lead/${ORG}`).get().catch(() => null);
+      // руководитель: доступ ещё есть? (владелец мог убрать) + своя запись в команде владельца.
+      // Руководитель области: пространство ещё в его области (иначе база его не отдаёт)
+      const spDoc = ORGSP ? await store.doc(`data/users/${ORG}/spaces/list/${ORGSP}`).get().catch(() => null) : null;
+      const ok = ORGSP ? !!spDoc?.exists : await store.doc(`team/${ORG}/managers/${id}`).get().then(x => x.exists, () => true);
+      if (!ok){ try { localStorage.removeItem(ORG_KEY); } catch(e) {} toast(ORGSP ? 'Доступ к этому пространству закрыт. Открываю ваши проекты.' : 'Доступ руководителя к этим проектам закрыт. Открываю ваши проекты.'); setTimeout(() => (window.kzReloadHook || (() => location.reload()))(), 1500); return; }
+      const lk = ORGSP ? await store.doc(`data/users/${id}/links/area/${ORG}.${spDoc.data()?.area}`).get().catch(() => null)
+        : await store.doc(`data/users/${id}/links/lead/${ORG}`).get().catch(() => null);
       const me = await user.me().catch(() => ({}));
-      cloud.org = { memberId:lk?.exists ? (lk.data().memberId || '') : '', name:me.name || '', email:me.email || '' };
+      cloud.org = { memberId:lk?.exists ? (lk.data().memberId || '') : '', name:me.name || '', email:me.email || '', area:ORGSP ? spDoc.data()?.area || '' : '' };
     }
     try { initShared(); } catch(e) { console.warn('Общие проекты недоступны', e); }   // ошибка шеринга не должна отключать личное сохранение
     if (URL_INVITE && (await acceptInvite(URL_INVITE)) === 'reload') return;
@@ -8024,8 +8058,11 @@ async function initCloud(){
       let own = ''; try { own = localStorage.getItem(ORG_OWN_KEY) || ''; } catch(e) {}
       const leads = own ? null : await store.collection(`data/users/${id}/links/lead`).get().catch(() => null);
       if (leads?.docs?.length){ switchOrg(leads.docs[0].id); return; }
+      // руководитель области — сразу в первое пространство этой области
+      const areas = own ? null : await store.collection(`data/users/${id}/links/area`).get().catch(() => null);
+      if (areas?.docs?.length){ const first = (await areaOrgs(areas.docs.map(d => d.data() || {})))[0]; if (first){ switchOrg(first.id); return; } }
     }
-    cloud.col = store.collection(ORG ? `data/users/${ORG}` : spacePath(id, SPACE));
+    cloud.col = store.collection(ORG ? spacePath(ORG, ORGSP) : spacePath(id, SPACE));
     watchSpaces();
     cloud.col.onSnapshot(onCloudSnapshot, err => setCloudStatus('error', err?.code === 'revoked' ? 'Доступ к хранилищу отозван' : 'Нет связи с хранилищем аккаунта. Данные сохраняются в браузере.'));
   } catch(e) { setCloudStatus('local'); if (!GUEST){ setMode('owner'); bootOwner(); } }
@@ -8069,7 +8106,7 @@ function sharedBodies(){
   return out;
 }
 function scheduleShared(){
-  if (!cloud.store || !cloud.uid) return;
+  if (!cloud.store || !cloud.uid || ORGSP) return;
   shared.pending = true; clearTimeout(shared.timer); shared.timer = setTimeout(flushShared, 700);
 }
 async function flushShared(){
@@ -8467,11 +8504,20 @@ const avatarOk = u => /^https:\/\//.test(u?.avatar || '');
 const avHtml = (u, cls = 'av') => avatarOk(u) ? `<span class="${cls}"><img src="${esc(u.avatar)}" alt="" referrerpolicy="no-referrer" loading="lazy"></span>` : `<span class="${cls}">${esc(initials(u || {}))}</span>`;
 
 async function createTeamLink(u){
-  if (!cloud.store || !cloud.uid || GUEST) return null;
+  if (!cloud.store || !cloud.uid || GUEST || ORGSP) return null;
   const code = newCode(), at = new Date().toISOString();
-  await cloud.store.doc(`inv/${code}`).set({ kind:'team', ownerId:OWNER(), memberId:u.id, name:u.name || '', at, ...(u.lead && !ORG ? { role:'lead' } : {}) });
+  const role = u.lead && !ORG ? (u.area ? { role:'arealead', area:u.area } : { role:'lead' }) : {};
+  if (role.area) await markAreaSpaces(role.area);
+  await cloud.store.doc(`inv/${code}`).set({ kind:'team', ownerId:OWNER(), memberId:u.id, name:u.name || '', at, ...role });
   if (u.invite?.code) cloud.store.doc(`inv/${u.invite.code}`).delete().catch(() => {});
   u.invite = { code, at }; commit(); return code;
+}
+// доступ руководителя области база проверяет по полю .area записи пространства: у старых пространств
+// область могла браться из раздела — вписываем её явно
+async function markAreaSpaces(a){
+  for (const x of spaces.list.filter(v => spArea(v) === a && v.area !== a)){
+    await cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${x.id}`).update({ area:a }).then(() => { x.area = a; }, () => {});
+  }
 }
 // Приложение само писем не отправляет: ссылку человек получает от вас — почтой или в мессенджере.
 // Кнопки открывают вашу почту / Telegram / WhatsApp с готовым текстом приглашения.
@@ -8490,7 +8536,7 @@ function openTeamLink(u){
   const url = inviteUrl(u.invite.code);
   layer.innerHTML = `<div class="backdrop" data-close></div>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tlT">
-    <h2 id="tlT">Ссылка для ${esc(u.name)}${u.lead ? ' — руководитель' : ''}</h2>
+    <h2 id="tlT">Ссылка для ${esc(u.name)}${u.lead && u.area ? ` — область «${esc(areaById(u.area).name)}»` : u.lead ? ' — руководитель' : ''}</h2>
     <p class="lead">Приложение само писем не отправляет — отправьте ссылку кнопкой ниже или скопируйте. Человек войдёт через Google или по почте и станет участником команды. Проекты, где он назначен, откроются ему сами.</p>
     <div class="row"><input readonly id="tlIn" value="${esc(url)}" aria-label="Ссылка-приглашение" style="flex:1;min-width:0;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px"><button class="primary" id="tlCopy">Копировать</button></div>
     ${sendLinkHtml(url, u.email, u.name)}
@@ -8550,6 +8596,18 @@ document.addEventListener('click', async e => {
 // человек открыл ссылку в команду
 async function acceptTeam(code, inv){
   if (inv.ownerId === cloud.uid){ toast('Это ссылка в вашу собственную команду. Отправьте её сотруднику.'); return; }
+  if (inv.role === 'arealead' && inv.area){
+    // руководитель области: вписываем себя (база проверяет ссылку и область) и открываем первое пространство области
+    const at = new Date().toISOString();
+    await cloud.store.doc(`team/${inv.ownerId}/areas/${inv.area}/${cloud.uid}`).set({ code, memberId:inv.memberId || '', at });
+    await cloud.store.doc(`team/${inv.ownerId}/members/${cloud.uid}`).set({ code, memberId:inv.memberId || '', role:'arealead', at }).catch(() => {});
+    await cloud.store.doc(`data/users/${cloud.uid}/links/area/${inv.ownerId}.${inv.area}`).set({ owner:inv.ownerId, area:inv.area, memberId:inv.memberId || '', at });
+    try { history.replaceState(null, '', location.pathname); } catch(e) {}
+    const first = (await areaOrgs([{ owner:inv.ownerId, area:inv.area }]))[0];
+    if (!first){ toast('Доступ к области открыт, но в ней пока нет пространств'); render(); return; }
+    toast(`Готово: открыт доступ к «${first.label}». Открываю…`);
+    switchOrg(first.id); return 'reload';
+  }
   if (inv.role === 'lead'){
     // руководитель: вписываем себя (база проверяет ссылку), запоминаем команду и открываем проекты владельца
     const at = new Date().toISOString();
@@ -8573,7 +8631,7 @@ async function acceptTeam(code, inv){
 
 // у владельца: кто вошёл в команду по ссылке
 function watchTeam(){
-  if (GUEST || !cloud.store || shared.subs.has('__team')) return;
+  if (GUEST || ORGSP || !cloud.store || shared.subs.has('__team')) return;
   shared.subs.set('__team', [cloud.store.collection(`team/${OWNER()}/members`).onSnapshot(s => { team.snap = s; processTeamJoins(); }, () => {})]);
 }
 function processTeamJoins(){
