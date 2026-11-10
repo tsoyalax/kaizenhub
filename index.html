@@ -735,6 +735,23 @@ body.side-pinned .side-btn{color:var(--ink)}
 .vtopic svg{width:12px;height:12px;flex:none}
 .vtopic:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 .topic-m{max-width:480px}
+.tpl-imp-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.tpl-imp-btn svg{width:15px;height:15px}
+.tpl-imp{max-width:520px}
+.tpl-imp .primary:disabled{opacity:.4;cursor:default}
+.tpl-imp h2{display:flex;align-items:center;gap:6px}
+.ti-back{width:30px;height:30px;font-size:22px;margin-left:-6px}
+.ti-src,.ti-list{display:grid;gap:6px;margin:12px 0 4px;max-height:52vh;overflow:auto}
+.ti-sp{display:grid;grid-template-columns:34px minmax(0,1fr) 14px;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font:inherit;color:var(--ink);text-align:left;cursor:pointer}
+.ti-sp:hover{border-color:var(--line-strong);background:var(--fbg-h,var(--surface-2))}
+.ti-sp b,.ti-item b{display:block;font-size:14px;font-weight:600}
+.ti-sp small,.ti-item small{display:block;font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ti-sp > span:last-child{color:var(--muted);font-size:18px}
+.ti-ico{width:34px;height:34px;border-radius:10px;background:var(--surface-2);display:grid;place-items:center;color:var(--ink)}
+.ti-ico svg{width:17px;height:17px}.ti-ico i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.ti-item{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;cursor:pointer}
+.ti-item:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.ti-item input{margin-top:3px;width:16px;height:16px;accent-color:var(--accent)}
 .crm-sum{margin:0 0 14px;padding:14px 16px;border-radius:16px;background:var(--fbg,var(--surface));border:1px solid var(--fbd,var(--line));display:grid;gap:12px}
 .crm-sum-hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .crm-kp{display:flex;flex-wrap:wrap;gap:6px 22px;flex:1;min-width:0}
@@ -5417,6 +5434,82 @@ document.addEventListener('keydown', e => {
   e.preventDefault(); const a = db.categories; const k = +g.dataset.catdrag, to = k + (e.key === 'ArrowUp' ? -1 : 1);
   if (to < 0 || to >= a.length) return; [a[k], a[to]] = [a[to], a[k]]; commit(); document.querySelector(`[data-catdrag="${to}"]`)?.focus();
 });
+// ---------- Шаблоны из другого пространства: этапы, подэтапы и карточки подэтапов копируются в открытое ----------
+const tplImp = { src:null, tpls:null, cards:null, sel:new Set(), loading:false, err:'' };
+// другие пространства этого аккаунта (кроме открытого); '' — основное
+function otherSpaces(){
+  const cur = ORG ? null : (SPACE || '');
+  return [{ id:'', name:mainName(), area:'' }, ...spaces.list].filter(x => x.id !== cur)
+    .map(x => ({ id:x.id, name:x.id ? (x.name || 'Без названия') : mainName(), area:x.id ? (areaById(spArea(x))?.name || '') : '', kind:spKindOf(x.id) }));
+}
+async function loadSpaceTemplates(id){
+  const snap = await cloud.store.collection(spacePath(cloud.uid, id)).get();
+  const d = cloudAssemble(new Map(snap.docs.map(x => [x.id, x.data()]).filter(([, b]) => b && b.kind)));
+  return { tpls:clone(d?.meta?.templates || []), cards:clone(d?.meta?.cardTpls || {}) };
+}
+function openTplImport(){
+  Object.assign(tplImp, { src:null, tpls:null, cards:null, sel:new Set(), loading:false, err:'' });
+  layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal tpl-imp" role="dialog" aria-modal="true" aria-labelledby="tiT" id="tiBox"></div>`;
+  paintTplImport();
+}
+function paintTplImport(){
+  const box = $('#tiBox'); if (!box) return;
+  const subsN = t => t.stages.reduce((n, s) => n + (s.subs || []).length, 0);
+  const item = (t, i) => `<label class="ti-item"><input type="checkbox" data-tisel="${i}"${tplImp.sel.has(i) ? ' checked' : ''}>
+    <span><b>${esc(t.name)}</b><small>${t.stages.length} ${plural(t.stages.length, 'этап', 'этапа', 'этапов')}${subsN(t) ? `, ${subsN(t)} подэт.` : ''} · ${esc(t.stages.slice(0, 4).map(s => s.name).join(' → '))}${t.stages.length > 4 ? ' → …' : ''}</small></span></label>`;
+  if (!tplImp.src){
+    const sp = cloud.store && cloud.uid && !GUEST ? otherSpaces() : [];
+    box.innerHTML = `<h2 id="tiT">Шаблоны из другого пространства</h2>
+      <p class="hint">Выберите, откуда взять шаблон — он скопируется сюда вместе с этапами, подэтапами и карточками подэтапов. Оригинал не изменится.</p>
+      <div class="ti-src">${sp.map(x => `<button type="button" class="ti-sp" data-tisrc="${x.id || 'main'}"><span class="ti-ico">${KIND_ICO(x.kind) || '<i></i>'}</span><span><b>${esc(x.name)}</b><small>${esc([x.area, KINDS[x.kind][0]].filter(Boolean).join(' · '))}</small></span><span aria-hidden="true">›</span></button>`).join('')}
+        <button type="button" class="ti-sp" data-tisrc="preset"><span class="ti-ico">${FUNNEL_ICO}</span><span><b>Готовые шаблоны</b><small>SMM: видео, CRM: оффер на запуск</small></span><span aria-hidden="true">›</span></button></div>
+      <div class="actions"><button type="button" class="ghost" data-close>Закрыть</button></div>`;
+    return;
+  }
+  const srcName = tplImp.src === 'preset' ? 'Готовые шаблоны' : (otherSpaces().find(x => (x.id || 'main') === tplImp.src)?.name || '');
+  box.innerHTML = `<h2 id="tiT"><button type="button" class="icon-btn ti-back" data-tiback aria-label="Назад">‹</button>${esc(srcName)}</h2>
+    ${tplImp.loading ? '<p class="hint">Загружаю шаблоны…</p>' : tplImp.err ? `<p class="err">${esc(tplImp.err)}</p>`
+      : !tplImp.tpls.length ? '<p class="hint">В этом пространстве нет шаблонов.</p>'
+      : `<p class="hint">Отметьте шаблоны, которые нужны здесь.</p><div class="ti-list">${tplImp.tpls.map(item).join('')}</div>`}
+    <div class="actions"><button type="button" class="ghost" data-close>Отмена</button><button type="button" class="primary" data-tido${tplImp.sel.size ? '' : ' disabled'}>Добавить${tplImp.sel.size ? ` (${tplImp.sel.size})` : ''}</button></div>`;
+}
+// копия шаблона: новые id; карточки подэтапов переносятся под новый id шаблона; одноимённый получает пометку источника
+function importTemplates(list, cards, srcName){
+  db.cardTpls = db.cardTpls || {}; const out = [];
+  list.forEach(t0 => {
+    const t = clone(t0); const oldId = t.id; t.id = uid();
+    t.stages.forEach(st => { st.id = uid(); (st.subs || []).forEach(x => { x.id = uid(); }); });
+    if (db.templates.some(x => x.name.trim().toLowerCase() === t.name.trim().toLowerCase())) t.name = `${t.name} (${srcName})`;
+    Object.entries(cards || {}).forEach(([k, v]) => { const [tid, ...rest] = k.split('|'); if (tid === oldId) db.cardTpls[`${t.id}|${rest.join('|')}`] = clone(v); });
+    db.templates.push(t); out.push(t);
+  });
+  return out;
+}
+document.addEventListener('click', async e => {
+  const t = e.target; if (!t.closest) return;
+  if (t.closest('[data-tplimport]')){ openTplImport(); return; }
+  if (!$('#tiBox')) return;
+  if (t.closest('[data-tiback]')){ tplImp.src = null; paintTplImport(); return; }
+  const src = t.closest('[data-tisrc]');
+  if (src){
+    const id = src.dataset.tisrc; Object.assign(tplImp, { src:id, sel:new Set(), err:'' });
+    if (id === 'preset'){ tplImp.tpls = [smmTemplate(), crmTemplate()]; tplImp.cards = {}; paintTplImport(); return; }
+    tplImp.loading = true; paintTplImport();
+    try { const r = await loadSpaceTemplates(id === 'main' ? '' : id); if (tplImp.src !== id) return; tplImp.tpls = r.tpls; tplImp.cards = r.cards; }
+    catch(err) { tplImp.err = 'Не удалось загрузить шаблоны. Проверьте связь и попробуйте ещё раз.'; tplImp.tpls = []; }
+    tplImp.loading = false; paintTplImport(); return;
+  }
+  if (t.closest('[data-tido]') && tplImp.sel.size){
+    const srcName = tplImp.src === 'preset' ? 'готовый' : (otherSpaces().find(x => (x.id || 'main') === tplImp.src)?.name || 'копия');
+    const added = importTemplates([...tplImp.sel].sort((a, b) => a - b).map(i => tplImp.tpls[i]), tplImp.cards, srcName);
+    commit(); layer.innerHTML = ''; ui.tplSel = added[0]?.id; ui.draft = null; ui.draftDirty = false; render();
+    toast(added.length === 1 ? `Шаблон «${added[0].name}» добавлен` : `Добавлено шаблонов: ${added.length}`);
+  }
+});
+document.addEventListener('change', e => {
+  const i = e.target.dataset?.tisel; if (i == null) return;
+  if (e.target.checked) tplImp.sel.add(+i); else tplImp.sel.delete(+i); paintTplImport();
+});
 function renderTemplates(){
   if (!ui.draft){
     const t = tplById(ui.tplSel) || db.templates[0];
@@ -5431,6 +5524,7 @@ function renderTemplates(){
       ${db.templates.map(t => `<button class="tpl-item" data-tpl="${t.id}" aria-current="${t.id===ui.tplSel}"><b>${esc(t.name)}</b>
         <small>${t.stages.length} ${plural(t.stages.length,'этап','этапа','этапов')}, ${t.stages.reduce((n,s)=>n+(s.subs||[]).length,0)} подэт.</small></button>`).join('')}
       <button class="ghost" data-tpl="new">Новый шаблон</button>
+      <button class="ghost tpl-imp-btn" data-tplimport>${COPY_ICO}Из другого пространства</button>
     </div>
     <div class="tpl-ed">
       <input class="name" id="tName" value="${esc(d.name)}" placeholder="Название шаблона" aria-label="Название шаблона">
