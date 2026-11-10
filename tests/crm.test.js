@@ -52,8 +52,9 @@ function openApp(backend, userId, keepStorage, session) {
   // 2) главная: «Новый блогер», воронка
   D.querySelector('.tabs [data-view="matrix"]').click(); await wait(150);
   assert.equal($('#newBtn').textContent, 'Новый блогер'); ok('кнопка «Новый блогер»');
-  assert.ok($('.crm-pf') && /Воронка блогеров/.test($('.crm-pf').textContent)); ok('на главной — воронка блогеров');
-  assert.equal(D.querySelectorAll('.crm-funnel [data-crmstage]').length, 8); ok('в воронке 8 этапов');
+  assert.ok($('.crm-sum') && !$('.crm-pf')); ok('на главной — сводка над списком, большой воронки нет');
+  assert.equal(D.querySelectorAll('.crm-sum .crm-chip').length, 9); ok('в сводке 8 этапов + «Запустились»');
+  assert.ok(!$('#density [data-density="funnel"]').hidden); ok('в переключателе вида есть «Воронка»');
 
   // 3) три блогера через форму
   w.eval("db.projects.forEach(p => p.state = 'archived'); db.projects = db.projects.filter(p => false); commit()"); await wait(100);
@@ -71,21 +72,30 @@ function openApp(backend, userId, keepStorage, session) {
   const st = w.eval('JSON.stringify(crmStats())'); const S = JSON.parse(st);
   assert.deepEqual(S.reached, [3, 2, 2, 1, 1, 1, 1, 1]); assert.equal(S.won, 1); ok('воронка: дошли 3 → 2 → 2 → 1…, завершил 1');
   assert.equal(S.at[0], 1); assert.equal(S.at[2], 1); ok('«сейчас» на этапе: Найден 1, Переговоры 1');
+  assert.ok(/1\s*оффер отправлен/.test($('.crm-kp').textContent.replace(/\s+/g, ' ')) && /2\s*в работе/.test($('.crm-kp').textContent)); ok('сводка: в работе 2, оффер отправлен 1');
+  assert.equal($('.crm-chip[data-crmstage="2"] b').textContent, '1'); ok('на чипе этапа — сколько блогеров на нём');
+  // вид «Воронка»
+  $('.crm-sum [data-crmview="funnel"]').click(); await wait(150);
+  assert.ok($('.crm-pf') && !$('.crm-sum') && D.querySelectorAll('.crm-funnel [data-crmstage]').length === 8); ok('вид «Воронка»: только воронка, 8 этапов');
   const row2 = $('.crm-funnel [data-crmstage="1"]');
   assert.ok(/67%/.test(row2.textContent)); ok('переход между этапами в процентах (3 → 2 = 67%)');
 
   // 4) фильтр по этапу
   $('.crm-funnel [data-crmstage="2"]').click(); await wait(150);
-  const names = () => [...D.querySelectorAll('.mx .pcol, .mx td.pcol')].map(x => x.textContent).join(' ');
-  assert.ok(/Борис/.test(names()) && !/Анна/.test(names())); ok('нажатие на этап показывает только блогеров на нём');
-  assert.ok($('.crm-reset')); $('.crm-reset').click(); await wait(150);
-  assert.ok(/Анна/.test(names())); ok('«показать всех» снимает фильтр');
+  const names = () => $('#app').textContent;
+  assert.ok($('.crm-sum') && !$('.crm-pf')); ok('нажатие на этап воронки ведёт к списку');
+  assert.ok(/Борис/.test(names()) && !/Анна/.test(names())); ok('в списке только блогеры этого этапа');
+  $('.crm-chip.on').click(); await wait(150);
+  assert.ok(/Анна/.test(names()) && /Борис/.test(names())); ok('повторное нажатие на чип снимает фильтр');
+  $('.crm-chip[data-crmstage="8"]').click(); await wait(150);
+  assert.ok(/Вера/.test(names()) && !/Борис/.test(names())); $('.crm-chip.on').click(); await wait(100); ok('чип «Запустились» показывает запустившихся');
 
   // 5) отказ = архив
   w.eval("db.projects.find(p => p.name === 'Анна').state = 'archived'; commit()"); await wait(150);
-  assert.equal(JSON.parse(w.eval('JSON.stringify(crmStats())')).lost, 1); assert.ok(/отказ 1/.test($('.crm-pf').textContent)); ok('блогер в архиве считается отказом');
+  assert.equal(JSON.parse(w.eval('JSON.stringify(crmStats())')).lost, 1); assert.ok(/1\s*отказ/.test($('.crm-kp').textContent)); ok('блогер в архиве считается отказом');
 
   // 5б) редактирование воронки: переименовать, добавить, убрать
+  $('[data-crmview="funnel"]').click(); await wait(100);
   $('[data-crmedit]').click(); await wait(100);
   assert.equal(D.querySelectorAll('#crmEd [data-crmname]').length, 8); ok('«Редактировать воронку» открывает список этапов');
   const nm = $('#crmEd [data-crmname="3"]'); nm.value = 'Созвон'; fire(nm, 'input');

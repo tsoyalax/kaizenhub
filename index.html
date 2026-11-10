@@ -728,6 +728,31 @@ body.side-pinned .side-btn{color:var(--ink)}
 .tg-pick input{width:150px;padding:6px 10px;font-size:13px}
 .smm-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .smm-tags span{font-size:13px}
+.vtopic{display:flex;align-items:center;gap:5px;max-width:100%;margin-top:2px;font-size:12.5px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:text;border-radius:6px}
+.vtopic:hover{color:var(--brand)}
+.vtopic.empty{display:flex;width:max-content;padding:1px 7px 1px 5px;color:var(--muted);font-weight:400;border:1px dashed var(--line-strong);cursor:pointer}
+.vtopic.empty:hover{color:var(--brand);border-color:var(--brand)}
+.vtopic svg{width:12px;height:12px;flex:none}
+.vtopic:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.topic-m{max-width:480px}
+.crm-sum{margin:0 0 14px;padding:14px 16px;border-radius:16px;background:var(--fbg,var(--surface));border:1px solid var(--fbd,var(--line));display:grid;gap:12px}
+.crm-sum-hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.crm-kp{display:flex;flex-wrap:wrap;gap:6px 22px;flex:1;min-width:0}
+.crm-kp span{display:inline-flex;align-items:baseline;gap:6px;font-size:13px;color:var(--muted);white-space:nowrap}
+.crm-kp b{font-size:20px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.crm-sum-f{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
+.crm-sum-f svg,.crm-back svg{width:15px;height:15px}
+.crm-chips{display:flex;flex-wrap:wrap;gap:6px}
+@media (max-width:640px){.crm-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px}}
+.crm-chips::-webkit-scrollbar{display:none}
+.crm-chip{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 6px 0 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font:inherit;font-size:13px;color:var(--ink);white-space:nowrap;cursor:pointer;flex:none}
+.crm-chip:hover{border-color:var(--line-strong)}
+.crm-chip b{min-width:22px;height:22px;padding:0 6px;border-radius:999px;display:inline-grid;place-items:center;font-size:12px;font-weight:600;background:color-mix(in srgb,var(--brand) 14%,var(--surface));color:var(--brand);font-variant-numeric:tabular-nums}
+.crm-chip.zero{color:var(--muted)}.crm-chip.zero b{background:var(--surface-2);color:var(--muted)}
+.crm-chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.crm-chip.on b{background:color-mix(in srgb,var(--accent-ink) 22%,transparent);color:var(--accent-ink)}
+.crm-chip:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.crm-back{font-size:13px}
 .crm-funnel{display:grid;gap:4px;margin-bottom:6px}
 .crm-row{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr) 48px;align-items:center;gap:12px;width:100%;padding:5px 8px;border:0;border-radius:12px;background:none;font:inherit;color:var(--ink);text-align:left;cursor:pointer;transition:background .15s}
 .crm-row:hover{background:var(--surface-2)}
@@ -2024,6 +2049,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <div class="seg-toggle" id="density" role="group" aria-label="Вид списка">
       <button data-density="compact" title="Список проектов"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg><span>Список</span></button>
       <button data-density="detailed" title="Таблица этапов"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16M15 4v16"/></svg><span>Этапы</span></button>
+      <button data-density="funnel" title="Воронка блогеров" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5Z"/></svg><span>Воронка</span></button>
     </div>
   </div>
   <div class="tags" id="tags"></div>
@@ -2171,7 +2197,7 @@ function crmPanelHtml(){
       <span class="crm-conv">${conv === null ? '' : `${conv}%`}</span></button>`;
   }).join('');
   return `<section class="smm-pf crm-pf" aria-label="Воронка блогеров">
-    <div class="smm-hd"><h2>Воронка блогеров</h2>${ui.crmStage != null && st.names[ui.crmStage] ? `<button class="ghost crm-reset" data-crmstage="${ui.crmStage}">Этап «${esc(st.names[ui.crmStage])}» · показать всех</button>` : ''}
+    <div class="smm-hd"><button class="ghost crm-back" data-crmview="compact">← Список блогеров</button><h2>Воронка блогеров</h2>${ui.crmStage != null && st.names[ui.crmStage] ? `<button class="ghost crm-reset" data-crmstage="${ui.crmStage}">Этап «${esc(st.names[ui.crmStage])}» · показать всех</button>` : ''}
       ${ui.crmEdit ? '' : `<button class="ghost smm-edit crm-editbtn" data-crmedit>${ICON_EDIT}Редактировать воронку</button>`}</div>
     ${ui.crmEdit ? crmEditHtml() : ''}
     <div class="smm-kpi">
@@ -2240,8 +2266,25 @@ document.addEventListener('submit', e => {
 });
 document.addEventListener('click', e => {
   const b = e.target.closest?.('[data-crmstage]'); if (!b) return;
-  const i = +b.dataset.crmstage; ui.crmStage = ui.crmStage === i ? null : i; render();
+  const i = +b.dataset.crmstage; ui.crmStage = ui.crmStage === i ? null : i;
+  if (density() === 'funnel' && ui.crmStage != null){ db.prefs = { ...(db.prefs || {}), density:'compact' }; save(); }   // из воронки — к списку этих блогеров
+  render();
 });
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-crmview]'); if (!b) return;
+  db.prefs = { ...(db.prefs || {}), density:b.dataset.crmview }; if (ui.view !== 'matrix') ui.view = 'matrix'; save(); render(); scrollTo(0, 0);
+});
+// сводка над списком блогеров: главные цифры и этапы с количеством (нажатие — фильтр)
+function crmSumHtml(){
+  const st = crmStats(); if (!st.names.length) return '';
+  const oi = st.names.findIndex(n => /оффер|offer/i.test(n));
+  const kp = [[st.total, 'в воронке'], [st.total - st.won, 'в работе'], ...(oi >= 0 ? [[st.reached[oi], 'оффер отправлен']] : []), [st.won, 'запустились'], ...(st.lost ? [[st.lost, 'отказ']] : [])];
+  const chip = (i, n, c) => `<button type="button" class="crm-chip${ui.crmStage === i ? ' on' : ''}${c ? '' : ' zero'}" data-crmstage="${i}" aria-pressed="${ui.crmStage === i}">${esc(n)}<b>${c}</b></button>`;
+  return `<section class="crm-sum" aria-label="Сводка по блогерам">
+    <div class="crm-sum-hd"><div class="crm-kp">${kp.map(([v, l]) => `<span><b>${v}</b>${l}</span>`).join('')}</div>
+      <button class="ghost crm-sum-f" data-crmview="funnel">${FUNNEL_ICO}<span>Воронка</span></button></div>
+    <div class="crm-chips" role="group" aria-label="Кто на каком этапе">${st.names.map((n, i) => chip(i, n, st.at[i])).join('')}${chip(st.names.length, 'Запустились', st.won)}</div></section>`;
+}
 function ensureSmmTemplate(d){ d.templates = d.templates || []; if (!d.templates.some(t => t.id === SMM_TPL_ID || /smm/i.test(t.name))) d.templates.unshift(smmTemplate()); }
 // дата видео — день публикации (дедлайн), по ней видео попадает в «Неделю 1–4» месяца
 const RX_SHOT = /съ[её]мк|сня[тл]/i, RX_PUB = /опубликов|публикац|выложен|постинг/i;
@@ -2323,6 +2366,42 @@ function smmPanelHtml(){
     </tbody></table>
     ${smmTagRows(c)}</section>`;
 }
+// ---------- Тема видео (SMM): «Ролик 1…45» нумеруются сами, реальную тему Reels вписывают потом — p.topic ----------
+const PEN_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+const topicHtml = p => !isSMM() || GUEST || p._ext ? '' : p.topic
+  ? `<span class="vtopic" data-topic="${p.id}" role="button" tabindex="0" title="${esc(p.topic)} — нажмите, чтобы изменить">${esc(p.topic)}</span>`
+  : `<span class="vtopic empty" data-topic="${p.id}" role="button" tabindex="0">${PEN_ICO}Тема</span>`;
+// порядок видео для «Следующее →»: тот же цикл, по неделе и номеру в названии
+const vidOrder = p => db.projects.filter(x => x.state !== 'archived' && (x.cycle || '') === (p.cycle || '') && x.template_id === p.template_id)
+  .sort((a, b) => (a.week || 0) - (b.week || 0) || a.name.localeCompare(b.name, 'ru', { numeric:true }));
+function openTopic(id){
+  const p = projById(id); if (!p) return;
+  const list = vidOrder(p); const i = list.indexOf(p); const next = list.slice(i + 1).find(x => !x.topic) || null;
+  layer.innerHTML = `<div class="backdrop" data-close></div>
+  <div class="modal topic-m" role="dialog" aria-modal="true" aria-labelledby="tpT">
+    <h2 id="tpT">Тема видео</h2><p class="hint">${esc(p.name)}${p.week ? ` · Неделя ${p.week}` : ''}${p.deadline ? ` · публикация ${fmt(p.deadline)}` : ''}</p>
+    <form class="form" id="tpForm" data-id="${p.id}">
+      <div class="field"><label for="tpIn">Тема / название Reels</label><input id="tpIn" value="${esc(p.topic || '')}" maxlength="140" autocomplete="off" placeholder="Например: 5 мифов о чекапе"></div>
+      <div class="actions"><button type="button" class="ghost" data-close>Отмена</button>
+        ${next ? `<button type="button" class="ghost" id="tpNext" data-next="${next.id}">Сохранить и следующее →</button>` : ''}<button class="primary">Сохранить</button></div>
+    </form></div>`;
+  const inp = $('#tpIn'); inp.focus(); inp.select();
+}
+function saveTopic(){
+  const f = $('#tpForm'); const p = f && projById(f.dataset.id); if (!p) return false;
+  const v = $('#tpIn').value.trim(); if ((p.topic || '') !== v){ if (v) p.topic = v; else delete p.topic; addLog(p, v ? `Тема: «${v}»` : 'Тема убрана'); commit(); }
+  return true;
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest?.('[data-topic]'); if (!t) return;
+  e.preventDefault(); e.stopPropagation(); openTopic(t.dataset.topic);
+}, true);
+document.addEventListener('keydown', e => {
+  const t = e.target.closest?.('[data-topic]'); if (!t || (e.key !== 'Enter' && e.key !== ' ')) return;
+  e.preventDefault(); e.stopPropagation(); openTopic(t.dataset.topic);
+}, true);
+document.addEventListener('submit', e => { if (e.target.id !== 'tpForm') return; e.preventDefault(); if (saveTopic()){ layer.innerHTML = ''; render(); } });
+document.addEventListener('click', e => { const b = e.target.closest?.('#tpNext'); if (!b) return; const nx = b.dataset.next; if (saveTopic()){ render(); openTopic(nx); } });
 // по тегам (формат / KPI): сколько видео этого формата в цикле и сколько уже опубликовано
 function smmTagRows(c){
   const rows = tagList().map(t => { const ps = db.projects.filter(p => cycleOf(p) === c && p.state !== 'archived' && (p.tags || []).includes(t.id));
@@ -3067,7 +3146,7 @@ function baseOk(p){
   if (ui.crmStage != null && isCRM() && crmPos(p, (crmTpl()?.stages || []).map(s => s.name)) !== ui.crmStage) return false;
   if (ui.q){
     const q = ui.q.toLowerCase();
-    const hay = [p.name, p.client, nameOf(p.pm_id), p.worker_id ? nameOf(p.worker_id) : '', ...p.stages.map(s => s.assignee_id ? nameOf(s.assignee_id) : '')].join(' ').toLowerCase();
+    const hay = [p.name, p.topic || '', p.client, nameOf(p.pm_id), p.worker_id ? nameOf(p.worker_id) : '', ...p.stages.map(s => s.assignee_id ? nameOf(s.assignee_id) : '')].join(' ').toLowerCase();
     if (!hay.includes(q)) return false;
   }
   return true;
@@ -3075,7 +3154,7 @@ function baseOk(p){
 function riskOk(p){
   const r = projectRisk(p);
   if (ui.risk === 'done') return r === 'done';
-  if (r === 'done') return false;
+  if (r === 'done') return isCRM() && ui.crmStage != null && ui.crmStage >= (crmTpl()?.stages || []).length;   // чип «Запустились» в CRM
   return !ui.risk || r === ui.risk;
 }
 const SORTS = {
@@ -3101,6 +3180,7 @@ function renderFilters(){
   if (!['risk', 'deadline', 'name'].includes(ui.sort)) ui.sort = 'risk';          // убранные варианты сортировки
   if (['client', 'priority'].includes(ui.group)) ui.group = 'auto';               // и группировки
   $('#density').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.density === density()));
+  const fnb = $('#density [data-density="funnel"]'); if (fnb) fnb.hidden = !isCRM();
   const gs = $('#group'); let wk = gs.querySelector('option[value="week"]');
   if (isSMM() && !wk) gs.insertAdjacentHTML('afterbegin', '<option value="week">По неделям</option>'); else if (!isSMM() && wk) wk.remove();
   $('#sort').value = ui.sort; $('#group').value = groupMode();
@@ -3158,7 +3238,7 @@ function render(){
   if (!isCRM()) ui.crmStage = null;
   ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
-  if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST) app.insertAdjacentHTML('afterbegin', crmPanelHtml());
+  if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST && !(ui.view === 'matrix' && density() === 'funnel')) app.insertAdjacentHTML('afterbegin', crmSumHtml());
   if (ui.open) renderDrawer();
   try { paintPage(); } catch(e) {}
   paintSelect();
@@ -3282,6 +3362,7 @@ function groupsFor(list){
   return keys.map(k => ({ title:titleOf(k), items:list.filter(p => keyOf(p) === k) }));
 }
 function renderMatrix(){
+  if (isCRM() && !GUEST && density() === 'funnel'){ app.innerHTML = crmPanelHtml(); return; }
   const list = visible();
   if (!db.projects.some(p => p.state !== 'archived')){ app.innerHTML = `<div class="empty">${W('Проектов пока нет. Запустите первый по готовому шаблону.', 'Видео пока нет. Добавьте первое — оно пойдёт по шаблону SMM.', 'Блогеров пока нет. Добавьте первого — он встанет в воронку на этап «Найден».')}<br><button class="primary" id="emptyCreate">${W('Новый проект', 'Новое видео', 'Новый блогер')}</button></div>`; return; }
   if (IS_PHONE.matches) return renderPhoneList(list);
@@ -3304,7 +3385,7 @@ function renderMatrix(){
           ${cellWho(p, s)}</button>
           <select class="cell-as" data-qassign="${p.id}|${s.id}" aria-label="Ответственный за этап «${esc(s.name)}», проект ${esc(p.name)}" title="Сменить ответственного">${peopleOpts(s.assignee_id, p.worker_id ? `Как у проекта: ${short(p.worker_id)}` : 'Не назначен')}</select></div></td>`;
       }).join('');
-      return `<tr><th class="pcol"><button class="prow" data-open="${p.id}"><b>${projAva(p, 'xs')}${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</b>${tagsHtml(p)}
+      return `<tr><th class="pcol"><button class="prow" data-open="${p.id}"><b>${projAva(p, 'xs')}${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</b>${topicHtml(p)}${tagsHtml(p)}
         <small>${esc(p.client)}</small>
         <small>${startTxt(p)}</small>
         <small class="${late ? 'late' : p.state === 'completed' ? '' : 'ut-' + urg(p.deadline || end).k}">Финиш ${fmt(end)}${late ? `, позже дедлайна ${fmt(p.deadline)}` : p.state === 'completed' ? '' : `, ${urg(p.deadline || end).txt}`}</small></button>
@@ -3344,7 +3425,7 @@ function renderPhoneList(list){
     const onStage = m.daysAtCurrentStage && !m.maint ? `<small class="mc-age${m.plannedStage && m.daysAtCurrentStage > m.plannedStage ? ' slow' : ''}">(${m.daysAtCurrentStage}-й день на этапе)</small>` : '';
     return `<article class="pc mc">
       <button class="mc-main" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''}>
-        <span class="mc-top">${projAva(p, 'm36')}<span class="mc-tt"><b>${esc(p.name)}</b>${tagsHtml(p)}<small>PM ${esc(short(p.pm_id))} · ${esc(p.client)}${p.priority === 'high' ? ' · <em class="mc-hp">высокий</em>' : ''}</small></span>${stPill(risk, risk === 'green' ? 'В работе' : risk === 'red' ? 'Просрочен' : RISK_RU[risk])}</span>
+        <span class="mc-top">${projAva(p, 'm36')}<span class="mc-tt"><b>${esc(p.name)}</b>${topicHtml(p)}${tagsHtml(p)}<small>PM ${esc(short(p.pm_id))} · ${esc(p.client)}${p.priority === 'high' ? ' · <em class="mc-hp">высокий</em>' : ''}</small></span>${stPill(risk, risk === 'green' ? 'В работе' : risk === 'red' ? 'Просрочен' : RISK_RU[risk])}</span>
         <span class="mc-mid">${ticksHtml(p, risk)}${onStage}</span>
         ${dl ? `<span class="mc-bot ${dl.cls}">${FLAG}${dl.html}</span>` : ''}
       </button>
@@ -3886,7 +3967,8 @@ document.addEventListener('click', e => {
     const b = document.querySelector(`.pm-nav .icon-btn[aria-label="${dx < 0 ? 'Следующий' : 'Предыдущий'} проект"]`); if (b && !b.disabled){ b.click(); scrollTo(0, 0); } }, { passive:true }); })();
 
 // Компактный вид: одна строка на проект — название, текущий этап, статус, срок
-const density = () => db.prefs?.density || 'detailed';
+// в CRM по умолчанию — список блогеров; «Воронка» — отдельный вид только для CRM
+const density = () => { const d = db.prefs?.density || (isCRM() ? 'compact' : 'detailed'); return d === 'funnel' && !isCRM() ? 'detailed' : d; };
 // значки статусов в плашках списка
 const sico = path => `<svg class="pi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
 // иконка статуса в фильтрах — та же, что в плашке статуса проекта
@@ -3924,7 +4006,7 @@ function renderCompact(list){
       const progress = ticksHtml(p, !c ? 'done' : h.key);
       const tm = getProjectTimeMetrics(p);
       return `<tr class="r-${h.key}" data-open="${p.id}"${c ? ` data-stage="${c.id}"` : ''} tabindex="0">
-        <td title="${esc(p.name)}"><span class="cx-name">${projAva(p, 'sm')}<span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}${tagsHtml(p)}<small>${esc(p.client)}</small></span></span></td>
+        <td title="${esc(p.name)}"><span class="cx-name">${projAva(p, 'sm')}<span class="cx-nt">${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}${topicHtml(p)}${tagsHtml(p)}<small>${esc(p.client)}</small></span></span></td>
         <td>${tm.isOverdue && h.key !== 'red' ? stPill('red', 'Просрочен') : stPill(h.key, h.label)}</td>
         <td>${progress}</td>
         <td class="start">${startCell(p, tm)}</td>
@@ -4289,6 +4371,7 @@ function renderDrawer(){
       <button class="close" data-close aria-label="Закрыть">×</button></div>
     <div class="d-boxes">
       <section class="d-box"><h3>Проект</h3><div class="d-g">
+        ${isSMM() ? `<div class="field"><label for="pTopic">Тема видео</label><input id="pTopic" value="${esc(p.topic || '')}" maxlength="140" placeholder="Тема / название Reels"></div>` : ''}
         <div class="field"><label>Клиент</label><div class="val">${esc(p.client)}</div></div>
         <div class="field"><label for="pCat">Категория</label><select id="pCat">${catOpts(p.category_id)}</select></div>
         <div class="field d-tags"><label>Теги</label>${tagPicker(p.tags || [], p.id)}</div>
@@ -5090,6 +5173,7 @@ document.addEventListener('click', e => {
   const b = e.target.closest?.('[data-spkind]'); if (!b || b.getAttribute('aria-pressed') === 'true') return;
   const k = normKind(b.dataset.spkind);
   db.prefs = db.prefs || {}; db.prefs.kind = k; ensureKindTemplate(db, k); ui.group = 'auto'; ui.crmStage = null;
+  if (k === 'crm') db.prefs.density = 'compact'; else if (db.prefs.density === 'funnel') delete db.prefs.density;
   if (k === 'crm') ui.kbTpl = crmTpl()?.id || ui.kbTpl;
   commit(); toast({ smm:'Тип: SMM — вместо проектов видео, недели и план / факт', crm:'Тип: CRM — вместо проектов блогеры и воронка общения', agency:'Тип: Агентство — проекты' }[k]);
   if (!cloud.store || !cloud.uid || ORG) return;
@@ -5573,6 +5657,7 @@ document.addEventListener('change', e => {
     if (el.id === 'pStart') return setStart(p, el.value);
     if (el.id === 'pBudget'){ const v = el.value === '' ? null : Math.max(0, +el.value); return updateProject(p, 'budget', v, `Бюджет: ${money(v)}`); }
     if (el.id === 'pDl') return updateProject(p, 'deadline', el.value, `Общий дедлайн: ${fmt(el.value)}`);
+    if (el.id === 'pTopic'){ const v = el.value.trim(); return updateProject(p, 'topic', v || undefined, v ? `Тема: «${v}»` : 'Тема убрана'); }
     if (el.id === 'pName' && el.value.trim()) return updateProject(p, 'name', el.value.trim(), `Переименован в «${el.value.trim()}»`);
   }
   if (el.id === 'tName' && ui.draft) ui.draft.name = el.value;

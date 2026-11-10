@@ -99,6 +99,20 @@ function openApp(backend, userId, keepStorage, session) {
   // 5) у видео без фото — иконка видео
   assert.ok($('.pava.vid svg')); ok('у видео иконка видео вместо букв');
 
+  // 5б) тема видео: «Ролик N» нумеруется сам, тему вписывают потом
+  const empties = D.querySelectorAll('.vtopic.empty'); assert.ok(empties.length >= 40); ok('у видео без темы — кнопка «Тема»');
+  const r1 = w.eval('vidOrder(db.projects.find(p => p.name === "Ролик 1")).map(p => p.id)');
+  const tb = $(`.vtopic[data-topic="${r1[0]}"]`); tb.click(); await wait(80);
+  assert.ok($('#tpForm') && !$('.drawer.open')); ok('нажатие на «Тема» открывает окно темы, а не карточку');
+  $('#tpIn').value = '5 мифов о чекапе'; $('#tpNext').click(); await wait(120);
+  assert.equal($('#tpForm').dataset.id, r1[1]); ok('«Сохранить и следующее» переходит к следующему видео');
+  $('#tpIn').value = 'Как готовиться к МРТ'; fire($('#tpForm'), 'submit'); await wait(150);
+  const P1 = ls().projects.find(p => p.id === r1[0]), P2 = ls().projects.find(p => p.id === r1[1]);
+  assert.equal(P1.topic, '5 мифов о чекапе'); assert.equal(P2.topic, 'Как готовиться к МРТ'); assert.ok(/^Ролик \d+$/.test(P1.name)); ok('темы сохранены, название-номер не тронуто');
+  assert.ok(!$('#tpForm') && w.eval(`topicHtml(projById('${r1[0]}'))`).includes('5 мифов о чекапе') && [...D.querySelectorAll('.vtopic:not(.empty)')].some(x => x.textContent === 'Как готовиться к МРТ')); ok('тема видна в списке');
+  w.eval('ui.q = "мрт"; render()'); await wait(80);
+  assert.equal(D.querySelectorAll('[data-topic]').length, 1); w.eval('ui.q = ""; render()'); await wait(80); ok('поиск находит видео по теме');
+
   // 6) пачкой назначить тег выбранным
   w.eval('addTag("Отзыв"); save();');
   $('#selToggle').click(); await wait(100);
