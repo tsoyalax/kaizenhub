@@ -10,7 +10,8 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000c', 'g@x.y', '{"full_name":"Guest G","picture":"https://img/g.png"}'),
   ('00000000-0000-0000-0000-00000000000d', 's@x.y', '{}'),
   ('00000000-0000-0000-0000-00000000000e', 't@x.y', '{"name":"Team T","avatar_url":"https://img/t.png"}'),
-  ('00000000-0000-0000-0000-00000000000f', 'l@x.y', '{"name":"Lead L"}');
+  ('00000000-0000-0000-0000-00000000000f', 'l@x.y', '{"name":"Lead L"}'),
+  ('00000000-0000-0000-0000-000000000010', 'v@x.y', '{"name":"Area V"}');
 
 create temp table results (name text, ok boolean);
 grant all on results to authenticated;
@@ -40,6 +41,7 @@ end $$;
 \set S '''00000000-0000-0000-0000-00000000000d'''
 \set T '''00000000-0000-0000-0000-00000000000e'''
 \set L '''00000000-0000-0000-0000-00000000000f'''
+\set V '''00000000-0000-0000-0000-000000000010'''
 
 begin;
 -- ---------- профили ----------
@@ -152,6 +154,51 @@ select pg_temp.expect('задачи: руководитель видит зад�
 select pg_temp.expect('задачи: руководитель ставит задачу от имени владельца', pg_temp.try(:M, $q$select doc_set('it/i2', '{"ownerId":"00000000-0000-0000-0000-00000000000a","memberIds":["00000000-0000-0000-0000-00000000000a"],"json":"{}"}')$q$), true);
 select pg_temp.expect('задачи: руководитель удаляет задачу', pg_temp.try(:M, $q$select doc_delete('it/i2')$q$), true);
 select pg_temp.expect('задачи: владелец удаляет задачу', pg_temp.try(:O, $q$select doc_delete('it/i1')$q$), true);
+-- ---------- руководитель одной области (V — только область aV) ----------
+select pg_temp.expect('область: пространство s1 в области aV', pg_temp.try(:O, $q$select doc_set('data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s1', '{"name":"Вика","area":"aV"}')$q$), true);
+select pg_temp.expect('область: пространство s2 в другой области', pg_temp.try(:O, $q$select doc_set('data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s2', '{"name":"Icon SMM","area":"a0"}')$q$), true);
+select pg_temp.expect('область: название области aV', pg_temp.try(:O, $q$select doc_set('data/users/00000000-0000-0000-0000-00000000000a/spaces/area/aV', '{"name":"Вика Фандо"}')$q$), true);
+select pg_temp.expect('область: данные s1', pg_temp.try(:O, $q$select doc_set('data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s1/items/p_px', '{"json":"{}"}')$q$), true);
+select pg_temp.expect('область: данные s2', pg_temp.try(:O, $q$select doc_set('data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s2/items/p_py', '{"json":"{}"}')$q$), true);
+select pg_temp.expect('область: до приглашения s1 не видно', pg_temp.rows_as(:V, $q$select * from docs where path like 'data/users/00000000-0000-0000-0000-00000000000a/%'$q$) = 0, true);
+select pg_temp.expect('область: владелец создаёт ссылку на область', pg_temp.try(:O, $q$select doc_set('inv/areacode01', '{"kind":"team","role":"arealead","area":"aV","ownerId":"00000000-0000-0000-0000-00000000000a","memberId":"u8"}')$q$), true);
+select pg_temp.expect('область: руководитель команды не создаёт ссылку на область', pg_temp.try(:M, $q$select doc_set('inv/areacodeM1', '{"kind":"team","role":"arealead","area":"aV","ownerId":"00000000-0000-0000-0000-00000000000a"}')$q$), false);
+select pg_temp.expect('область: посторонний не создаёт ссылку на область', pg_temp.try(:S, $q$select doc_set('inv/areacodeS1', '{"kind":"team","role":"arealead","area":"aV","ownerId":"00000000-0000-0000-0000-00000000000a"}')$q$), false);
+select pg_temp.expect('область: по ссылке на область общим руководителем не стать', pg_temp.try(:V, $q$select doc_set('team/00000000-0000-0000-0000-00000000000a/managers/00000000-0000-0000-0000-000000000010', '{"code":"areacode01"}')$q$), false);
+select pg_temp.expect('область: по ссылке на aV чужую область не взять', pg_temp.try(:V, $q$select doc_set('team/00000000-0000-0000-0000-00000000000a/areas/a0/00000000-0000-0000-0000-000000000010', '{"code":"areacode01"}')$q$), false);
+select pg_temp.expect('область: по ссылке исполнителя область не взять', pg_temp.try(:V, $q$select doc_set('team/00000000-0000-0000-0000-00000000000a/areas/aV/00000000-0000-0000-0000-000000000010', '{"code":"teamcode03"}')$q$), false);
+select pg_temp.expect('область: без ссылки не вписаться', pg_temp.try(:S, $q$select doc_set('team/00000000-0000-0000-0000-00000000000a/areas/aV/00000000-0000-0000-0000-00000000000d', '{"code":"nocode0001"}')$q$), false);
+select pg_temp.expect('область: вписывает себя по ссылке на область', pg_temp.try(:V, $q$select doc_set('team/00000000-0000-0000-0000-00000000000a/areas/aV/00000000-0000-0000-0000-000000000010', '{"code":"areacode01","memberId":"u8"}')$q$), true);
+select pg_temp.expect('область: нельзя вписать другого', pg_temp.try(:V, $q$select doc_set('team/00000000-0000-0000-0000-00000000000a/areas/aV/00000000-0000-0000-0000-00000000000d', '{"code":"areacode01"}')$q$), false);
+select pg_temp.expect('область: видит пространство своей области', pg_temp.rows_as(:V, $q$select * from docs where parent = 'data/users/00000000-0000-0000-0000-00000000000a/spaces/list'$q$) = 1, true);
+select pg_temp.expect('область: читает данные своего пространства', pg_temp.rows_as(:V, $q$select * from docs where path = 'data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s1/items/p_px'$q$) = 1, true);
+select pg_temp.expect('область: видит название области', pg_temp.rows_as(:V, $q$select * from docs where parent = 'data/users/00000000-0000-0000-0000-00000000000a/spaces/area'$q$) = 1, true);
+select pg_temp.expect('область: не видит пространство другой области', pg_temp.rows_as(:V, $q$select * from docs where path like 'data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s2%'$q$) = 0, true);
+select pg_temp.expect('область: не видит основное пространство', pg_temp.rows_as(:V, $q$select * from docs where path = 'data/users/00000000-0000-0000-0000-00000000000a/meta'$q$) = 0, true);
+select pg_temp.expect('область: не видит личные ссылки владельца', pg_temp.rows_as(:V, $q$select * from docs where path like 'data/users/00000000-0000-0000-0000-00000000000a/links/%'$q$) = 0, true);
+select pg_temp.expect('область: пишет в своё пространство', pg_temp.try(:V, $q$select doc_set('data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s1/items/p_pv', '{"json":"{}"}')$q$), true);
+select pg_temp.expect('область: удаляет в своём пространстве', pg_temp.try(:V, $q$select doc_delete('data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s1/items/p_pv')$q$), true);
+select pg_temp.expect('область: не пишет в другую область', pg_temp.try(:V, $q$select doc_set('data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s2/items/p_pv', '{"json":"{}"}')$q$), false);
+select pg_temp.expect('область: не удаляет в другой области', pg_temp.try(:V, $q$select doc_delete('data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s2/items/p_py')$q$), false);
+select pg_temp.expect('область: не пишет в основное пространство', pg_temp.try(:V, $q$select doc_set('data/users/00000000-0000-0000-0000-00000000000a/p_v', '{"json":"{}"}')$q$), false);
+select pg_temp.expect('область: не переносит чужое пространство к себе', pg_temp.try(:V, $q$select doc_update('data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s2', '{"area":"aV"}')$q$), false);
+select pg_temp.expect('область: не создаёт пространства владельцу', pg_temp.try(:V, $q$select doc_set('data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s9', '{"name":"x","area":"aV"}')$q$), false);
+select pg_temp.expect('область: не видит команду владельца', pg_temp.rows_as(:V, $q$select * from docs where parent = 'team/00000000-0000-0000-0000-00000000000a/members'$q$) = 0, true);
+select pg_temp.expect('область: видит свою запись руководителя области', pg_temp.rows_as(:V, $q$select * from docs where path = 'team/00000000-0000-0000-0000-00000000000a/areas/aV/00000000-0000-0000-0000-000000000010'$q$) = 1, true);
+select pg_temp.expect('область: посторонний не видит руководителей области', pg_temp.rows_as(:S, $q$select * from docs where path like 'team/00000000-0000-0000-0000-00000000000a/areas/%'$q$) = 0, true);
+select pg_temp.expect('область: не создаёт ссылку на область сам', pg_temp.try(:V, $q$select doc_set('inv/areacodeV1', '{"kind":"team","role":"arealead","area":"aV","ownerId":"00000000-0000-0000-0000-00000000000a"}')$q$), false);
+select pg_temp.expect('область: файл проекта своей области', pg_temp.try(:O, $q$insert into storage.objects (bucket_id, name) values ('kz-files', '00000000-0000-0000-0000-00000000000a/p/px/a.pdf'), ('kz-files', '00000000-0000-0000-0000-00000000000a/p/py/b.pdf')$q$), true);
+select pg_temp.expect('область: видит файл проекта своей области', pg_temp.rows_as(:V, $q$select * from storage.objects where name = '00000000-0000-0000-0000-00000000000a/p/px/a.pdf'$q$) = 1, true);
+select pg_temp.expect('область: не видит файл проекта другой области', pg_temp.rows_as(:V, $q$select * from storage.objects where name = '00000000-0000-0000-0000-00000000000a/p/py/b.pdf'$q$) = 0, true);
+select pg_temp.expect('область: загружает свой файл', pg_temp.try(:V, $q$insert into storage.objects (bucket_id, name) values ('kz-files', '00000000-0000-0000-0000-000000000010/p/px/v.pdf')$q$), true);
+select pg_temp.expect('область: владелец видит файл руководителя области', pg_temp.rows_as(:O, $q$select * from storage.objects where name = '00000000-0000-0000-0000-000000000010/p/px/v.pdf'$q$) = 1, true);
+select pg_temp.expect('область: посторонний не видит файл руководителя области', pg_temp.rows_as(:S, $q$select * from storage.objects where name = '00000000-0000-0000-0000-000000000010/p/px/v.pdf'$q$) = 0, true);
+select pg_temp.expect('область: владелец переносит s1 в другую область', pg_temp.try(:O, $q$select doc_update('data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s1', '{"area":"a0"}')$q$), true);
+select pg_temp.expect('область: после переноса s1 не видно', pg_temp.rows_as(:V, $q$select * from docs where path like 'data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s1%'$q$) = 0, true);
+select pg_temp.expect('область: владелец возвращает s1', pg_temp.try(:O, $q$select doc_update('data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s1', '{"area":"aV"}')$q$), true);
+select pg_temp.expect('область: владелец убирает руководителя области', pg_temp.try(:O, $q$select doc_delete('team/00000000-0000-0000-0000-00000000000a/areas/aV/00000000-0000-0000-0000-000000000010')$q$), true);
+select pg_temp.expect('область: после этого ничего не видит', pg_temp.rows_as(:V, $q$select * from docs where path like 'data/users/00000000-0000-0000-0000-00000000000a/%'$q$) = 0, true);
+select pg_temp.expect('область: и писать не может', pg_temp.try(:V, $q$select doc_set('data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s1/items/p_pw', '{"json":"{}"}')$q$), false);
 select pg_temp.expect('без входа ничего не читается', pg_temp.rows_as('', $q$select * from docs$q$) = 0, true);
 
 select (case when ok then 'PASS ' else 'FAIL ' end) || name from results;
