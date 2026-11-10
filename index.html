@@ -748,7 +748,12 @@ body.side-pinned .side-btn{color:var(--ink)}
 .crm-hint{margin:10px 0 0}
 .smm-ed.crm-ed{display:grid;gap:10px;align-items:start;max-width:560px}
 .crm-ed-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
-.crm-ed-row{display:grid;grid-template-columns:22px minmax(0,1fr) 32px 32px 32px;align-items:center;gap:6px}
+.crm-ed-row{display:grid;grid-template-columns:24px 18px minmax(0,1fr) 32px;align-items:center;gap:6px;border-radius:10px;transition:box-shadow .15s,background .15s}
+.crm-ed-row.dragging{background:var(--surface);box-shadow:0 6px 18px rgba(0,0,0,.14);position:relative;z-index:2}
+.crm-grip{display:grid;place-items:center;height:34px;color:var(--muted);cursor:grab;touch-action:none;border-radius:8px}
+.crm-grip:hover{background:var(--surface);color:var(--ink)}
+.crm-grip svg{width:16px;height:16px}
+body.crm-dragging,body.crm-dragging *{cursor:grabbing!important;user-select:none}
 .crm-ed-n{font-size:12px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
 .crm-ed input{width:100%}
 .crm-ed-del:not(:disabled):hover{color:var(--neg,#dc2626)}
@@ -2184,10 +2189,9 @@ function crmPanelHtml(){
 function crmEditHtml(){
   const d = ui.crmEdit;
   return `<form class="smm-ed crm-ed" id="crmEd">
-    <ol class="crm-ed-list">${d.map((x, i) => `<li class="crm-ed-row"><span class="crm-ed-n">${i + 1}</span>
+    <ol class="crm-ed-list">${d.map((x, i) => `<li class="crm-ed-row" data-crmi="${i}"><span class="crm-grip" data-crmgrip title="Перетащите, чтобы поменять порядок" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>
+      <span class="crm-ed-n">${i + 1}</span>
       <input value="${esc(x.name)}" data-crmname="${i}" aria-label="Этап ${i + 1}" maxlength="60" placeholder="Название этапа">
-      <button type="button" class="icon-btn" data-crmmove="${i}|-1" ${i ? '' : 'disabled'} aria-label="Выше">↑</button>
-      <button type="button" class="icon-btn" data-crmmove="${i}|1" ${i < d.length - 1 ? '' : 'disabled'} aria-label="Ниже">↓</button>
       <button type="button" class="icon-btn crm-ed-del" data-crmdel="${i}" ${d.length > 2 ? '' : 'disabled'} aria-label="Убрать этап">×</button></li>`).join('')}</ol>
     <button type="button" class="ghost crm-ed-add" data-crmadd>+ Добавить этап</button>
     <small class="hint">Переименование и новые этапы сразу появятся у всех блогеров. Убранный этап исчезнет у тех, кто до него ещё не дошёл.</small>
@@ -2201,8 +2205,27 @@ document.addEventListener('click', e => {
   const d = ui.crmEdit;
   const add = t.closest('[data-crmadd]'); if (add){ d.push({ id:'', name:'' }); render(); const ins = document.querySelectorAll('[data-crmname]'); ins[ins.length - 1]?.focus(); return; }
   const del = t.closest('[data-crmdel]'); if (del && d.length > 2){ d.splice(+del.dataset.crmdel, 1); render(); return; }
-  const mv = t.closest('[data-crmmove]'); if (mv){ const [i, k] = mv.dataset.crmmove.split('|').map(Number); const j = i + k; if (d[j]){ [d[i], d[j]] = [d[j], d[i]]; render(); } }
 });
+// перетаскивание этапов за ручку ⋮⋮ (мышь и палец): строка едет за указателем, порядок применяется при отпускании
+const crmDrag = { li:null, list:null };
+document.addEventListener('pointerdown', e => {
+  const g = e.target.closest?.('[data-crmgrip]'); if (!g || !ui.crmEdit) return;
+  e.preventDefault(); crmDrag.li = g.closest('.crm-ed-row'); crmDrag.list = crmDrag.li.parentElement;
+  crmDrag.li.classList.add('dragging'); document.body.classList.add('crm-dragging');
+});
+document.addEventListener('pointermove', e => {
+  const li = crmDrag.li; if (!li) return; e.preventDefault();
+  const rows = [...crmDrag.list.children].filter(x => x !== li);
+  const next = rows.find(x => { const r = x.getBoundingClientRect(); return e.clientY < r.top + r.height / 2; });
+  if (next){ if (li.nextElementSibling !== next) crmDrag.list.insertBefore(li, next); } else if (crmDrag.list.lastElementChild !== li) crmDrag.list.appendChild(li);
+  [...crmDrag.list.children].forEach((x, k) => { const n = x.querySelector('.crm-ed-n'); if (n) n.textContent = k + 1; });
+}, { passive:false });
+const crmDrop = () => {
+  const li = crmDrag.li; if (!li) return; crmDrag.li = null; document.body.classList.remove('crm-dragging'); li.classList.remove('dragging');
+  const order = [...crmDrag.list.children].map(x => +x.dataset.crmi);
+  if (ui.crmEdit && order.some((v, k) => v !== k)){ ui.crmEdit = order.map(k => ui.crmEdit[k]); render(); }
+};
+document.addEventListener('pointerup', crmDrop); document.addEventListener('pointercancel', crmDrop);
 document.addEventListener('input', e => { const i = e.target.dataset?.crmname; if (i != null && ui.crmEdit?.[+i]) ui.crmEdit[+i].name = e.target.value; });
 document.addEventListener('submit', e => {
   if (e.target.id !== 'crmEd') return; e.preventDefault();

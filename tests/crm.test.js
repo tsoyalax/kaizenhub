@@ -92,6 +92,15 @@ function openApp(backend, userId, keepStorage, session) {
   $('#crmEd [data-crmdel="7"]').click(); await wait(80);
   $('#crmEd [data-crmadd]').click(); await wait(80);
   const last = [...D.querySelectorAll('#crmEd [data-crmname]')].pop(); last.value = 'Отчёт по запуску'; fire(last, 'input');
+  assert.ok(!$('#crmEd [data-crmmove]') && D.querySelectorAll('#crmEd [data-crmgrip]').length === 8); ok('стрелок нет — у этапов ручка для перетаскивания');
+  // перетащить «Переговоры» (3-й) на самый верх, потом обратно вниз под «Первый контакт»
+  const pe = (type, el, y) => el.dispatchEvent(new w.MouseEvent(type, { bubbles: true, cancelable: true, clientY: y }));
+  pe('pointerdown', $('#crmEd [data-crmi="2"] [data-crmgrip]')); pe('pointermove', D, -1); pe('pointerup', D); await wait(80);
+  assert.equal($('#crmEd [data-crmname="0"]').value, 'Переговоры'); ok('перетаскивание меняет порядок этапов');
+  pe('pointerdown', $('#crmEd [data-crmi="0"] [data-crmgrip]'));
+  const rows = [...D.querySelectorAll('#crmEd .crm-ed-row')]; rows.forEach((r, k) => { r.getBoundingClientRect = () => ({ top: k * 40, height: 40 }); });
+  pe('pointermove', D, 100); pe('pointerup', D); await wait(80);
+  assert.deepEqual([...D.querySelectorAll('#crmEd [data-crmname]')].slice(0, 3).map(x => x.value), ['Найден', 'Первый контакт', 'Переговоры']); ok('и обратно — на место');
   fire($('#crmEd'), 'submit'); await wait(200);
   const nt = ls().templates.find(x => x.id === tpl.id).stages.map(s => s.name);
   assert.deepEqual(nt, ['Найден', 'Первый контакт', 'Переговоры', 'Созвон', 'Оффер отправлен', 'Условия согласованы', 'Договор подписан', 'Отчёт по запуску']); ok('воронка сохранена: переименован, убран и добавлен этап');
