@@ -7737,7 +7737,7 @@ function renderTaskModal(focusSel){
   const d = editable ? ui.taskDraft : null;
   const keepScroll = taskLayer().querySelector('.tk-modal')?.scrollTop;
   const head = `<div class="tk-head">
-      <div class="tk-headtxt"><small>${p?._ext ? esc(p.name) : `<button class="link-plain" data-open="${p.id}" data-stage="${s?.id || ''}">${esc(p.name)}</button>`} · ${esc(s?.name || 'Этап удалён')}${sub ? ` · подэтап «${esc(sub.name)}»` : ''}</small>
+      <div class="tk-headtxt"><small>${p?._ext ? esc(p.name) : `<button class="link-plain" data-open="${p.id}" data-stage="${s?.id || ''}">${esc(p.name)}</button>`} · ${esc(s?.name || 'Этап удалён')}</small>
         <h2 id="tkTitle">${d ? 'Редактирование подэтапа' : esc(t.title)}</h2></div>
       ${!d ? msgIcon(p, t) : ''}
       ${!d && editable ? '<button class="ghost" data-tedit>Редактировать</button>' : ''}
@@ -7767,7 +7767,6 @@ function renderTaskModal(focusSel){
   } else {
     body = `<form class="form tk-form" id="tkForm" novalidate>
       <div class="field"><label for="tdTitle">Название подэтапа</label><input id="tdTitle" data-td="title" value="${esc(d.title)}"></div>
-      <div class="field"><label for="tdSub">Подэтап на доске</label><select id="tdSub" data-td="substage_id"><option value="">Нет</option>${(s?.subs || []).map(x => { const o = taskFor(p.id, s.id, x.id); const busy = o && o.id !== t.id; return `<option value="${x.id}" ${x.id === d.substage_id ? 'selected' : ''} ${busy ? 'disabled' : ''}>${esc(x.name)}${busy ? ' (есть задача)' : ''}</option>`; }).join('')}</select></div>
       <div class="field"><label for="tdDesc">Задание</label><textarea id="tdDesc" data-td="description" rows="6" placeholder="Что сделать, требования, критерии приёмки">${esc(d.description)}</textarea></div>
       ${blocksEditor(d.blocks, 'td')}
       <div class="field"><label>Чек-лист</label>
