@@ -1191,6 +1191,26 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .fl-node.k-idle,.fl-node.k-done{opacity:.85}
 .fl-why{color:var(--pl-b,var(--b))!important}
 .fl-sum{font-size:13px;color:var(--muted)}
+.fl-ai-why{color:var(--ink)!important;opacity:.75}
+.fl-ai{border-radius:14px;padding:12px 14px;display:grid;gap:8px;border:1px solid var(--line)}
+.fl-ai.empty{display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:14px}
+.fl-ai.empty span{flex:1 1 260px}
+.fl-ai.k-red{background:var(--pl-r-bg,color-mix(in srgb,var(--r) 10%,transparent));border-color:color-mix(in srgb,var(--r) 30%,transparent)}
+.fl-ai.k-yellow{background:var(--pl-y-bg,color-mix(in srgb,var(--y) 10%,transparent));border-color:color-mix(in srgb,var(--y) 30%,transparent)}
+.fl-ai.k-green{background:var(--pl-g-bg,color-mix(in srgb,var(--g) 10%,transparent));border-color:color-mix(in srgb,var(--g) 30%,transparent)}
+.fl-ai-hd{display:flex;align-items:flex-start;gap:12px}.fl-ai-hd b{flex:1;font-size:15px;line-height:1.35}
+.fl-ai-btn{flex:none}
+.fl-ai-chain{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.fl-ai-act h3{font-size:12px;margin:2px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.fl-ai-act ol{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14px}
+.fl-ai-act small{color:var(--muted)}
+.fl-ai-at,.fl-ai-err{color:var(--muted);font-size:12px}
+.np-dlg{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:16px}
+.np-bd{position:absolute;inset:0;background:rgba(10,10,14,.35)}
+.np-box{position:relative;width:min(380px,100%);background:var(--surface);color:var(--ink);border-radius:16px;padding:18px;display:grid;gap:10px;box-shadow:0 18px 50px rgba(10,10,14,.25)}
+.np-box h3{margin:0;font-size:17px}
+.np-box input{height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 12px;font:inherit;font-size:15px}
+.np-act{display:flex;justify-content:flex-end;gap:8px}
 .fl-block{height:30px;border:1px dashed var(--line);border-radius:8px;background:transparent;color:var(--ink);padding:0 8px;font:inherit;font-size:12.5px;width:100%;box-sizing:border-box}
 .fl-block:focus{border-style:solid;outline:none;border-color:var(--ink)}
 .fl-node.k-paused .fl-block{border-style:solid;border-color:color-mix(in srgb,var(--b) 45%,var(--line));color:var(--pl-b,var(--b));font-weight:600}
@@ -3240,8 +3260,33 @@ function setAssignee(p, s, id){
   addLog(p, `На этап «${s.name}» назначен(а) ${id ? nameOf(id) : 'никто'}`); commit(); assignNote(id, p);
 }
 // список людей для выбора ответственного; «не вошёл» — пока проект ему не откроется
+const NEW_PERSON = '__newperson';   // пункт «+ Добавить человека…» в списках ответственных
 const peopleOpts = (val, empty) => (empty != null ? `<option value="">${esc(empty)}</option>` : '') + db.users.map(u =>
-  `<option value="${u.id}" ${u.id === val ? 'selected' : ''}>${esc(u.name || 'Вы')}${u.id !== ME && !u.account_id && cloud.store ? ' (не вошёл)' : u.status === 'invited' && !cloud.store ? ' (приглашён)' : ''}</option>`).join('');
+  `<option value="${u.id}" ${u.id === val ? 'selected' : ''}>${esc(u.name || 'Вы')}${u.id !== ME && !u.account_id && cloud.store ? ' (не вошёл)' : u.status === 'invited' && !cloud.store ? ' (приглашён)' : ''}</option>`).join('')
+  + (GUEST ? '' : `<option value="${NEW_PERSON}">+ Добавить человека…</option>`);
+// ---------- «+ Добавить человека…» в любом списке ответственных: имя → человек в «Команде» и сразу выбран ----------
+document.addEventListener('focusin', e => { if (e.target.tagName === 'SELECT') e.target.dataset.prev = e.target.value; });
+document.addEventListener('change', e => {
+  const sel = e.target; if (sel.tagName !== 'SELECT' || sel.value !== NEW_PERSON) return;
+  e.stopImmediatePropagation(); const prev = sel.dataset.prev ?? ''; sel.value = prev === NEW_PERSON ? '' : prev;
+  askPerson(name => {
+    const u = { id:'u' + uid(), name, email:'', role:'specialist', dept:'Другое', capacity:3, status:'active' };
+    db.users.push(u); save(); toast(`${name} добавлен(а) в «Команду»`);
+    if (!sel.isConnected) return render();
+    if (![...sel.options].some(o => o.value === u.id)) sel.insertAdjacentHTML('afterbegin', `<option value="${u.id}">${esc(name)}</option>`);
+    sel.value = u.id; sel.dataset.prev = u.id; sel.dispatchEvent(new Event('change', { bubbles:true }));   // дальше — как обычный выбор ответственного
+  });
+}, true);
+function askPerson(onOk){
+  $('#npDlg')?.remove();
+  document.body.insertAdjacentHTML('beforeend', `<div class="np-dlg" id="npDlg" role="dialog" aria-modal="true" aria-labelledby="npT"><div class="np-bd" data-npclose></div>
+    <form class="np-box" id="npForm"><h3 id="npT">Новый человек</h3><input id="npName" placeholder="Имя и фамилия" maxlength="80" autocomplete="off" required>
+    <small class="hint">Появится в «Команде» и во всех списках «Ответственный». Пригласить в приложение можно потом из «Команды».</small>
+    <div class="np-act"><button type="button" class="ghost" data-npclose>Отмена</button><button class="primary">Добавить</button></div></form></div>`);
+  $('#npName').focus();
+  $('#npForm').onsubmit = ev => { ev.preventDefault(); const v = $('#npName').value.trim(); if (!v) return; $('#npDlg').remove(); onOk(v); };
+}
+document.addEventListener('click', e => { if (e.target.closest?.('[data-npclose]')) $('#npDlg')?.remove(); });
 // после назначения подсказываем, увидит ли человек проект
 function assignNote(id, p){
   const u = userById(id); if (!u || u.id === ME || !cloud.store || GUEST || p?._ext) return;
@@ -4597,6 +4642,7 @@ function renderProduction(){
   const p = infoBoard();
   if (!isInfo() || GUEST || !p || projById(ui.prodProject) !== p) return;
   app.insertAdjacentHTML('afterbegin', infoTabsHtml() + flowPanelHtml(p));
+  maybeFlowAi(p);
   if (ui.infoMode === 'timeline'){ const b = app.querySelector('.pf-board'); if (b) b.outerHTML = timelineHtml(p); }
 }
 // ---------- Инфобизнес: таймлайн — все задачи доски на одной шкале времени ----------
@@ -4705,6 +4751,7 @@ const flowPill = v => { const [pk, txt, ico] = FLOW_PILL[v.key]; return `<span c
 const DEPT_ST = [['work', 'В работе'], ['pause', 'Приостановлено'], ['idle', 'Не начато'], ['done', 'Готово']];
 function flowPanelHtml(p){
   const st = flowState(p); const list = [...st.values()];
+  const ai = p.ai?.res ? p.ai : null;
   const nm = id => esc(st.get(id)?.s.name || '');
   const why = v => !v.n ? 'нет задач' : v.over.length ? `${v.over.length} ${plural(v.over.length, 'задача просрочена', 'задачи просрочены', 'задач просрочено')}` : '';
   const urgent = list.filter(v => v.own === 'red' || v.own === 'paused').sort((a, b) => (b.own === 'paused') - (a.own === 'paused') || b.down.length - a.down.length || b.over.length - a.over.length);
@@ -4721,15 +4768,14 @@ function flowPanelHtml(p){
   const cause = v => v.own === 'paused' ? (v.s.dept.note ? esc(v.s.dept.note) : 'приостановлено') : !v.n ? 'нет задач — этап не запущен'
     : `просрочено: ${v.over.slice(0, 3).map(i => `«${esc(i.x.name)}»`).join(', ')}${v.over.length > 3 ? ` и ещё ${v.over.length - 3}` : ''}`;
   const chain = v => [...v.down].sort((a, b) => list.findIndex(x => x.s.id === a) - list.findIndex(x => x.s.id === b)).map(nm).join(' → ');
-  const node = v => `<div class="fl-node k-${v.key}">
-      <button class="fl-name" data-flgo="${v.s.id}" title="Показать на доске"><b>${esc(v.s.name)}</b></button>${flowPill(v)}
-      <small>${v.n ? `${v.done} из ${v.n} готово` : 'нет задач'}${v.over.length ? ` · просрочено ${v.over.length}` : v.soon.length ? ` · срок скоро: ${v.soon.length}` : ''}</small>
-      <input class="fl-block" data-flblock="${v.s.id}" value="${esc(v.s.dept?.st === 'pause' ? v.s.dept.note || '' : '')}" placeholder="Что мешает?" aria-label="Что мешает отделу «${esc(v.s.name)}»" maxlength="140">
-      ${flowDeps(p, v.s).length ? `<small class="fl-from">после: ${flowDeps(p, v.s).map(nm).join(', ')}</small>` : ''}
-      <select class="fl-st" data-flst="${v.s.id}" aria-label="Статус отдела «${esc(v.s.name)}»">${DEPT_ST.map(([k, l]) => `<option value="${k}" ${(v.s.dept?.st || 'work') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`;
+  const aiSt = ai ? new Map((ai.res.stages || []).map(x => [norm(x.name), x])) : null;
+  const node = v => { const a = aiSt?.get(norm(v.s.name)); const ak = a && AI_ST[a.status];
+    return `<div class="fl-node k-${ak ? ak[0] : v.key}">
+      <button class="fl-name" data-flgo="${v.s.id}" title="Показать на доске"><b>${esc(v.s.name)}</b></button>${ak ? `<span class="pill st-pill s-${ak[1]}">${STATUS_ICO[ak[1]]}${ak[2]}</span>` : flowPill(v)}
+      <small>${v.n ? `${v.done} из ${v.n} готово` : 'нет задач'}${v.over.length ? ` · просрочено ${v.over.length}` : ''}</small>
+      ${a?.reason ? `<small class="fl-ai-why">${esc(a.reason)}</small>` : ''}</div>`; };
   return `<section class="fl" aria-label="Воронка: связи этапов">
-    <div class="fl-hd"><h2>Воронка</h2><span class="pill st-pill s-${verdict[0]}">${STATUS_ICO[verdict[0]]}${verdict[1]}</span>
-      <span class="fl-sum">Отделы: в работе ${cnt('work')}${cnt('pause') ? ` · приостановлено ${cnt('pause')}` : ''}${cnt('idle') ? ` · не начато ${cnt('idle')}` : ''}${cnt('done') ? ` · готово ${cnt('done')}` : ''}</span>
+    <div class="fl-hd"><h2>${ai ? 'AI-воронка' : 'Воронка'}</h2>${ai && AI_VERDICT[ai.res.verdict] ? `<span class="pill st-pill s-${AI_VERDICT[ai.res.verdict][0]}">${STATUS_ICO[AI_VERDICT[ai.res.verdict][0]]}${AI_VERDICT[ai.res.verdict][1]}</span>` : `<span class="pill st-pill s-${verdict[0]}">${STATUS_ICO[verdict[0]]}${verdict[1]}</span>`}
       <span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${ui.infoMode !== 'timeline'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline'}">Таймлайн</button></span>
       <button class="ghost" data-flwedit aria-pressed="${!!ui.flowEdit}">${ICON_EDIT}Связи</button></div>
     ${goalHtml(p)}
@@ -4737,7 +4783,8 @@ function flowPanelHtml(p){
     ${ui.flowEdit ? `<div class="fl-edit"><p class="hint">Отметьте, от чего зависит каждый этап: если этап-источник встал, зависимые подсветятся «ждёт».</p>
       ${list.map(v => `<div class="fl-erow"><b>${esc(v.s.name)}</b><span>зависит от:</span>${list.filter(o => o !== v).map(o => `<label class="fl-dep"><input type="checkbox" data-fldep="${v.s.id}|${o.s.id}" ${flowDeps(p, v.s).includes(o.s.id) ? 'checked' : ''}>${esc(o.s.name)}</label>`).join('')}</div>`).join('')}
       <button class="ghost" data-flreset>Как по порядку колонок</button></div>` : ''}
-    ${urgent.length ? `<div class="fl-why-box k-${verdict[0]}"><b>${verdict[1]}${urgent.length ? ', потому что:' : ''}</b><small>${verdict[2]}</small><ol>
+    ${aiBoxHtml(p, ai)}
+    ${!ai && urgent.length ? `<div class="fl-why-box k-${verdict[0]}"><b>${verdict[1]}${urgent.length ? ', потому что:' : ''}</b><small>${verdict[2]}</small><ol>
       ${urgent.map(v => `<li>${flowPill(v)}<button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button> — ${cause(v)}${v.down.length ? `<span class="fl-then"> → поэтому не работают: ${chain(v)}</span>` : ''}</li>`).join('')}</ol></div>` : ''}
     ${soon.length || late.length || urgent.some(v => v.over.length) ? `<div class="fl-urgent"><h3>Срочно сделать</h3><ol>
       ${late.length ? `<li class="k-red"><span class="pill st-pill s-red">${STATUS_ICO.red}После дедлайна</span>${late.length} ${plural(late.length, 'задача заканчивается', 'задачи заканчиваются', 'задач заканчиваются')} позже, чем «${esc(goalName(p))}» (${fmt(p.deadline)})
@@ -4764,6 +4811,62 @@ document.addEventListener('change', e => {
   const v = e.target.value; if (!v) return; const old = p.deadline; p.deadline = v;
   addLog(p, `${goalName(p)}: ${old ? fmt(old) + ' → ' : ''}${fmt(v)}`); commit(); toast(`${goalName(p)}: ${fmt(v)}`);
 });
+// ---------- AI-воронка: Claude читает задачи отделов и объясняет, что стоит, почему и что из-за этого не работает ----------
+// Запрос — через /api/sample (getSample().json, как AI-отчёты). Ответ хранится у инфоповода: p.ai = { at, hash, res }.
+// Разбор сам обновляется при открытии доски, если данные поменялись (не чаще раза в 10 минут); кнопка — вручную.
+const AI_ST = { works:['green', 'green', 'Работает'], at_risk:['yellow', 'yellow', 'Под риском'], waiting:['yellow', 'yellow', 'Ждёт'], stopped:['red', 'red', 'Не работает'] };
+const AI_VERDICT = { works:['green', 'Воронка работает'], partial:['yellow', 'Работает с перебоями'], broken:['red', 'Воронка не работает'] };
+function flowAiInput(p){
+  const st = flowState(p); const t0 = today();
+  const stages = [...st.values()].map(v => ({
+    name:v.s.name, depends_on:flowDeps(p, v.s).map(id => st.get(id)?.s.name).filter(Boolean),
+    note:v.s.dept?.st === 'pause' ? `приостановлено${v.s.dept.note ? ': ' + v.s.dept.note : ''}` : v.s.dept?.st === 'idle' ? 'не начат' : v.s.dept?.st === 'done' ? 'готов' : '',
+    tasks:v.items.map(i => ({ name:i.x.name, done:i.done, ...(i.due ? { due:i.due, overdue:!i.done && i.due < t0 } : {}), ...(i.start ? { start:i.start } : {}),
+      ...(i.t?.checklist?.length ? { checklist:`${i.t.checklist.filter(c => c.done).length}/${i.t.checklist.length}`, open_items:i.t.checklist.filter(c => !c.done).slice(0, 5).map(c => c.text) } : {}) })).slice(0, 40)
+  }));
+  return { launch:p.name, today:t0, final_deadline:p.deadline ? { name:goalName(p), date:p.deadline } : null, stages };
+}
+const flowAiHash = p => hashStr(JSON.stringify(flowAiInput(p)));
+const FLOW_AI_PROMPT = data => `Ты — операционный директор инфобизнеса. Перед тобой воронка запуска «${data.launch}»: отделы по порядку, от чего каждый зависит, и их задачи (сделана ли, срок, просрочена ли, открытые пункты чек-листа). Сегодня ${data.today}.
+
+Пойми по задачам, что реально готово, а что нет, и сделай выводы по цепочке. Пример логики: контент выходит, но статья не дописана (задача «Дописать статью» не закрыта) — значит, трафику некуда вести, VSL не на чем строить, платный канал не запускается, в отдел продаж не приходят заявки и деньги не поступают — отдел продаж фактически стоит. Если отдел зависит от другого, который не работает, он тоже не работает или ждёт. Не придумывай фактов, которых нет в задачах; если задач у отдела нет — он не запущен.
+
+Данные (JSON):
+${JSON.stringify(data)}
+
+Ответь JSON-объектом:
+{"verdict":"works|partial|broken","summary":"1–2 предложения: работает ли воронка и главная причина","stages":[{"name":"точное название отдела","status":"works|at_risk|waiting|stopped","reason":"до 12 слов: почему"}],"chain":["цепочки причин и следствий вида «Статья не дописана → VSL не на чем строить → платный канал не запускается → в продажах нет заявок, деньги не поступают»; 1–3 штуки, только если что-то не работает"],"actions":[{"stage":"отдел","task":"что сделать первым — конкретно, по задачам","why":"что это разблокирует"}]}
+verdict: broken — воронка не доводит до денег; partial — доводит, но есть риски; works — всё работает. actions — не больше 3, по важности. Пиши по-русски, коротко.`;
+const flowAi = { busy:new Set(), err:'' };
+async function runFlowAi(p, manual){
+  if (!p || flowAi.busy.has(p.id)) return;
+  const smp = await getSample(); if (!smp?.json){ if (manual) toast('AI-разбор доступен после входа в аккаунт'); return; }
+  flowAi.busy.add(p.id); flowAi.err = ''; if (ui.view === 'production') render();
+  try {
+    const data = flowAiInput(p); const res = await smp.json(FLOW_AI_PROMPT(data), { modelTier:'default' });
+    if (!res || !Array.isArray(res.stages)) throw new Error('Claude ответил не в том формате');
+    p.ai = { at:new Date().toISOString(), hash:flowAiHash(p), res }; addLog(p, `AI-разбор воронки: ${AI_VERDICT[res.verdict]?.[1] || 'готов'}`); save();
+  } catch(e) { flowAi.err = sampleErr(e); if (manual) toast(flowAi.err); }
+  flowAi.busy.delete(p.id); if (ui.view === 'production') render();
+}
+// сам — при открытии доски, если данные поменялись с прошлого разбора и прошло больше 10 минут
+function maybeFlowAi(p){
+  if (!p || GUEST || flowAi.busy.has(p.id)) return;
+  const fresh = p.ai && p.ai.hash === flowAiHash(p); const recent = p.ai && Date.now() - new Date(p.ai.at) < 6e5;
+  if (!fresh && !recent) setTimeout(() => runFlowAi(p, false), 300);
+}
+function aiBoxHtml(p, ai){
+  const busy = flowAi.busy.has(p.id); const stale = ai && ai.hash !== flowAiHash(p);
+  const btn = `<button class="ghost fl-ai-btn" data-flai ${busy ? 'disabled' : ''}>${busy ? 'Claude разбирает…' : ai ? 'Обновить разбор' : 'AI-разбор воронки'}</button>`;
+  if (!ai) return `<div class="fl-ai empty"><span>Claude прочитает задачи отделов и покажет, где воронка рвётся и почему.</span>${btn}${flowAi.err ? `<small class="fl-ai-err">${esc(flowAi.err)}</small>` : ''}</div>`;
+  const r = ai.res; const v = AI_VERDICT[r.verdict] || AI_VERDICT.partial;
+  return `<div class="fl-ai k-${v[0]}">
+    <div class="fl-ai-hd"><b>${esc(r.summary || v[1])}</b>${btn}</div>
+    ${(r.chain || []).length ? `<ul class="fl-ai-chain">${r.chain.slice(0, 3).map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+    ${(r.actions || []).length ? `<div class="fl-ai-act"><h3>Сделать в первую очередь</h3><ol>${r.actions.slice(0, 3).map(a => `<li><b>${esc(a.stage || '')}</b>: ${esc(a.task || '')}${a.why ? ` <small>— ${esc(a.why)}</small>` : ''}</li>`).join('')}</ol></div>` : ''}
+    <small class="fl-ai-at">Разбор ${new Date(ai.at).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}${stale ? ' · задачи с тех пор менялись' : ''}${flowAi.err ? ` · ${esc(flowAi.err)}` : ''}</small></div>`;
+}
+document.addEventListener('click', e => { if (e.target.closest?.('[data-flai]')) runFlowAi(infoBoard(), true); });
 // «Что мешает?» на отделе: написали — отдел остановлен (приостановлено с этой причиной), стёрли — снова в работе
 document.addEventListener('change', e => {
   const sid = e.target.dataset?.flblock; if (!sid) return;

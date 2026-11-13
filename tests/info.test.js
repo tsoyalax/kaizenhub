@@ -87,6 +87,13 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.equal(E(`(() => { const t = taskById(ui.taskId); return projById(t.project_id).stages.find(s => s.id === t.stage_id).subs.find(x => x.id === t.substage_id).name; })()`), 'Рилс про отзывы'); ok('новое название задачи — и на карточке доски');
   E(`(() => { const t = taskById(ui.taskId); projById(t.project_id).stages.find(s => s.id === t.stage_id).subs.find(x => x.id === t.substage_id).name = 'Старое имя'; render(); })()`);
   assert.equal(E(`(() => { const t = taskById(ui.taskId); return projById(t.project_id).stages.find(s => s.id === t.stage_id).subs.find(x => x.id === t.substage_id).name; })()`), 'Рилс про отзывы'); ok('переименованные раньше — карточка на доске подтягивает название задачи');
+  // «+ Добавить человека…» в списке ответственных: человек появляется в команде и сразу назначен
+  const asg = D.querySelector('[data-tqassign]'); asg.dispatchEvent(new w.Event('focusin', { bubbles:true })); asg.value = '__newperson'; asg.dispatchEvent(new w.Event('change', { bubbles:true }));
+  assert.ok(D.getElementById('npDlg')); ok('«+ Добавить человека…» открывает окно имени');
+  D.getElementById('npName').value = 'Влад Ким'; D.getElementById('npForm').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
+  assert.ok(E(`db.users.some(u => u.name === 'Влад Ким')`)); ok('человек добавлен в «Команду»');
+  assert.equal(E(`userById(taskById(ui.taskId).assignee_id)?.name`), 'Влад Ким'); ok('и сразу назначен ответственным за задачу');
+  assert.ok(/Влад Ким/.test(E('peopleOpts(null)'))); ok('и есть во всех списках ответственных');
   E('closeTask()');
   // связи этапов и «Срочно»: просроченный этап тормозит всех, кто от него зависит
   E(`(() => { const p = infoBoard(); const t0 = today();
@@ -103,22 +110,20 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.deepEqual(E(`flowDeps(infoBoard(), infoBoard().stages[5])`), ['f0']); ok('связи меняются: «Эфиры» зависят от «Контента»');
   assert.ok(!E(`flowState(infoBoard()).get('f2').down.includes('f5')`)); ok('VSL больше не тормозит «Эфиры»');
   E(`ui.flowEdit = false`);
-  // статусы отделов вручную: «Приостановлено» с причиной тормозит зависимых и стоит первым в «Срочно»
+  // без AI — запасной вывод по срокам; на отделах нет лишних полей
   E(`ui.view = 'production'; ui.infoMode = 'board'; render()`);
-  const sel = D.querySelector('[data-flst="f1"]'); sel.value = 'pause'; sel.dispatchEvent(new w.Event('change', { bubbles:true }));
-  D.getElementById('gateTx').value = 'Ждём интервью'; D.getElementById('gateF').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
-  assert.equal(E(`infoBoard().stages[1].dept.st`), 'pause'); ok('отдел приостановлен');
-  assert.equal(E(`flowState(infoBoard()).get('f1').key`), 'paused'); ok('в воронке — «Приостановлено»');
-  assert.ok(E(`flowState(infoBoard()).get('f2').blockedBy.includes('f1')`)); ok('зависимые ждут приостановленный отдел');
-  assert.ok(/Приостановлено\s*Статья\s*— Ждём интервью.*поэтому не работают/.test(D.querySelector('.fl-why-box li').textContent)); ok('причины: приостановленный — первым, с тем, что мешает');
-  const sel2 = D.querySelector('[data-flst="f1"]'); sel2.value = 'work'; sel2.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
-  assert.notEqual(E(`flowState(infoBoard()).get('f1').key`), 'paused'); ok('снова «В работе»');
-  // «Что мешает?» прямо на отделе: написали — отдел остановлен, стёрли — снова в работе
-  const blk = D.querySelector('[data-flblock="f4"]'); blk.value = 'не хватает материалов'; blk.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
-  assert.equal(E(`infoBoard().stages[4].dept.st`), 'pause'); ok('«Что мешает?» — отдел сам становится приостановленным');
-  assert.ok(/Отдел продаж\s*— не хватает материалов/.test(D.querySelector('.fl-why-box').textContent)); ok('причина словами — в выводе воронки');
-  const blk2 = D.querySelector('[data-flblock="f4"]'); blk2.value = ''; blk2.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
-  assert.equal(E(`infoBoard().stages[4].dept.st`), 'work'); ok('стёрли — снова в работе');
+  assert.ok(!D.querySelector('[data-flst]') && !D.querySelector('[data-flblock]')); ok('на отделах нет «Что мешает?» и выпадающих статусов');
+  // AI-воронка: ответ Claude (подставной) — вывод, причины по цепочке, статусы отделов, что сделать первым
+  E(`_sample = { json: async prompt => { window.__aiPrompt = prompt; return { verdict:'broken', summary:'Воронка не доводит до денег: статья не дописана.',
+    stages:[{ name:'Статья', status:'stopped', reason:'задача «Дописать статью» не закрыта' }, { name:'Отдел продаж', status:'stopped', reason:'нет заявок — деньги не поступают' }, { name:'Контент', status:'works', reason:'ролики выходят' }],
+    chain:['Статья не дописана → VSL не на чем строить → платный канал не запускается → в продажах нет заявок'], actions:[{ stage:'Статья', task:'Дописать статью', why:'разблокирует VSL и трафик' }] }; } }`);
+  D.querySelector('[data-flai]').click(); await wait(80);
+  assert.ok(/«Статья»|"Статья"/.test(E('window.__aiPrompt')) || /Статья/.test(E('window.__aiPrompt'))); ok('Claude получает отделы и задачи');
+  assert.ok(/AI-воронка/.test(D.querySelector('.fl-hd').textContent) && /Воронка не работает/.test(D.querySelector('.fl-hd').textContent)); ok('вывод AI: «Воронка не работает»');
+  assert.ok(/Статья не дописана → VSL не на чем строить/.test(D.querySelector('.fl-ai').textContent)); ok('цепочка причин и следствий');
+  assert.ok(/Дописать статью/.test(D.querySelector('.fl-ai-act').textContent)); ok('что сделать в первую очередь');
+  assert.ok(/Не работает/.test([...D.querySelectorAll('.fl-node')].find(n => /Отдел продаж/.test(n.textContent)).textContent)); ok('AI помечает отдел продаж: не работает');
+  assert.ok(E('!!infoBoard().ai?.res')); ok('разбор сохранён у инфоповода');
   // финальный дедлайн инфоповода: название и дата, задачи после него — в «Срочно», линия на таймлайне
   const gn = D.querySelector('[data-goalname]'); gn.value = 'Открытие окна продаж'; gn.dispatchEvent(new w.Event('change', { bubbles:true }));
   const gd = D.querySelector('[data-goaldate]'); gd.value = E('addDays(today(), 5)'); gd.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
