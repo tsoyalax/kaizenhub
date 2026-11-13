@@ -91,6 +91,22 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   addIn().querySelector('input').value = 'Запросить отзывы'; addIn().dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
   assert.deepEqual(E('boardSubs(infoBoard(), contentStage()).slice(0, 2).map(x => x.name)'), ['Запросить отзывы', 'Сценарий вебинара']); ok('свои задачи «Контента» — наверху, новые первыми');
   assert.ok(E('boardSubs(infoBoard(), contentStage()).slice(-3).every(x => x.cycle)')); ok('видео — ниже своих задач');
+  // инфоповоды: новый — своя доска с теми же колонками и связями, «Контент» — у выбранного
+  E(`infoBoard().name = 'Контент Игоря'; ui.view = 'production'; ui.ipNew = true; render()`);
+  D.getElementById('ipName').value = 'Челлендж Эма'; D.getElementById('ipNew').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
+  assert.deepEqual(E('infoBoards().map(p => p.name)').sort(), ['Контент Игоря', 'Челлендж Эма']); ok('инфоповод добавлен второй доской');
+  assert.equal(E('infoBoard().name'), 'Челлендж Эма'); ok('открыт новый инфоповод');
+  assert.deepEqual(E(`infoBoard().stages.map(s => s.name)`), E(`infoBoards().find(p => p.name === 'Контент Игоря').stages.filter(s => !isMaint(s)).map(s => s.name)`)); ok('колонки — как у текущего инфоповода');
+  assert.equal(E('infoBoard().stages.flatMap(s => s.subs).length'), 0); ok('задачи у нового инфоповода свои — пока пусто');
+  assert.ok(D.querySelectorAll('.ip-chip').length === 2); ok('в «Производстве» — строка инфоповодов');
+  // доп. контент: вне плана, считается отдельно
+  E(`addContent('Рилс', 4, today()); addContent('Сторис', 2, today(), true)`);
+  const cst = E('JSON.stringify(ctStats(ctCur()))'); const cj = JSON.parse(cst);
+  assert.equal(cj.plan, 4); ok('доп. контент не меняет план');
+  assert.deepEqual(cj.extra, { n:2, pub:0 }); ok('доп. контент считается отдельно');
+  E(`ui.view = 'content'; ui.ctMode = 'board'; render()`);
+  assert.equal(D.querySelectorAll('.ct-card .ct-x').length, 2); ok('на доске видео доп. контент с пометкой «доп.»');
+  assert.ok(!D.querySelector('[data-vidsync]')); ok('кнопки «Обновить из SMM» нет');
   E(`db.prefs.kind = 'agency'; render()`);
   assert.ok(!D.querySelector('.tabs [data-view="matrix"]').hidden); ok('в агентстве матрица на месте');
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');

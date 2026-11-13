@@ -1143,6 +1143,15 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ct-add label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
 .ct-add .hint{flex-basis:100%}
 .ct-wk{margin-top:14px}
+.ct-x{display:inline-block;font-size:11px;font-weight:600;padding:1px 6px;border-radius:6px;background:var(--pl-m-bg,color-mix(in srgb,var(--m) 14%,transparent));color:var(--pl-m,var(--m));vertical-align:1px}
+.ip-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.ip-l{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-right:4px}
+.ip-chip{display:inline-flex;align-items:center;gap:8px;padding:7px 10px 7px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
+.ip-chip.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink) inset}
+.ip-chip b{font-weight:600}
+.ip-new{display:flex;gap:6px;flex-wrap:wrap}
+.ip-new input{height:36px}
+.ip-card svg{width:16px;height:16px}
 .fl{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;display:grid;gap:14px}
 .fl-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .fl-hd h2{font-size:17px;margin:0;font-weight:700}
@@ -2300,7 +2309,44 @@ function ensureInfoTemplate(d){ d.templates = d.templates || []; if (!d.template
 // Одни и те же данные: отметили видео опубликованным здесь — оно отмечено на доске, и наоборот.
 // У видео: x.name, x.due_date — дата публикации, x.cycle — старт 4-недельного цикла, x.done — опубликовано (дата — x.u).
 // План цикла — db.prefs.infoPlans[старт] (по умолчанию — сколько видео в цикле), по неделям поровну, как в SMM.
-const infoBoard = () => projById(INFO_BOARD_ID) || db.projects.find(p => p.template_id === INFO_TPL_ID && p.state !== 'archived');
+// Инфоповоды: каждый — своя доска (проект по шаблону инфобизнеса), «Контент» и воронка — у выбранного (ui.prodProject)
+const infoBoards = () => db.projects.filter(p => p.state !== 'archived' && (p.template_id === INFO_TPL_ID || p.id === INFO_BOARD_ID))
+  .sort((a, b) => String(a.start_date || '').localeCompare(String(b.start_date || '')));
+const infoBoard = () => { const all = infoBoards(); const cur = all.find(p => p.id === ui.prodProject);
+  if (cur) return cur; const t0 = today(); return all.filter(p => (p.start_date || '') <= t0 && p.state !== 'completed').at(-1) || all.find(p => p.id === INFO_BOARD_ID) || all[0]; };
+function infoTabsHtml(){
+  const all = infoBoards(); const cur = infoBoard(); const t0 = today();
+  const stt = p => p.state === 'completed' ? ['done', 'Завершён'] : (p.start_date || '') > t0 ? ['gray', `с ${fmt(p.start_date)}`] : ['green', 'Идёт'];
+  return `<div class="ip-row" role="tablist" aria-label="Инфоповоды"><span class="ip-l">Инфоповоды</span>
+    ${all.map(p => { const [k, l] = stt(p); return `<button class="ip-chip${p === cur ? ' on' : ''}" role="tab" aria-selected="${p === cur}" data-ipsel="${p.id}"><b>${esc(p.name)}</b><span class="pill st-pill s-${k}">${STATUS_ICO[k]}${l}</span></button>`; }).join('')}
+    ${ui.ipNew ? `<form class="ip-new" id="ipNew"><input id="ipName" placeholder="Например, Челлендж Эма" aria-label="Название инфоповода" required><input type="date" id="ipStart" value="${addDays(plannedEnd(cur) || t0, 1) > t0 ? addDays(plannedEnd(cur) || t0, 1) : t0}" aria-label="Старт"><button class="primary">Добавить</button><button type="button" class="ghost" data-ipcancel>Отмена</button></form>`
+      : `<button class="ghost ip-add" data-ipnew>+ Инфоповод</button>`}
+    ${cur ? `<button class="icon-btn ip-card" data-open="${cur.id}" title="Карточка инфоповода: название, даты, архив" aria-label="Карточка инфоповода">${ICON_EDIT}</button>` : ''}</div>`;
+}
+function createInfoBoard(name, start){
+  ensureInfoTemplate(db); const src = infoBoard();
+  const p = makeProject({ name, client:'', template_id:INFO_TPL_ID, start_date:start || today(), pm_id:ME });
+  if (src){ // колонки — как у текущего инфоповода (их могли переименовать прямо на доске), задачи — пустые
+    let cur = p.start_date;
+    p.stages = src.stages.filter(x => !isMaint(x)).map((x, i) => { const n = Math.max(1, +x.days || 7);
+      const st = { id:uid(), position:i, name:x.name, days:n, approval:!!x.approval, gate:!!x.gate, assignee_id:x.assignee_id || null, subs:[],
+        status:'not_started', planned_start:cur, due_date:addDays(cur, n), started_at:null, completed_at:null, tsid:x.tsid };
+      cur = st.due_date; return st; });
+    p.deadline = p.stages.at(-1)?.due_date || p.deadline;
+  }
+  if (src?.flow){ // связи этапов — как у текущего инфоповода (по названию этапа)
+    const byName = n => p.stages.find(x => x.name === n)?.id; const nameOf = id => src.stages.find(x => x.id === id)?.name;
+    p.flow = Object.fromEntries(Object.entries(src.flow).map(([k, v]) => [byName(nameOf(k)), v.map(id => byName(nameOf(id))).filter(Boolean)]).filter(([k]) => k));
+  }
+  addLog(p, `Инфоповод «${name}» создан`); db.projects.push(p); copyCards(p); ui.prodProject = p.id; ui.ctCycle = null; ui.ipNew = false; commit();
+  toast(`Инфоповод «${name}» добавлен`); return p;
+}
+document.addEventListener('click', e => {
+  const s = e.target.closest?.('[data-ipsel]'); if (s){ ui.prodProject = s.dataset.ipsel; ui.ctCycle = null; render(); return; }
+  if (e.target.closest?.('[data-ipnew]')){ ui.ipNew = true; render(); $('#ipName')?.focus(); return; }
+  if (e.target.closest?.('[data-ipcancel]')){ ui.ipNew = false; render(); }
+});
+document.addEventListener('submit', e => { if (e.target.id !== 'ipNew') return; e.preventDefault(); const n = $('#ipName').value.trim(); if (n) createInfoBoard(n, $('#ipStart').value); });
 function contentStage(p = infoBoard()){
   if (!p) return null;
   const tpl = tplById(INFO_TPL_ID); const ts = tpl?.stages.find(x => /контент/i.test(x.name));
@@ -2320,15 +2366,15 @@ function ctCur(){
   const t = today(); return cs.filter(c => c <= t && t <= cycleEnd(c)).at(-1) || cs.filter(c => c <= t).at(-1) || cs[0];
 }
 function ctStats(c){
-  const items = ctItems().filter(x => x.cycle === c);
-  const set = db.prefs?.infoPlans?.[c]; const plan = set != null ? +set || 0 : items.length;
+  const items = ctItems().filter(x => x.cycle === c); const main = items.filter(x => !x.extra), extra = items.filter(x => x.extra);
+  const set = db.prefs?.infoPlans?.[c]; const plan = set != null ? +set || 0 : main.length;
   const weeks = splitPlan(plan).map((n, i) => ({ w:i + 1, plan:n, pub:0, items:[] }));
   let pub = 0;
   items.forEach(x => {
     weeks[weekOfDate(c, x.due_date || c) - 1].items.push(x);
-    const d = ctDoneAt(x); if (d){ pub++; weeks[weekOfDate(c, d < c ? c : d) - 1].pub++; }
+    const d = ctDoneAt(x); if (d && !x.extra){ pub++; weeks[weekOfDate(c, d < c ? c : d) - 1].pub++; }
   });
-  return { plan, pub, items, weeks };
+  return { plan, pub, items, weeks, extra:{ n:extra.length, pub:extra.filter(x => x.done).length } };
 }
 // доска видео: колонки — этапы шаблона «SMM: видео» (правятся в «Настройках → Шаблоны»), у видео x.vst — id этапа шаблона.
 // Последняя колонка — «Опубликовано»: попасть в неё = отметить видео на основной доске (toggleSub), и наоборот.
@@ -2336,7 +2382,7 @@ const vidTpl = () => db.templates.find(t => t.id === SMM_TPL_ID) || db.templates
 const vidCols = () => vidTpl()?.stages || [];
 const vidCol = x => { const cs = vidCols(); if (x.done) return cs.at(-1); return cs.slice(0, -1).find(c => c.id === x.vst) || cs[0]; };
 // этапы и подэтапы доски видео — как в шаблоне SMM-пространства: раз за открытие вкладки берём их оттуда
-// (id этапов сохраняются, поэтому видео не теряют свой этап). Кнопка «Обновить из SMM» — то же вручную.
+// (id этапов сохраняются, поэтому видео не теряют свой этап).
 const smmSpace = () => { try { return otherSpaces().find(x => x.kind === 'smm') || null; } catch(e) { return null; } };
 async function syncVidTplFromSmm(manual){
   const sp = smmSpace(); if (!sp || !cloud.store || !cloud.uid){ if (manual) toast('Нет SMM-пространства, из которого взять этапы'); return false; }
@@ -2359,7 +2405,8 @@ document.addEventListener('change', e => {
   const name = vidCols().flatMap(c => c.subs || []).find(y => y.id === sid)?.name || '';
   addLog(p, `Контент: «${x.name}» — ${name}: ${e.target.checked ? 'готово' : 'снова в работе'}`); commit();
 });
-document.addEventListener('click', e => { if (e.target.closest?.('[data-vidsync]')) syncVidTplFromSmm(true); });
+document.addEventListener('click', e => {
+  if (e.target.closest?.('[data-ctaddx]')){ ui.ctExtra = true; const x = $('#ctExtra'); if (x) x.checked = true; $('#ctAdd')?.scrollIntoView({ behavior:'smooth', block:'center' }); $('#ctName')?.focus(); } });
 function moveVideo(xid, colId){
   const p = infoBoard(); const s = contentStage(p); const x = s?.subs?.find(y => y.id === xid); const cs = vidCols(); const c = cs.find(y => y.id === colId);
   if (!x || !c) return;
@@ -2375,7 +2422,7 @@ function contentBoardHtml(s, items){
       <header><div><b>${ci + 1}. ${esc(c.name)}</b></div><small>${list.length} ${plural(list.length, 'видео', 'видео', 'видео')}${(c.subs || []).length ? ` · подэтапов ${c.subs.length}` : ''}</small></header>
       <div class="pf-cards">${list.map(x => { const t = taskFor(infoBoard().id, s.id, x.id);
         return `<div class="pf-card ct-card${x.done ? ' done' : ''}" draggable="true" data-ctdrag="${x.id}">
-          <button class="ct-open" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}</b></button>
+          <button class="ct-open" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}</b>${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</button>
           <small>${x.due_date ? `публикация ${fmt(x.due_date)}` : 'без даты'}${t?.assignee_id ? ` · ${esc(short(t.assignee_id))}` : ''}</small>
           ${(c.subs || []).length && !x.done ? `<div class="ct-subs">${c.subs.map(y => `<label><input type="checkbox" data-ctvs="${x.id}|${y.id}" ${x.vs?.[y.id] ? 'checked' : ''}><span>${esc(y.name)}</span></label>`).join('')}</div>` : ''}
           <select class="pf-status" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}">${cs.map(y => `<option value="${y.id}" ${y === c ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select></div>`; }).join('') || '<p class="hint">Пусто</p>'}</div></section>`; }).join('')}</div>`;
@@ -2387,6 +2434,10 @@ document.addEventListener('dragleave', e => { const col = e.target.closest?.('[d
 document.addEventListener('drop', e => { const col = e.target.closest?.('[data-ctcol]'); const id = e.dataTransfer?.getData('text/kz-video'); if (!col || !id) return; e.preventDefault(); col.classList.remove('drop-on'); moveVideo(id, col.dataset.ctcol); });
 document.addEventListener('click', e => { const m = e.target.closest?.('[data-ctmode]'); if (m){ ui.ctMode = m.dataset.ctmode; render(); } });
 function renderContent(){
+  renderContentBody();
+  if (isInfo() && !GUEST && infoBoards().length > 1) app.insertAdjacentHTML('afterbegin', infoTabsHtml());
+}
+function renderContentBody(){
   if (!vidTpl() && !GUEST){ ensureSmmTemplate(db); save(); }
   if (!ui.vidSynced && !GUEST && smmSpace()) syncVidTplFromSmm(false);
   const p = infoBoard(); const s = contentStage(p);
@@ -2396,9 +2447,10 @@ function renderContent(){
   const addForm = `<form class="ct-add" id="ctAdd">
       <input id="ctName" placeholder="Название видео или «Ролик»" aria-label="Название видео" required>
       <label>Сколько <input type="number" id="ctN" min="1" max="200" value="1" aria-label="Сколько видео"></label>
+      <label class="ct-extra"><input type="checkbox" id="ctExtra" ${ui.ctExtra ? 'checked' : ''}> Доп. контент (вне плана)</label>
       <label>Старт <input type="date" id="ctStart" value="${c && today() > cycleEnd(c) ? today() : (c || today())}" aria-label="Дата старта"></label>
       <button class="primary">Добавить видео</button>
-      <small class="hint">Несколько видео распределятся поровну на 4 недели от даты старта и появятся карточками в колонке «${esc(s.name)}» на доске.</small></form>`;
+      <small class="hint">Несколько видео распределятся поровну на 4 недели от даты старта и появятся карточками в колонке «${esc(s.name)}» на доске. Доп. контент — сверх плана: виден с пометкой «доп.» и считается отдельно.</small></form>`;
   if (!c){ app.innerHTML = `<section class="smm-pf"><div class="smm-hd"><h2>Контент</h2></div><p class="hint">Видео пока нет. Добавьте первые — например, 12 роликов на месяц.</p>${addForm}</section>`; return; }
   const st = ctStats(c); const pct = st.plan ? Math.min(100, Math.round(st.pub / st.plan * 100)) : 0;
   const t = today(); const live = t >= c && t <= cycleEnd(c); const nowW = live ? weekOfDate(c, t) : 0;
@@ -2406,13 +2458,13 @@ function renderContent(){
   const pace = !st.plan || (!live && t < c) ? '' : st.pub >= due ? 'идём по плану' : `отстаём на ${due - st.pub}`;
   const row = x => `<li class="ct-row${x.done ? ' done' : ''}">
       <input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="Опубликовано: ${esc(x.name)}">
-      <button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>
+      <button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>
       <input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
   const modeSeg = `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode !== 'plan'}">Доска</button><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode === 'plan'}">План / Факт</button></span>`;
   if (ui.ctMode !== 'plan'){
     app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>
       <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>${modeSeg}
-      ${smmSpace() ? `<button class="ghost" data-vidsync title="Взять этапы и подэтапы из шаблона пространства «${esc(smmSpace().name)}»">Обновить из SMM</button>` : ''}</div>
+      <button class="ghost" data-ctaddx>+ Доп. контент</button></div>
       ${contentBoardHtml(s, ctItems().filter(x => x.cycle === c))}
       <section class="smm-pf">${addForm}</section>`;
     return;
@@ -2427,6 +2479,7 @@ function renderContent(){
       <div><b>${st.plan}</b><small>План</small></div>
       <div><b>${st.pub} <small>из ${st.plan}</small></b><small>Опубликовано${pace ? ' · ' + pace : ''}</small></div>
       <div><b>${Math.max(0, st.plan - st.pub)}</b><small>Осталось</small></div>
+      ${st.extra.n ? `<div><b>${st.extra.pub} <small>из ${st.extra.n}</small></b><small>Доп. контент</small></div>` : ''}
     </div>
     <div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>
     <table class="smm-wk"><thead><tr><th>Неделя</th><th>План</th><th>Опубликовано</th></tr></thead><tbody>
@@ -2436,21 +2489,21 @@ function renderContent(){
       <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}
     <section class="smm-pf">${addForm}</section>`;
 }
-function addContent(name, n, start){
+function addContent(name, n, start, extra = false){
   const p = infoBoard(); const s = contentStage(p); if (!p || !s || !name) return;
   const c = ctCycles().filter(x => start >= x && start <= cycleEnd(x)).at(-1) || start;
   const w0 = weekOfDate(c, start); let k = 0;                     // поровну на недели от недели старта до конца цикла
   splitPlan(n, CYCLE_WEEKS - w0 + 1).forEach((m, wi) => { for (let j = 0; j < m; j++){
     k++; let due = addDays(weekStart(c, w0 + wi), Math.min(6, Math.floor((j + 0.5) * 7 / m)));
     if (due < start || n === 1) due = start;
-    (s.subs = s.subs || []).push({ id:uid(), name:n > 1 ? `${name} ${k}` : name, done:false, cycle:c, due_date:due });
+    (s.subs = s.subs || []).push({ id:uid(), name:n > 1 ? `${name} ${k}` : name, done:false, cycle:c, due_date:due, ...(extra ? { extra:true } : {}) });
   } });
-  addLog(p, `Контент: добавлено ${n} ${plural(n, 'видео', 'видео', 'видео')} в «${s.name}»`);
+  addLog(p, `Контент: добавлено ${n} ${plural(n, 'видео', 'видео', 'видео')}${extra ? ' (доп. контент)' : ''} в «${s.name}»`);
   ui.ctCycle = c; commit();
 }
 document.addEventListener('submit', e => {
   if (e.target.id === 'ctAdd'){ e.preventDefault();
-    const n = Math.max(1, Math.min(200, +$('#ctN').value || 1)); addContent($('#ctName').value.trim(), n, $('#ctStart').value || today()); return; }
+    const n = Math.max(1, Math.min(200, +$('#ctN').value || 1)); addContent($('#ctName').value.trim(), n, $('#ctStart').value || today(), $('#ctExtra')?.checked); ui.ctExtra = false; return; }
   if (e.target.id === 'ctEd'){ e.preventDefault(); const c = ctCur();
     db.prefs.infoPlans = { ...(db.prefs.infoPlans || {}), [c]:Math.max(0, +$('#ctPlan').value || 0) }; ui.ctEdit = null; commit(); }
 });
@@ -4435,10 +4488,11 @@ function openSubsModal(t, i){
 
 // ---------- Производство: доска выбранного проекта (поиск и список всех проектов слева) ----------
 function renderProduction(){
+  if (isInfo() && !GUEST && infoBoard()) ui.prodProject = infoBoard().id;
   renderProjectFocus();
   const p = infoBoard();
   if (!isInfo() || GUEST || !p || projById(ui.prodProject) !== p) return;
-  app.insertAdjacentHTML('afterbegin', flowPanelHtml(p));
+  app.insertAdjacentHTML('afterbegin', infoTabsHtml() + flowPanelHtml(p));
   if (ui.infoMode === 'timeline'){ const b = app.querySelector('.pf-board'); if (b) b.outerHTML = timelineHtml(p); }
 }
 // ---------- Инфобизнес: таймлайн — все задачи доски на одной шкале времени ----------
