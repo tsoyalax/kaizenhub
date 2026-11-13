@@ -1137,6 +1137,20 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 body[data-kind="info"] .pf{grid-template-columns:minmax(0,1fr)}
 body[data-kind="info"] :is(.pf-list,.pf-select,#newBtn,.pm-cnt,.pm-nav>.icon-btn:first-child,.pm-nav>.icon-btn:last-child){display:none!important}
 body[data-kind="info"] [data-pmpick]{pointer-events:none}
+.ct-add{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ct-add input:not([type=date]):not([type=number]){flex:1 1 220px;min-width:0}
+.ct-add input[type=number]{width:70px}
+.ct-add label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.ct-add .hint{flex-basis:100%}
+.ct-wk{margin-top:14px}
+.ct-wk h3{font-size:14px;margin:0 0 8px 4px}
+.ct-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ct-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.ct-name{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;color:inherit;display:grid;gap:2px;cursor:pointer}
+.ct-name b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ct-name small{color:var(--muted);font-size:12px}
+.ct-row.done .ct-name b{text-decoration:line-through;color:var(--muted)}
+.ct-date{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:4px 6px;font:inherit;font-size:13px}
 .pf-list{position:sticky;top:76px;display:grid;gap:8px;max-height:calc(100vh - 100px);grid-template-rows:auto minmax(0,1fr)}
 .pf-list input{height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 11px;font-size:14px;width:100%}
 .pf-items{overflow-y:auto;display:grid;gap:4px;align-content:start;padding-right:2px}
@@ -2024,6 +2038,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
+    <button data-view="content" hidden>Контент</button>
     <button data-view="mytasks" id="myTasksTab">Мои задачи</button>
     <button data-view="review" id="reviewTab">Приёмка</button>
     <button data-view="assign">Поручения</button>
@@ -2201,6 +2216,104 @@ function infoTemplate(){
     .map(([n, d]) => ({ id:uid(), name:n, days:d, approval:false, subs:[] })) };
 }
 function ensureInfoTemplate(d){ d.templates = d.templates || []; if (!d.templates.some(t => t.id === INFO_TPL_ID)) d.templates.unshift(infoTemplate()); }
+// ---------- Инфобизнес → «Контент»: видео = карточки (подэтапы) колонки «Контент» на доске «Производства» ----------
+// Одни и те же данные: отметили видео опубликованным здесь — оно отмечено на доске, и наоборот.
+// У видео: x.name, x.due_date — дата публикации, x.cycle — старт 4-недельного цикла, x.done — опубликовано (дата — x.u).
+// План цикла — db.prefs.infoPlans[старт] (по умолчанию — сколько видео в цикле), по неделям поровну, как в SMM.
+const infoBoard = () => projById(INFO_BOARD_ID) || db.projects.find(p => p.template_id === INFO_TPL_ID && p.state !== 'archived');
+function contentStage(p = infoBoard()){
+  if (!p) return null;
+  const tpl = tplById(INFO_TPL_ID); const ts = tpl?.stages.find(x => /контент/i.test(x.name));
+  return p.stages.find(x => ts && x.tsid === ts.id) || p.stages.find(x => /контент/i.test(x.name)) || null;
+}
+const ctItems = () => contentStage()?.subs || [];
+const ctCycles = () => [...new Set(ctItems().map(x => x.cycle).filter(Boolean))].sort();
+const ctDoneAt = x => x.done ? String(x.u || x.due_date || today()).slice(0, 10) : '';
+function ctCur(){
+  const cs = ctCycles(); if (!cs.length) return '';
+  if (ui.ctCycle && cs.includes(ui.ctCycle)) return ui.ctCycle;
+  const t = today(); return cs.filter(c => c <= t && t <= cycleEnd(c)).at(-1) || cs.filter(c => c <= t).at(-1) || cs[0];
+}
+function ctStats(c){
+  const items = ctItems().filter(x => x.cycle === c);
+  const set = db.prefs?.infoPlans?.[c]; const plan = set != null ? +set || 0 : items.length;
+  const weeks = splitPlan(plan).map((n, i) => ({ w:i + 1, plan:n, pub:0, items:[] }));
+  let pub = 0;
+  items.forEach(x => {
+    weeks[weekOfDate(c, x.due_date || c) - 1].items.push(x);
+    const d = ctDoneAt(x); if (d){ pub++; weeks[weekOfDate(c, d < c ? c : d) - 1].pub++; }
+  });
+  return { plan, pub, items, weeks };
+}
+function renderContent(){
+  const p = infoBoard(); const s = contentStage(p);
+  if (!p || !s){ app.innerHTML = `<div class="empty">На доске нет этапа «Контент».<br>Добавьте его в «Настройки → Шаблоны → Инфобизнес: запуск» — видео будут карточками этого этапа.</div>`; return; }
+  ui.prodProject = p.id;
+  const c = ctCur(); const cs = ctCycles(); const i = cs.indexOf(c);
+  const addForm = `<form class="ct-add" id="ctAdd">
+      <input id="ctName" placeholder="Название видео или «Ролик»" aria-label="Название видео" required>
+      <label>Сколько <input type="number" id="ctN" min="1" max="200" value="1" aria-label="Сколько видео"></label>
+      <label>Старт <input type="date" id="ctStart" value="${c && today() > cycleEnd(c) ? today() : (c || today())}" aria-label="Дата старта"></label>
+      <button class="primary">Добавить видео</button>
+      <small class="hint">Несколько видео распределятся поровну на 4 недели от даты старта и появятся карточками в колонке «${esc(s.name)}» на доске.</small></form>`;
+  if (!c){ app.innerHTML = `<section class="smm-pf"><div class="smm-hd"><h2>Контент</h2></div><p class="hint">Видео пока нет. Добавьте первые — например, 12 роликов на месяц.</p>${addForm}</section>`; return; }
+  const st = ctStats(c); const pct = st.plan ? Math.min(100, Math.round(st.pub / st.plan * 100)) : 0;
+  const t = today(); const live = t >= c && t <= cycleEnd(c); const nowW = live ? weekOfDate(c, t) : 0;
+  const due = live ? st.weeks.slice(0, nowW).reduce((m, x) => m + x.plan, 0) : t > cycleEnd(c) ? st.plan : 0;
+  const pace = !st.plan || (!live && t < c) ? '' : st.pub >= due ? 'идём по плану' : `отстаём на ${due - st.pub}`;
+  const row = x => `<li class="ct-row${x.done ? ' done' : ''}">
+      <input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="Опубликовано: ${esc(x.name)}">
+      <button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>
+      <input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
+  app.innerHTML = `<section class="smm-pf" aria-label="Контент: план и факт">
+    <div class="smm-hd"><h2>Контент</h2>
+      <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>
+      ${ui.ctEdit === c ? '' : `<button class="ghost smm-edit" data-ctedit>${ICON_EDIT}План</button>`}</div>
+    ${ui.ctEdit === c ? `<form class="smm-ed" id="ctEd"><label>План на 4 недели, видео <input type="number" id="ctPlan" min="0" max="999" value="${st.plan}"></label>
+      <span class="smm-ed-act"><button type="button" class="ghost" data-cteditcancel>Отмена</button><button class="primary">Сохранить</button></span></form>` : ''}
+    <div class="smm-kpi">
+      <div><b>${st.plan}</b><small>План</small></div>
+      <div><b>${st.pub} <small>из ${st.plan}</small></b><small>Опубликовано${pace ? ' · ' + pace : ''}</small></div>
+      <div><b>${Math.max(0, st.plan - st.pub)}</b><small>Осталось</small></div>
+    </div>
+    <div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>
+    <table class="smm-wk"><thead><tr><th>Неделя</th><th>План</th><th>Опубликовано</th></tr></thead><tbody>
+      ${st.weeks.map(x => `<tr class="${x.w === nowW ? 'now' : ''}"><td>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></td><td>${x.plan}</td><td>${x.pub} <small class="hint">из ${x.plan}</small></td></tr>`).join('')}
+    </tbody></table></section>
+    ${st.weeks.filter(x => x.items.length).map(x => `<section class="ct-wk"><h3>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></h3>
+      <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}
+    <section class="smm-pf">${addForm}</section>`;
+}
+function addContent(name, n, start){
+  const p = infoBoard(); const s = contentStage(p); if (!p || !s || !name) return;
+  const c = ctCycles().filter(x => start >= x && start <= cycleEnd(x)).at(-1) || start;
+  const w0 = weekOfDate(c, start); let k = 0;                     // поровну на недели от недели старта до конца цикла
+  splitPlan(n, CYCLE_WEEKS - w0 + 1).forEach((m, wi) => { for (let j = 0; j < m; j++){
+    k++; let due = addDays(weekStart(c, w0 + wi), Math.min(6, Math.floor((j + 0.5) * 7 / m)));
+    if (due < start || n === 1) due = start;
+    (s.subs = s.subs || []).push({ id:uid(), name:n > 1 ? `${name} ${k}` : name, done:false, cycle:c, due_date:due });
+  } });
+  addLog(p, `Контент: добавлено ${n} ${plural(n, 'видео', 'видео', 'видео')} в «${s.name}»`);
+  ui.ctCycle = c; commit();
+}
+document.addEventListener('submit', e => {
+  if (e.target.id === 'ctAdd'){ e.preventDefault();
+    const n = Math.max(1, Math.min(200, +$('#ctN').value || 1)); addContent($('#ctName').value.trim(), n, $('#ctStart').value || today()); return; }
+  if (e.target.id === 'ctEd'){ e.preventDefault(); const c = ctCur();
+    db.prefs.infoPlans = { ...(db.prefs.infoPlans || {}), [c]:Math.max(0, +$('#ctPlan').value || 0) }; ui.ctEdit = null; commit(); }
+});
+document.addEventListener('click', e => {
+  const cy = e.target.closest?.('[data-ctcyc]'); if (cy){ const cs = ctCycles(); ui.ctCycle = cs[cs.indexOf(ctCur()) + +cy.dataset.ctcyc] || ctCur(); render(); return; }
+  if (e.target.closest?.('[data-ctedit]')){ ui.ctEdit = ctCur(); render(); return; }
+  if (e.target.closest?.('[data-cteditcancel]')){ ui.ctEdit = null; render(); }
+});
+document.addEventListener('change', e => {
+  const d = e.target.dataset || {}; if (!d.ctdone && !d.ctdue) return;
+  const p = infoBoard(); const s = contentStage(p); const x = s?.subs?.find(y => y.id === (d.ctdone || d.ctdue)); if (!x) return;
+  if (d.ctdone){ const t = taskFor(p.id, s.id, x.id); if (t?.checklist?.length){ e.target.checked = !!x.done; openTask(t.id); return; }   // с чек-листом — отмечается в карточке
+    toggleSub(p, s, x, e.target.checked); return; }
+  if (e.target.value){ x.due_date = e.target.value; if (!x.cycle) x.cycle = e.target.value; addLog(p, `Контент: «${x.name}» — публикация ${fmt(x.due_date)}`); commit(); }
+});
 // доска создаётся сама, когда данные пространства уже загружены и в нём нет ни одного проекта
 function ensureInfoBoard(){
   if (!isInfo() || GUEST || !db.onboarded || (cloud.col && !cloud.ready)) return;
@@ -3273,6 +3386,8 @@ function render(){
   document.body.dataset.kind = GUEST ? '' : (db?.prefs?.kind || 'agency');
   if (isInfo() && !GUEST){ if (INFO_HIDDEN.includes(ui.view)) ui.view = 'production'; try { ensureInfoBoard(); } catch(e) {} }
   INFO_HIDDEN.forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = isInfo() && !GUEST; });
+  { const b = $('.tabs [data-view="content"]'); if (b) b.hidden = !isInfo() || GUEST; }
+  if (ui.view === 'content' && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
   try { renderSide(); } catch(e) {}
   setTimeout(() => { try { paintReviewBadge(); } catch(e) {} }, 0);
   try { paintPhoneHead(); } catch(e) {}
@@ -3285,7 +3400,7 @@ function render(){
   renderFilters();
   const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер');
   if (!isCRM()) ui.crmStage = null;
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
   if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST && !(ui.view === 'matrix' && density() === 'funnel')) app.insertAdjacentHTML('afterbegin', crmSumHtml());
   if (ui.open) renderDrawer();
@@ -8801,6 +8916,7 @@ const MNAV = {
   matrix:['Матрица', MI('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>')],
   kanban:['Канбан', MI('<rect x="3" y="3" width="5" height="15" rx="1.5"/><rect x="10" y="3" width="5" height="10" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/>')],
   production:['Произв.', MI('<path d="M3 12h4l3-8 4 16 3-8h4"/>')],
+  content:['Контент', MI('<rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3"/>')],
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
   assign:['Поручения', MI('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2 2 4-4M8.5 17h7"/>')],
@@ -8812,7 +8928,7 @@ const MNAV = {
   templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
 };
 const MNAV_MAIN_ALL = ['matrix', 'kanban', 'production', 'load'];
-const mnavMain = () => isInfo() ? ['production', 'mytasks', 'review', 'load'] : MNAV_MAIN_ALL;
+const mnavMain = () => isInfo() ? ['production', 'content', 'mytasks', 'review'] : MNAV_MAIN_ALL;
 // иконки в боковом меню (те же, что в нижнем меню телефона)
 const NAV_FULL = { production:'Производство' };
 document.querySelectorAll('.tabs [data-view]').forEach(b => { const m = MNAV[b.dataset.view]; if (m && !b.querySelector('svg')) b.insertAdjacentHTML('afterbegin', m[1]); });
@@ -8849,7 +8965,7 @@ document.addEventListener('click', e => {
   const k = c.dataset.kdrisk; ui.risk = ui.risk === k ? '' : k; render();
 });
 const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>');
-const moreViews = () => ['review', 'mytasks', 'assign', 'mine', 'reports', 'team', 'archive', 'templates'].filter(v => (v !== 'mine' || !$('#mineTab').hidden) && !mnavMain().includes(v) && !(isInfo() && INFO_HIDDEN.includes(v)));
+const moreViews = () => ['review', 'mytasks', 'assign', 'mine', 'reports', 'load', 'team', 'archive', 'templates'].filter(v => (v !== 'mine' || !$('#mineTab').hidden) && !mnavMain().includes(v) && !(isInfo() && INFO_HIDDEN.includes(v)));
 function renderMobileNav(){
   const nav = $('#mnav'); if (!nav) return;
   if (GUEST){ nav.innerHTML = guestViews().map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
