@@ -1161,8 +1161,14 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .fl-chain{display:flex;align-items:stretch;gap:4px;overflow-x:auto;padding:2px 2px 6px}
 .fl-arr{align-self:center;color:var(--muted);font-size:16px;flex:none}
 .fl-node{flex:1 0 150px;max-width:230px;text-align:left;display:grid;align-content:start;gap:6px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;font:inherit;transition:border-color .15s,box-shadow .15s}
-.fl-node:hover{border-color:color-mix(in srgb,var(--ink) 25%,var(--line));box-shadow:0 4px 14px rgba(10,10,14,.06)}
+.fl-node:hover{cursor:default;border-color:color-mix(in srgb,var(--ink) 25%,var(--line));box-shadow:0 4px 14px rgba(10,10,14,.06)}
 .fl-node b{font-size:14px;font-weight:600}
+.fl-name{background:none;border:0;padding:0;text-align:left;color:inherit;font:inherit;cursor:pointer}
+.fl-node .fl-st{margin-top:2px;height:30px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:0 6px}
+.fl-node.k-paused{border-style:dashed}
+.fl-node.k-idle,.fl-node.k-done{opacity:.85}
+.fl-why{color:var(--pl-b,var(--b))!important}
+.fl-sum{font-size:13px;color:var(--muted)}
 .fl-node .pill{justify-self:start}
 .fl-node small{font-size:12px;color:var(--muted)}
 .fl-urgent{border-top:1px solid var(--line);padding-top:12px}
@@ -4517,7 +4523,7 @@ function timelineHtml(p){
   // связь: от последнего срока этапа-источника — к строке зависимого этапа (туда, где он может продолжаться после источника)
   const lastPt = l => { const ps = l.placed; if (!ps.length) return null; const i = ps.reduce((m, q) => q.px > m.px ? q : m, ps[0]); return { x:i.px, y:l.top + 8 + i.r * TL_ROW + TL_ROW / 2 }; };
   const arrows = lanes.flatMap(l => flowDeps(p, l.v.s).map(id => byId.get(id)).filter(Boolean).map(src => {
-    const a = lastPt(src); if (!a) return ''; const red = src.v.own === 'red';
+    const a = lastPt(src); if (!a) return ''; const red = src.v.own === 'red' || src.v.own === 'paused';
     const next = l.placed.filter(q => q.px >= a.x).sort((m, q) => m.px - q.px)[0];     // первая задача зависимого после источника
     const b = next ? { x:next.px - 9, y:l.top + 8 + next.r * TL_ROW + TL_ROW / 2 } : { x:a.x + 26, y:l.top + l.h / 2 };
     const dy = b.y - a.y;
@@ -4530,7 +4536,7 @@ function timelineHtml(p){
   const k = i => i.done ? 'done' : i.due < t0 ? 'red' : i.due <= addDays(t0, 1) ? 'yellow' : 'green';
   return `<div class="tl" aria-label="Таймлайн задач">
     <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl" style="height:${l.h}px"><b>${esc(l.v.s.name)}</b>
-      <span class="pill st-pill s-${FLOW_PILL[l.v.key][0]}">${STATUS_ICO[FLOW_PILL[l.v.key][0]]}${FLOW_PILL[l.v.key][1](l.v)}</span>
+      ${flowPill(l.v)}
       ${l.nodate.length ? `<small>без срока: ${l.nodate.length}</small>` : ''}</div>`).join('')}</div>
     <div class="tl-scroll"><div class="tl-in" style="width:${W}px">
       <div class="tl-head">${head}</div>
@@ -4557,30 +4563,40 @@ function flowState(p){
     const over = open.filter(i => i.due && i.due < t0), soon = open.filter(i => i.due && i.due >= t0 && i.due <= t1);
     return [s.id, { s, items, open, over, soon, n:items.length, done:items.length - open.length }];
   }));
-  const own = v => v.over.length || !v.n ? 'red' : v.soon.length ? 'yellow' : 'green';
+  // статус отдела вручную (s.dept.st): приостановлен — тормозит зависимых, как просроченный; не начат и готов — не горят
+  const own = v => { const d = v.s.dept?.st;
+    if (d === 'pause') return 'paused'; if (d === 'idle') return 'idle'; if (d === 'done') return 'done';
+    return v.over.length || !v.n ? 'red' : v.soon.length ? 'yellow' : 'green'; };
   st.forEach(v => { v.own = own(v); });
   // ниже по воронке: кого тормозит этот этап (все, кто зависит от него — напрямую и через другие)
   const downstream = id => { const out = new Set(), q = [id]; while (q.length){ const c = q.shift(); st.forEach(v => { if (!out.has(v.s.id) && flowDeps(p, v.s).includes(c)){ out.add(v.s.id); q.push(v.s.id); } }); } return [...out]; };
   st.forEach(v => { v.down = downstream(v.s.id); v.blockedBy = []; });
-  st.forEach(v => { if (v.own === 'red') v.down.forEach(id => st.get(id)?.blockedBy.push(v.s.id)); });
-  st.forEach(v => { v.key = v.own === 'red' ? 'red' : v.blockedBy.length || v.own === 'yellow' ? 'yellow' : 'green'; });
+  st.forEach(v => { if (v.own === 'red' || v.own === 'paused') v.down.forEach(id => st.get(id)?.blockedBy.push(v.s.id)); });
+  st.forEach(v => { v.key = ['red', 'paused', 'idle', 'done'].includes(v.own) ? v.own : v.blockedBy.length || v.own === 'yellow' ? 'yellow' : 'green'; });
   return st;
 }
 // подписи плашек: [ключ плашки, текст]
-const FLOW_PILL = { red:['red', v => !v.n ? 'Нет задач' : 'Просрочено'], yellow:['yellow', v => v.blockedBy.length && v.own !== 'yellow' ? 'Ждёт' : 'Горит'], green:['green', () => 'В графике'] };
+const FLOW_PILL = { red:['red', v => !v.n ? 'Нет задач' : 'Просрочено'], yellow:['yellow', v => v.blockedBy.length && v.own !== 'yellow' ? 'Ждёт' : 'Горит'], green:['green', () => 'В работе'],
+  paused:['blue', () => 'Приостановлено', 'pause'], idle:['gray', () => 'Не начато'], done:['done', () => 'Готово'] };
+const PAUSE_ICO = sico('<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>');
+const flowPill = v => { const [pk, txt, ico] = FLOW_PILL[v.key]; return `<span class="pill st-pill s-${pk}">${ico === 'pause' ? PAUSE_ICO : STATUS_ICO[pk]}${txt(v)}</span>`; };
+const DEPT_ST = [['work', 'В работе'], ['pause', 'Приостановлено'], ['idle', 'Не начато'], ['done', 'Готово']];
 function flowPanelHtml(p){
   const st = flowState(p); const list = [...st.values()];
   const nm = id => esc(st.get(id)?.s.name || '');
   const why = v => !v.n ? 'нет задач' : v.over.length ? `${v.over.length} ${plural(v.over.length, 'задача просрочена', 'задачи просрочены', 'задач просрочено')}` : '';
-  const urgent = list.filter(v => v.own === 'red').sort((a, b) => b.down.length - a.down.length || b.over.length - a.over.length);
+  const urgent = list.filter(v => v.own === 'red' || v.own === 'paused').sort((a, b) => (b.own === 'paused') - (a.own === 'paused') || b.down.length - a.down.length || b.over.length - a.over.length);
+  const cnt = k => list.filter(v => (v.s.dept?.st || 'work') === k).length;
   const soon = list.filter(v => v.own === 'yellow');
-  const pill = v => { const [pk, txt] = FLOW_PILL[v.key]; return `<span class="pill st-pill s-${pk}">${STATUS_ICO[pk]}${txt(v)}</span>`; };
-  const node = v => `<button class="fl-node k-${v.key}" data-flgo="${v.s.id}" title="${esc(v.s.name)}">
-      <b>${esc(v.s.name)}</b>${pill(v)}
+  const node = v => `<div class="fl-node k-${v.key}">
+      <button class="fl-name" data-flgo="${v.s.id}" title="Показать на доске"><b>${esc(v.s.name)}</b></button>${flowPill(v)}
       <small>${v.n ? `${v.done} из ${v.n} готово` : 'нет задач'}${v.over.length ? ` · просрочено ${v.over.length}` : v.soon.length ? ` · срок скоро: ${v.soon.length}` : ''}</small>
-      ${flowDeps(p, v.s).length ? `<small class="fl-from">после: ${flowDeps(p, v.s).map(nm).join(', ')}</small>` : ''}</button>`;
+      ${v.s.dept?.st === 'pause' && v.s.dept.note ? `<small class="fl-why">${esc(v.s.dept.note)}</small>` : ''}
+      ${flowDeps(p, v.s).length ? `<small class="fl-from">после: ${flowDeps(p, v.s).map(nm).join(', ')}</small>` : ''}
+      <select class="fl-st" data-flst="${v.s.id}" aria-label="Статус отдела «${esc(v.s.name)}»">${DEPT_ST.map(([k, l]) => `<option value="${k}" ${(v.s.dept?.st || 'work') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`;
   return `<section class="fl" aria-label="Воронка: связи этапов">
     <div class="fl-hd"><h2>Воронка</h2><span class="pill st-pill s-${urgent.length ? 'red' : 'green'}">${STATUS_ICO[urgent.length ? 'red' : 'green']}${urgent.length ? `Узких мест: ${urgent.length}` : 'Всё работает'}</span>
+      <span class="fl-sum">Отделы: в работе ${cnt('work')}${cnt('pause') ? ` · приостановлено ${cnt('pause')}` : ''}${cnt('idle') ? ` · не начато ${cnt('idle')}` : ''}${cnt('done') ? ` · готово ${cnt('done')}` : ''}</span>
       <span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${ui.infoMode !== 'timeline'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline'}">Таймлайн</button></span>
       <button class="ghost" data-flwedit aria-pressed="${!!ui.flowEdit}">${ICON_EDIT}Связи</button></div>
     <div class="fl-chain">${list.map((v, i) => node(v) + (i < list.length - 1 ? '<span class="fl-arr" aria-hidden="true">→</span>' : '')).join('')}</div>
@@ -4588,11 +4604,20 @@ function flowPanelHtml(p){
       ${list.map(v => `<div class="fl-erow"><b>${esc(v.s.name)}</b><span>зависит от:</span>${list.filter(o => o !== v).map(o => `<label class="fl-dep"><input type="checkbox" data-fldep="${v.s.id}|${o.s.id}" ${flowDeps(p, v.s).includes(o.s.id) ? 'checked' : ''}>${esc(o.s.name)}</label>`).join('')}</div>`).join('')}
       <button class="ghost" data-flreset>Как по порядку колонок</button></div>` : ''}
     ${urgent.length || soon.length ? `<div class="fl-urgent"><h3>Срочно</h3><ol>
-      ${urgent.map(v => `<li class="k-red"><span class="pill st-pill s-red">${STATUS_ICO.red}${!v.n ? 'Нет задач' : 'Просрочено'}</span><button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: ${why(v)}${v.down.length ? ` → из-за этого стоят: ${v.down.map(nm).join(', ')}` : ''}
+      ${urgent.map(v => `<li class="k-red">${flowPill(v)}<button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: ${v.own === 'paused' ? `приостановлено${v.s.dept.note ? ` — ${esc(v.s.dept.note)}` : ''}` : why(v)}${v.down.length ? ` → из-за этого стоят: ${v.down.map(nm).join(', ')}` : ''}
         ${v.over.length ? `<div class="fl-tasks">${v.over.slice(0, 4).map(i => `<button class="fl-task" data-pfsub="${v.s.id}|${i.x.id}">${esc(i.x.name)} <small>срок ${fmt(i.due)}</small></button>`).join('')}</div>` : ''}</li>`).join('')}
       ${soon.map(v => `<li class="k-yellow"><span class="pill st-pill s-yellow">${STATUS_ICO.yellow}Горит</span><button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: срок сегодня или завтра — ${v.soon.map(i => esc(i.x.name)).slice(0, 3).join(', ')}</li>`).join('')}
     </ol></div>` : ''}</section>`;
 }
+// статус отдела: «Приостановлено» спрашивает причину (необязательно)
+document.addEventListener('change', e => {
+  const sid = e.target.dataset?.flst; if (!sid) return;
+  const p = infoBoard(); const s = p?.stages.find(x => x.id === sid); if (!s) return;
+  const set = (st, note = '') => { s.dept = { st, note, at:new Date().toISOString(), by:actorName() };
+    addLog(p, `Отдел «${s.name}»: ${DEPT_ST.find(([k]) => k === st)[1].toLowerCase()}${note ? ` — ${note}` : ''}`); commit(); };
+  if (e.target.value === 'pause') return gateDialog(`Приостановить «${esc(s.name)}»`, 'Почему приостановлено (необязательно)', 'Приостановить', note => set('pause', note));
+  set(e.target.value);
+});
 document.addEventListener('click', e => {
   if (e.target.closest?.('[data-flwedit]')){ ui.flowEdit = !ui.flowEdit; render(); return; }
   if (e.target.closest?.('[data-flreset]')){ const p = infoBoard(); if (p){ delete p.flow; addLog(p, 'Связи этапов: как по порядку колонок'); commit(); } return; }

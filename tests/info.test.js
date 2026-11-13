@@ -70,6 +70,16 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.deepEqual(E(`flowDeps(infoBoard(), infoBoard().stages[5])`), ['f0']); ok('связи меняются: «Эфиры» зависят от «Контента»');
   assert.ok(!E(`flowState(infoBoard()).get('f2').down.includes('f5')`)); ok('VSL больше не тормозит «Эфиры»');
   E(`ui.flowEdit = false`);
+  // статусы отделов вручную: «Приостановлено» с причиной тормозит зависимых и стоит первым в «Срочно»
+  E(`ui.view = 'production'; ui.infoMode = 'board'; render()`);
+  const sel = D.querySelector('[data-flst="f1"]'); sel.value = 'pause'; sel.dispatchEvent(new w.Event('change', { bubbles:true }));
+  D.getElementById('gateTx').value = 'Ждём интервью'; D.getElementById('gateF').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
+  assert.equal(E(`infoBoard().stages[1].dept.st`), 'pause'); ok('отдел приостановлен');
+  assert.equal(E(`flowState(infoBoard()).get('f1').key`), 'paused'); ok('в воронке — «Приостановлено»');
+  assert.ok(E(`flowState(infoBoard()).get('f2').blockedBy.includes('f1')`)); ok('зависимые ждут приостановленный отдел');
+  assert.ok(/Приостановлено.*Статья.*Ждём интервью.*из-за этого стоят/.test(D.querySelector('.fl-urgent li').textContent)); ok('«Срочно»: приостановленный — первым, с причиной');
+  const sel2 = D.querySelector('[data-flst="f1"]'); sel2.value = 'work'; sel2.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
+  assert.notEqual(E(`flowState(infoBoard()).get('f1').key`), 'paused'); ok('снова «В работе»');
   // таймлайн: все задачи с датой на одной шкале, связи стрелками
   E(`ui.infoMode = 'timeline'; render()`);
   assert.ok(D.querySelector('.tl') && !D.querySelector('.pf-board')); ok('«Таймлайн» вместо доски');
