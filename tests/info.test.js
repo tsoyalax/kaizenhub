@@ -46,10 +46,18 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.ok(E(`contentStage().subs.find(x => x.id === '${x2}').done`)); ok('«Опубликовано» отмечает видео на основной доске');
   // срок и напоминание у задачи
   E(`(() => { const p = infoBoard(), s = contentStage(p), x = s.subs[3]; tasksFromSubs(p, { ...s, subs:[x] }); openTask(taskFor(p.id, s.id, x.id).id); })()`); await wait(50);
-  const due = D.querySelector('[data-tdue]'); due.value = '2026-01-10'; due.dispatchEvent(new w.Event('change', { bubbles:true }));
-  const rem = D.querySelector('[data-tremind]'); rem.value = '2026-01-01T09:00'; rem.dispatchEvent(new w.Event('change', { bubbles:true }));
-  assert.equal(E('taskById(ui.taskId).due_date'), '2026-01-10'); ok('у задачи ставится срок');
-  assert.equal(E('taskById(ui.taskId).remind.at'), '2026-01-01T09:00'); ok('у задачи ставится напоминание');
+  // быстрый календарь: срок — день одним нажатием; напоминание — день, потом время
+  D.querySelector('[data-duepick]').click(); assert.ok(D.getElementById('dpPop')); ok('по нажатию на «Срок» открывается календарь');
+  D.querySelector(`[data-dpday="${E('addDays(today(), 3)')}"]`).click();
+  assert.equal(E('taskById(ui.taskId).due_date'), E('addDays(today(), 3)')); ok('у задачи ставится срок — нажатием на день');
+  assert.ok(!D.getElementById('dpPop')); ok('календарь закрылся сам');
+  D.querySelector('[data-duepick]').click(); [...D.querySelectorAll('[data-dpq]')].find(b => b.textContent === 'Завтра').click();
+  assert.equal(E('taskById(ui.taskId).due_date'), E('addDays(today(), 1)')); ok('быстрый вариант «Завтра»');
+  D.querySelector('[data-rempick]').click(); D.querySelector(`[data-dpday="${E('addDays(today(), 1)')}"]`).click();
+  assert.ok(D.getElementById('dpPop')); ok('после дня для напоминания — выбор времени');
+  D.querySelector('[data-dptime="10:00"]').click();
+  assert.equal(E('taskById(ui.taskId).remind.at'), E('addDays(today(), 1)') + 'T10:00'); ok('у задачи ставится напоминание — день и время');
+  assert.ok(/завтра, 10:00/.test(D.querySelector('[data-rempick]').textContent)); ok('на кнопке — «завтра, 10:00»');
   E(`(() => { const t = taskById(ui.taskId); const d = new Date(Date.now() - 60000); t.remind.at = d.toISOString().slice(0, 16); t.remind.by = meKey(); })()`);
   E('checkReminders()');
   assert.ok(D.getElementById('remPop')); ok('напоминание срабатывает');
