@@ -24,12 +24,12 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.ok(E(`projById('infoboard').stages.some(s => s.name === 'Вебинар')`)); ok('этап из шаблона появился на доске');
   // «Контент»: видео — карточки колонки «Контент» на доске; отметка в одном месте видна в другом
   assert.ok(!D.querySelector('.tabs [data-view="content"]').hidden); ok('в меню есть «Контент»');
-  E(`ui.ctMode = null; ui.view = 'content'; render()`);
-  assert.equal(D.querySelector('.ct-mode [aria-pressed="true"]')?.textContent, 'План / Факт'); ok('«Контент» открывается «План / Факт»');
   E(`ui.view = 'content'; render()`);
   D.getElementById('ctName').value = 'Ролик'; D.getElementById('ctN').value = '12';
   D.getElementById('ctAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(50);
   assert.equal(E('contentStage().subs.length'), 12); ok('12 видео добавлены карточками в колонку «Контент» доски');
+  E(`ui.ctMode = null; render()`);
+  assert.equal(D.querySelector('.ct-mode [aria-pressed="true"]')?.textContent, 'План / Факт'); ok('«Контент» открывается «План / Факт»');
   assert.deepEqual(E('ctStats(ctCur()).weeks.map(x => x.plan)'), [3, 3, 3, 3]); ok('план поровну на 4 недели');
   E(`ui.ctMode = 'plan'; render()`);
   const xid = E('contentStage().subs[0].id');
