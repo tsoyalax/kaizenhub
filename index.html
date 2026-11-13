@@ -1143,31 +1143,62 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ct-add label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
 .ct-add .hint{flex-basis:100%}
 .ct-wk{margin-top:14px}
-.fl{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:14px;display:grid;gap:12px}
-.fl-hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.fl-hd h2{font-size:17px;margin:0}
-.fl-hd .ghost{margin-left:auto;display:inline-flex;align-items:center;gap:6px}
+.fl{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;display:grid;gap:14px}
+.fl-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fl-hd h2{font-size:17px;margin:0;font-weight:700}
+.fl-hd .fl-mode{margin-left:auto}
+.fl-hd .ghost{display:inline-flex;align-items:center;gap:6px}
 .fl-hd svg{width:14px;height:14px}
-.fl-chain{display:flex;align-items:stretch;gap:6px;overflow-x:auto;padding-bottom:4px}
-.fl-arr{align-self:center;color:var(--muted);font-size:18px;flex:none}
-.fl-node{flex:1 0 140px;max-width:220px;text-align:left;display:grid;gap:3px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;font:inherit;border-left-width:4px}
-.fl-node b{font-size:14px}
+.fl-chain{display:flex;align-items:stretch;gap:4px;overflow-x:auto;padding:2px 2px 6px}
+.fl-arr{align-self:center;color:var(--muted);font-size:16px;flex:none}
+.fl-node{flex:1 0 150px;max-width:230px;text-align:left;display:grid;align-content:start;gap:6px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;font:inherit;transition:border-color .15s,box-shadow .15s}
+.fl-node:hover{border-color:color-mix(in srgb,var(--ink) 25%,var(--line));box-shadow:0 4px 14px rgba(10,10,14,.06)}
+.fl-node b{font-size:14px;font-weight:600}
+.fl-node .pill{justify-self:start}
 .fl-node small{font-size:12px;color:var(--muted)}
-.fl-node.k-red{border-left-color:var(--r)}.fl-node.k-yellow{border-left-color:var(--y)}.fl-node.k-green{border-left-color:var(--g)}
-.fl-node.k-red small:first-of-type{color:var(--r)}
-.fl-from{opacity:.8}
-.fl-urgent h3{font-size:14px;margin:0 0 6px}
-.fl-urgent ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:14px}
-.fl-urgent li.k-red::marker{color:var(--r)}.fl-urgent li.k-yellow::marker{color:var(--y)}
-.fl-tasks{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.fl-task{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:4px 8px;font:inherit;font-size:13px;cursor:pointer}
+.fl-urgent{border-top:1px solid var(--line);padding-top:12px}
+.fl-urgent h3{font-size:13px;margin:0 0 8px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.fl-urgent ol{margin:0;padding:0;list-style:none;display:grid;gap:8px;font-size:14px}
+.fl-urgent li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.fl-urgent li .pill{flex:none}
+.fl-tasks{display:flex;flex-wrap:wrap;gap:6px;flex-basis:100%}
+.fl-task{border:1px solid var(--line);background:var(--fbg,var(--surface-2));color:var(--ink);border-radius:8px;padding:4px 9px;font:inherit;font-size:13px;cursor:pointer}
 .fl-task small{color:var(--r)}
-.fl-edit{display:grid;gap:8px;font-size:13px}
+.fl-edit{display:grid;gap:8px;font-size:13px;border-top:1px solid var(--line);padding-top:12px}
 .fl-erow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
 .fl-erow > span{color:var(--muted)}
 .fl-dep{display:inline-flex;align-items:center;gap:4px}
 .pf-col.fl-flash{outline:2px solid var(--brand);outline-offset:-2px}
-@media (max-width:640px){.fl-chain{flex-direction:column}.fl-arr{transform:rotate(90deg)}.fl-node{max-width:none}}
+/* таймлайн */
+.tl{display:grid;grid-template-columns:170px minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.tl-lbls{border-right:1px solid var(--line)}
+.tl-lbl{box-sizing:border-box;display:grid;align-content:center;gap:4px;padding:0 12px;border-top:1px solid var(--line);font-size:13px;overflow:hidden}
+.tl-lbls,.tl-head,.tl-lane,.tl-d{box-sizing:border-box}
+.tl-lbl .pill{justify-self:start}
+.tl-lbl small{color:var(--muted);font-size:11.5px}
+.tl-scroll{overflow-x:auto}
+.tl-in{position:relative}
+.tl-head{position:relative;height:34px;border-bottom:1px solid var(--line)}
+.tl-d{position:absolute;top:0;width:34px;height:34px;display:grid;place-items:end center;padding-bottom:6px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tl-d em{position:absolute;top:3px;left:4px;font-style:normal;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink);white-space:nowrap}
+.tl-d.wk{color:color-mix(in srgb,var(--muted) 60%,transparent)}
+.tl-d.now{color:var(--brand);font-weight:700}
+.tl-body{position:relative}
+.tl-wk{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--muted) 7%,transparent)}
+.tl-lane{position:absolute;left:0;right:0;border-top:1px solid var(--line)}
+.tl-today{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--brand);opacity:.55}
+.tl-svg{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.tl-arr{fill:none;stroke:color-mix(in srgb,var(--muted) 70%,transparent);stroke-width:1.6;stroke-dasharray:4 3}
+.tl-arr.red{stroke:var(--r);stroke-dasharray:none;opacity:.8}
+.tl-hd{fill:color-mix(in srgb,var(--muted) 70%,transparent)}.tl-hd.red{fill:var(--r)}
+.tl-task{position:absolute;display:flex;align-items:center;gap:6px;height:22px;padding:0;border:0;background:none;color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.tl-task i{width:14px;height:14px;border-radius:50%;flex:none;border:2px solid var(--surface);box-shadow:0 0 0 1.5px currentColor;background:currentColor}
+.tl-task span{max-width:180px;overflow:hidden;text-overflow:ellipsis;background:color-mix(in srgb,var(--surface) 85%,transparent);border-radius:6px;padding:1px 4px}
+.tl-task.k-red{color:var(--r)}.tl-task.k-yellow{color:var(--y)}.tl-task.k-green{color:var(--b)}.tl-task.k-done{color:var(--g)}
+.tl-task.k-done span{text-decoration:line-through;color:var(--muted)}
+.tl-task span{color:var(--ink)}
+.tl-task.k-red span{color:var(--r)}
+@media (max-width:640px){.fl-chain{flex-direction:column}.fl-arr{transform:rotate(90deg);align-self:flex-start;margin-left:18px}.fl-node{max-width:none}.fl-hd .fl-mode{margin-left:0}.tl{grid-template-columns:110px minmax(0,1fr)}.tl-lbl{padding:0 8px}}
 .ct-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .ct-top .ct-mode{margin-left:auto}
 .ct-board{margin-bottom:16px}
@@ -1175,6 +1206,10 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ct-card .ct-open{background:none;border:0;padding:0;text-align:left;color:inherit;cursor:pointer;font:inherit}
 .ct-card small{color:var(--muted);font-size:12px}
 .ct-card select{width:100%}
+.ct-subs{display:grid;gap:3px;font-size:12.5px}
+.ct-subs label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.ct-subs input{flex:none;margin:0}
+.ct-subs input:checked + span{text-decoration:line-through;color:var(--muted)}
 .pf-col.drop-on{outline:2px dashed var(--brand);outline-offset:-4px}
 .ct-wk h3{font-size:14px;margin:0 0 8px 4px}
 .ct-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
@@ -2295,6 +2330,31 @@ function ctStats(c){
 const vidTpl = () => db.templates.find(t => t.id === SMM_TPL_ID) || db.templates.find(t => /smm/i.test(t.name));
 const vidCols = () => vidTpl()?.stages || [];
 const vidCol = x => { const cs = vidCols(); if (x.done) return cs.at(-1); return cs.slice(0, -1).find(c => c.id === x.vst) || cs[0]; };
+// этапы и подэтапы доски видео — как в шаблоне SMM-пространства: раз за открытие вкладки берём их оттуда
+// (id этапов сохраняются, поэтому видео не теряют свой этап). Кнопка «Обновить из SMM» — то же вручную.
+const smmSpace = () => { try { return otherSpaces().find(x => x.kind === 'smm') || null; } catch(e) { return null; } };
+async function syncVidTplFromSmm(manual){
+  const sp = smmSpace(); if (!sp || !cloud.store || !cloud.uid){ if (manual) toast('Нет SMM-пространства, из которого взять этапы'); return false; }
+  ui.vidSynced = true;
+  try {
+    const { tpls } = await loadSpaceTemplates(sp.id);
+    const src = tpls.find(t => t.id === SMM_TPL_ID) || tpls.find(t => /smm/i.test(t.name)) || tpls[0];
+    if (!src?.stages?.length){ if (manual) toast(`В пространстве «${sp.name}» нет шаблона SMM`); return false; }
+    const cur = vidTpl(); const next = { ...(cur || {}), id:SMM_TPL_ID, name:src.name, stages:clone(src.stages), fromSpace:sp.id };
+    if (cur && JSON.stringify(cur.stages) === JSON.stringify(next.stages)){ if (manual) toast('Этапы уже как в SMM'); return false; }
+    db.templates = [next, ...db.templates.filter(t => t !== cur)];
+    toast(`Этапы видео обновлены из «${sp.name}»`); commit(); return true;
+  } catch(e) { if (manual) toast('Не удалось прочитать шаблоны SMM, проверьте интернет'); return false; }
+}
+// подэтапы текущего этапа видео — галочки на карточке (x.vs = { id подэтапа: true })
+document.addEventListener('change', e => {
+  const v = e.target.dataset?.ctvs; if (!v) return;
+  const [xid, sid] = v.split('|'); const p = infoBoard(); const s = contentStage(p); const x = s?.subs?.find(y => y.id === xid); if (!x) return;
+  x.vs = { ...(x.vs || {}) }; if (e.target.checked) x.vs[sid] = true; else delete x.vs[sid];
+  const name = vidCols().flatMap(c => c.subs || []).find(y => y.id === sid)?.name || '';
+  addLog(p, `Контент: «${x.name}» — ${name}: ${e.target.checked ? 'готово' : 'снова в работе'}`); commit();
+});
+document.addEventListener('click', e => { if (e.target.closest?.('[data-vidsync]')) syncVidTplFromSmm(true); });
 function moveVideo(xid, colId){
   const p = infoBoard(); const s = contentStage(p); const x = s?.subs?.find(y => y.id === xid); const cs = vidCols(); const c = cs.find(y => y.id === colId);
   if (!x || !c) return;
@@ -2307,11 +2367,12 @@ function contentBoardHtml(s, items){
   const cs = vidCols(); if (!cs.length) return '<p class="hint">Нет шаблона «SMM: видео» — добавьте его в «Настройки → Шаблоны → Из другого пространства → Готовые».</p>';
   return `<div class="pf-board ct-board">${cs.map((c, ci) => { const list = items.filter(x => vidCol(x) === c);
     return `<section class="pf-col${ci === cs.length - 1 ? ' passed' : ''}" data-ctcol="${c.id}" aria-label="${esc(c.name)}">
-      <header><div><b>${ci + 1}. ${esc(c.name)}</b></div><small>${list.length} ${plural(list.length, 'видео', 'видео', 'видео')}</small></header>
+      <header><div><b>${ci + 1}. ${esc(c.name)}</b></div><small>${list.length} ${plural(list.length, 'видео', 'видео', 'видео')}${(c.subs || []).length ? ` · подэтапов ${c.subs.length}` : ''}</small></header>
       <div class="pf-cards">${list.map(x => { const t = taskFor(infoBoard().id, s.id, x.id);
         return `<div class="pf-card ct-card${x.done ? ' done' : ''}" draggable="true" data-ctdrag="${x.id}">
           <button class="ct-open" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}</b></button>
           <small>${x.due_date ? `публикация ${fmt(x.due_date)}` : 'без даты'}${t?.assignee_id ? ` · ${esc(short(t.assignee_id))}` : ''}</small>
+          ${(c.subs || []).length && !x.done ? `<div class="ct-subs">${c.subs.map(y => `<label><input type="checkbox" data-ctvs="${x.id}|${y.id}" ${x.vs?.[y.id] ? 'checked' : ''}><span>${esc(y.name)}</span></label>`).join('')}</div>` : ''}
           <select class="pf-status" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}">${cs.map(y => `<option value="${y.id}" ${y === c ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select></div>`; }).join('') || '<p class="hint">Пусто</p>'}</div></section>`; }).join('')}</div>`;
 }
 document.addEventListener('change', e => { const v = e.target.dataset?.ctmove; if (v) moveVideo(v, e.target.value); });
@@ -2322,6 +2383,7 @@ document.addEventListener('drop', e => { const col = e.target.closest?.('[data-c
 document.addEventListener('click', e => { const m = e.target.closest?.('[data-ctmode]'); if (m){ ui.ctMode = m.dataset.ctmode; render(); } });
 function renderContent(){
   if (!vidTpl() && !GUEST){ ensureSmmTemplate(db); save(); }
+  if (!ui.vidSynced && !GUEST && smmSpace()) syncVidTplFromSmm(false);
   const p = infoBoard(); const s = contentStage(p);
   if (!p || !s){ app.innerHTML = `<div class="empty">На доске нет этапа «Контент».<br>Добавьте его в «Настройки → Шаблоны → Инфобизнес: запуск» — видео будут карточками этого этапа.</div>`; return; }
   ui.prodProject = p.id;
@@ -2344,7 +2406,8 @@ function renderContent(){
   const modeSeg = `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode !== 'plan'}">Доска</button><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode === 'plan'}">План / Факт</button></span>`;
   if (ui.ctMode !== 'plan'){
     app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>
-      <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>${modeSeg}</div>
+      <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>${modeSeg}
+      ${smmSpace() ? `<button class="ghost" data-vidsync title="Взять этапы и подэтапы из шаблона пространства «${esc(smmSpace().name)}»">Обновить из SMM</button>` : ''}</div>
       ${contentBoardHtml(s, ctItems().filter(x => x.cycle === c))}
       <section class="smm-pf">${addForm}</section>`;
     return;
@@ -4368,8 +4431,60 @@ function openSubsModal(t, i){
 // ---------- Производство: доска выбранного проекта (поиск и список всех проектов слева) ----------
 function renderProduction(){
   renderProjectFocus();
-  if (isInfo() && !GUEST && infoBoard() && projById(ui.prodProject) === infoBoard()) app.insertAdjacentHTML('afterbegin', flowPanelHtml(infoBoard()));
+  const p = infoBoard();
+  if (!isInfo() || GUEST || !p || projById(ui.prodProject) !== p) return;
+  app.insertAdjacentHTML('afterbegin', flowPanelHtml(p));
+  if (ui.infoMode === 'timeline'){ const b = app.querySelector('.pf-board'); if (b) b.outerHTML = timelineHtml(p); }
 }
+// ---------- Инфобизнес: таймлайн — все задачи доски на одной шкале времени ----------
+// Строка — этап, точка — задача в день её срока (t.due_date или x.due_date). Стрелки — связи этапов (p.flow):
+// от последнего срока этапа-источника к первому сроку зависимого. Красное — просрочено, зелёное — сделано, линия — сегодня.
+const TL_DW = 34, TL_ROW = 30;
+function timelineHtml(p){
+  const st = flowState(p); const list = [...st.values()]; const t0 = today();
+  const dated = list.flatMap(v => v.items.filter(i => i.due).map(i => i.due));
+  let from = [addDays(t0, -7), ...dated].sort()[0], to = [addDays(t0, 21), ...dated].sort().at(-1);
+  from = addDays(from, -1); to = addDays(to, 2);
+  const nd = diffDays(to, from) + 1; const W = nd * TL_DW;
+  const xOf = d => diffDays(d, from) * TL_DW + TL_DW / 2;
+  // раскладка: в строке этапа задачи по своим дорожкам, чтобы подписи не налезали
+  let y = 0; const lanes = list.map(v => {
+    const items = v.items.filter(i => i.due).sort((a, b) => a.due.localeCompare(b.due)); const rowsEnd = [];
+    const placed = items.map(i => { const px = xOf(i.due); let r = rowsEnd.findIndex(e => e < px - 8); if (r < 0){ r = rowsEnd.length; rowsEnd.push(0); }
+      rowsEnd[r] = px + 14 + Math.min(180, i.x.name.length * 7); return { ...i, px, r }; });
+    const h = Math.max(62, Math.max(1, rowsEnd.length) * TL_ROW + 16); /* не ниже подписи этапа с плашкой */ const lane = { v, top:y, h, placed, nodate:v.items.filter(i => !i.due) }; y += h; return lane;
+  });
+  const H = y; const byId = new Map(lanes.map(l => [l.v.s.id, l]));
+  // связь: от последнего срока этапа-источника — к строке зависимого этапа (туда, где он может продолжаться после источника)
+  const lastPt = l => { const ps = l.placed; if (!ps.length) return null; const i = ps.reduce((m, q) => q.px > m.px ? q : m, ps[0]); return { x:i.px, y:l.top + 8 + i.r * TL_ROW + TL_ROW / 2 }; };
+  const arrows = lanes.flatMap(l => flowDeps(p, l.v.s).map(id => byId.get(id)).filter(Boolean).map(src => {
+    const a = lastPt(src); if (!a) return ''; const red = src.v.own === 'red';
+    const next = l.placed.filter(q => q.px >= a.x).sort((m, q) => m.px - q.px)[0];     // первая задача зависимого после источника
+    const b = next ? { x:next.px - 9, y:l.top + 8 + next.r * TL_ROW + TL_ROW / 2 } : { x:a.x + 26, y:l.top + l.h / 2 };
+    const dy = b.y - a.y;
+    return `<path d="M${a.x},${a.y + Math.sign(dy) * 8} C${a.x},${a.y + dy * 0.6} ${b.x - 24},${b.y} ${b.x},${b.y}" class="tl-arr${red ? ' red' : ''}" marker-end="url(#tlHead${red ? 'R' : ''})"/>`;
+  })).join('');
+  const days = Array.from({ length:nd }, (_, i) => addDays(from, i));
+  const head = days.map(d => { const dt = parse(d); const wk = dt.getDay() === 0 || dt.getDay() === 6;
+    return `<span class="tl-d${wk ? ' wk' : ''}${d === t0 ? ' now' : ''}" style="left:${diffDays(d, from) * TL_DW}px">${dt.getDate() === 1 || d === from ? `<em>${dt.toLocaleDateString('ru-RU', { month:'short' })}</em>` : ''}${dt.getDate()}</span>`; }).join('');
+  const shade = days.map(d => { const g = parse(d).getDay(); return g === 0 || g === 6 ? `<i class="tl-wk" style="left:${diffDays(d, from) * TL_DW}px;width:${TL_DW}px"></i>` : ''; }).join('');
+  const k = i => i.done ? 'done' : i.due < t0 ? 'red' : i.due <= addDays(t0, 1) ? 'yellow' : 'green';
+  return `<div class="tl" aria-label="Таймлайн задач">
+    <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl" style="height:${l.h}px"><b>${esc(l.v.s.name)}</b>
+      <span class="pill st-pill s-${FLOW_PILL[l.v.key][0]}">${STATUS_ICO[FLOW_PILL[l.v.key][0]]}${FLOW_PILL[l.v.key][1](l.v)}</span>
+      ${l.nodate.length ? `<small>без срока: ${l.nodate.length}</small>` : ''}</div>`).join('')}</div>
+    <div class="tl-scroll"><div class="tl-in" style="width:${W}px">
+      <div class="tl-head">${head}</div>
+      <div class="tl-body" style="height:${H}px">${shade}
+        ${lanes.map(l => `<div class="tl-lane" style="top:${l.top}px;height:${l.h}px"></div>`).join('')}
+        <i class="tl-today" style="left:${xOf(t0)}px"></i>
+        <svg class="tl-svg" width="${W}" height="${H}" aria-hidden="true"><defs>
+          <marker id="tlHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="tl-hd"/></marker>
+          <marker id="tlHeadR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="tl-hd red"/></marker></defs>${arrows}</svg>
+        ${lanes.flatMap(l => l.placed.map(i => `<button class="tl-task k-${k(i)}" data-pfsub="${l.v.s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px" title="${esc(i.x.name)} · срок ${fmt(i.due)}"><i></i><span>${esc(i.x.name)}</span></button>`)).join('')}
+      </div></div></div></div>`;
+}
+document.addEventListener('click', e => { const m = e.target.closest?.('[data-infomode]'); if (m){ ui.infoMode = m.dataset.infomode; render(); } });
 // ---------- Инфобизнес: связи этапов доски и «где срочно» ----------
 // Этапы доски — части воронки (Контент → Статья → VSL → Платный канал → Отдел продаж → Эфиры). p.flow = { этап: [этапы, от которых он зависит] };
 // нет записи — этап зависит от предыдущего. Состояние этапа — по его задачам: просрочено / срок сегодня-завтра / нет задач;
@@ -4392,26 +4507,31 @@ function flowState(p){
   st.forEach(v => { v.key = v.own === 'red' ? 'red' : v.blockedBy.length || v.own === 'yellow' ? 'yellow' : 'green'; });
   return st;
 }
+// подписи плашек: [ключ плашки, текст]
+const FLOW_PILL = { red:['red', v => !v.n ? 'Нет задач' : 'Просрочено'], yellow:['yellow', v => v.blockedBy.length && v.own !== 'yellow' ? 'Ждёт' : 'Горит'], green:['green', () => 'В графике'] };
 function flowPanelHtml(p){
   const st = flowState(p); const list = [...st.values()];
   const nm = id => esc(st.get(id)?.s.name || '');
   const why = v => !v.n ? 'нет задач' : v.over.length ? `${v.over.length} ${plural(v.over.length, 'задача просрочена', 'задачи просрочены', 'задач просрочено')}` : '';
   const urgent = list.filter(v => v.own === 'red').sort((a, b) => b.down.length - a.down.length || b.over.length - a.over.length);
   const soon = list.filter(v => v.own === 'yellow');
+  const pill = v => { const [pk, txt] = FLOW_PILL[v.key]; return `<span class="pill st-pill s-${pk}">${STATUS_ICO[pk]}${txt(v)}</span>`; };
   const node = v => `<button class="fl-node k-${v.key}" data-flgo="${v.s.id}" title="${esc(v.s.name)}">
-      <b>${esc(v.s.name)}</b><small>${v.n ? `${v.done}/${v.n} готово` : 'нет задач'}${v.over.length ? ` · просрочено ${v.over.length}` : v.soon.length ? ` · срок скоро: ${v.soon.length}` : ''}</small>
-      ${flowDeps(p, v.s).length ? `<small class="fl-from">← ${flowDeps(p, v.s).map(nm).join(', ')}</small>` : ''}</button>`;
+      <b>${esc(v.s.name)}</b>${pill(v)}
+      <small>${v.n ? `${v.done} из ${v.n} готово` : 'нет задач'}${v.over.length ? ` · просрочено ${v.over.length}` : v.soon.length ? ` · срок скоро: ${v.soon.length}` : ''}</small>
+      ${flowDeps(p, v.s).length ? `<small class="fl-from">после: ${flowDeps(p, v.s).map(nm).join(', ')}</small>` : ''}</button>`;
   return `<section class="fl" aria-label="Воронка: связи этапов">
-    <div class="fl-hd"><h2>Воронка</h2><span class="hint">${urgent.length ? `Узких мест: ${urgent.length}` : 'Всё работает'}</span>
+    <div class="fl-hd"><h2>Воронка</h2><span class="pill st-pill s-${urgent.length ? 'red' : 'green'}">${STATUS_ICO[urgent.length ? 'red' : 'green']}${urgent.length ? `Узких мест: ${urgent.length}` : 'Всё работает'}</span>
+      <span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${ui.infoMode !== 'timeline'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline'}">Таймлайн</button></span>
       <button class="ghost" data-flwedit aria-pressed="${!!ui.flowEdit}">${ICON_EDIT}Связи</button></div>
     <div class="fl-chain">${list.map((v, i) => node(v) + (i < list.length - 1 ? '<span class="fl-arr" aria-hidden="true">→</span>' : '')).join('')}</div>
     ${ui.flowEdit ? `<div class="fl-edit"><p class="hint">Отметьте, от чего зависит каждый этап: если этап-источник встал, зависимые подсветятся «ждёт».</p>
       ${list.map(v => `<div class="fl-erow"><b>${esc(v.s.name)}</b><span>зависит от:</span>${list.filter(o => o !== v).map(o => `<label class="fl-dep"><input type="checkbox" data-fldep="${v.s.id}|${o.s.id}" ${flowDeps(p, v.s).includes(o.s.id) ? 'checked' : ''}>${esc(o.s.name)}</label>`).join('')}</div>`).join('')}
       <button class="ghost" data-flreset>Как по порядку колонок</button></div>` : ''}
     ${urgent.length || soon.length ? `<div class="fl-urgent"><h3>Срочно</h3><ol>
-      ${urgent.map(v => `<li class="k-red"><button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: ${why(v)}${v.down.length ? ` → из-за этого стоят: ${v.down.map(nm).join(', ')}` : ''}
+      ${urgent.map(v => `<li class="k-red"><span class="pill st-pill s-red">${STATUS_ICO.red}${!v.n ? 'Нет задач' : 'Просрочено'}</span><button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: ${why(v)}${v.down.length ? ` → из-за этого стоят: ${v.down.map(nm).join(', ')}` : ''}
         ${v.over.length ? `<div class="fl-tasks">${v.over.slice(0, 4).map(i => `<button class="fl-task" data-pfsub="${v.s.id}|${i.x.id}">${esc(i.x.name)} <small>срок ${fmt(i.due)}</small></button>`).join('')}</div>` : ''}</li>`).join('')}
-      ${soon.map(v => `<li class="k-yellow"><button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: срок сегодня или завтра — ${v.soon.map(i => esc(i.x.name)).slice(0, 3).join(', ')}</li>`).join('')}
+      ${soon.map(v => `<li class="k-yellow"><span class="pill st-pill s-yellow">${STATUS_ICO.yellow}Горит</span><button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: срок сегодня или завтра — ${v.soon.map(i => esc(i.x.name)).slice(0, 3).join(', ')}</li>`).join('')}
     </ol></div>` : ''}</section>`;
 }
 document.addEventListener('click', e => {

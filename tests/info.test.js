@@ -70,6 +70,20 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.deepEqual(E(`flowDeps(infoBoard(), infoBoard().stages[5])`), ['f0']); ok('связи меняются: «Эфиры» зависят от «Контента»');
   assert.ok(!E(`flowState(infoBoard()).get('f2').down.includes('f5')`)); ok('VSL больше не тормозит «Эфиры»');
   E(`ui.flowEdit = false`);
+  // таймлайн: все задачи с датой на одной шкале, связи стрелками
+  E(`ui.infoMode = 'timeline'; render()`);
+  assert.ok(D.querySelector('.tl') && !D.querySelector('.pf-board')); ok('«Таймлайн» вместо доски');
+  assert.equal(D.querySelectorAll('.tl-task').length, E(`flowState(infoBoard()) && [...flowState(infoBoard()).values()].reduce((n, v) => n + v.items.filter(i => i.due).length, 0)`)); ok('на таймлайне все задачи со сроком');
+  assert.equal(D.querySelectorAll('.tl-lbl').length, 6); ok('строка на каждый этап');
+  assert.ok(D.querySelector('.tl-task.k-red') && D.querySelector('.tl-arr.red')); ok('просроченное и связь от него — красные');
+  E(`ui.infoMode = 'board'`);
+  // этапы и подэтапы видео — из шаблона SMM-пространства
+  E(`cloud.store = cloud.store || {}; cloud.uid = cloud.uid || 'u1'; otherSpaces = () => [{ id:'s1', name:'SMM Reels', kind:'smm' }];
+    loadSpaceTemplates = async () => ({ tpls:[{ id:'tsmm', name:'SMM: видео', stages:[{ id:'a', name:'Сценарий', days:2, subs:[{ id:'a1', name:'Хук' }] }, { id:'b', name:'Съёмка', days:1, subs:[] }, { id:'c', name:'Публикация', days:1, subs:[] }] }], cards:{} });`);
+  await w.eval('syncVidTplFromSmm(true)');
+  assert.deepEqual(E('vidCols().map(c => c.name)'), ['Сценарий', 'Съёмка', 'Публикация']); ok('этапы видео — как в шаблоне SMM-пространства');
+  E(`addContent('Рилс', 3, today()); ui.view = 'content'; ui.ctMode = 'board'; render()`);
+  assert.ok(/Хук/.test(D.querySelector('.ct-subs')?.textContent || '')); ok('подэтапы этапа SMM — на карточке видео');
   E(`db.prefs.kind = 'agency'; render()`);
   assert.ok(!D.querySelector('.tabs [data-view="matrix"]').hidden); ok('в агентстве матрица на месте');
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
