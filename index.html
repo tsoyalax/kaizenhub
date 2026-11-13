@@ -1138,6 +1138,8 @@ body[data-kind="info"] .pf{grid-template-columns:minmax(0,1fr)}
 body[data-kind="info"] :is(.pf-list,.pf-select,#newBtn,.pm-cnt,.pm-nav>.icon-btn:first-child,.pm-nav>.icon-btn:last-child){display:none!important}
 body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ct-wk{margin-top:14px}
+.ai-key-row input{flex:1;min-width:0;height:40px}
+.ai-key-act{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
 .ct-kpi-ed{display:grid;gap:10px}
 .ct-kpi-ed > .ct-f input,.ct-kpi-w input{height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 10px;font:inherit;font-size:14px;width:120px}
 .ct-kpi-w{display:flex;flex-wrap:wrap;gap:10px}
@@ -5311,9 +5313,39 @@ document.addEventListener('click', e => {
 });
 
 // ---------- Шаблоны ----------
+// ---------- Настройки → AI: свой ключ Anthropic ----------
+// Ключ хранится только в этом браузере (localStorage AI_KEY_LS) — не в облаке и не в коде; claude-shim.js отправляет его
+// заголовком x-anthropic-key нашей функции /api/sample, она использует его вместо ключа из Vercel. Без своего ключа — ключ сервера.
+const AI_KEY_LS = 'kz-anthropic-key';
+const aiKey = () => { try { return localStorage.getItem(AI_KEY_LS) || ''; } catch(e) { return ''; } };
+const aiKeyOk = k => /^sk-ant-[A-Za-z0-9_\-]{20,300}$/.test(k);
+function renderAiSettings(){
+  const k = aiKey();
+  app.innerHTML = `${setNav()}<div class="panel set-panel">
+    <h2>AI: ключ Anthropic</h2>
+    <p class="hint">Ключ нужен для AI-воронки, AI-отчётов и распознавания скриншотов. Хранится только в этом браузере: в облако и другим людям не передаётся, на сервер уходит только вместе с запросом к Claude. На другом устройстве ключ нужно ввести заново.</p>
+    <div class="field"><label for="aiKeyIn">Ключ</label>
+      <div class="row ai-key-row"><input type="password" id="aiKeyIn" placeholder="${k ? 'Ключ сохранён: ' + k.slice(0, 10) + '…' + k.slice(-4) : 'sk-ant-…'}" autocomplete="off" spellcheck="false">
+        <button class="primary" id="aiKeySave">Сохранить</button></div>
+      <small class="hint">Создать ключ: console.anthropic.com → API Keys. Запросы оплачиваются с вашего аккаунта Anthropic.</small></div>
+    <div class="row ai-key-act">${k ? '<span class="pill st-pill s-green">' + STATUS_ICO.green + 'Свой ключ задан</span><button class="ghost" id="aiKeyTest">Проверить ключ</button><button class="ghost danger" id="aiKeyDel">Удалить ключ</button>' : '<span class="pill st-pill s-gray">' + STATUS_ICO.gray + 'Используется ключ сервера (если задан)</span>'}</div>
+    <p class="hint" id="aiKeyMsg" aria-live="polite"></p></div>`;
+}
+document.addEventListener('click', async e => {
+  const id = e.target.id;
+  if (id === 'aiKeySave'){ const v = $('#aiKeyIn').value.trim(); if (!v) return toast('Вставьте ключ');
+    if (!aiKeyOk(v)) return toast('Ключ Anthropic начинается с sk-ant-');
+    try { localStorage.setItem(AI_KEY_LS, v); } catch(err) { return toast('Браузер не дал сохранить ключ'); }
+    _sample = undefined; render(); toast('Ключ сохранён в этом браузере'); return; }
+  if (id === 'aiKeyDel'){ try { localStorage.removeItem(AI_KEY_LS); } catch(err) {} _sample = undefined; render(); toast('Ключ удалён'); return; }
+  if (id === 'aiKeyTest'){ const m = $('#aiKeyMsg'); m.textContent = 'Проверяю…';
+    try { const smp = await getSample(); if (!smp) throw { message:'Нужно войти в аккаунт' }; const r = await smp('Ответь одним словом: работает', { modelTier:'fast' }); m.textContent = r?.text ? 'Ключ работает ✓' : 'Ответ пустой'; }
+    catch(err) { m.textContent = sampleErr(err); } }
+});
 const setNav = () => `<div class="set-nav seg-toggle" role="tablist" aria-label="Разделы настроек">
-  <button data-settab="deadlines" aria-pressed="${!ui.setTab || ui.setTab === 'deadlines'}">Дедлайны</button><button data-settab="templates" aria-pressed="${ui.setTab === 'templates'}">Шаблоны</button><button data-settab="categories" aria-pressed="${ui.setTab === 'categories'}">Категории</button><button data-settab="spaces" aria-pressed="${ui.setTab === 'spaces'}">Пространства</button></div>`;
+  <button data-settab="deadlines" aria-pressed="${!ui.setTab || ui.setTab === 'deadlines'}">Дедлайны</button><button data-settab="templates" aria-pressed="${ui.setTab === 'templates'}">Шаблоны</button><button data-settab="categories" aria-pressed="${ui.setTab === 'categories'}">Категории</button><button data-settab="spaces" aria-pressed="${ui.setTab === 'spaces'}">Пространства</button><button data-settab="ai" aria-pressed="${ui.setTab === 'ai'}">AI</button></div>`;
 function renderSettings(){
+  if (ui.setTab === 'ai'){ renderAiSettings(); return; }
   if (ui.setTab === 'templates'){ renderTemplates(); return; }
   if (ui.setTab === 'categories'){ renderCategories(); return; }
   if (ui.setTab === 'spaces'){ renderSpaces(); return; }
@@ -6614,7 +6646,9 @@ const SAMPLE_ERR = {
   invalid_json:'Claude ответил не в том формате. Попробуйте ещё раз или пришлите скриншот крупнее.',
   images_unavailable:'Распознавание изображений сейчас недоступно. Попробуйте позже или загрузите таблицу CSV/XLSX.',
   image_rejected:'Файл не принят: подходят PNG, JPEG, WebP до 20 МБ.',
-  prompt_too_large:'Слишком много данных для одного запроса.'
+  prompt_too_large:'Слишком много данных для одного запроса.',
+  no_key:'Нет ключа Anthropic. Добавьте его в «Настройки → AI».',
+  bad_key:'Ключ Anthropic не подошёл. Проверьте его в «Настройки → AI».'
 };
 const sampleErr = e => SAMPLE_ERR[e?.code] || e?.message || 'Не удалось связаться с Claude. Попробуйте позже.';
 

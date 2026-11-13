@@ -1,5 +1,6 @@
 // Vercel-функция: проксирует запросы приложения к Claude (распознавание скриншотов, AI-резюме).
 // Ключ ANTHROPIC_API_KEY хранится только в переменных окружения Vercel, в браузер он не попадает.
+// Человек может задать свой ключ в «Настройки → AI»: он лежит только в его браузере и приходит заголовком x-anthropic-key.
 // Доступ только для вошедших в аккаунт (проверяем токен Supabase) + ограничение числа запросов.
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -43,8 +44,12 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return send(res, 405, fail('method_not_allowed', 'Только POST'));
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return send(res, 500, fail('unavailable', 'На сервере не задан ANTHROPIC_API_KEY'));
+  // свой ключ человека («Настройки → AI», приходит заголовком x-anthropic-key) — для этого запроса вместо ключа сервера.
+  // Не сохраняем и не пишем в логи.
+  const userKey = String(req.headers['x-anthropic-key'] || '').trim();
+  const ownKey = /^sk-ant-[A-Za-z0-9_\-]{20,300}$/.test(userKey);
+  const apiKey = ownKey ? userKey : process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return send(res, 400, fail('no_key', 'Нет ключа Anthropic. Добавьте его в «Настройки → AI».'));
 
   const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
   const uid = await whoIs(token);
@@ -97,6 +102,7 @@ module.exports = async (req, res) => {
   if (!r.ok) {
     let detail = ''; try { detail = (await r.json()).error.message; } catch (e) { /* ничего */ }
     console.error('Anthropic error', r.status, detail);
+    if (r.status === 401 || r.status === 403) return send(res, 400, fail(ownKey ? 'bad_key' : 'unavailable', ownKey ? 'Ключ Anthropic не подошёл. Проверьте его в «Настройки → AI».' : 'Ключ сервера не подошёл'));
     if (r.status === 429) return send(res, 429, fail('rate_limited', 'Слишком много запросов подряд. Подождите минуту.'));
     if (r.status === 413) return send(res, 413, fail('prompt_too_large', 'Слишком много данных для одного запроса'));
     if (r.status === 400 && /image/i.test(detail)) return send(res, 400, fail('image_rejected', 'Изображение не принято'));
