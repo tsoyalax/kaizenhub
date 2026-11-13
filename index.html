@@ -1287,9 +1287,8 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .tl-task.k-red span{color:var(--r)}
 @media (max-width:640px){.fl-chain{flex-direction:column}.fl-arr{transform:rotate(90deg);align-self:flex-start;margin-left:18px}.fl-node{max-width:none}.fl-hd .fl-mode{margin-left:0}.tl{grid-template-columns:110px minmax(0,1fr)}.tl-lbl{padding:0 8px}}
 .ct-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-.ct-top .ct-mode{margin-left:0}
-.ct-who{display:inline-flex;align-items:center;gap:8px;margin-left:auto;font-size:13px;color:var(--muted)}
-.ct-who select{height:34px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit;font-size:13.5px;max-width:200px}
+.ct-top .ct-mode{margin-left:auto}
+.vid-st{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:6px;font-size:11.5px;font-weight:600;background:var(--fbg,var(--surface-2));border:1px solid var(--line);color:var(--ink);vertical-align:middle}
 .ct-board{margin-bottom:16px}
 .ct-card{display:grid;gap:6px;cursor:grab}
 .ct-card .ct-open{background:none;border:0;padding:0;text-align:left;color:inherit;cursor:pointer;font:inherit}
@@ -2518,6 +2517,16 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('click', e => {
   if (e.target.closest?.('[data-ctaddx]')){ ui.ctExtra = true; const x = $('#ctExtra'); if (x) x.checked = true; $('#ctAdd')?.scrollIntoView({ behavior:'smooth', block:'center' }); $('#ctName')?.focus(); } });
+// ответственный у каждого этапа видео (колонки доски «Контента»): p.vidWho = { id этапа шаблона SMM: id человека }.
+// Ответственный видео — у кого оно сейчас на этапе; свой ответственный в карточке видео важнее.
+const vidWhoOf = (p, x) => (p?.vidWho || {})[vidCol(x)?.id] || null;
+const contentWho = (p, s, x, t) => t?.assignee_id || vidWhoOf(p, x) || s?.assignee_id || p?.worker_id || null;
+document.addEventListener('change', e => {
+  const cid = e.target.dataset?.vidwho; if (!cid) return;
+  const p = infoBoard(); const c = vidCols().find(y => y.id === cid); if (!p || !c) return;
+  p.vidWho = { ...(p.vidWho || {}), [cid]:e.target.value || null };
+  addLog(p, `Контент: на этап «${c.name}» ${e.target.value ? `назначен(а) ${nameOf(e.target.value)}` : 'никто не назначен'}`); commit();
+});
 function moveVideo(xid, colId){
   const p = infoBoard(); const s = contentStage(p); const x = s?.subs?.find(y => y.id === xid); const cs = vidCols(); const c = cs.find(y => y.id === colId);
   if (!x || !c) return;
@@ -2530,11 +2539,12 @@ function contentBoardHtml(s, items){
   const cs = vidCols(); if (!cs.length) return '<p class="hint">Нет шаблона «SMM: видео» — добавьте его в «Настройки → Шаблоны → Из другого пространства → Готовые».</p>';
   return `<div class="pf-board ct-board">${cs.map((c, ci) => { const list = items.filter(x => vidCol(x) === c);
     return `<section class="pf-col${ci === cs.length - 1 ? ' passed' : ''}" data-ctcol="${c.id}" aria-label="${esc(c.name)}">
-      <header><div><b>${ci + 1}. ${esc(c.name)}</b></div><small>${list.length} ${plural(list.length, 'видео', 'видео', 'видео')}${(c.subs || []).length ? ` · подэтапов ${c.subs.length}` : ''}</small></header>
+      <header><div><b>${ci + 1}. ${esc(c.name)}</b></div><small>${list.length} ${plural(list.length, 'видео', 'видео', 'видео')}${(c.subs || []).length ? ` · подэтапов ${c.subs.length}` : ''}</small>
+        ${GUEST ? '' : `<select class="pf-status" data-vidwho="${c.id}" aria-label="Ответственный за этап «${esc(c.name)}»">${peopleOpts((infoBoard()?.vidWho || {})[c.id] || '', 'Ответственный не назначен')}</select>`}</header>
       <div class="pf-cards">${list.map(x => { const t = taskFor(infoBoard().id, s.id, x.id);
         return `<div class="pf-card ct-card${x.done ? ' done' : ''}" draggable="true" data-ctdrag="${x.id}">
           <button class="ct-open" data-pfsub="${s.id}|${x.id}"><span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><b>${esc(x.name)}</b>${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</button>
-          <small>${x.due_date ? `публикация ${fmt(x.due_date)}` : 'без даты'}</small>${whoChip(whoId(infoBoard(), s, t))}
+          <small>${x.due_date ? `публикация ${fmt(x.due_date)}` : 'без даты'}</small>${whoChip(contentWho(infoBoard(), s, x, t))}
           ${(c.subs || []).length && !x.done ? `<div class="ct-subs">${c.subs.map(y => `<label><input type="checkbox" data-ctvs="${x.id}|${y.id}" ${x.vs?.[y.id] ? 'checked' : ''}><span>${esc(y.name)}</span></label>`).join('')}</div>` : ''}
           <select class="pf-status" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}">${cs.map(y => `<option value="${y.id}" ${y === c ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select></div>`; }).join('') || '<p class="hint">Пусто</p>'}</div></section>`; }).join('')}</div>`;
 }
@@ -2575,10 +2585,9 @@ function renderContentBody(){
   const row = x => `<li class="ct-row${x.done ? ' done' : ''}">
       <input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="Опубликовано: ${esc(x.name)}">
       <span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>
-      ${whoChip(whoId(p, s, taskFor(p.id, s.id, x.id)))}<input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
+      ${whoChip(contentWho(p, s, x, taskFor(p.id, s.id, x.id)))}<input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
   // по умолчанию — «План / Факт», доска — вторым видом
-  const ctWho = GUEST ? '' : `<label class="ct-who"><span>Ответственный за контент</span><select data-qassign="${p.id}|${s.id}" aria-label="Ответственный за контент">${peopleOpts(s.assignee_id, 'Не назначен')}</select></label>`;
-  const modeSeg = ctWho + `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode !== 'board'}">План / Факт</button><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode === 'board'}">Доска</button></span>`;
+  const modeSeg = `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode !== 'board'}">План / Факт</button><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode === 'board'}">Доска</button></span>`;
   if (ui.ctMode === 'board'){
     app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>
       <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>${modeSeg}
@@ -7470,7 +7479,7 @@ function dayProjectItems(who){
     const rows = (c.subs || []).map(x => ({ x, t:tasks.find(t => t.substage_id === x.id) || null }))
       .concat(tasks.filter(t => !t.substage_id || !(c.subs || []).some(x => x.id === t.substage_id)).map(t => ({ x:null, t })));
     rows.forEach(({ x, t }) => {
-      const w = whoId(p, c, t);
+      const w = x?.cycle && isInfoBoardP(p) ? contentWho(p, c, x, t) : whoId(p, c, t);   // видео — у кого оно сейчас на этапе
       if (p._ext){ if (!mine.includes(w)) return; }
       else if (who && w !== who) return;
       const pr = t ? taskProgress(t) : null;
@@ -8588,7 +8597,7 @@ function renderProjectFocus(mine = false){
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" ${dnd ? `draggable="true" data-pfdrag="${s.id}|${x.id}"` : ''} aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
         <b>${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
-        <small>${whoChip(whoId(p, s, t))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : `срок ${fmt(t.due_date)}`}</span>` : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
+        <small>${x.cycle && isInfoBoardP(p) && vidCol(x) ? `<span class="vid-st">${esc(vidCol(x).name)}</span>` : ''}${whoChip(x.cycle && isInfoBoardP(p) ? contentWho(p, s, x, t) : whoId(p, s, t))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : `срок ${fmt(t.due_date)}`}</span>` : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
       </button>`;
