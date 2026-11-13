@@ -1191,6 +1191,17 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .fl-node.k-idle,.fl-node.k-done{opacity:.85}
 .fl-why{color:var(--pl-b,var(--b))!important}
 .fl-sum{font-size:13px;color:var(--muted)}
+.fl-block{height:30px;border:1px dashed var(--line);border-radius:8px;background:transparent;color:var(--ink);padding:0 8px;font:inherit;font-size:12.5px;width:100%;box-sizing:border-box}
+.fl-block:focus{border-style:solid;outline:none;border-color:var(--ink)}
+.fl-node.k-paused .fl-block{border-style:solid;border-color:color-mix(in srgb,var(--b) 45%,var(--line));color:var(--pl-b,var(--b));font-weight:600}
+.fl-why-box{border-radius:14px;padding:12px 14px;display:grid;gap:6px;border:1px solid var(--line)}
+.fl-why-box.k-red{background:var(--pl-r-bg,color-mix(in srgb,var(--r) 10%,transparent));border-color:color-mix(in srgb,var(--r) 30%,transparent)}
+.fl-why-box.k-yellow{background:var(--pl-y-bg,color-mix(in srgb,var(--y) 10%,transparent));border-color:color-mix(in srgb,var(--y) 30%,transparent)}
+.fl-why-box > b{font-size:15px}
+.fl-why-box > small{color:var(--muted)}
+.fl-why-box ol{margin:4px 0 0;padding:0;list-style:none;display:grid;gap:8px;font-size:14px}
+.fl-why-box li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.fl-then{color:var(--muted)}
 .fl-goal{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border-radius:12px;background:var(--fbg,var(--surface-2));border:1px solid var(--line);font-size:13.5px}
 .fl-goal svg{width:16px;height:16px;flex:none;color:var(--brand)}
 .fl-goal input{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit;font-size:13.5px}
@@ -2603,6 +2614,15 @@ document.addEventListener('change', e => {
     toggleSub(p, s, x, e.target.checked); return; }
   if (e.target.value){ x.due_date = e.target.value; if (!x.cycle) x.cycle = e.target.value; addLog(p, `Контент: «${x.name}» — публикация ${fmt(x.due_date)}`); commit(); }
 });
+// задачи, переименованные до исправления (название менялось только в карточке задачи): карточка на доске берёт название задачи
+function syncInfoNames(){
+  let n = 0;
+  infoBoards().forEach(p => (db.tasks || []).filter(t => t.project_id === p.id && t.title).forEach(t => {
+    const x = p.stages.find(s => s.id === t.stage_id)?.subs?.find(y => y.id === t.substage_id);
+    if (x && x.name !== t.title){ x.name = t.title; n++; }
+  }));
+  if (n) save();
+}
 // доска создаётся сама, когда данные пространства уже загружены и в нём нет ни одного проекта
 function ensureInfoBoard(){
   if (!isInfo() || GUEST || !db.onboarded || (cloud.col && !cloud.ready)) return;
@@ -3673,7 +3693,7 @@ function restoreView(){
 function render(){
   if (GUEST && !guestViews().includes(ui.view)) ui.view = 'mine';
   document.body.dataset.kind = GUEST ? '' : (db?.prefs?.kind || 'agency');
-  if (isInfo() && !GUEST){ if (INFO_HIDDEN.includes(ui.view)) ui.view = 'production'; try { ensureInfoBoard(); } catch(e) {} }
+  if (isInfo() && !GUEST){ if (INFO_HIDDEN.includes(ui.view)) ui.view = 'production'; try { ensureInfoBoard(); syncInfoNames(); } catch(e) {} }
   INFO_HIDDEN.forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = isInfo() && !GUEST; });
   { const b = $('.tabs [data-view="content"]'); if (b) b.hidden = !isInfo() || GUEST; }
   if (ui.view === 'content' && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
@@ -4691,14 +4711,24 @@ function flowPanelHtml(p){
   const cnt = k => list.filter(v => (v.s.dept?.st || 'work') === k).length;
   const late = p.deadline ? list.flatMap(v => v.open.filter(i => i.due && i.due > p.deadline).map(i => ({ ...i, sid:v.s.id }))) : [];
   const soon = list.filter(v => v.own === 'yellow');
+  // вывод: последний этап воронки (от него никто не зависит) встал сам или ждёт вставший — воронка не работает
+  const sinks = list.filter(v => !list.some(o => flowDeps(p, o.s).includes(v.s.id)));
+  const stopped = v => v.own === 'red' || v.own === 'paused' || v.blockedBy.length;
+  const verdict = !urgent.length ? ['green', 'Воронка работает', 'Все отделы работают, ничего не стоит.']
+    : sinks.some(stopped) ? ['red', 'Воронка не работает', `Не доходит до конца: ${sinks.filter(stopped).map(v => `«${esc(v.s.name)}»`).join(', ')} ${sinks.filter(stopped).length > 1 ? 'стоят' : 'стоит'}.`]
+    : ['yellow', 'Работает с перебоями', 'Есть проблемы, но до конца воронки они пока не доходят.'];
+  // причина словами: что мешает (написано в отделе), нет задач, просрочено
+  const cause = v => v.own === 'paused' ? (v.s.dept.note ? esc(v.s.dept.note) : 'приостановлено') : !v.n ? 'нет задач — этап не запущен'
+    : `просрочено: ${v.over.slice(0, 3).map(i => `«${esc(i.x.name)}»`).join(', ')}${v.over.length > 3 ? ` и ещё ${v.over.length - 3}` : ''}`;
+  const chain = v => [...v.down].sort((a, b) => list.findIndex(x => x.s.id === a) - list.findIndex(x => x.s.id === b)).map(nm).join(' → ');
   const node = v => `<div class="fl-node k-${v.key}">
       <button class="fl-name" data-flgo="${v.s.id}" title="Показать на доске"><b>${esc(v.s.name)}</b></button>${flowPill(v)}
       <small>${v.n ? `${v.done} из ${v.n} готово` : 'нет задач'}${v.over.length ? ` · просрочено ${v.over.length}` : v.soon.length ? ` · срок скоро: ${v.soon.length}` : ''}</small>
-      ${v.s.dept?.st === 'pause' && v.s.dept.note ? `<small class="fl-why">${esc(v.s.dept.note)}</small>` : ''}
+      <input class="fl-block" data-flblock="${v.s.id}" value="${esc(v.s.dept?.st === 'pause' ? v.s.dept.note || '' : '')}" placeholder="Что мешает?" aria-label="Что мешает отделу «${esc(v.s.name)}»" maxlength="140">
       ${flowDeps(p, v.s).length ? `<small class="fl-from">после: ${flowDeps(p, v.s).map(nm).join(', ')}</small>` : ''}
       <select class="fl-st" data-flst="${v.s.id}" aria-label="Статус отдела «${esc(v.s.name)}»">${DEPT_ST.map(([k, l]) => `<option value="${k}" ${(v.s.dept?.st || 'work') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`;
   return `<section class="fl" aria-label="Воронка: связи этапов">
-    <div class="fl-hd"><h2>Воронка</h2><span class="pill st-pill s-${urgent.length ? 'red' : 'green'}">${STATUS_ICO[urgent.length ? 'red' : 'green']}${urgent.length ? `Узких мест: ${urgent.length}` : 'Всё работает'}</span>
+    <div class="fl-hd"><h2>Воронка</h2><span class="pill st-pill s-${verdict[0]}">${STATUS_ICO[verdict[0]]}${verdict[1]}</span>
       <span class="fl-sum">Отделы: в работе ${cnt('work')}${cnt('pause') ? ` · приостановлено ${cnt('pause')}` : ''}${cnt('idle') ? ` · не начато ${cnt('idle')}` : ''}${cnt('done') ? ` · готово ${cnt('done')}` : ''}</span>
       <span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${ui.infoMode !== 'timeline'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline'}">Таймлайн</button></span>
       <button class="ghost" data-flwedit aria-pressed="${!!ui.flowEdit}">${ICON_EDIT}Связи</button></div>
@@ -4707,11 +4737,13 @@ function flowPanelHtml(p){
     ${ui.flowEdit ? `<div class="fl-edit"><p class="hint">Отметьте, от чего зависит каждый этап: если этап-источник встал, зависимые подсветятся «ждёт».</p>
       ${list.map(v => `<div class="fl-erow"><b>${esc(v.s.name)}</b><span>зависит от:</span>${list.filter(o => o !== v).map(o => `<label class="fl-dep"><input type="checkbox" data-fldep="${v.s.id}|${o.s.id}" ${flowDeps(p, v.s).includes(o.s.id) ? 'checked' : ''}>${esc(o.s.name)}</label>`).join('')}</div>`).join('')}
       <button class="ghost" data-flreset>Как по порядку колонок</button></div>` : ''}
-    ${urgent.length || soon.length || late.length ? `<div class="fl-urgent"><h3>Срочно</h3><ol>
+    ${urgent.length ? `<div class="fl-why-box k-${verdict[0]}"><b>${verdict[1]}${urgent.length ? ', потому что:' : ''}</b><small>${verdict[2]}</small><ol>
+      ${urgent.map(v => `<li>${flowPill(v)}<button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button> — ${cause(v)}${v.down.length ? `<span class="fl-then"> → поэтому не работают: ${chain(v)}</span>` : ''}</li>`).join('')}</ol></div>` : ''}
+    ${soon.length || late.length || urgent.some(v => v.over.length) ? `<div class="fl-urgent"><h3>Срочно сделать</h3><ol>
       ${late.length ? `<li class="k-red"><span class="pill st-pill s-red">${STATUS_ICO.red}После дедлайна</span>${late.length} ${plural(late.length, 'задача заканчивается', 'задачи заканчиваются', 'задач заканчиваются')} позже, чем «${esc(goalName(p))}» (${fmt(p.deadline)})
         <div class="fl-tasks">${late.slice(0, 6).map(i => `<button class="fl-task" data-pfsub="${i.sid}|${i.x.id}">${esc(i.x.name)} <small>срок ${fmt(i.due)}</small></button>`).join('')}</div></li>` : ''}
-      ${urgent.map(v => `<li class="k-red">${flowPill(v)}<button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: ${v.own === 'paused' ? `приостановлено${v.s.dept.note ? ` — ${esc(v.s.dept.note)}` : ''}` : why(v)}${v.down.length ? ` → из-за этого стоят: ${v.down.map(nm).join(', ')}` : ''}
-        ${v.over.length ? `<div class="fl-tasks">${v.over.slice(0, 4).map(i => `<button class="fl-task" data-pfsub="${v.s.id}|${i.x.id}">${esc(i.x.name)} <small>срок ${fmt(i.due)}</small></button>`).join('')}</div>` : ''}</li>`).join('')}
+      ${urgent.filter(v => v.over.length).map(v => `<li class="k-red"><span class="pill st-pill s-red">${STATUS_ICO.red}Просрочено</span><button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: ${why(v)}
+        <div class="fl-tasks">${v.over.slice(0, 4).map(i => `<button class="fl-task" data-pfsub="${v.s.id}|${i.x.id}">${esc(i.x.name)} <small>срок ${fmt(i.due)}</small></button>`).join('')}</div></li>`).join('')}
       ${soon.map(v => `<li class="k-yellow"><span class="pill st-pill s-yellow">${STATUS_ICO.yellow}Горит</span><button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: срок сегодня или завтра — ${v.soon.map(i => esc(i.x.name)).slice(0, 3).join(', ')}</li>`).join('')}
     </ol></div>` : ''}</section>`;
 }
@@ -4732,6 +4764,17 @@ document.addEventListener('change', e => {
   const v = e.target.value; if (!v) return; const old = p.deadline; p.deadline = v;
   addLog(p, `${goalName(p)}: ${old ? fmt(old) + ' → ' : ''}${fmt(v)}`); commit(); toast(`${goalName(p)}: ${fmt(v)}`);
 });
+// «Что мешает?» на отделе: написали — отдел остановлен (приостановлено с этой причиной), стёрли — снова в работе
+document.addEventListener('change', e => {
+  const sid = e.target.dataset?.flblock; if (!sid) return;
+  const p = infoBoard(); const s = p?.stages.find(x => x.id === sid); if (!s) return;
+  const note = e.target.value.trim(); const was = s.dept?.st === 'pause';
+  if (note){ s.dept = { st:'pause', note, at:new Date().toISOString(), by:actorName() }; addLog(p, `Отдел «${s.name}»: мешает — ${note}`); }
+  else if (was){ s.dept = { st:'work', note:'', at:new Date().toISOString(), by:actorName() }; addLog(p, `Отдел «${s.name}»: помеха снята, снова в работе`); }
+  else return;
+  commit();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.dataset?.flblock) e.target.blur(); });
 // статус отдела: «Приостановлено» спрашивает причину (необязательно)
 document.addEventListener('change', e => {
   const sid = e.target.dataset?.flst; if (!sid) return;

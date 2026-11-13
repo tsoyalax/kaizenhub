@@ -85,6 +85,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   const tt = D.getElementById('tdTitle'); tt.value = 'Рилс про отзывы'; tt.dispatchEvent(new w.Event('input', { bubbles:true }));
   E('saveTaskDraft()'); await wait(20);
   assert.equal(E(`(() => { const t = taskById(ui.taskId); return projById(t.project_id).stages.find(s => s.id === t.stage_id).subs.find(x => x.id === t.substage_id).name; })()`), 'Рилс про отзывы'); ok('новое название задачи — и на карточке доски');
+  E(`(() => { const t = taskById(ui.taskId); projById(t.project_id).stages.find(s => s.id === t.stage_id).subs.find(x => x.id === t.substage_id).name = 'Старое имя'; render(); })()`);
+  assert.equal(E(`(() => { const t = taskById(ui.taskId); return projById(t.project_id).stages.find(s => s.id === t.stage_id).subs.find(x => x.id === t.substage_id).name; })()`), 'Рилс про отзывы'); ok('переименованные раньше — карточка на доске подтягивает название задачи');
   E('closeTask()');
   // связи этапов и «Срочно»: просроченный этап тормозит всех, кто от него зависит
   E(`(() => { const p = infoBoard(); const t0 = today();
@@ -93,7 +95,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     ui.view = 'production'; ui.prodProject = p.id; render(); })()`);
   const fs = E(`JSON.stringify([...flowState(infoBoard()).values()].map(v => [v.s.name, v.key]))`);
   assert.deepEqual(JSON.parse(fs), [['Контент','green'],['Статья','green'],['VSL','red'],['Платный канал','yellow'],['Отдел продаж','yellow'],['Эфиры','red']]); ok('VSL просрочен — следующие за ним ждут, этап без задач — красный');
-  assert.ok(D.querySelector('.fl') && /VSL.*из-за этого стоят: Платный канал, Отдел продаж, Эфиры/.test(D.querySelector('.fl-urgent').textContent)); ok('«Срочно» объясняет, что и из-за чего стоит');
+  assert.ok(D.querySelector('.fl') && /VSL — просрочено.*поэтому не работают: Платный канал → Отдел продаж → Эфиры/.test(D.querySelector('.fl-why-box').textContent)); ok('воронка объясняет, что и из-за чего не работает');
+  assert.ok(/Воронка не работает/.test(D.querySelector('.fl-hd').textContent)); ok('вывод: «Воронка не работает» — конец воронки стоит');
   E(`ui.flowEdit = true; render()`);
   const cbx = D.querySelector('[data-fldep="f5|f4"]'); cbx.checked = false; cbx.dispatchEvent(new w.Event('change', { bubbles:true }));
   const cby = D.querySelector('[data-fldep="f5|f0"]'); cby.checked = true; cby.dispatchEvent(new w.Event('change', { bubbles:true }));
@@ -107,9 +110,15 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.equal(E(`infoBoard().stages[1].dept.st`), 'pause'); ok('отдел приостановлен');
   assert.equal(E(`flowState(infoBoard()).get('f1').key`), 'paused'); ok('в воронке — «Приостановлено»');
   assert.ok(E(`flowState(infoBoard()).get('f2').blockedBy.includes('f1')`)); ok('зависимые ждут приостановленный отдел');
-  assert.ok(/Приостановлено.*Статья.*Ждём интервью.*из-за этого стоят/.test(D.querySelector('.fl-urgent li').textContent)); ok('«Срочно»: приостановленный — первым, с причиной');
+  assert.ok(/Приостановлено\s*Статья\s*— Ждём интервью.*поэтому не работают/.test(D.querySelector('.fl-why-box li').textContent)); ok('причины: приостановленный — первым, с тем, что мешает');
   const sel2 = D.querySelector('[data-flst="f1"]'); sel2.value = 'work'; sel2.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
   assert.notEqual(E(`flowState(infoBoard()).get('f1').key`), 'paused'); ok('снова «В работе»');
+  // «Что мешает?» прямо на отделе: написали — отдел остановлен, стёрли — снова в работе
+  const blk = D.querySelector('[data-flblock="f4"]'); blk.value = 'не хватает материалов'; blk.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
+  assert.equal(E(`infoBoard().stages[4].dept.st`), 'pause'); ok('«Что мешает?» — отдел сам становится приостановленным');
+  assert.ok(/Отдел продаж\s*— не хватает материалов/.test(D.querySelector('.fl-why-box').textContent)); ok('причина словами — в выводе воронки');
+  const blk2 = D.querySelector('[data-flblock="f4"]'); blk2.value = ''; blk2.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
+  assert.equal(E(`infoBoard().stages[4].dept.st`), 'work'); ok('стёрли — снова в работе');
   // финальный дедлайн инфоповода: название и дата, задачи после него — в «Срочно», линия на таймлайне
   const gn = D.querySelector('[data-goalname]'); gn.value = 'Открытие окна продаж'; gn.dispatchEvent(new w.Event('change', { bubbles:true }));
   const gd = D.querySelector('[data-goaldate]'); gd.value = E('addDays(today(), 5)'); gd.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
