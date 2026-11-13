@@ -1194,6 +1194,12 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .fl-node.k-idle,.fl-node.k-done{opacity:.85}
 .fl-why{color:var(--pl-b,var(--b))!important}
 .fl-sum{font-size:13px;color:var(--muted)}
+.who-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:1px 8px 1px 2px;border-radius:999px;font-size:12px;font-weight:600;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;
+  background:hsl(var(--h) 85% 93%);color:hsl(var(--h) 55% 32%)}
+.who-chip i{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;flex:none;font-style:normal;font-size:8.5px;font-weight:700;background:hsl(var(--h) 60% 50%);color:#fff}
+.who-chip.none{padding:1px 8px;background:transparent;color:var(--muted);font-weight:500;border:1px dashed var(--line)}
+:root[data-theme="dark"] .who-chip:not(.none){background:hsl(var(--h) 35% 22%);color:hsl(var(--h) 75% 80%)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .who-chip:not(.none){background:hsl(var(--h) 35% 22%);color:hsl(var(--h) 75% 80%)}}
 .fl-ai-why{color:var(--ink)!important;opacity:.75}
 .fl-ai{border-radius:14px;padding:12px 14px;display:grid;gap:8px;border:1px solid var(--line)}
 .fl-ai.empty{display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:14px}
@@ -2525,7 +2531,7 @@ function contentBoardHtml(s, items){
       <div class="pf-cards">${list.map(x => { const t = taskFor(infoBoard().id, s.id, x.id);
         return `<div class="pf-card ct-card${x.done ? ' done' : ''}" draggable="true" data-ctdrag="${x.id}">
           <button class="ct-open" data-pfsub="${s.id}|${x.id}"><span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><b>${esc(x.name)}</b>${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</button>
-          <small>${x.due_date ? `публикация ${fmt(x.due_date)}` : 'без даты'}${t?.assignee_id ? ` · ${esc(short(t.assignee_id))}` : ''}</small>
+          <small>${x.due_date ? `публикация ${fmt(x.due_date)}` : 'без даты'}${t?.assignee_id ? ` ${whoChip(t.assignee_id)}` : ''}</small>
           ${(c.subs || []).length && !x.done ? `<div class="ct-subs">${c.subs.map(y => `<label><input type="checkbox" data-ctvs="${x.id}|${y.id}" ${x.vs?.[y.id] ? 'checked' : ''}><span>${esc(y.name)}</span></label>`).join('')}</div>` : ''}
           <select class="pf-status" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}">${cs.map(y => `<option value="${y.id}" ${y === c ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select></div>`; }).join('') || '<p class="hint">Пусто</p>'}</div></section>`; }).join('')}</div>`;
 }
@@ -3264,6 +3270,14 @@ function setAssignee(p, s, id){
   addLog(p, `На этап «${s.name}» назначен(а) ${id ? nameOf(id) : 'никто'}`); commit(); assignNote(id, p);
 }
 // список людей для выбора ответственного; «не вошёл» — пока проект ему не откроется
+// ответственный на карточках — цветной плашкой: у каждого человека свой постоянный цвет (по id), «Не назначен» — серым пунктиром
+const whoHue = id => [...String(id || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % 360;
+function whoChip(id){
+  const u = id && userById(id);
+  if (!u) return '<span class="who-chip none">Не назначен</span>';
+  const nm = short(id); const ini = (u.name || 'Вы').split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toUpperCase();
+  return `<span class="who-chip" style="--h:${whoHue(id)}" title="${esc(u.name || 'Вы')}"><i aria-hidden="true">${esc(ini)}</i>${esc(nm)}</span>`;
+}
 const NEW_PERSON = '__newperson';   // пункт «+ Добавить человека…» в списках ответственных
 const peopleOpts = (val, empty) => (empty != null ? `<option value="">${esc(empty)}</option>` : '') + db.users.map(u =>
   `<option value="${u.id}" ${u.id === val ? 'selected' : ''}>${esc(u.name || 'Вы')}${u.id !== ME && !u.account_id && cloud.store ? ' (не вошёл)' : u.status === 'invited' && !cloud.store ? ' (приглашён)' : ''}</option>`).join('')
@@ -4416,7 +4430,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
       if (mine && !t) return tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<b>${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
-        <small>${esc(short(whoId(p, s, t)))}</small>
+        <small>${whoChip(whoId(p, s, t))}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}</button>`;
     }).join('');
@@ -7359,7 +7373,7 @@ function renderTaskBoard(){
       <div class="tk-top"><b>${esc(t.title)}</b>${pr.done ? '<span class="tk-ok">Выполнено</span>' : ''}</div>
       <small>${sub ? `Ведёт подэтап «${esc(sub.name)}»` : 'Отдельная задача этапа'}</small>
       <div class="tk-bar" aria-hidden="true"><i style="width:${pr.pct}%"></i></div>
-      <div class="tk-foot"><span>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</span><span>${esc(short(whoId(p, s, t)))}</span></div>
+      <div class="tk-foot"><span>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</span>${whoChip(whoId(p, s, t))}</div>
       ${t.video_url || t.result_link ? `<div class="tk-tags">${t.video_url ? '<span>видео</span>' : ''}${t.result_link ? '<span>результат сдан</span>' : ''}</div>` : ''}
     </article>`;
   };
@@ -7604,7 +7618,7 @@ function dayCard(i){
     <div class="dt-badges"><span class="dt-int">Внутренняя · ${esc(IT_CAT[t.category] || 'Другое')}</span>${t.priority === 'urgent' || t.priority === 'high' ? `<span class="dt-pri pri-${t.priority}">${FLAG}${IT_PRI[t.priority]}</span>` : ''}</div>
     <div class="dt-main"><b>${esc(t.title)}</b></div>
     ${t.description ? `<p class="dt-desc">${esc(t.description.slice(0, 140))}${t.description.length > 140 ? '…' : ''}</p>` : ''}
-    <div class="dt-meta">${t.creator_name ? `<span>от ${esc(t.creator_name)}</span>` : ''}${showWho ? `<span>→ ${esc(short(t.assignee_id))}</span>` : ''}${dueTxt(t.due_date)}
+    <div class="dt-meta">${t.creator_name ? `<span>от ${esc(t.creator_name)}</span>` : ''}${showWho ? `<span>→ ${whoChip(t.assignee_id)}</span>` : ''}${dueTxt(t.due_date)}
       <select class="dt-status st-${t.status}" data-itstatus="${t.id}" aria-label="Статус задачи «${esc(t.title)}»">${Object.entries(IT_STATUS).map(([k, v]) => `<option value="${k}" ${k === t.status ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
   </article>`;
 }
@@ -8011,7 +8025,7 @@ function renderTaskModal(focusSel){
     body = `<div class="tk-meta"><div class="tk-progress"><div class="tk-bar big"><i style="width:${pr.pct}%"></i></div>
         <span>${pr.done ? 'Подэтап выполнен' : pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Без чек-листа'}</span></div>
         ${editable && !p?._ext ? `<label class="tk-who"><span>Ответственный</span><select class="tk-as" data-tqassign="${t.id}" aria-label="Ответственный за подэтап">${peopleOpts(t.assignee_id, s?.assignee_id ? `Как у этапа: ${short(s.assignee_id)}` : 'Как у этапа: не назначен')}</select></label>`
-          : `<span class="tk-who"><span>Ответственный</span><b>${esc(short(whoId(p, s, t)) || 'не назначен')}</b></span>`}
+          : `<span class="tk-who"><span>Ответственный</span>${whoChip(whoId(p, s, t))}</span>`}
         ${dueRemindHtml(t, editable)}</div>
       <section class="tk-sec"><h3>Задание</h3>
         <div class="tk-text">${t.description ? linkify(t.description) : '<span class="hint">Описания пока нет.</span>'}</div>
@@ -8565,7 +8579,7 @@ function renderProjectFocus(mine = false){
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" ${dnd ? `draggable="true" data-pfdrag="${s.id}|${x.id}"` : ''} aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
         <b>${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
-        <small>${esc(short(whoId(p, s, t)))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : `срок ${fmt(t.due_date)}`}</span>` : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
+        <small>${whoChip(whoId(p, s, t))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : `срок ${fmt(t.due_date)}`}</span>` : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
       </button>`;
