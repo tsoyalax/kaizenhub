@@ -1233,6 +1233,8 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .tl-arr{fill:none;stroke:color-mix(in srgb,var(--muted) 70%,transparent);stroke-width:1.6;stroke-dasharray:4 3}
 .tl-arr.red{stroke:var(--r);stroke-dasharray:none;opacity:.8}
 .tl-hd{fill:color-mix(in srgb,var(--muted) 70%,transparent)}.tl-hd.red{fill:var(--r)}
+.tl-bar{position:absolute;height:22px;border-radius:11px;background:currentColor;opacity:.18;pointer-events:none}
+.tl-bar.k-red{color:var(--r)}.tl-bar.k-yellow{color:var(--y)}.tl-bar.k-green{color:var(--b)}.tl-bar.k-done{color:var(--g)}
 .tl-task{position:absolute;display:flex;align-items:center;gap:6px;height:22px;padding:0;border:0;background:none;color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
 .tl-task i{width:14px;height:14px;border-radius:50%;flex:none;border:2px solid var(--surface);box-shadow:0 0 0 1.5px currentColor;background:currentColor}
 .tl-task span{max-width:180px;overflow:hidden;text-overflow:ellipsis;background:color-mix(in srgb,var(--surface) 85%,transparent);border-radius:6px;padding:1px 4px}
@@ -2013,6 +2015,8 @@ svg.clip{width:14px;height:14px;flex:none}
 .dp-day.past{color:var(--muted)}
 .dp-day.today{box-shadow:inset 0 0 0 1.5px var(--brand);font-weight:700}
 .dp-day.on{background:var(--ink);color:var(--surface);font-weight:700}
+.dp-day.in{background:color-mix(in srgb,var(--ink) 10%,transparent);border-radius:0}
+.dp-hint{color:var(--muted);font-size:12px;text-align:center}
 .dp-times{display:grid;gap:6px;border-top:1px solid var(--line);padding-top:10px}
 .dp-times small{color:var(--muted)}
 .dp-times > div{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
@@ -2899,7 +2903,7 @@ function stampStages(){
 }
 // Карточки подэтапов тоже пишутся целиком: пункт чек-листа получает i.u при отметке/снятии, карточка — t.u при прочих правках
 const taskSig = t => JSON.stringify([t.title, t.description || '', t.assignee_id || null, t.result_link || '', t.video_url || '', t.regulation_link || '',
-  (t.checklist || []).map(i => [i.id, i.text]), (t.mats || []).map(m => [m.id, !!m.ok]), t.due_date || null, t.remind?.at || null]);
+  (t.checklist || []).map(i => [i.id, i.text]), (t.mats || []).map(m => [m.id, !!m.ok]), t.start_date || null, t.due_date || null, t.remind?.at || null]);
 function stampTasks(){
   const now = new Date().toISOString();
   [...(db.tasks || []), ...((typeof ext !== 'undefined' && ext.tasks) || [])].forEach(t => {
@@ -4564,15 +4568,16 @@ const TL_DW = 34, TL_ROW = 30;
 function timelineHtml(p){
   const st = flowState(p); const list = [...st.values()]; const t0 = today();
   const dated = list.flatMap(v => v.items.filter(i => i.due).map(i => i.due));
-  let from = [addDays(t0, -7), ...dated].sort()[0], to = [addDays(t0, 21), ...dated, ...(p.deadline ? [p.deadline] : [])].sort().at(-1);
+  const starts = list.flatMap(v => v.items.filter(i => i.start).map(i => i.start));
+  let from = [addDays(t0, -7), ...dated, ...starts].sort()[0], to = [addDays(t0, 21), ...dated, ...(p.deadline ? [p.deadline] : [])].sort().at(-1);
   from = addDays(from, -1); to = addDays(to, 2);
   const nd = diffDays(to, from) + 1; const W = nd * TL_DW;
   const xOf = d => diffDays(d, from) * TL_DW + TL_DW / 2;
   // раскладка: в строке этапа задачи по своим дорожкам, чтобы подписи не налезали
   let y = 0; const lanes = list.map(v => {
     const items = v.items.filter(i => i.due).sort((a, b) => a.due.localeCompare(b.due)); const rowsEnd = [];
-    const placed = items.map(i => { const px = xOf(i.due); let r = rowsEnd.findIndex(e => e < px - 8); if (r < 0){ r = rowsEnd.length; rowsEnd.push(0); }
-      rowsEnd[r] = px + 14 + Math.min(180, i.x.name.length * 7); return { ...i, px, r }; });
+    const placed = items.map(i => { const px = xOf(i.due), sx = i.start ? xOf(i.start) : px; let r = rowsEnd.findIndex(e => e < sx - 8); if (r < 0){ r = rowsEnd.length; rowsEnd.push(0); }
+      rowsEnd[r] = px + 14 + Math.min(180, i.x.name.length * 7); return { ...i, px, sx, r }; });
     const h = Math.max(62, Math.max(1, rowsEnd.length) * TL_ROW + 16); /* не ниже подписи этапа с плашкой */ const lane = { v, top:y, h, placed, nodate:v.items.filter(i => !i.due) }; y += h; return lane;
   });
   const H = y; const byId = new Map(lanes.map(l => [l.v.s.id, l]));
@@ -4603,7 +4608,7 @@ function timelineHtml(p){
         <svg class="tl-svg" width="${W}" height="${H}" aria-hidden="true"><defs>
           <marker id="tlHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="tl-hd"/></marker>
           <marker id="tlHeadR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="tl-hd red"/></marker></defs>${arrows}</svg>
-        ${lanes.flatMap(l => l.placed.map(i => `<button class="tl-task k-${k(i)}" data-pfsub="${l.v.s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px" title="${esc(i.x.name)} · срок ${fmt(i.due)}"><i></i><span>${esc(i.x.name)}</span></button>`)).join('')}
+        ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task k-${k(i)}" data-pfsub="${l.v.s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px" title="${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}"><i></i><span>${esc(i.x.name)}</span></button>`)).join('')}
       </div></div></div></div>`;
 }
 document.addEventListener('click', e => { const m = e.target.closest?.('[data-infomode]'); if (m){ ui.infoMode = m.dataset.infomode; render(); } });
@@ -4637,7 +4642,7 @@ const flowDeps = (p, s) => { const i = p.stages.indexOf(s); const f = p.flow?.[s
 function flowState(p){
   const t0 = today(), t1 = addDays(t0, 1);
   const st = new Map(p.stages.filter(s => !isMaint(s)).map(s => {
-    const items = (s.subs || []).map(x => { const t = taskFor(p.id, s.id, x.id); return { x, t, done:subDone(p, s, x), due:t?.due_date || x.due_date || '' }; });
+    const items = (s.subs || []).map(x => { const t = taskFor(p.id, s.id, x.id); return { x, t, done:subDone(p, s, x), due:t?.due_date || x.due_date || '', start:(t?.due_date && t?.start_date && t.start_date < t.due_date) ? t.start_date : '' }; });
     const open = items.filter(i => !i.done);
     const over = open.filter(i => i.due && i.due < t0), soon = open.filter(i => i.due && i.due >= t0 && i.due <= t1);
     return [s.id, { s, items, open, over, soon, n:items.length, done:items.length - open.length }];
@@ -8181,16 +8186,27 @@ const remTxt = at => at ? new Date(at).toLocaleString('ru-RU', { day:'numeric', 
 const taskDone = t => taskProgress(t).done || (() => { const p = projById(t.project_id); const s = p?.stages.find(x => x.id === t.stage_id); const x = s?.subs?.find(y => y.id === t.substage_id); return !!(s && x && subDone(p, s, x)); })();
 function dueRemindHtml(t, editable){
   const late = t.due_date && t.due_date < today() && !taskDone(t);
-  const dueTxt = t.due_date ? (t.due_date === today() ? 'сегодня' : t.due_date === addDays(today(), 1) ? 'завтра' : fmt(t.due_date)) : 'не задан';
+  const dueTxt = t.due_date ? rangeTxt(t.start_date, t.due_date) : 'не задан';
   return `<span class="tk-who tk-due"><span>${FLAG} Срок</span>${editable ? `<button type="button" class="dp-btn${late ? ' late' : ''}${t.due_date ? '' : ' empty'}" data-duepick="${t.id}">${dueTxt}</button>` : `<b class="${late ? 'late' : ''}">${dueTxt}</b>`}${late ? '<b class="late">просрочено</b>' : ''}</span>
     <span class="tk-who tk-due"><span>${BELL_ICO} Напомнить</span><button type="button" class="dp-btn${t.remind?.at ? '' : ' empty'}" data-rempick="${t.id}">${t.remind?.at ? remShort(t.remind.at) : 'нет'}</button></span>`;
 }
+// «13–20 нояб.», «28 нояб. – 3 дек.», один день — «сегодня» / «завтра» / «20 нояб.»
+const dayWord = d => d === today() ? 'сегодня' : d === addDays(today(), 1) ? 'завтра' : fmt(d);
+function rangeTxt(a, b){
+  if (!a || a === b) return dayWord(b);
+  const A = parse(a), B = parse(b);
+  return A.getMonth() === B.getMonth() && A.getFullYear() === B.getFullYear() ? `${A.getDate()}–${fmt(b)}` : `${fmt(a)} – ${fmt(b)}`;
+}
 const remShort = at => { const d = at.slice(0, 10), tm = at.slice(11, 16); return `${d === today() ? 'сегодня' : d === addDays(today(), 1) ? 'завтра' : fmt(d)}, ${tm}`; };
 // сохранить срок / напоминание задачи
+// v — 'YYYY-MM-DD' (один день) или 'YYYY-MM-DD|YYYY-MM-DD' (от и до); t.start_date — начало, t.due_date — конец (срок)
 function setTaskDue(t, v){
   const p = projById(t.project_id); if (!canEditProject(p)) return;
-  t.due_date = v || null; if (p) addLog(p, `Срок задачи «${t.title}»: ${t.due_date ? fmt(t.due_date) : 'снят'}`);
-  commit(); if (ui.taskId) renderTaskModal(); toast(t.due_date ? `Срок: ${fmt(t.due_date)}` : 'Срок снят');
+  const [a, b] = String(v || '').split('|'); const end = b || a || null; const start = b && a !== b ? a : null;
+  t.due_date = end; t.start_date = start;
+  const txt = end ? rangeTxt(start, end) : '';
+  if (p) addLog(p, `Срок задачи «${t.title}»: ${end ? txt : 'снят'}`);
+  commit(); if (ui.taskId) renderTaskModal(); toast(end ? `Срок: ${txt}` : 'Срок снят');
 }
 function setTaskRemind(t, at){
   const p = projById(t.project_id);
@@ -8206,8 +8222,8 @@ const DP_TIMES = ['09:00', '10:00', '12:00', '15:00', '18:00', '20:00'];
 const DP_MON = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 function openDatePick(anchor, o){
   const sel = o.value ? o.value.slice(0, 10) : '';
-  const base = parse(sel || today());
-  Object.assign(dp, { open:true, anchor, mode:o.mode, sel, time:o.value?.slice(11, 16) || '', y:base.getFullYear(), m:base.getMonth(), onPick:o.onPick, onClear:o.onClear });
+  const base = parse(o.from || sel || today());
+  Object.assign(dp, { open:true, anchor, mode:o.mode, sel, from:o.from || '', picking:'', time:o.value?.slice(11, 16) || '', y:base.getFullYear(), m:base.getMonth(), onPick:o.onPick, onClear:o.onClear });
   paintDatePick();
 }
 function closeDatePick(){ dp.open = false; $('#dpPop')?.remove(); }
@@ -8217,13 +8233,19 @@ function paintDatePick(){
   const cells = [...Array(lead).fill(''), ...Array.from({ length:nd }, (_, i) => iso(new Date(dp.y, dp.m, i + 1)))];
   const dt = dp.mode === 'datetime';
   const nowPlusH = () => { const d = new Date(Date.now() + 36e5); return `${iso(d)}T${pad(d.getHours())}:${pad(Math.floor(d.getMinutes() / 5) * 5)}`; };
+  const rg = dp.mode === 'range'; const sun = addDays(t0, (7 - parse(t0).getDay()) % 7);
   const quick = dt ? [['Через час', nowPlusH()], ['Сегодня 18:00', `${t0}T18:00`], ['Завтра 10:00', `${addDays(t0, 1)}T10:00`], ['Через неделю', `${addDays(t0, 7)}T10:00`]]
+    : rg ? [['Сегодня', t0], ['Завтра', addDays(t0, 1)], ['Эта неделя', `${t0}|${sun}`], ['Следующая неделя', `${addDays(sun, 1)}|${addDays(sun, 7)}`], ['3 дня', `${t0}|${addDays(t0, 2)}`]]
     : [['Сегодня', t0], ['Завтра', addDays(t0, 1)], ['Через 3 дня', addDays(t0, 3)], ['Через неделю', addDays(t0, 7)]];
+  // период: выбрано начало (dp.picking) — подсвечиваем; уже заданный период (dp.from…dp.sel) — тоже
+  const lo = rg ? (dp.picking || dp.from || dp.sel) : '', hi = rg ? (dp.picking ? '' : dp.sel) : '';
+  const inR = d => rg && lo && hi && d > lo && d < hi;
   document.body.insertAdjacentHTML('beforeend', `<div class="dp" id="dpPop" role="dialog" aria-label="${dt ? 'Напоминание' : 'Срок'}">
     <div class="dp-quick">${quick.map(([l, v]) => `<button type="button" data-dpq="${v}">${l}</button>`).join('')}</div>
     <div class="dp-hd"><button type="button" class="icon-btn" data-dpnav="-1" aria-label="Предыдущий месяц">‹</button><b>${DP_MON[dp.m]} ${dp.y}</b><button type="button" class="icon-btn" data-dpnav="1" aria-label="Следующий месяц">›</button></div>
     <div class="dp-grid">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d => `<span class="dp-wd">${d}</span>`).join('')}
-      ${cells.map(d => d ? `<button type="button" class="dp-day${d === t0 ? ' today' : ''}${d === dp.sel ? ' on' : ''}${d < t0 ? ' past' : ''}" data-dpday="${d}">${+d.slice(8)}</button>` : '<span></span>').join('')}</div>
+      ${cells.map(d => d ? `<button type="button" class="dp-day${d === t0 ? ' today' : ''}${d === dp.sel || (rg && (d === lo || d === hi)) ? ' on' : ''}${inR(d) ? ' in' : ''}${d < t0 ? ' past' : ''}" data-dpday="${d}">${+d.slice(8)}</button>` : '<span></span>').join('')}</div>
+    ${rg ? `<small class="dp-hint">${dp.picking ? `С ${fmt(dp.picking)} — теперь нажмите день окончания (тот же день — срок на один день)` : 'Нажмите день начала, потом день окончания'}</small>` : ''}
     ${dt ? `<div class="dp-times${dp.sel ? '' : ' off'}"><small>${dp.sel ? `${fmt(dp.sel)} — во сколько?` : 'Сначала выберите день'}</small>
       <div>${DP_TIMES.map(tm => `<button type="button" data-dptime="${tm}" ${dp.sel ? '' : 'disabled'} class="${dp.time === tm ? 'on' : ''}">${tm}</button>`).join('')}
       <input type="time" id="dpTime" value="${dp.time}" ${dp.sel ? '' : 'disabled'} aria-label="Своё время"></div></div>` : ''}
@@ -8235,13 +8257,16 @@ function paintDatePick(){
 }
 const dpDone = v => { const f = dp.onPick; closeDatePick(); f?.(v); };
 document.addEventListener('click', e => {
-  const due = e.target.closest?.('[data-duepick]'); if (due){ const t = taskById(due.dataset.duepick); if (t) openDatePick(due, { mode:'date', value:t.due_date || '', onPick:v => setTaskDue(t, v), onClear:t.due_date ? () => setTaskDue(t, '') : null }); return; }
+  const due = e.target.closest?.('[data-duepick]'); if (due){ const t = taskById(due.dataset.duepick); if (t) openDatePick(due, { mode:'range', value:t.due_date || '', from:t.start_date || '', onPick:v => setTaskDue(t, v), onClear:t.due_date ? () => setTaskDue(t, '') : null }); return; }
   const rem = e.target.closest?.('[data-rempick]'); if (rem){ const t = taskById(rem.dataset.rempick); if (t) openDatePick(rem, { mode:'datetime', value:t.remind?.at || '', onPick:v => setTaskRemind(t, v), onClear:t.remind?.at ? () => setTaskRemind(t, '') : null }); return; }
   if (!dp.open) return;
   if (!e.target.closest('#dpPop')){ closeDatePick(); return; }
   const q = e.target.closest('[data-dpq]'); if (q) return dpDone(q.dataset.dpq);
   const n = e.target.closest('[data-dpnav]'); if (n){ const d = new Date(dp.y, dp.m + +n.dataset.dpnav, 1); dp.y = d.getFullYear(); dp.m = d.getMonth(); paintDatePick(); return; }
-  const day = e.target.closest('[data-dpday]'); if (day){ if (dp.mode === 'date') return dpDone(day.dataset.dpday); dp.sel = day.dataset.dpday; paintDatePick(); return; }
+  const day = e.target.closest('[data-dpday]'); if (day){ const d = day.dataset.dpday;
+    if (dp.mode === 'date') return dpDone(d);
+    if (dp.mode === 'range'){ if (!dp.picking || d < dp.picking){ dp.picking = d; paintDatePick(); return; } return dpDone(d === dp.picking ? d : `${dp.picking}|${d}`); }
+    dp.sel = d; paintDatePick(); return; }
   const tm = e.target.closest('[data-dptime]'); if (tm && dp.sel) return dpDone(`${dp.sel}T${tm.dataset.dptime}`);
   if (e.target.closest('[data-dpclear]')){ const f = dp.onClear; closeDatePick(); f?.(); return; }
   if (e.target.closest('[data-dpclose]')) closeDatePick();
@@ -8331,7 +8356,7 @@ function renderProjectFocus(mine = false){
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" ${dnd ? `draggable="true" data-pfdrag="${s.id}|${x.id}"` : ''} aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
         <b>${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
-        <small>${esc(short(whoId(p, s, t)))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">срок ${fmt(t.due_date)}</span>` : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
+        <small>${esc(short(whoId(p, s, t)))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : `срок ${fmt(t.due_date)}`}</span>` : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
       </button>`;

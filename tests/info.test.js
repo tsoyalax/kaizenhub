@@ -50,11 +50,17 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   E(`(() => { const p = infoBoard(), s = contentStage(p), x = s.subs[3]; tasksFromSubs(p, { ...s, subs:[x] }); openTask(taskFor(p.id, s.id, x.id).id); })()`); await wait(50);
   // быстрый календарь: срок — день одним нажатием; напоминание — день, потом время
   D.querySelector('[data-duepick]').click(); assert.ok(D.getElementById('dpPop')); ok('по нажатию на «Срок» открывается календарь');
+  D.querySelector(`[data-dpday="${E('addDays(today(), 1)')}"]`).click();
+  assert.ok(D.getElementById('dpPop') && /теперь нажмите день окончания/.test(D.querySelector('.dp-hint').textContent)); ok('срок «от и до»: после первого дня — выбор окончания');
   D.querySelector(`[data-dpday="${E('addDays(today(), 3)')}"]`).click();
-  assert.equal(E('taskById(ui.taskId).due_date'), E('addDays(today(), 3)')); ok('у задачи ставится срок — нажатием на день');
+  assert.equal(E('taskById(ui.taskId).start_date'), E('addDays(today(), 1)')); assert.equal(E('taskById(ui.taskId).due_date'), E('addDays(today(), 3)')); ok('у задачи ставится срок от и до');
+  assert.ok(/–/.test(D.querySelector('[data-duepick]').textContent)); ok('на кнопке — период');
   assert.ok(!D.getElementById('dpPop')); ok('календарь закрылся сам');
   D.querySelector('[data-duepick]').click(); [...D.querySelectorAll('[data-dpq]')].find(b => b.textContent === 'Завтра').click();
   assert.equal(E('taskById(ui.taskId).due_date'), E('addDays(today(), 1)')); ok('быстрый вариант «Завтра»');
+  assert.ok(!E('taskById(ui.taskId).start_date')); ok('один день — без начала');
+  D.querySelector('[data-duepick]').click(); const d2 = E('addDays(today(), 2)'); D.querySelector(`[data-dpday="${d2}"]`).click(); D.querySelector(`[data-dpday="${d2}"]`).click();
+  assert.equal(E('taskById(ui.taskId).due_date'), d2); assert.ok(!E('taskById(ui.taskId).start_date')); ok('двойное нажатие на день — срок на один день');
   D.querySelector('[data-rempick]').click(); D.querySelector(`[data-dpday="${E('addDays(today(), 1)')}"]`).click();
   assert.ok(D.getElementById('dpPop')); ok('после дня для напоминания — выбор времени');
   D.querySelector('[data-dptime="10:00"]').click();
@@ -110,6 +116,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.equal(D.querySelectorAll('.tl-task').length, E(`flowState(infoBoard()) && [...flowState(infoBoard()).values()].reduce((n, v) => n + v.items.filter(i => i.due).length, 0)`)); ok('на таймлайне все задачи со сроком');
   assert.equal(D.querySelectorAll('.tl-lbl').length, 6); ok('строка на каждый этап');
   assert.ok(D.querySelector('.tl-task.k-red') && D.querySelector('.tl-arr.red')); ok('просроченное и связь от него — красные');
+  E(`(() => { const p = infoBoard(), s = p.stages[0], x = s.subs[0]; tasksFromSubs(p, { ...s, subs:[x] }); const t = taskFor(p.id, s.id, x.id); t.start_date = addDays(today(), 1); t.due_date = addDays(today(), 4); render(); })()`);
+  assert.ok(D.querySelector('.tl-bar')); ok('срок от и до — полосой на таймлайне');
   E(`ui.infoMode = 'board'`);
   // этапы и подэтапы видео — из шаблона SMM-пространства
   E(`cloud.store = cloud.store || {}; cloud.uid = cloud.uid || 'u1'; otherSpaces = () => [{ id:'s1', name:'SMM Reels', kind:'smm' }];
