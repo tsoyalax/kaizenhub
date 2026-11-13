@@ -65,6 +65,11 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.ok(D.getElementById('remPop')); ok('напоминание срабатывает');
   D.getElementById('remPop').querySelector('[data-remok]').click(); E('checkReminders()');
   assert.ok(!D.getElementById('remPop')); ok('одно напоминание срабатывает один раз');
+  // переименование задачи — и карточка на доске / видео в «Контенте» получает новое название
+  D.querySelector('[data-tedit]').click(); await wait(20);
+  const tt = D.getElementById('tdTitle'); tt.value = 'Рилс про отзывы'; tt.dispatchEvent(new w.Event('input', { bubbles:true }));
+  E('saveTaskDraft()'); await wait(20);
+  assert.equal(E(`(() => { const t = taskById(ui.taskId); return projById(t.project_id).stages.find(s => s.id === t.stage_id).subs.find(x => x.id === t.substage_id).name; })()`), 'Рилс про отзывы'); ok('новое название задачи — и на карточке доски');
   E('closeTask()');
   // связи этапов и «Срочно»: просроченный этап тормозит всех, кто от него зависит
   E(`(() => { const p = infoBoard(); const t0 = today();

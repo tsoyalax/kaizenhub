@@ -6397,7 +6397,8 @@ app.addEventListener('drop', e => {
 });
 
 // Пересчёт «светофора» раз в минуту
-setInterval(() => { if (!document.hidden && !layer.innerHTML && !(ui.view === 'reports' && ui.repId)) render(); }, 60000);
+// раз в минуту — свежие сроки; не пока человек печатает в поле на странице (иначе набранное пропадало)
+setInterval(() => { const ae = document.activeElement; if (!document.hidden && !layer.innerHTML && !(ui.view === 'reports' && ui.repId) && !(ae && app.contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))) render(); }, 60000);
 
 // ---------- Тема ----------
 const THEME_KEY = 'agency-theme';
@@ -7853,6 +7854,9 @@ function saveTaskDraft(){
   });
   syncTaskToSub(t); if (taskProgress(t).done) queueAutoClose(p.id);
   const subX = p.stages.find(x => x.id === t.stage_id)?.subs?.find(x => x.id === t.substage_id);
+  // новое название задачи — и у её карточки на доске (раньше менялось только в карточке задачи, на доске оставалось старое).
+  // Подэтап из шаблона агентства не переименовываем: его название задаёт шаблон (иначе синхронизация вернула бы старое)
+  if (subX && t.title && subX.name !== t.title && (isInfo() || !subX.tsub)){ addLog(p, `«${subX.name}» переименован в «${t.title}»`); subX.name = t.title; }
   let synced = 0;
   // пустая карточка шаблоном не становится — иначе она стёрла бы эту карточку во всех проектах
   const filled = !!(t.description || t.regulation_link || t.video_url || t.checklist.length || (t.blocks || []).length);
