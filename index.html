@@ -1143,6 +1143,14 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ct-add label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
 .ct-add .hint{flex-basis:100%}
 .ct-wk{margin-top:14px}
+.ct-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.ct-top .ct-mode{margin-left:auto}
+.ct-board{margin-bottom:16px}
+.ct-card{display:grid;gap:6px;cursor:grab}
+.ct-card .ct-open{background:none;border:0;padding:0;text-align:left;color:inherit;cursor:pointer;font:inherit}
+.ct-card small{color:var(--muted);font-size:12px}
+.ct-card select{width:100%}
+.pf-col.drop-on{outline:2px dashed var(--brand);outline-offset:-4px}
 .ct-wk h3{font-size:14px;margin:0 0 8px 4px}
 .ct-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .ct-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
@@ -1882,6 +1890,18 @@ svg.clip{width:14px;height:14px;flex:none}
 .tk-who{display:flex;align-items:center;gap:8px;font-size:13px}
 .tk-who > span{color:var(--muted)}
 .tk-who .tk-as{height:34px;max-width:230px}
+.tk-due input{height:34px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit;font-size:13px}
+.tk-due .late{color:var(--r);font-weight:600}
+.pf-due{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
+.pf-due.late{color:var(--r);font-weight:600}
+.pf-due svg{width:12px;height:12px}
+.tk-due svg,.rem-pop svg{width:14px;height:14px;vertical-align:-2px;flex:none}
+.tk-due > span{display:inline-flex;align-items:center;gap:4px}
+.rem-pop{position:fixed;z-index:60;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);width:min(360px,calc(100% - 32px));background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 50px rgba(10,10,14,.22);padding:14px;display:grid;gap:8px}
+.rem-pop b{font-size:15px}
+.rem-pop small{color:var(--muted)}
+.rem-pop .row{display:flex;gap:8px;justify-content:flex-end}
+@media (max-width:640px){.rem-pop{bottom:calc(env(safe-area-inset-bottom,0px) + 80px)}}
 
 /* приёмка материалов */
 .mat-acc{height:28px;padding:0 10px;font-size:12.5px;display:inline-flex;align-items:center;gap:5px}
@@ -2215,7 +2235,7 @@ function infoTemplate(){
   return { id:INFO_TPL_ID, name:'Инфобизнес: запуск', stages:[['Продукт',7],['Контент',7],['Прогрев',7],['Запуск',7],['Продажи',14],['Сопровождение',14]]
     .map(([n, d]) => ({ id:uid(), name:n, days:d, approval:false, subs:[] })) };
 }
-function ensureInfoTemplate(d){ d.templates = d.templates || []; if (!d.templates.some(t => t.id === INFO_TPL_ID)) d.templates.unshift(infoTemplate()); }
+function ensureInfoTemplate(d){ d.templates = d.templates || []; if (!d.templates.some(t => t.id === INFO_TPL_ID)) d.templates.unshift(infoTemplate()); ensureSmmTemplate(d); }   // SMM — колонки доски «Контента»
 // ---------- Инфобизнес → «Контент»: видео = карточки (подэтапы) колонки «Контент» на доске «Производства» ----------
 // Одни и те же данные: отметили видео опубликованным здесь — оно отмечено на доске, и наоборот.
 // У видео: x.name, x.due_date — дата публикации, x.cycle — старт 4-недельного цикла, x.done — опубликовано (дата — x.u).
@@ -2245,7 +2265,38 @@ function ctStats(c){
   });
   return { plan, pub, items, weeks };
 }
+// доска видео: колонки — этапы шаблона «SMM: видео» (правятся в «Настройках → Шаблоны»), у видео x.vst — id этапа шаблона.
+// Последняя колонка — «Опубликовано»: попасть в неё = отметить видео на основной доске (toggleSub), и наоборот.
+const vidTpl = () => db.templates.find(t => t.id === SMM_TPL_ID) || db.templates.find(t => /smm/i.test(t.name));
+const vidCols = () => vidTpl()?.stages || [];
+const vidCol = x => { const cs = vidCols(); if (x.done) return cs.at(-1); return cs.slice(0, -1).find(c => c.id === x.vst) || cs[0]; };
+function moveVideo(xid, colId){
+  const p = infoBoard(); const s = contentStage(p); const x = s?.subs?.find(y => y.id === xid); const cs = vidCols(); const c = cs.find(y => y.id === colId);
+  if (!x || !c) return;
+  const pub = c === cs.at(-1);
+  if (!pub) x.vst = c.id;
+  addLog(p, `Контент: «${x.name}» → «${c.name}»`);
+  if (pub !== !!x.done) toggleSub(p, s, x, pub); else commit();
+}
+function contentBoardHtml(s, items){
+  const cs = vidCols(); if (!cs.length) return '<p class="hint">Нет шаблона «SMM: видео» — добавьте его в «Настройки → Шаблоны → Из другого пространства → Готовые».</p>';
+  return `<div class="pf-board ct-board">${cs.map((c, ci) => { const list = items.filter(x => vidCol(x) === c);
+    return `<section class="pf-col${ci === cs.length - 1 ? ' passed' : ''}" data-ctcol="${c.id}" aria-label="${esc(c.name)}">
+      <header><div><b>${ci + 1}. ${esc(c.name)}</b></div><small>${list.length} ${plural(list.length, 'видео', 'видео', 'видео')}</small></header>
+      <div class="pf-cards">${list.map(x => { const t = taskFor(infoBoard().id, s.id, x.id);
+        return `<div class="pf-card ct-card${x.done ? ' done' : ''}" draggable="true" data-ctdrag="${x.id}">
+          <button class="ct-open" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}</b></button>
+          <small>${x.due_date ? `публикация ${fmt(x.due_date)}` : 'без даты'}${t?.assignee_id ? ` · ${esc(short(t.assignee_id))}` : ''}</small>
+          <select class="pf-status" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}">${cs.map(y => `<option value="${y.id}" ${y === c ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select></div>`; }).join('') || '<p class="hint">Пусто</p>'}</div></section>`; }).join('')}</div>`;
+}
+document.addEventListener('change', e => { const v = e.target.dataset?.ctmove; if (v) moveVideo(v, e.target.value); });
+document.addEventListener('dragstart', e => { const c = e.target.closest?.('[data-ctdrag]'); if (c){ e.dataTransfer.setData('text/kz-video', c.dataset.ctdrag); e.dataTransfer.effectAllowed = 'move'; } });
+document.addEventListener('dragover', e => { const col = e.target.closest?.('[data-ctcol]'); if (col && e.dataTransfer?.types?.includes('text/kz-video')){ e.preventDefault(); col.classList.add('drop-on'); } });
+document.addEventListener('dragleave', e => { const col = e.target.closest?.('[data-ctcol]'); if (col && !col.contains(e.relatedTarget)) col.classList.remove('drop-on'); });
+document.addEventListener('drop', e => { const col = e.target.closest?.('[data-ctcol]'); const id = e.dataTransfer?.getData('text/kz-video'); if (!col || !id) return; e.preventDefault(); col.classList.remove('drop-on'); moveVideo(id, col.dataset.ctcol); });
+document.addEventListener('click', e => { const m = e.target.closest?.('[data-ctmode]'); if (m){ ui.ctMode = m.dataset.ctmode; render(); } });
 function renderContent(){
+  if (!vidTpl() && !GUEST){ ensureSmmTemplate(db); save(); }
   const p = infoBoard(); const s = contentStage(p);
   if (!p || !s){ app.innerHTML = `<div class="empty">На доске нет этапа «Контент».<br>Добавьте его в «Настройки → Шаблоны → Инфобизнес: запуск» — видео будут карточками этого этапа.</div>`; return; }
   ui.prodProject = p.id;
@@ -2265,8 +2316,16 @@ function renderContent(){
       <input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="Опубликовано: ${esc(x.name)}">
       <button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>
       <input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
-  app.innerHTML = `<section class="smm-pf" aria-label="Контент: план и факт">
-    <div class="smm-hd"><h2>Контент</h2>
+  const modeSeg = `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode !== 'plan'}">Доска</button><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode === 'plan'}">План / Факт</button></span>`;
+  if (ui.ctMode !== 'plan'){
+    app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>
+      <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>${modeSeg}</div>
+      ${contentBoardHtml(s, ctItems().filter(x => x.cycle === c))}
+      <section class="smm-pf">${addForm}</section>`;
+    return;
+  }
+  app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>${modeSeg}</div><section class="smm-pf" aria-label="Контент: план и факт">
+    <div class="smm-hd"><h2>План / Факт</h2>
       <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>
       ${ui.ctEdit === c ? '' : `<button class="ghost smm-edit" data-ctedit>${ICON_EDIT}План</button>`}</div>
     ${ui.ctEdit === c ? `<form class="smm-ed" id="ctEd"><label>План на 4 недели, видео <input type="number" id="ctPlan" min="0" max="999" value="${st.plan}"></label>
@@ -2632,7 +2691,7 @@ function stampStages(){
 }
 // Карточки подэтапов тоже пишутся целиком: пункт чек-листа получает i.u при отметке/снятии, карточка — t.u при прочих правках
 const taskSig = t => JSON.stringify([t.title, t.description || '', t.assignee_id || null, t.result_link || '', t.video_url || '', t.regulation_link || '',
-  (t.checklist || []).map(i => [i.id, i.text]), (t.mats || []).map(m => [m.id, !!m.ok])]);
+  (t.checklist || []).map(i => [i.id, i.text]), (t.mats || []).map(m => [m.id, !!m.ok]), t.due_date || null, t.remind?.at || null]);
 function stampTasks(){
   const now = new Date().toISOString();
   [...(db.tasks || []), ...((typeof ext !== 'undefined' && ext.tasks) || [])].forEach(t => {
@@ -7348,7 +7407,8 @@ function renderTaskModal(focusSel){
     body = `<div class="tk-meta"><div class="tk-progress"><div class="tk-bar big"><i style="width:${pr.pct}%"></i></div>
         <span>${pr.done ? 'Подэтап выполнен' : pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Без чек-листа'}</span></div>
         ${editable && !p?._ext ? `<label class="tk-who"><span>Ответственный</span><select class="tk-as" data-tqassign="${t.id}" aria-label="Ответственный за подэтап">${peopleOpts(t.assignee_id, s?.assignee_id ? `Как у этапа: ${short(s.assignee_id)}` : 'Как у этапа: не назначен')}</select></label>`
-          : `<span class="tk-who"><span>Ответственный</span><b>${esc(short(whoId(p, s, t)) || 'не назначен')}</b></span>`}</div>
+          : `<span class="tk-who"><span>Ответственный</span><b>${esc(short(whoId(p, s, t)) || 'не назначен')}</b></span>`}
+        ${dueRemindHtml(t, editable)}</div>
       <section class="tk-sec"><h3>Задание</h3>
         <div class="tk-text">${t.description ? linkify(t.description) : '<span class="hint">Описания пока нет.</span>'}</div>
         ${reg ? `<p><a class="ghost tk-reg" href="${esc(reg)}" target="_blank" rel="noopener noreferrer">Открыть регламент ↗</a></p>` : ''}
@@ -7720,6 +7780,58 @@ document.addEventListener('change', e => {
     t.assignee_id = e.target.value || null; addLog(p, `Подэтап «${t.title}»: ответственный ${t.assignee_id ? nameOf(t.assignee_id) : 'как у этапа'}`);
     commit(); renderTaskModal(); assignNote(t.assignee_id, p); }
 });
+// ---------- Срок и напоминание у задачи (карточки подэтапа) ----------
+// t.due_date — срок; t.remind = { at:'YYYY-MM-DDTHH:MM' (местное время), by, byName } — напоминание.
+// Срабатывает на устройствах того, кто поставил, и ответственного (пока сайт или приложение открыто):
+// окошко с «Открыть» и уведомление браузера; каждое — один раз на устройстве (NSENT_KEY: rem:<задача>:<время>).
+const BELL_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+const remTxt = at => at ? new Date(at).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+const taskDone = t => taskProgress(t).done || (() => { const p = projById(t.project_id); const s = p?.stages.find(x => x.id === t.stage_id); const x = s?.subs?.find(y => y.id === t.substage_id); return !!(s && x && subDone(p, s, x)); })();
+function dueRemindHtml(t, editable){
+  const late = t.due_date && t.due_date < today() && !taskDone(t);
+  return `<span class="tk-who tk-due"><span>Срок</span>${editable ? `<input type="date" data-tdue="${t.id}" value="${esc(t.due_date || '')}" aria-label="Срок задачи">` : `<b class="${late ? 'late' : ''}">${t.due_date ? fmt(t.due_date) : 'не задан'}</b>`}${late && editable ? '<b class="late">просрочено</b>' : ''}</span>
+    <span class="tk-who tk-due"><span>${BELL_ICO} Напомнить</span><input type="datetime-local" data-tremind="${t.id}" value="${esc(t.remind?.at || '')}" aria-label="Напоминание о задаче"></span>`;
+}
+document.addEventListener('change', e => {
+  const d = e.target.dataset || {}; if (!d.tdue && !d.tremind) return;
+  const t = taskById(d.tdue || d.tremind); const p = t && projById(t.project_id); if (!t) return;
+  if (d.tdue){ if (!canEditProject(p)) return; t.due_date = e.target.value || null;
+    if (p) addLog(p, `Срок задачи «${t.title}»: ${t.due_date ? fmt(t.due_date) : 'снят'}`); commit(); renderTaskModal(); toast(t.due_date ? `Срок: ${fmt(t.due_date)}` : 'Срок снят'); return; }
+  const at = e.target.value;
+  t.remind = at ? { at, by:meKey(), byName:actorName() } : null;
+  if (p) addLog(p, `Напоминание о задаче «${t.title}»: ${at ? remTxt(at) : 'снято'}`);
+  commit(); renderTaskModal();
+  if (at && typeof Notification !== 'undefined' && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
+  toast(at ? `Напомню ${remTxt(at)}` : 'Напоминание снято');
+});
+// кому напоминать: тому, кто поставил, и ответственному за задачу
+const remindMine = t => t.remind?.at && (t.remind.by === meKey() || (() => { const p = projById(t.project_id); const s = p?.stages.find(x => x.id === t.stage_id); const w = whoId(p, s, t); return GUEST ? (p?._ext && myTeamIds(p).includes(w)) : w === ME; })());
+function checkReminders(){
+  if (typeof db === 'undefined' || !db) return;
+  const now = new Date(); const sent = readSet(NSENT_KEY()); let fired = null;
+  [...(db.tasks || []), ...ext.tasks].forEach(t => {
+    if (!remindMine(t) || new Date(t.remind.at) > now) return;
+    const key = 'rem:' + t.id + ':' + t.remind.at; if (sent.has(key)) return;
+    sent.add(key); if (new Date(t.remind.at) < now - 864e5 || taskDone(t)) return;   // старые и выполненные — молча
+    fired = t; const p = projById(t.project_id);
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') try { new Notification('Напоминание', { body:`${t.title}${p ? ` — ${p.name}` : ''}${t.due_date ? `, срок ${fmt(t.due_date)}` : ''}`, tag:'kz-rem-' + t.id }); } catch(e) {}
+  });
+  writeSet(NSENT_KEY(), sent);
+  if (fired) showReminder(fired);
+}
+function showReminder(t){
+  const p = projById(t.project_id); $('#remPop')?.remove();
+  document.body.insertAdjacentHTML('beforeend', `<div class="rem-pop" id="remPop" role="alertdialog" aria-label="Напоминание">
+    <small>${BELL_ICO} Напоминание · ${remTxt(t.remind.at)}</small><b>${esc(t.title)}</b>
+    <small>${esc(p?.name || '')}${t.due_date ? ` · срок ${fmt(t.due_date)}` : ''}</small>
+    <div class="row"><button class="ghost" data-remok>Понятно</button><button class="primary" data-remopen="${t.id}">Открыть</button></div></div>`);
+}
+document.addEventListener('click', e => {
+  if (e.target.closest?.('[data-remok]')){ $('#remPop')?.remove(); return; }
+  const o = e.target.closest?.('[data-remopen]'); if (o){ $('#remPop')?.remove(); openTask(o.dataset.remopen); }
+});
+setInterval(() => { try { checkReminders(); } catch(e) {} }, 30000);
+setTimeout(() => { try { checkReminders(); } catch(e) {} }, 4000);
 // «Мои проекты»: исполнитель сам меняет статус этапа и отмечает подэтапы без чек-листа — владелец видит это сразу
 const stageStatusSelect = (p, s) => !canEditProject(p) && s.status === 'done' ? '' : `<select class="pf-status" data-mstatus="${p.id}|${s.id}" aria-label="Статус этапа ${esc(s.name)}">${Object.entries(STATUS).filter(([k]) => canEditProject(p) || k !== 'done').map(([k,v]) => `<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('')}</select>`;
 const tickCard = (p, s, x, here) => `<label class="pf-card pf-tick${x.done ? ' done' : ''}${here ? ' here' : ''}">
@@ -7774,7 +7886,7 @@ function renderProjectFocus(mine = false){
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
         <b>${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
-        <small>${esc(short(whoId(p, s, t)))}</small>
+        <small>${esc(short(whoId(p, s, t)))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">срок ${fmt(t.due_date)}</span>` : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
       </button>`;
