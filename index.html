@@ -2223,6 +2223,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
+    <button data-view="funnel" hidden>AI-воронка</button>
     <button data-view="content" hidden>Контент</button>
     <button data-view="mytasks" id="myTasksTab">Мои задачи</button>
     <button data-view="review" id="reviewTab">Приёмка</button>
@@ -3742,8 +3743,8 @@ function render(){
   document.body.dataset.kind = GUEST ? '' : (db?.prefs?.kind || 'agency');
   if (isInfo() && !GUEST){ if (INFO_HIDDEN.includes(ui.view)) ui.view = 'production'; try { ensureInfoBoard(); syncInfoNames(); } catch(e) {} }
   INFO_HIDDEN.forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = isInfo() && !GUEST; });
-  { const b = $('.tabs [data-view="content"]'); if (b) b.hidden = !isInfo() || GUEST; }
-  if (ui.view === 'content' && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
+  ['content', 'funnel'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST; });
+  if ((ui.view === 'content' || ui.view === 'funnel') && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
   try { renderSide(); } catch(e) {}
   setTimeout(() => { try { paintReviewBadge(); } catch(e) {} }, 0);
   try { paintPhoneHead(); } catch(e) {}
@@ -3756,7 +3757,7 @@ function render(){
   renderFilters();
   const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер');
   if (!isCRM()) ui.crmStage = null;
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
   if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST && !(ui.view === 'matrix' && density() === 'funnel')) app.insertAdjacentHTML('afterbegin', crmSumHtml());
   if (ui.open) renderDrawer();
@@ -4643,10 +4644,17 @@ function renderProduction(){
   renderProjectFocus();
   const p = infoBoard();
   if (!isInfo() || GUEST || !p || projById(ui.prodProject) !== p) return;
-  app.insertAdjacentHTML('afterbegin', infoTabsHtml() + flowPanelHtml(p));
-  maybeFlowAi(p);
+  app.insertAdjacentHTML('afterbegin', infoTabsHtml() + flowPanelHtml(p, 'prod'));
   if (ui.infoMode === 'timeline'){ const b = app.querySelector('.pf-board'); if (b) b.outerHTML = timelineHtml(p); }
 }
+// раздел «AI-воронка» (только в инфобизнесе): разбор Claude, финальный дедлайн, статусы и связи отделов
+function renderFunnel(){
+  const p = infoBoard(); if (!p){ app.innerHTML = '<div class="empty">Доски пока нет</div>'; return; }
+  ui.prodProject = p.id;
+  app.innerHTML = infoTabsHtml() + flowPanelHtml(p, 'ai');
+  maybeFlowAi(p);
+}
+document.addEventListener('click', e => { const g = e.target.closest?.('[data-view-go]'); if (g){ ui.view = g.dataset.viewGo; render(); scrollTo(0, 0); } });
 // ---------- Инфобизнес: таймлайн — все задачи доски на одной шкале времени ----------
 // Строка — этап, точка — задача в день её срока (t.due_date или x.due_date). Стрелки — связи этапов (p.flow):
 // от последнего срока этапа-источника к первому сроку зависимого. Красное — просрочено, зелёное — сделано, линия — сегодня.
@@ -4751,7 +4759,9 @@ const FLOW_PILL = { red:['red', v => !v.n ? 'Нет задач' : 'Просро�
 const PAUSE_ICO = sico('<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>');
 const flowPill = v => { const [pk, txt, ico] = FLOW_PILL[v.key]; return `<span class="pill st-pill s-${pk}">${ico === 'pause' ? PAUSE_ICO : STATUS_ICO[pk]}${txt(v)}</span>`; };
 const DEPT_ST = [['work', 'В работе'], ['pause', 'Приостановлено'], ['idle', 'Не начато'], ['done', 'Готово']];
-function flowPanelHtml(p){
+// part: 'prod' — в «Производстве»: статусы отделов сверху и «Срочно сделать»; 'ai' — раздел «AI-воронка»: разбор Claude, дедлайн, связи
+function flowPanelHtml(p, part = 'prod'){
+  const full = part === 'ai';
   const st = flowState(p); const list = [...st.values()];
   const ai = p.ai?.res ? p.ai : null;
   const nm = id => esc(st.get(id)?.s.name || '');
@@ -4777,18 +4787,19 @@ function flowPanelHtml(p){
       <small>${v.n ? `${v.done} из ${v.n} готово` : 'нет задач'}${v.over.length ? ` · просрочено ${v.over.length}` : ''}</small>
       ${a?.reason ? `<small class="fl-ai-why">${esc(a.reason)}</small>` : ''}</div>`; };
   return `<section class="fl" aria-label="Воронка: связи этапов">
-    <div class="fl-hd"><h2>${ai ? 'AI-воронка' : 'Воронка'}</h2>${ai && AI_VERDICT[ai.res.verdict] ? `<span class="pill st-pill s-${AI_VERDICT[ai.res.verdict][0]}">${STATUS_ICO[AI_VERDICT[ai.res.verdict][0]]}${AI_VERDICT[ai.res.verdict][1]}</span>` : `<span class="pill st-pill s-${verdict[0]}">${STATUS_ICO[verdict[0]]}${verdict[1]}</span>`}
-      <span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${ui.infoMode !== 'timeline'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline'}">Таймлайн</button></span>
-      <button class="ghost" data-flwedit aria-pressed="${!!ui.flowEdit}">${ICON_EDIT}Связи</button></div>
-    ${goalHtml(p)}
+    <div class="fl-hd"><h2>${full ? 'AI-воронка' : 'Статусы этапов'}</h2>${ai && AI_VERDICT[ai.res.verdict] ? `<span class="pill st-pill s-${AI_VERDICT[ai.res.verdict][0]}">${STATUS_ICO[AI_VERDICT[ai.res.verdict][0]]}${AI_VERDICT[ai.res.verdict][1]}</span>` : `<span class="pill st-pill s-${verdict[0]}">${STATUS_ICO[verdict[0]]}${verdict[1]}</span>`}
+      ${full ? `<button class="ghost fl-mode" data-flwedit aria-pressed="${!!ui.flowEdit}">${ICON_EDIT}Связи</button>`
+        : `<span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${ui.infoMode !== 'timeline'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline'}">Таймлайн</button></span>
+      <button class="ghost" data-view-go="funnel">AI-разбор →</button>`}</div>
+    ${full ? goalHtml(p) : ''}
     <div class="fl-chain">${list.map((v, i) => node(v) + (i < list.length - 1 ? '<span class="fl-arr" aria-hidden="true">→</span>' : '')).join('')}</div>
-    ${ui.flowEdit ? `<div class="fl-edit"><p class="hint">Отметьте, от чего зависит каждый этап: если этап-источник встал, зависимые подсветятся «ждёт».</p>
+    ${full && ui.flowEdit ? `<div class="fl-edit"><p class="hint">Отметьте, от чего зависит каждый этап: если этап-источник встал, зависимые подсветятся «ждёт».</p>
       ${list.map(v => `<div class="fl-erow"><b>${esc(v.s.name)}</b><span>зависит от:</span>${list.filter(o => o !== v).map(o => `<label class="fl-dep"><input type="checkbox" data-fldep="${v.s.id}|${o.s.id}" ${flowDeps(p, v.s).includes(o.s.id) ? 'checked' : ''}>${esc(o.s.name)}</label>`).join('')}</div>`).join('')}
       <button class="ghost" data-flreset>Как по порядку колонок</button></div>` : ''}
-    ${aiBoxHtml(p, ai)}
-    ${!ai && urgent.length ? `<div class="fl-why-box k-${verdict[0]}"><b>${verdict[1]}${urgent.length ? ', потому что:' : ''}</b><small>${verdict[2]}</small><ol>
+    ${full ? aiBoxHtml(p, ai) : ''}
+    ${full && !ai && urgent.length ? `<div class="fl-why-box k-${verdict[0]}"><b>${verdict[1]}${urgent.length ? ', потому что:' : ''}</b><small>${verdict[2]}</small><ol>
       ${urgent.map(v => `<li>${flowPill(v)}<button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button> — ${cause(v)}${v.down.length ? `<span class="fl-then"> → поэтому не работают: ${chain(v)}</span>` : ''}</li>`).join('')}</ol></div>` : ''}
-    ${soon.length || late.length || urgent.some(v => v.over.length) ? `<div class="fl-urgent"><h3>Срочно сделать</h3><ol>
+    ${!full && (soon.length || late.length || urgent.some(v => v.over.length)) ? `<div class="fl-urgent"><h3>Срочно сделать</h3><ol>
       ${late.length ? `<li class="k-red"><span class="pill st-pill s-red">${STATUS_ICO.red}После дедлайна</span>${late.length} ${plural(late.length, 'задача заканчивается', 'задачи заканчиваются', 'задач заканчиваются')} позже, чем «${esc(goalName(p))}» (${fmt(p.deadline)})
         <div class="fl-tasks">${late.slice(0, 6).map(i => `<button class="fl-task" data-pfsub="${i.sid}|${i.x.id}">${esc(i.x.name)} <small>срок ${fmt(i.due)}</small></button>`).join('')}</div></li>` : ''}
       ${urgent.filter(v => v.over.length).map(v => `<li class="k-red"><span class="pill st-pill s-red">${STATUS_ICO.red}Просрочено</span><button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: ${why(v)}
@@ -4843,13 +4854,13 @@ const flowAi = { busy:new Set(), err:'' };
 async function runFlowAi(p, manual){
   if (!p || flowAi.busy.has(p.id)) return;
   const smp = await getSample(); if (!smp?.json){ if (manual) toast('AI-разбор доступен после входа в аккаунт'); return; }
-  flowAi.busy.add(p.id); flowAi.err = ''; if (ui.view === 'production') render();
+  flowAi.busy.add(p.id); flowAi.err = ''; if (ui.view === 'funnel' || ui.view === 'production') render();
   try {
     const data = flowAiInput(p); const res = await smp.json(FLOW_AI_PROMPT(data), { modelTier:'default' });
     if (!res || !Array.isArray(res.stages)) throw new Error('Claude ответил не в том формате');
     p.ai = { at:new Date().toISOString(), hash:flowAiHash(p), res }; addLog(p, `AI-разбор воронки: ${AI_VERDICT[res.verdict]?.[1] || 'готов'}`); save();
   } catch(e) { flowAi.err = sampleErr(e); if (manual) toast(flowAi.err); }
-  flowAi.busy.delete(p.id); if (ui.view === 'production') render();
+  flowAi.busy.delete(p.id); if (ui.view === 'funnel' || ui.view === 'production') render();
 }
 // сам — при открытии доски, если данные поменялись с прошлого разбора и прошло больше 10 минут
 function maybeFlowAi(p){
@@ -9697,6 +9708,7 @@ const MNAV = {
   matrix:['Матрица', MI('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>')],
   kanban:['Канбан', MI('<rect x="3" y="3" width="5" height="15" rx="1.5"/><rect x="10" y="3" width="5" height="10" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/>')],
   production:['Произв.', MI('<path d="M3 12h4l3-8 4 16 3-8h4"/>')],
+  funnel:['AI-воронка', MI('<path d="M3 4h18l-7 8.5V19l-4 2v-7.5Z"/><path d="M18 2.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6Z"/>')],
   content:['Контент', MI('<rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3"/>')],
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
@@ -9709,7 +9721,7 @@ const MNAV = {
   templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
 };
 const MNAV_MAIN_ALL = ['matrix', 'kanban', 'production', 'load'];
-const mnavMain = () => isInfo() ? ['production', 'content', 'mytasks', 'review'] : MNAV_MAIN_ALL;
+const mnavMain = () => isInfo() ? ['production', 'funnel', 'content', 'mytasks'] : MNAV_MAIN_ALL;
 // иконки в боковом меню (те же, что в нижнем меню телефона)
 const NAV_FULL = { production:'Производство' };
 document.querySelectorAll('.tabs [data-view]').forEach(b => { const m = MNAV[b.dataset.view]; if (m && !b.querySelector('svg')) b.insertAdjacentHTML('afterbegin', m[1]); });
