@@ -3,7 +3,7 @@ const fs = require('fs'), assert = require('assert');
 const { JSDOM, VirtualConsole } = require('jsdom');
 const { makeBackend } = require('./fake-supabase');
 const root = __dirname + '/../';
-let html = fs.readFileSync(root + 'launch/index.html', 'utf8');
+let html = fs.readFileSync(root + 'index.html', 'utf8');
 const shim = fs.readFileSync(root + 'claude-shim.js', 'utf8'), cfg = fs.readFileSync(root + 'config.js', 'utf8');
 html = html
   .replace(/<script src="https:\/\/cdn\.jsdelivr\.net[^>]*><\/script>/, '<script>/* supabase подставляется тестом */</script>')
@@ -12,7 +12,7 @@ html = html
 const wait = ms => new Promise(r => setTimeout(r, ms));
 let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
 
-function openApp(backend, userId, url = 'https://kz.test/launch/', extra, keepStorage) {
+function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) {
   const errors = [];
   const vc = new VirtualConsole();
   vc.on('jsdomError', e => errors.push(String(e.message || e).slice(0, 200)));
@@ -34,60 +34,61 @@ function openApp(backend, userId, url = 'https://kz.test/launch/', extra, keepSt
 (async () => {
   const be = makeBackend();
   const A = 'aaaaaaaa-0000-0000-0000-000000000071';
-  const o = openApp(be, A); await wait(3500);
-  const w = o.w, D = w.document, $ = s => D.querySelector(s);
+  const o = openApp(be, A); await wait(4500);
+  const w = o.w, D = w.document, $ = s => D.querySelector(s), E = x => w.eval(x);
   const fire = (el, t) => el.dispatchEvent(new w.Event(t, { bubbles: true, cancelable: true }));
+  D.getElementById('spPick')?.remove(); E(`layer.innerHTML = ''`);
   const row = () => be.rows.get(`data/users/${A}/launch/igor`)?.data?.board;
-  assert.equal($('h1').textContent, 'Воронка Игоря'); ok('отдельная страница: «Воронка Игоря»');
-  assert.equal(D.querySelectorAll('.stage').length, 8); assert.equal(D.querySelectorAll('.proj').length, 5); ok('8 этапов воронки и 5 проектов вокруг, как в артефакте');
+  const tab = D.querySelector('.tabs [data-view="launch"]');
+  assert.ok(tab && !tab.hidden && /Воронка/.test(tab.textContent)); ok('пункт «Воронка» в меню приложения');
+  const projN = E('db.projects.length');
+  tab.click(); await wait(600);
+  assert.ok($('.ln') && /Воронка Игоря/.test($('.ln-head').textContent)); ok('раздел внутри KaizenHub: «Воронка Игоря»');
+  assert.equal(D.querySelectorAll('.ln-stage').length, 8); assert.equal(D.querySelectorAll('.ln-proj').length, 5); ok('8 этапов воронки и 5 проектов вокруг');
+  assert.ok($('.ln-stage .pill.st-pill.s-yellow') && $('.ln-stage .pill.st-pill.s-green') && $('.ln-stage .pill.st-pill.s-red')); ok('статусы — плашки приложения');
   await wait(800);
-  assert.ok(row() && row().stages.length === 8); ok('воронка сохранена в аккаунте KaizenHub (data/users/<id>/launch)');
-  assert.ok(/Сохранено в KaizenHub/.test($('#sync').textContent)); ok('видно, что сохранено в KaizenHub');
-  // задача: исполнитель и сроки
-  $('[data-addtask="stage|article"]').click(); await wait(30);
-  $('#tkT1').value = 'Добавить кейсы в статью'; $('#tkWho').value = 'Юля'; $('#tkStart').value = '2026-11-20'; $('#tkDue').value = '2026-12-01';
-  $('#tkFx').checked = true; fire($('#tkForm'), 'submit'); await wait(800);
-  const t = row().stages.find(s => s.id === 'article').todo.find(x => x.t === 'Добавить кейсы в статью');
-  assert.ok(t && t.who === 'Юля' && t.due === '2026-12-01' && t.start && t.fx); ok('задача: исполнитель, начало, срок, «утверждён» — сохраняются');
-  assert.ok([...D.querySelectorAll('[data-task]')].some(b => /Добавить кейсы в статью/.test(b.textContent) && /Юля/.test(b.textContent) && /1 дек/.test(b.textContent))); ok('на карточке видно исполнителя и срок');
-  // просроченная — в колокольчике
-  const k = w.kzLaunch; const b = k.board(); b.stages[1].todo[0].due = '2020-01-01'; k.save(); k.render(); await wait(50);
-  assert.ok(!$('#bellN').hidden && +$('#bellN').textContent >= 1); ok('колокольчик считает просроченные и задачи на сегодня');
-  $('#bellBtn').click(); await wait(30);
-  assert.ok(/Просрочено/.test($('#drop').textContent) && /Докрутить новую статью/.test($('#drop').textContent)); ok('в колокольчике — список просроченного');
-  const sel = $('#bellWho'); sel.value = 'Алексей'; fire(sel, 'change'); await wait(30);
-  assert.ok(!/Докрутить новую статью/.test($('#drop').textContent)); ok('фильтр по исполнителю');
-  $('#drop [data-task]')?.click(); D.body.click(); await wait(30);
-  // напоминание
-  D.querySelector('[data-task]').click(); await wait(30);
-  const tg = [...D.querySelectorAll('.send a')].find(a => /Telegram/.test(a.textContent));
-  assert.ok(tg && /t\.me\/share/.test(tg.href) && /%D0%9D%D0%B0%D0%BF%D0%BE%D0%BC%D0%B8%D0%BD%D0%B0%D0%BD%D0%B8%D0%B5/.test(tg.href)); ok('«Напомнить исполнителю»: Telegram / WhatsApp с готовым текстом');
-  D.querySelector('[data-close]').click();
-  // отдел контента: план / факт рилсов
-  assert.ok($('#cd') && /Рилсы: план \/ факт/.test($('#cd').textContent)); ok('отдел контента: рилсы план / факт');
-  const wk = w.eval('kzLaunch.S.wk'); const before = k.weekStats(b.content, wk);
-  const plan = b.content.reels.find(x => x.st !== 'pub' && D.querySelector(`[data-rst="${x.id}|pub"]`));
-  D.querySelector(`[data-rst="${plan.id}|pub"]`).click(); await wait(50);
-  const after = k.weekStats(k.board().content, wk);
-  assert.equal(after.fact, before.fact + 1); ok('«Вышел» — факт недели растёт');
-  const f = $('#reelAdd'); f.elements.namedItem('title').value = 'Рилс про Porsche'; fire(f, 'submit'); await wait(50);
-  assert.equal(k.weekStats(k.board().content, wk).plan, after.plan + 1); ok('новый рилс добавляет в план');
-  const inp = D.querySelector(`[data-fact="${wk}|posts"]`); inp.value = '4'; fire(inp, 'change'); await wait(50);
-  assert.equal(k.board().content.facts[wk].posts, 4); ok('посты и сторис: факт по неделе вводится в таблице');
-  assert.ok(/Рилсы на этой неделе/.test(D.querySelector('.stage').textContent)); ok('на этапе «Контент» — план / факт этой недели');
-  // статус этапа и редактирование
-  const pill = D.querySelector('[data-cycle="vsl"]'); pill.click(); await wait(30);
-  assert.equal(k.board().stages.find(s => s.id === 'vsl').s, 'part'); ok('статус этапа меняется нажатием');
-  $('#editBtn').click(); await wait(30); assert.ok(D.querySelector('[data-sf="vsl|name"]')); ok('режим «Редактировать»: этапы, «есть», проекты, вопросы');
-  $('#editBtn').click(); await wait(900);
-  // новая воронка и повторное открытие — данные из аккаунта
-  w.prompt = () => 'Воронка Ромы'; D.querySelector('[data-newboard]').click(); await wait(900);
-  assert.equal(k.S.boards.length, 2); ok('можно завести ещё воронку');
-  const ids = [...be.rows.keys()].filter(p => p.startsWith(`data/users/${A}/launch/`)); assert.equal(ids.length, 2); ok('каждая воронка — свой документ');
+  assert.ok(row() && row().stages.length === 8); ok('воронка в аккаунте: data/users/<id>/launch');
+  // задача: исполнитель, начало, срок
+  $('[data-lnadd="stage|article"]').click(); await wait(30);
+  assert.ok($('#lnForm') && $('.modal')); ok('окно задачи — модалка приложения');
+  $('#lnT1').value = 'Добавить кейсы в статью'; $('#lnWho').value = 'Юля'; $('#lnStart').value = '2026-11-20'; $('#lnDue').value = '2026-12-01'; $('#lnFx').checked = true;
+  fire($('#lnForm'), 'submit'); await wait(800);
+  const t = row().stages.find(x => x.id === 'article').todo.find(x => x.t === 'Добавить кейсы в статью');
+  assert.ok(t && t.who === 'Юля' && t.start === '2026-11-20' && t.due === '2026-12-01' && t.fx); ok('исполнитель, начало и срок задачи сохраняются');
+  assert.ok([...D.querySelectorAll('[data-lntask]')].some(b => /Добавить кейсы/.test(b.textContent) && /Юля/.test(b.textContent))); ok('на этапе видно исполнителя и срок');
+  // уведомления: просрочено — в блоке «Сроки» и в колокольчике приложения
+  E(`lnBoard().stages[1].todo[0].due = '2020-01-01'; lnSave(); render();`); await wait(50);
+  assert.ok(/Просрочено/.test($('.ln-hot').textContent) && /Докрутить новую статью/.test($('.ln-hot').textContent)); ok('блок «Сроки»: просрочено и на сегодня');
+  const sel = $('[data-lnwho]'); sel.value = 'Алексей'; fire(sel, 'change'); await wait(30);
+  assert.ok(!/Докрутить новую статью/.test($('.ln-hot').textContent)); ok('фильтр сроков по исполнителю');
+  E('LN.who = ""; render(); openBell()'); await wait(30);
+  assert.ok(/Воронка: сроки/.test($('.pop').textContent) && /Докрутить новую статью/.test($('.pop').textContent)); ok('колокольчик приложения показывает сроки воронки');
+  $('.pop [data-lntask]').click(); await wait(30);
+  assert.ok($('#lnForm') && /Докрутить/.test($('#lnT1').value)); ok('из колокольчика открывается задача');
+  const tg = [...D.querySelectorAll('.send-row a')].find(a => /Telegram/.test(a.textContent));
+  assert.ok(tg && /t\.me\/share/.test(tg.href)); ok('«Напомнить исполнителю» — Telegram / WhatsApp');
+  E(`layer.innerHTML = ''`);
+  // отдел контента
+  assert.ok($('#lnCd') && /рилсы план \/ факт/.test($('#lnCd').textContent)); ok('отдел контента: рилсы план / факт');
+  const wk = E('LN.wk'); const before = E(`lnWeekStats(lnBoard().content, '${wk}')`);
+  const id = E(`lnBoard().content.reels.find(r => r.st !== 'pub' && lnInWeek(r.date, '${wk}')).id`);
+  $(`[data-lnrst="${id}|pub"]`).click(); await wait(50);
+  assert.equal(E(`lnWeekStats(lnBoard().content, '${wk}')`).fact, before.fact + 1); ok('«Вышел» — факт недели растёт');
+  const f = $('#lnReelAdd'); f.elements.namedItem('rtitle').value = 'Рилс про Porsche'; fire(f, 'submit'); await wait(50);
+  assert.equal(E(`lnWeekStats(lnBoard().content, '${wk}')`).plan, before.plan + 1); ok('новый рилс — в план');
+  const inp = $(`[data-lnfact="${wk}|posts"]`); inp.value = '4'; fire(inp, 'change'); await wait(50);
+  assert.equal(E(`lnBoard().content.facts['${wk}'].posts`), 4); ok('посты и сторис — план и факт по неделям');
+  assert.ok(/Рилсы на этой неделе/.test(D.querySelector('.ln-stage').textContent)); ok('на этапе «Контент» — план / факт недели');
+  // статус и редактирование
+  $('[data-lncycle="vsl"]').click(); await wait(30); assert.equal(E(`lnBoard().stages.find(x => x.id === 'vsl').s`), 'part'); ok('статус этапа меняется нажатием');
+  $('[data-lnedit]').click(); await wait(30); assert.ok($('[data-lnsf="vsl|name"]')); ok('«Редактировать»: этапы, «есть», проекты, вопросы');
+  $('[data-lnedit]').click(); await wait(900);
+  // проекты не тронуты, другое устройство видит воронку
+  assert.equal(E('db.projects.length'), projN); ok('проекты KaizenHub не тронуты');
   o.w.close();
-  const o2 = openApp(be, A); await wait(3500);
-  const k2 = o2.w.kzLaunch; const ig = k2.S.boards.find(x => x.id === 'igor');
-  assert.ok(ig.stages.find(s => s.id === 'article').todo.some(x => x.t === 'Добавить кейсы в статью' && x.who === 'Юля')); ok('на другом устройстве всё на месте (из аккаунта)');
+  const o2 = openApp(be, A); await wait(4500); o2.w.document.getElementById('spPick')?.remove();
+  o2.w.eval(`layer.innerHTML = ''; ui.view = 'launch'; render();`); await wait(600);
+  assert.ok(o2.w.eval(`lnBoard().stages.find(x => x.id === 'article').todo.some(x => x.t === 'Добавить кейсы в статью' && x.who === 'Юля')`)); ok('на другом устройстве всё на месте');
   assert.deepEqual([...o.errors, ...o2.errors].filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });

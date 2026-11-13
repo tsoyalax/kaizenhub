@@ -480,6 +480,61 @@ body.selecting #app{padding-bottom:90px}
 .send-btn small{color:var(--muted);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sh-link .send-row{margin:6px 0 0}
 .st-lead{display:inline-block;font-size:12px;font-weight:600;color:var(--b);background:var(--b-bg);border-radius:6px;padding:1px 7px;margin-bottom:3px}
+.ln{display:flex;flex-direction:column;gap:14px}
+.ln-acts{margin-left:auto;display:flex;gap:6px}
+.ln-head{display:flex;flex-direction:column;gap:6px}.ln-head .ln-title{margin:0;font-size:22px;font-weight:700}.ln-lead{margin:0;color:var(--muted);max-width:80ch}
+.ln-legend{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted);margin-top:4px}
+.ln-d.fx{color:var(--g)}.ln-d.pr{color:var(--y)}
+.ln-h{margin:6px 0 0;font-size:16px}.ln-h .hint{font-weight:400;font-size:13px;margin-left:6px}
+.ln-chain{display:flex;align-items:stretch;overflow-x:auto;padding-bottom:8px}
+.ln-arrow{flex:0 0 24px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.ln-stage{flex:0 0 280px;display:flex;flex-direction:column;gap:9px;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--lc,var(--line));border-radius:var(--radius);padding:14px;min-width:0}
+.ln-stage[data-s="ok"]{--lc:var(--g)}.ln-stage[data-s="part"]{--lc:var(--y)}.ln-stage[data-s="gap"]{--lc:var(--r)}
+@media (max-width:640px){.ln-stage{flex-basis:82vw}}
+.ln-sth{display:flex;justify-content:space-between;align-items:center;gap:8px}.ln-sth .pill{cursor:pointer;border:0}
+.ln-stage h3,.ln-proj h3{margin:0;font-size:15.5px}.ln-what{margin:0;font-size:13px}
+.ln-blk{display:flex;flex-direction:column;gap:4px}.ln-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.ln-todo{background:var(--surface-2);border-radius:10px;padding:8px 10px}.ln-stage:not([data-s="ok"]) .ln-todo .ln-lbl{color:var(--r)}
+.ln-have{margin:0;padding-left:18px;font-size:13px;display:grid;gap:2px}
+.ln-chk{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ln-t{display:grid;grid-template-columns:16px 1fr;gap:8px;align-items:start}.ln-t input{margin:3px 0 0;width:15px;height:15px;accent-color:var(--brand)}
+.ln-tt{background:none;border:0;padding:0;text-align:left;font:inherit;font-size:13px;color:var(--ink);cursor:pointer;display:grid;gap:1px;min-width:0}.ln-tt:hover .ln-tx{text-decoration:underline}
+.ln-t.on .ln-tx{color:var(--muted);text-decoration:line-through}
+.ln-meta{display:flex;gap:6px;flex-wrap:wrap;font-size:11.5px}.ln-meta b{color:var(--brand);font-weight:600}.ln-late{color:var(--r);font-weight:600}.ln-today{color:var(--y);font-weight:600}
+.ln-add{font-size:12.5px;align-self:flex-start}
+.ln-cmini{font-size:12.5px;text-align:left}
+.ln-metric{margin-top:auto;font-size:12.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:6px}.ln-metric b{color:var(--ink);font-weight:600}
+.ln-side{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.ln-proj{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ln-link{font-size:12.5px;font-weight:600;color:var(--c)}
+.ln-ask h3{margin:0 0 6px;font-size:15px}.ln-ask{display:flex;flex-direction:column;gap:8px;max-width:760px}
+.ln-addblk{flex:0 0 140px;min-height:120px;border:1px dashed var(--line);border-radius:var(--radius);background:none;color:var(--muted);font:inherit;cursor:pointer;margin-left:24px}.ln-side .ln-addblk{margin:0}
+.ln-in{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;padding:6px 8px}textarea.ln-in{resize:vertical;min-height:54px}.ln-h1{font-size:20px;font-weight:600}
+.ln-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ln-x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:17px;padding:0 4px}
+.ln-hot{display:flex;flex-direction:column;gap:8px}.ln-hot select,.ln-row select,.ln-row input[type=date],.ln-row input[type=number],.ln-row input:not([type]){height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;padding:0 8px}
+.ln-hotlist{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.ln-hi{flex:0 0 240px;display:grid;gap:2px;text-align:left;background:var(--surface-2);border:0;border-left:3px solid var(--line);border-radius:9px;padding:8px 10px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer}.ln-hi small{color:var(--muted);font-size:12px}
+.ln-hi.late{border-left-color:var(--r)}.ln-hi.today{border-left-color:var(--y)}.ln-hi.soon{border-left-color:var(--b)}
+.ln-cd{display:flex;flex-direction:column;gap:12px;border-top:4px solid var(--brand)}
+.ln-sh{display:flex;flex-direction:column;gap:2px}.ln-sh h3{margin:0;font-size:16px}
+.ln-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.ln-kpi{background:var(--surface-2);border-radius:10px;padding:10px 12px;display:grid;gap:3px}.ln-kpi b{font-size:21px}.ln-kpi small{color:var(--muted);font-size:12.5px}
+.ln-kpi.bad b{color:var(--r)}.ln-kpi.good b{color:var(--g)}
+.ln-bar{height:6px;border-radius:4px;background:var(--line);overflow:hidden}.ln-bar i{display:block;height:100%;background:var(--g)}
+.ln-scroll{overflow-x:auto}
+.ln-tbl{width:100%;border-collapse:collapse;font-size:13px}.ln-tbl th,.ln-tbl td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.ln-tbl th{font-size:11.5px;color:var(--muted);font-weight:600}.ln-tbl tr.cur td{background:color-mix(in srgb,var(--brand) 7%,transparent)}.ln-sum td{font-weight:600}
+.ln-tbl input{width:58px;height:28px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:inherit;font-size:12.5px;padding:0 6px}
+.ln-good{color:var(--g);font-weight:600}.ln-bad{color:var(--r);font-weight:600}
+.ln-wtabs{flex-wrap:wrap;align-self:flex-start}
+.ln-reels{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ln-reel{display:grid;grid-template-columns:110px 1fr auto auto auto;gap:8px;align-items:center;background:var(--surface-2);border-radius:9px;padding:6px 8px;font-size:13px}
+.ln-rd{font-size:12.5px;color:var(--muted)}
+.ln-rt{border:1px solid transparent;background:none;border-radius:7px;padding:4px 6px;font:inherit;font-size:13px;color:var(--ink);min-width:0;width:100%}.ln-rt:hover,.ln-rt:focus{border-color:var(--line);background:var(--surface)}
+.ln-reel .seg-toggle button.pub[aria-pressed="true"]{background:var(--g);color:#fff}
+.ln-rw{font-size:12.5px;color:var(--brand);font-weight:600}
+@media (max-width:640px){.ln-reel{grid-template-columns:76px 1fr auto}.ln-reel .seg-toggle{grid-column:2}.ln-acts{margin-left:0}}
 .lead-check{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
 .lead-check input{margin-top:3px}.lead-check span{display:grid;gap:2px}.lead-check small{color:var(--muted);font-size:12.5px}
 .td-title{font-size:18px;font-weight:600;margin:0}
@@ -2020,6 +2075,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
+    <button data-view="launch" id="launchTab">Воронка</button>
     <button data-view="mytasks" id="myTasksTab">Мои задачи</button>
     <button data-view="review" id="reviewTab">Приёмка</button>
     <button data-view="assign">Поручения</button>
@@ -3253,11 +3309,12 @@ function render(){
   document.body.dataset.view = ui.view;
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
+  { const lt = $('#launchTab'); if (lt) lt.hidden = GUEST; }
   $('#myTasksTab').hidden = false;
   renderFilters();
   const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер');
   if (!isCRM()) ui.crmStage = null;
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, launch:renderLaunch, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
   if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST && !(ui.view === 'matrix' && density() === 'funnel')) app.insertAdjacentHTML('afterbegin', crmSumHtml());
   if (ui.open) renderDrawer();
@@ -3897,6 +3954,296 @@ document.addEventListener('click', e => {
   const p = projById(b.dataset.unarch); restoreProject(p); commit(); toast(`Проект «${p.name}» снова в работе`);
 });
 document.addEventListener('input', e => { if (e.target.id !== 'archQ') return; ui.archQ = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#archQ'); q?.focus(); q?.setSelectionRange(pos, pos); });
+// ---------- Воронка запуска (раздел «Воронка» в меню): этапы воронки, проекты вокруг, задачи со сроками, отдел контента ----------
+// Отдельно от проектов и пространств: свои данные аккаунта data/users/<id>/launch/<воронка> = { board, at }; без входа — localStorage kz-launch.
+// Board = { id, title, eyebrow, lead, fxLabel, prLabel, stages:[Stage], side:[Proj], ask:[строки], askNote, content }
+// Stage = { id, name, what, s:'ok'|'part'|'gap', have:[строки], todo:[Task], metric, content (показывать план/факт контента) }
+// Task  = { id, t, who, start, due, fx (срок утверждён), rec (постоянная), done }
+// content = { start (понедельник), weeks, reelsPerWeek, postsPerWeek, storiesPerWeek, goal:{label,target,fact,by}, reels:[{id,title,date,who,st:'plan'|'shot'|'pub',pubAt}], facts:{ неделя:{postsPlan,posts,storiesPlan,stories} } }
+const lnId = () => uid().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10) || String(Date.now());
+const LN = { boards:[], cur:'', loaded:false, loading:false, mode:'local', timers:{}, writing:0, dirty:0, edit:false, wk:'', who:'' };
+const LN_KEY = 'kz-launch';
+const LN_ST = { ok:['Работает', 's-green'], part:['Частично', 's-yellow'], gap:['Не хватает', 's-red'] };
+const LT = (t, who, start, due, fx, rec) => ({ id:lnId(), t, who, start:start || null, due:due || null, fx:!!fx, rec:!!rec, done:false });
+function lnSeedIgor(){
+  const t0 = today(), w0 = mondayOf(t0);
+  const reels = []; for (let w = -1; w < 3; w++) for (let i = 0; i < 5; i++){
+    const date = addDays(w0, w * 7 + i); const past = date < t0;
+    reels.push({ id:lnId(), title:'', date, who:'Юля', st:past ? (i === 3 && w === 0 ? 'shot' : 'pub') : 'plan', pubAt:past && !(i === 3 && w === 0) ? date : null });
+  }
+  return {
+    id:'igor', title:'Воронка Игоря', eyebrow:'По созвону с Ромой · 13 ноября 2026',
+    lead:'Путь человека от контента до оплаты. По каждому этапу видно, что уже работает и чего не хватает. Главная дыра сейчас: заявки доходят до менеджера, но не покупают, потому что не хватает материалов.',
+    fxLabel:'назвал Рома', prLabel:'моё предложение',
+    stages:[
+      { id:'content', name:'Контент', what:'Рилсы и карусели в Instagram, посты в Telegram, сторис. Ведут на статью.', s:'part',
+        have:['Юля делает рилсы и весь остальной контент', 'Смыслы и идеи от Ромы'],
+        todo:[LT('Нанять автора постов и сторис стилем Игоря', 'Ты', null, '2026-11-24'), LT('5 постов и 5 сторис в неделю', 'Автор', '2026-11-24', null, false, true),
+          LT('Юля только на рилсах', 'Юля', '2026-11-24', null, false, true), LT('Озвучка и рилс от Игоря', 'Игорь', null, '2026-11-13', true),
+          LT('Рилс выходит в день плана, без переносов', 'Юля', null, null, false, true)],
+        metric:'+10 000 подписчиков к декабрю', content:true },
+      { id:'article', name:'Статья', what:'Человек читает статью и решает оставить заявку.', s:'part', have:['Новая статья выдаётся', 'Первая статья, которая продавала год'],
+        todo:[LT('Докрутить новую статью на базе первой', 'Юля', null, '2026-11-18'), LT('Согласовать с Ромой', 'Рома', null, '2026-11-19')], metric:'Конверсия статьи в кодовое слово' },
+      { id:'code', name:'Кодовое слово', what:'Человек отправляет кодовое слово, бот передаёт заявку в отдел продаж.', s:'ok', have:['Боты работают, техничка на Роме'], todo:[], metric:'Количество заявок' },
+      { id:'qual', name:'Квалификация', what:'Квалификатор проверяет, подходит ли человек.', s:'ok', have:['Квалификатор работает'], todo:[], metric:'Доля прошедших квалификацию' },
+      { id:'vsl', name:'VSL', what:'После квалификации человеку отправляют ролик: смыслы продукта и «продажа» менеджера.', s:'gap', have:['Вопросы от Алексея', 'Материалы от Прохора', 'ТЗ для Юли'],
+        todo:[LT('Игорь записывает примеры каналов, ниши, агрегаторы, связку', 'Игорь', null, '2026-11-17'), LT('Сценарий и согласование с Ромой', 'Юля', '2026-11-15', '2026-11-19'),
+          LT('Запись с Игорем и монтаж', 'Юля', '2026-11-20', '2026-11-24'), LT('Встроить отправку после квалификации', 'Алексей', null, '2026-11-25')], metric:'Доля досмотревших и записавшихся на созвон' },
+      { id:'call', name:'Созвон с менеджером', what:'Менеджер проводит созвон и продаёт.', s:'gap', have:['Менеджеры и созвоны есть', 'Заявки приходят'],
+        todo:[LT('Ответы на возражения по новому продукту', 'Алексей', null, '2026-11-25'), LT('Менеджеры знают обновлённые смыслы продукта', 'Алексей', null, '2026-11-25')], metric:'Конверсия созвона в оплату' },
+      { id:'follow', name:'Дожим после созвона', what:'Менеджер отправляет канал с примерами роликов и результатами.', s:'gap', have:['Примеры залетевших роликов у Ромы'],
+        todo:[LT('Собрать канал: ролики, цифры, результаты', 'Ты', '2026-11-16', '2026-11-22'), LT('Менеджер отправляет его после каждого созвона', 'Алексей', '2026-11-23', null, false, true)], metric:'Оплаты после дожима' },
+      { id:'pay', name:'Оплата', what:'Человек покупает основной продукт.', s:'part', have:['Обновлённый продукт', 'Продажи шли больше года'],
+        todo:[LT('План и факт по оплатам каждый день', 'Ты', '2026-11-16', null, false, true)], metric:'Оплаты, чек от $10k' }],
+    side:[
+      { id:'m', name:'Челлендж М до $100k', c:'--x2', why:'Главный инфоповод запуска. Кормит этап «Контент».', link:'→ Контент',
+        todo:[LT('Отдельный чат с М', 'Ты', '2026-11-13', '2026-11-14', true), LT('Старт челленджа в публикациях', 'Юля', null, '2026-11-14', true), LT('Ежедневная съёмка контента с М', 'М', '2026-11-15', null, false, true), LT('Пост о покупке Porsche Cayenne', 'Юля', null, '2026-12-02', true)] },
+      { id:'sales', name:'Отдел продаж', c:'--x1', why:'Закрывает этапы «Созвон» и «Дожим».', link:'→ Созвон, дожим',
+        todo:[LT('Транскрибация звонков, выгрузка базы', 'Алексей', '2026-11-13', '2026-11-20'), LT('Разбор звонков: где теряем оплаты', 'Ты', '2026-11-21', '2026-11-25'), LT('Скрипт с VSL и каналом примеров', 'Алексей', null, '2026-11-30')] },
+      { id:'live', name:'Эфиры', c:'--x4', why:'Окно продаж: всплеск заявок в воронку.', link:'→ Кодовое слово',
+        todo:[LT('Темы и даты эфиров', 'Рома', '2026-11-23', '2026-11-30'), LT('Анонсы и прогрев', 'Юля', '2026-11-23', '2026-11-30'), LT('Провести эфиры', 'Игорь', '2026-12-01', '2026-12-05', true)] },
+      { id:'p50', name:'Продукт за $50', c:'--x3', why:'Дешёвый продукт рядом с основной воронкой. Место в воронке уточнить.', link:'→ ответвление',
+        todo:[LT('Концепция: воронка из созвона с Игорем, анализ рынка', 'Ты', null, '2026-11-13', true), LT('Мини-приложение в Telegram, оплата', 'Ты', '2026-11-14', '2026-11-20'), LT('Старт продаж русской версии', 'Ты', null, '2026-11-21')] },
+      { id:'en', name:'Английская версия', c:'--x5', why:'Та же воронка на английском: соцсети М, статья, продукт за $50.', link:'→ вся воронка',
+        todo:[LT('Перевод статьи для носителей через Claude', 'Юля', '2026-11-19', '2026-11-20'), LT('Площадка для США: мини-приложение или домен .com', 'Ты', '2026-11-21', '2026-11-25'), LT('Продукт за $50 на английском', 'Ты', '2026-12-01', '2026-12-12')] }],
+    ask:['Где в воронке стоит продукт за $50: для тех, кто не прошёл квалификацию, или отдельный вход.', 'Конверсии по этапам сейчас: сколько заявок, сколько проходят квалификацию, сколько созвонов и оплат.', 'Точные даты эфиров.', 'Дедлайн VSL.'],
+    askNote:'Вопросы сначала в общий чат, Игорю только если там нет ответа.',
+    content:{ start:addDays(w0, -7), weeks:4, reelsPerWeek:5, postsPerWeek:5, storiesPerWeek:5, goal:{ label:'Подписчики', target:10000, fact:0, by:'2026-12-01' }, reels, facts:{} }
+  };
+}
+
+function lnEmpty(name, from){
+  return { id:lnId(), created:new Date().toISOString(), title:name, eyebrow:'', lead:'', fxLabel:'утверждено', prLabel:'предложение',
+    stages:(from?.stages || [{ name:'Контент' }, { name:'Статья' }, { name:'Заявка' }, { name:'Созвон' }, { name:'Оплата' }]).map((x, i) => ({ id:lnId(), name:x.name, what:x.what || '', s:'gap', have:[], todo:[], metric:x.metric || '', content:i === 0 })),
+    side:(from?.side || []).map(x => ({ id:lnId(), name:x.name, c:x.c, why:x.why || '', link:x.link || '', todo:[] })), ask:[], askNote:'',
+    content:{ start:mondayOf(today()), weeks:4, reelsPerWeek:5, postsPerWeek:5, storiesPerWeek:5, goal:{ label:'Подписчики', target:0, fact:0, by:'' }, reels:[], facts:{} } };
+}
+const lnPath = id => `data/users/${cloud.uid}/launch/${id}`;
+const lnBoard = () => LN.boards.find(b => b.id === LN.cur) || LN.boards[0];
+function lnSaveLocal(){ try { localStorage.setItem(LN_KEY, JSON.stringify({ boards:LN.boards, cur:LN.cur })); } catch(e) {} }
+function lnSave(b = lnBoard()){
+  if (!b) return; b.updated = new Date().toISOString(); lnSaveLocal();
+  if (LN.mode !== 'cloud') return;
+  clearTimeout(LN.timers[b.id]); LN.dirty++;
+  LN.timers[b.id] = setTimeout(async () => {
+    LN.writing++;
+    try { await cloud.store.doc(lnPath(b.id)).set({ board:b, at:b.updated }); } catch(e) { toast('Воронка не сохранилась — проверьте связь'); }
+    LN.writing--; LN.dirty = Math.max(0, LN.dirty - 1);
+  }, 500);
+}
+async function lnLoad(){
+  if (LN.loaded || LN.loading || GUEST) return; LN.loading = true;
+  try { const l = JSON.parse(localStorage.getItem(LN_KEY) || 'null'); if (l?.boards?.length){ LN.boards = l.boards; LN.cur = l.cur; } } catch(e) {}
+  if (cloud.store && cloud.uid){
+    try {
+      LN.mode = 'cloud'; const col = cloud.store.collection(`data/users/${cloud.uid}/launch`);
+      const remote = (await col.get()).docs.map(d => d.data()?.board).filter(Boolean);
+      if (remote.length) LN.boards = remote.sort((a, b) => String(a.created || '').localeCompare(String(b.created || '')));
+      else { if (!LN.boards.length) LN.boards = [lnSeedIgor()]; LN.boards.forEach(b => lnSave(b)); }
+      col.onSnapshot(sn => {   // правки с другого устройства
+        if (LN.writing || LN.dirty || layer.querySelector('#lnForm') || document.activeElement?.closest?.('.ln')) return;
+        const list = sn.docs.map(d => d.data()?.board).filter(Boolean).sort((a, b) => String(a.created || '').localeCompare(String(b.created || '')));
+        if (list.length && JSON.stringify(list) !== JSON.stringify(LN.boards)){ LN.boards = list; lnSaveLocal(); if (ui.view === 'launch') render(); else paintBell(); }
+      }, () => {});
+    } catch(e) { LN.mode = 'local'; }
+  }
+  if (!LN.boards.length){ LN.boards = [lnSeedIgor()]; lnSave(LN.boards[0]); }
+  if (!LN.boards.some(b => b.id === LN.cur)) LN.cur = LN.boards[0].id;
+  LN.loaded = true; LN.loading = false;
+  if (ui.view === 'launch') render(); else paintBell();
+}
+// задачи воронки: все, срочность, люди
+const lnTasks = b => [...b.stages.flatMap(x => x.todo.map(t => ({ t, where:x.name, scope:'stage', pid:x.id, b }))), ...b.side.flatMap(x => x.todo.map(t => ({ t, where:x.name, scope:'side', pid:x.id, b })))];
+const lnPeople = b => [...new Set(lnTasks(b).map(x => x.t.who).concat((b.content?.reels || []).map(r => r.who)).filter(Boolean))].sort();
+const lnUrg = t => { if (t.done || !t.due) return ''; const d = diffDays(t.due, today()); return d < 0 ? 'late' : d === 0 ? 'today' : d <= 2 ? 'soon' : ''; };
+const lnOwner = (b, scope, pid) => (scope === 'stage' ? b.stages : b.side).find(x => x.id === pid);
+const lnRange = (a, z) => a && z ? `${fmt(a)} – ${fmt(z)}` : z ? `до ${fmt(z)}` : a ? `с ${fmt(a)}` : '';
+// для колокольчика приложения: просроченные и на сегодня по всем воронкам
+function lnAlerts(){
+  if (!LN.loaded) return { late:[], today:[] };
+  const all = LN.boards.flatMap(lnTasks).filter(x => !x.t.done && x.t.due);
+  return { late:all.filter(x => lnUrg(x.t) === 'late'), today:all.filter(x => lnUrg(x.t) === 'today') };
+}
+function lnTaskLi(scope, pid, t){
+  const u = lnUrg(t); const when = t.rec ? (t.start ? `с ${fmt(t.start)} · постоянно` : 'постоянно') : lnRange(t.start, t.due) || 'без срока';
+  return `<li class="ln-t${t.done ? ' on' : ''}"><input type="checkbox" data-lndone="${scope}|${pid}|${t.id}" ${t.done ? 'checked' : ''} aria-label="Готово: ${esc(t.t)}">
+    <button class="ln-tt" data-lntask="${scope}|${pid}|${t.id}"><span class="ln-tx">${esc(t.t)}</span>
+      <span class="ln-meta">${t.who ? `<b>${esc(t.who)}</b>` : '<span class="hint">не назначено</span>'}<span class="ln-d ${t.fx ? 'fx' : 'pr'}">${esc(when)}</span>${u === 'late' ? `<span class="ln-late">просрочено ${-diffDays(t.due, today())} дн.</span>` : u === 'today' ? '<span class="ln-today">сегодня</span>' : ''}</span></button></li>`;
+}
+const lnChecklist = (scope, pid, items) => `<ul class="ln-chk">${items.map(t => lnTaskLi(scope, pid, t)).join('')}</ul><button class="link ln-add" data-lnadd="${scope}|${pid}">+ задача</button>`;
+// отдел контента: рилсы план / факт по неделям
+const lnWeeks = c => Array.from({ length:c.weeks }, (_, i) => addDays(c.start, i * 7));
+const lnInWeek = (d, w) => d && d >= w && d <= addDays(w, 6);
+function lnWeekStats(c, w){
+  const f = c.facts[w] || {};
+  return { plan:c.reels.filter(r => lnInWeek(r.date, w)).length, fact:c.reels.filter(r => r.st === 'pub' && lnInWeek(r.pubAt || r.date, w)).length,
+    posts:[f.postsPlan ?? c.postsPerWeek, f.posts || 0], stories:[f.storiesPlan ?? c.storiesPerWeek, f.stories || 0] };
+}
+function lnContentHtml(b){
+  const c = b.content, t0 = today(), ws = lnWeeks(c), cur = ws.find(w => lnInWeek(t0, w)) || ws[0];
+  if (!LN.wk || !ws.includes(LN.wk)) LN.wk = cur;
+  const all = ws.map(w => ({ w, ...lnWeekStats(c, w) })), sum = all.reduce((a, x) => ({ plan:a.plan + x.plan, fact:a.fact + x.fact }), { plan:0, fact:0 });
+  const lag = c.reels.filter(r => r.date < t0).length - c.reels.filter(r => r.st === 'pub' && r.date < t0).length;
+  const cs = lnWeekStats(c, cur), g = c.goal, gp = g.target ? Math.min(100, Math.round(g.fact / g.target * 100)) : 0;
+  const reels = c.reels.filter(r => lnInWeek(r.date, LN.wk)).sort((a, z) => a.date.localeCompare(z.date)); const ppl = lnPeople(b);
+  const tot = k => all.reduce((a, x) => [a[0] + (+x[k][0] || 0), a[1] + (+x[k][1] || 0)], [0, 0]);
+  return `<section class="panel ln-cd" id="lnCd">
+    <div class="ln-sh"><h3>Отдел контента · рилсы план / факт</h3><span class="hint">План — рилсы на дату, факт — вышедшие. Рилс выходит в день плана, без переносов.</span></div>
+    <div class="ln-kpis">
+      <div class="ln-kpi${cs.plan && cs.fact >= cs.plan ? ' good' : ''}"><b>${cs.fact} / ${cs.plan}</b><small>рилсы на этой неделе</small></div>
+      <div class="ln-kpi"><b>${sum.fact} / ${sum.plan}</b><small>за ${c.weeks} нед. с ${fmt(c.start)}</small><span class="ln-bar"><i style="width:${sum.plan ? Math.round(sum.fact / sum.plan * 100) : 0}%"></i></span></div>
+      <div class="ln-kpi ${lag > 0 ? 'bad' : 'good'}"><b>${lag > 0 ? '−' + lag : '0'}</b><small>${lag > 0 ? 'не вышли в день плана' : 'всё по плану'}</small></div>
+      <div class="ln-kpi"><b>${Number(g.fact || 0).toLocaleString('ru-RU')}${g.target ? ` / ${Number(g.target).toLocaleString('ru-RU')}` : ''}</b><small>${esc(g.label || 'Цель')}${g.by ? ` к ${fmt(g.by)}` : ''} · <button class="link" data-lngoal>изменить</button></small>${g.target ? `<span class="ln-bar"><i style="width:${gp}%"></i></span>` : ''}</div>
+    </div>
+    <div class="ln-scroll"><table class="ln-tbl"><thead><tr><th>Неделя</th><th>Рилсы план</th><th>Рилсы факт</th><th>Посты план / факт</th><th>Сторис план / факт</th></tr></thead><tbody>
+      ${all.map((x, i) => `<tr class="${x.w === cur ? 'cur' : ''}"><td>Неделя ${i + 1} <span class="hint">${fmt(x.w)} – ${fmt(addDays(x.w, 6))}</span></td><td>${x.plan}</td>
+        <td class="${x.w <= t0 ? (x.fact >= x.plan ? 'ln-good' : 'ln-bad') : ''}">${x.fact}</td>
+        <td><input type="number" min="0" data-lnfact="${x.w}|postsPlan" value="${x.posts[0]}" aria-label="Посты план"> / <input type="number" min="0" data-lnfact="${x.w}|posts" value="${x.posts[1]}" aria-label="Посты факт"></td>
+        <td><input type="number" min="0" data-lnfact="${x.w}|storiesPlan" value="${x.stories[0]}" aria-label="Сторис план"> / <input type="number" min="0" data-lnfact="${x.w}|stories" value="${x.stories[1]}" aria-label="Сторис факт"></td></tr>`).join('')}
+      <tr class="ln-sum"><td>Итого</td><td>${sum.plan}</td><td>${sum.fact}</td><td>${tot('posts').join(' / ')}</td><td>${tot('stories').join(' / ')}</td></tr></tbody></table></div>
+    <div class="ln-row"><button class="ghost" data-lnshift="-1">← Раньше</button><button class="ghost" data-lnshift="1">Позже →</button>
+      <label class="hint">старт <input type="date" data-lnstart value="${c.start}"></label><label class="hint">недель <input type="number" min="1" max="12" data-lnweeks value="${c.weeks}" style="width:60px"></label></div>
+    <div class="seg-toggle ln-wtabs" role="group" aria-label="Неделя">${ws.map((w, i) => `<button data-lnwk="${w}" aria-pressed="${w === LN.wk}">Неделя ${i + 1} · ${fmt(w)}</button>`).join('')}</div>
+    <ul class="ln-reels">${reels.map(r => { const late = r.st !== 'pub' && r.date < t0;
+      return `<li class="ln-reel"><span class="ln-rd${late ? ' ln-bad' : ''}">${fmt(r.date)}${late ? ' · не вышел' : r.date === t0 ? ' · сегодня' : ''}</span>
+        <input class="ln-rt" data-lnrtitle="${r.id}" value="${esc(r.title)}" placeholder="Тема рилса" aria-label="Тема рилса">
+        <span class="seg-toggle" role="group" aria-label="Статус рилса">${[['plan', 'План'], ['shot', 'Снят'], ['pub', 'Вышел']].map(([k, l]) => `<button data-lnrst="${r.id}|${k}" aria-pressed="${r.st === k}" class="${k}">${l}</button>`).join('')}</span>
+        <span class="ln-rw">${esc(r.who || '')}</span><button class="ln-x" data-lnrdel="${r.id}" aria-label="Удалить рилс">×</button></li>`; }).join('') || '<li class="hint">На эту неделю рилсов нет — добавьте или запланируйте неделю.</li>'}</ul>
+    <form class="ln-row" id="lnReelAdd"><input type="date" name="date" value="${lnInWeek(t0, LN.wk) ? t0 : LN.wk}" aria-label="Дата"><input name="rtitle" placeholder="Тема рилса" aria-label="Тема" style="flex:1 1 200px"><input name="who" list="lnPpl" placeholder="Кто" value="${ppl.includes('Юля') ? 'Юля' : ''}" aria-label="Исполнитель" style="width:120px">
+      <button class="ghost">+ Рилс</button><button class="ghost" type="button" data-lnplan>Запланировать неделю: ${c.reelsPerWeek} рилсов</button></form>
+    <datalist id="lnPpl">${ppl.map(x => `<option value="${esc(x)}">`).join('')}</datalist></section>`;
+}
+function renderLaunch(){
+  if (!LN.loaded){ app.innerHTML = '<div class="empty">Загружаю воронку…</div>'; lnLoad(); return; }
+  const b = lnBoard(), E = LN.edit;
+  const stage = (st, i) => { const [lbl, cls] = LN_ST[st.s];
+    return `<article class="ln-stage" data-s="${st.s}">
+      <div class="ln-sth"><span class="hint">Этап ${i + 1}</span><button class="pill st-pill ${cls}" data-lncycle="${st.id}" title="Нажмите, чтобы сменить статус">${lbl}</button></div>
+      ${E ? `<input class="ln-in" data-lnsf="${st.id}|name" value="${esc(st.name)}" aria-label="Название этапа"><textarea class="ln-in" data-lnsf="${st.id}|what" aria-label="Описание">${esc(st.what)}</textarea>` : `<h3>${esc(st.name)}</h3><p class="hint ln-what">${esc(st.what)}</p>`}
+      <div class="ln-blk"><span class="ln-lbl">Есть</span>${E ? `${st.have.map((h, k) => `<div class="ln-row"><input class="ln-in" data-lnhave="${st.id}|${k}" value="${esc(h)}" aria-label="Есть"><button class="ln-x" data-lnhdel="${st.id}|${k}" aria-label="Убрать">×</button></div>`).join('')}<button class="link ln-add" data-lnhadd="${st.id}">+ пункт</button>`
+        : st.have.length ? `<ul class="ln-have">${st.have.map(h => `<li>${esc(h)}</li>`).join('')}</ul>` : '<span class="hint">—</span>'}</div>
+      <div class="ln-blk ln-todo"><span class="ln-lbl">${st.s === 'ok' ? 'Задачи' : 'Не хватает — сделать'}</span>${lnChecklist('stage', st.id, st.todo)}</div>
+      ${st.content && b.content ? (() => { const s2 = lnWeekStats(b.content, mondayOf(today())); return `<button class="link ln-cmini" data-lngocontent>Рилсы на этой неделе: <b>${s2.fact} / ${s2.plan}</b> →</button>`; })() : ''}
+      <div class="ln-metric">Метрика: ${E ? `<input class="ln-in" data-lnsf="${st.id}|metric" value="${esc(st.metric)}" aria-label="Метрика">` : `<b>${esc(st.metric || '—')}</b>`}</div>
+      ${E ? `<div class="ln-row"><label class="hint"><input type="checkbox" data-lnscontent="${st.id}" ${st.content ? 'checked' : ''}> план / факт контента</label><button class="link danger" data-lnsdel="${st.id}" style="margin-left:auto">Удалить этап</button></div>` : ''}</article>`; };
+  const proj = x => { const dues = x.todo.map(t => t.due).filter(Boolean).sort();
+    return `<article class="ln-proj" style="--c:var(${x.c || '--brand'})">
+      <div class="ln-row">${E ? `<input class="ln-in" data-lnpf="${x.id}|name" value="${esc(x.name)}" aria-label="Название">` : `<h3>${esc(x.name)}</h3>`}<span class="hint" style="margin-left:auto;white-space:nowrap">${dues.length ? `до ${fmt(dues.at(-1))}` : ''}</span></div>
+      ${E ? `<textarea class="ln-in" data-lnpf="${x.id}|why" aria-label="Зачем">${esc(x.why)}</textarea><input class="ln-in" data-lnpf="${x.id}|link" value="${esc(x.link)}" aria-label="Связь с воронкой">` : `<p class="hint ln-what">${esc(x.why)}</p>${x.link ? `<span class="ln-link">${esc(x.link)}</span>` : ''}`}
+      ${lnChecklist('side', x.id, x.todo)}
+      ${E ? `<button class="link danger" data-lnpdel="${x.id}" style="align-self:flex-end">Удалить проект</button>` : ''}</article>`; };
+  const al = (() => { const a = lnTasks(b).filter(x => !x.t.done && x.t.due); return { late:a.filter(x => lnUrg(x.t) === 'late'), today:a.filter(x => lnUrg(x.t) === 'today'), soon:a.filter(x => lnUrg(x.t) === 'soon') }; })();
+  const who = LN.who; const fw = l => who ? l.filter(x => x.t.who === who) : l;
+  const hot = [...fw(al.late), ...fw(al.today), ...fw(al.soon)];
+  app.innerHTML = `<div class="ln">
+    <div class="fn-head-row"><h2 class="td-title">Воронка</h2>
+      ${LN.boards.length > 1 ? `<div class="seg-toggle" role="group" aria-label="Воронки">${LN.boards.map(x => `<button data-lnboard="${x.id}" aria-pressed="${x.id === b.id}">${esc(x.title)}</button>`).join('')}</div>` : ''}
+      <span class="ln-acts"><button class="ghost" data-lnnew>+ Воронка</button><button class="${E ? 'primary' : 'ghost'}" data-lnedit>${E ? 'Готово' : 'Редактировать'}</button></span></div>
+    <div class="panel ln-head">${E ? `<input class="ln-in" data-lnbf="eyebrow" value="${esc(b.eyebrow)}" placeholder="Подзаголовок, например «По созвону с Ромой»"><input class="ln-in ln-h1" data-lnbf="title" value="${esc(b.title)}" aria-label="Название воронки"><textarea class="ln-in" data-lnbf="lead" placeholder="Что главное сейчас">${esc(b.lead)}</textarea>`
+      : `${b.eyebrow ? `<span class="hint">${esc(b.eyebrow)}</span>` : ''}<h2 class="ln-title">${esc(b.title)}</h2>${b.lead ? `<p class="ln-lead">${esc(b.lead)}</p>` : ''}`}
+      <div class="ln-legend">${Object.values(LN_ST).map(([l, c]) => `<span class="pill st-pill ${c}">${l}</span>`).join('')}<span><b class="ln-d fx">Зелёная дата</b> — ${esc(b.fxLabel)}</span><span><b class="ln-d pr">Оранжевая</b> — ${esc(b.prLabel)}</span>
+        <span class="hint">${LN.mode === 'cloud' ? 'Сохраняется в аккаунте' : 'Без входа — только в этом браузере'}</span></div></div>
+    ${hot.length || who ? `<div class="panel ln-hot"><div class="ln-row"><b>Сроки</b>${al.late.length ? `<span class="pill st-pill s-red">Просрочено ${fw(al.late).length}</span>` : ''}${al.today.length ? `<span class="pill st-pill s-yellow">Сегодня ${fw(al.today).length}</span>` : ''}
+        <select data-lnwho aria-label="Исполнитель" style="margin-left:auto"><option value="">Все исполнители</option>${lnPeople(b).map(x => `<option ${x === who ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></div>
+      <div class="ln-hotlist">${hot.map(x => `<button class="ln-hi ${lnUrg(x.t)}" data-lntask="${x.scope}|${x.pid}|${x.t.id}"><b>${esc(x.t.t)}</b><small>${esc(x.where)} · ${esc(x.t.who || 'не назначено')} · ${fmt(x.t.due)}${lnUrg(x.t) === 'late' ? ' · просрочено' : lnUrg(x.t) === 'today' ? ' · сегодня' : ''}</small></button>`).join('') || '<span class="hint">Горящих задач нет</span>'}</div></div>` : ''}
+    <h3 class="ln-h">Этапы воронки</h3>
+    <div class="ln-chain">${b.stages.map((st, i) => (i ? '<span class="ln-arrow" aria-hidden="true">→</span>' : '') + stage(st, i)).join('')}${E ? '<button class="ln-addblk" data-lnaddstage>+ Этап</button>' : ''}</div>
+    ${b.content ? lnContentHtml(b) : ''}
+    <h3 class="ln-h">Вокруг воронки <span class="hint">отдельные проекты, которые кормят воронку трафиком или закрывают продажи</span></h3>
+    <div class="ln-side">${b.side.map(proj).join('')}${E ? '<button class="ln-addblk" data-lnaddside>+ Проект</button>' : ''}</div>
+    <div class="panel ln-ask"><h3>Уточнить</h3>
+      ${E ? `${b.ask.map((a, k) => `<div class="ln-row"><input class="ln-in" data-lnask="${k}" value="${esc(a)}"><button class="ln-x" data-lnaskdel="${k}">×</button></div>`).join('')}<button class="link ln-add" data-lnaskadd>+ вопрос</button><input class="ln-in" data-lnbf="askNote" value="${esc(b.askNote)}" placeholder="Заметка">
+        <div class="ln-row"><label class="hint">Зелёная дата — <input class="ln-in" data-lnbf="fxLabel" value="${esc(b.fxLabel)}" style="width:160px"></label><label class="hint">Оранжевая — <input class="ln-in" data-lnbf="prLabel" value="${esc(b.prLabel)}" style="width:160px"></label></div>
+        <div class="ln-row"><button class="ghost" data-lncopy>Копия как новая воронка</button>${LN.boards.length > 1 ? '<button class="ghost danger" data-lndelboard>Удалить воронку</button>' : ''}</div>`
+        : `${b.ask.length ? `<ul class="ln-have">${b.ask.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : '<p class="hint">Вопросов нет — добавить можно в «Редактировать».</p>'}${b.askNote ? `<p class="hint">${esc(b.askNote)}</p>` : ''}`}</div>
+  </div>`;
+}
+const lnReminder = (b, t) => `Напоминание по воронке «${b.title}»: ${t.t}${t.due ? ` — срок ${fmt(t.due)}` : ''}${t.start ? ` (с ${fmt(t.start)})` : ''}.`;
+// окно задачи: исполнитель, начало, срок, утверждён, постоянная, готово, напомнить
+function lnOpenTask(scope, pid, tid){
+  const b = lnBoard(); const owner = lnOwner(b, scope, pid); if (!owner) return;
+  const t = tid ? owner.todo.find(x => x.id === tid) : null; const v = t || { t:'', who:'', start:null, due:null, fx:false, rec:false, done:false };
+  const team = db.users.map(u => u.name).filter(Boolean); const ppl = [...new Set([...lnPeople(b), ...team])].sort();
+  const enc = encodeURIComponent, txt = lnReminder(b, v), url = location.origin + location.pathname;
+  layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal" role="dialog" aria-modal="true" aria-labelledby="lnT">
+    <h2 id="lnT">${t ? 'Задача' : 'Новая задача'}</h2><p class="lead">${esc(b.title)} · ${esc(owner.name)}</p>
+    <form class="form" id="lnForm" novalidate>
+      <div class="field"><label for="lnT1">Что сделать</label><input id="lnT1" value="${esc(v.t)}" maxlength="300" autocomplete="off"></div>
+      <div class="field"><label for="lnWho">Исполнитель</label><input id="lnWho" value="${esc(v.who)}" list="lnTeam" placeholder="Например, Юля" autocomplete="off"><datalist id="lnTeam">${ppl.map(x => `<option value="${esc(x)}">`).join('')}</datalist></div>
+      <div class="two"><div class="field"><label for="lnStart">Начало</label><input type="date" id="lnStart" value="${v.start || ''}"></div><div class="field"><label for="lnDue">Срок (дедлайн)</label><input type="date" id="lnDue" value="${v.due || ''}"></div></div>
+      <label class="check"><input type="checkbox" id="lnFx" ${v.fx ? 'checked' : ''}> <span>Срок утверждён <small class="hint">— ${esc(b.fxLabel)}; иначе ${esc(b.prLabel)}</small></span></label>
+      <label class="check"><input type="checkbox" id="lnRec" ${v.rec ? 'checked' : ''}> <span>Постоянная задача (без даты окончания)</span></label>
+      ${t ? `<label class="check"><input type="checkbox" id="lnDoneIn" ${v.done ? 'checked' : ''}> <span>Готово</span></label>
+        <div class="field"><label>Напомнить исполнителю</label>${sendLinkHtml ? `<div class="send-row"><a class="ghost send-btn" target="_blank" rel="noopener" href="https://t.me/share/url?url=${enc(url)}&text=${enc(txt)}">${TG_ICO}Telegram</a><a class="ghost send-btn" target="_blank" rel="noopener" href="https://wa.me/?text=${enc(txt)}">${WA_ICO}WhatsApp</a><button type="button" class="ghost send-btn" data-lncopyrem>Копировать</button></div>` : ''}</div>` : ''}
+      <div class="err" id="lnErr"></div>
+      <div class="actions">${t ? '<button type="button" class="ghost danger m-out" id="lnDel">Удалить</button>' : ''}<button type="button" class="ghost" data-close>Отмена</button><button class="primary">${t ? 'Сохранить' : 'Добавить'}</button></div>
+    </form></div>`;
+  $('#lnT1').focus();
+  $('#lnForm').onsubmit = e => {
+    e.preventDefault(); const title = $('#lnT1').value.trim(); if (!title){ $('#lnErr').textContent = 'Напишите, что сделать'; return; }
+    const start = $('#lnStart').value || null, due = $('#lnDue').value || null;
+    if (start && due && start > due){ $('#lnErr').textContent = 'Начало позже срока'; return; }
+    const data = { t:title, who:$('#lnWho').value.trim(), start, due, fx:$('#lnFx').checked, rec:$('#lnRec').checked, done:t ? $('#lnDoneIn').checked : false };
+    if (t) Object.assign(t, data); else owner.todo.push({ id:lnId(), ...data });
+    layer.innerHTML = ''; lnSave(); render(); toast(t ? 'Сохранено' : `Задача добавлена${data.who ? ` — ${data.who}` : ''}`);
+  };
+  const del = $('#lnDel'); if (del) del.onclick = () => askConfirm({ title:`Удалить «${t.t}»?`, text:'Задача пропадёт из воронки.', ok:'Удалить' }).then(y => { if (!y) return; owner.todo = owner.todo.filter(x => x !== t); layer.innerHTML = ''; lnSave(); render(); });
+  const cp = layer.querySelector('[data-lncopyrem]'); if (cp) cp.onclick = async () => toast(await copyText(txt) ? 'Текст скопирован' : 'Не удалось скопировать');
+}
+document.addEventListener('click', e => {
+  const el = e.target; if (!el.closest) return;
+  const tk = el.closest('[data-lntask]'); if (tk){ e.stopPropagation(); const [sc, pid, tid] = tk.dataset.lntask.split('|'); if (ui.view !== 'launch'){ ui.view = 'launch'; render(); } lnOpenTask(sc, pid, tid); return; }
+  if (ui.view !== 'launch' || !LN.loaded) return;
+  const b = lnBoard();
+  const ad = el.closest('[data-lnadd]'); if (ad){ const [sc, pid] = ad.dataset.lnadd.split('|'); lnOpenTask(sc, pid, null); return; }
+  if (el.closest('[data-lnedit]')){ LN.edit = !LN.edit; render(); return; }
+  const bd = el.closest('[data-lnboard]'); if (bd){ LN.cur = bd.dataset.lnboard; LN.wk = ''; lnSaveLocal(); render(); return; }
+  if (el.closest('[data-lnnew]')){ const n = prompt('Название новой воронки', 'Новая воронка'); if (!n || !n.trim()) return; const nb = lnEmpty(n.trim().slice(0, 80)); LN.boards.push(nb); LN.cur = nb.id; LN.edit = true; lnSave(nb); render(); return; }
+  if (el.closest('[data-lncopy]')){ const n = prompt('Название копии', `${b.title} (копия)`); if (!n || !n.trim()) return; const nb = lnEmpty(n.trim().slice(0, 80), b); LN.boards.push(nb); LN.cur = nb.id; lnSave(nb); render(); toast('Копия: этапы и проекты без задач'); return; }
+  if (el.closest('[data-lndelboard]')){ askConfirm({ title:`Удалить воронку «${b.title}»?`, text:'Вместе со всеми задачами и планом контента.', ok:'Удалить' }).then(y => { if (!y) return;
+    LN.boards = LN.boards.filter(x => x !== b); LN.cur = LN.boards[0].id; lnSaveLocal(); if (LN.mode === 'cloud') cloud.store.doc(lnPath(b.id)).delete().catch(() => {}); LN.edit = false; render(); }); return; }
+  const cy = el.closest('[data-lncycle]'); if (cy){ const st = b.stages.find(x => x.id === cy.dataset.lncycle); st.s = { gap:'part', part:'ok', ok:'gap' }[st.s]; lnSave(); render(); return; }
+  if (el.closest('[data-lngocontent]')){ $('#lnCd')?.scrollIntoView({ behavior:'smooth', block:'start' }); return; }
+  if (el.closest('[data-lngoal]')){ const g = b.content.goal; const t = prompt('Цель: сколько нужно (например, 10000)', g.target || ''); if (t === null) return; const f = prompt('Сколько сейчас (факт)', g.fact || 0); if (f === null) return;
+    g.target = Math.max(0, +t || 0); g.fact = Math.max(0, +f || 0); lnSave(); render(); return; }
+  const wk = el.closest('[data-lnwk]'); if (wk){ LN.wk = wk.dataset.lnwk; render(); return; }
+  const rs = el.closest('[data-lnrst]'); if (rs){ const [id, st] = rs.dataset.lnrst.split('|'); const r = b.content.reels.find(x => x.id === id); r.st = st; r.pubAt = st === 'pub' ? (r.pubAt || (r.date <= today() ? today() : r.date)) : null; lnSave(); render(); return; }
+  const rd = el.closest('[data-lnrdel]'); if (rd){ b.content.reels = b.content.reels.filter(x => x.id !== rd.dataset.lnrdel); lnSave(); render(); return; }
+  const sh = el.closest('[data-lnshift]'); if (sh){ b.content.start = addDays(b.content.start, +sh.dataset.lnshift * 7); LN.wk = ''; lnSave(); render(); return; }
+  if (el.closest('[data-lnplan]')){ const c = b.content; const n = Math.max(0, +prompt('Сколько рилсов на неделю?', c.reelsPerWeek) || 0); if (!n) return; c.reelsPerWeek = n;
+    const who = $('#lnReelAdd [name=who]')?.value.trim() || ''; for (let i = 0; i < n; i++) c.reels.push({ id:lnId(), title:'', date:addDays(LN.wk, Math.min(6, Math.round(i * 7 / n))), who, st:'plan', pubAt:null });
+    lnSave(); render(); toast(`Запланировано рилсов: ${n}`); return; }
+  const ha = el.closest('[data-lnhadd]'); if (ha){ b.stages.find(x => x.id === ha.dataset.lnhadd).have.push(''); lnSave(); render(); return; }
+  const hd = el.closest('[data-lnhdel]'); if (hd){ const [sid, k] = hd.dataset.lnhdel.split('|'); b.stages.find(x => x.id === sid).have.splice(+k, 1); lnSave(); render(); return; }
+  if (el.closest('[data-lnaddstage]')){ b.stages.push({ id:lnId(), name:'Новый этап', what:'', s:'gap', have:[], todo:[], metric:'' }); lnSave(); render(); return; }
+  const sd = el.closest('[data-lnsdel]'); if (sd){ const st = b.stages.find(x => x.id === sd.dataset.lnsdel); askConfirm({ title:`Удалить этап «${st.name}»?`, text:'Вместе с задачами этапа.', ok:'Удалить' }).then(y => { if (!y) return; b.stages = b.stages.filter(x => x !== st); lnSave(); render(); }); return; }
+  if (el.closest('[data-lnaddside]')){ const cs = ['--b', '--y', '--m', '--g', '--brand']; b.side.push({ id:lnId(), name:'Новый проект', c:cs[b.side.length % cs.length], why:'', link:'', todo:[] }); lnSave(); render(); return; }
+  const pd = el.closest('[data-lnpdel]'); if (pd){ const x = b.side.find(v => v.id === pd.dataset.lnpdel); askConfirm({ title:`Удалить «${x.name}»?`, text:'Вместе с задачами проекта.', ok:'Удалить' }).then(y => { if (!y) return; b.side = b.side.filter(v => v !== x); lnSave(); render(); }); return; }
+  if (el.closest('[data-lnaskadd]')){ b.ask.push(''); lnSave(); render(); return; }
+  const aq = el.closest('[data-lnaskdel]'); if (aq){ b.ask.splice(+aq.dataset.lnaskdel, 1); lnSave(); render(); return; }
+});
+document.addEventListener('change', e => {
+  const el = e.target; if (ui.view !== 'launch' || !LN.loaded || !el.closest?.('.ln')) return; const b = lnBoard();
+  if (el.matches('[data-lnwho]')){ LN.who = el.value; render(); return; }
+  if (el.dataset.lndone){ const [sc, pid, tid] = el.dataset.lndone.split('|'); const t = lnOwner(b, sc, pid).todo.find(x => x.id === tid); t.done = el.checked; lnSave(); render(); return; }
+  if (el.dataset.lnfact){ const [w, k] = el.dataset.lnfact.split('|'); b.content.facts[w] = { ...(b.content.facts[w] || {}), [k]:Math.max(0, +el.value || 0) }; lnSave(); render(); return; }
+  if (el.dataset.lnrtitle !== undefined){ const r = b.content.reels.find(x => x.id === el.dataset.lnrtitle); r.title = el.value.trim(); lnSave(); return; }
+  if (el.matches('[data-lnstart]') && el.value){ b.content.start = mondayOf(el.value); LN.wk = ''; lnSave(); render(); return; }
+  if (el.matches('[data-lnweeks]')){ b.content.weeks = Math.max(1, Math.min(12, +el.value || 4)); lnSave(); render(); return; }
+  if (el.dataset.lnscontent){ b.stages.forEach(x => { x.content = x.id === el.dataset.lnscontent && el.checked; }); lnSave(); render(); return; }
+  if (el.dataset.lnbf){ b[el.dataset.lnbf] = el.value.trim(); lnSave(); return; }
+  if (el.dataset.lnsf){ const [sid, f] = el.dataset.lnsf.split('|'); b.stages.find(x => x.id === sid)[f] = el.value.trim(); lnSave(); return; }
+  if (el.dataset.lnpf){ const [pid, f] = el.dataset.lnpf.split('|'); b.side.find(x => x.id === pid)[f] = el.value.trim(); lnSave(); return; }
+  if (el.dataset.lnhave){ const [sid, k] = el.dataset.lnhave.split('|'); b.stages.find(x => x.id === sid).have[+k] = el.value.trim(); lnSave(); return; }
+  if (el.dataset.lnask !== undefined){ b.ask[+el.dataset.lnask] = el.value.trim(); lnSave(); return; }
+});
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'lnReelAdd') return; e.preventDefault(); const f = e.target.elements; const b = lnBoard();
+  const date = f.namedItem('date').value; if (!date){ toast('Укажите дату'); return; }
+  b.content.reels.push({ id:lnId(), title:f.namedItem('rtitle').value.trim(), date, who:f.namedItem('who').value.trim(), st:'plan', pubAt:null });
+  const w = lnWeeks(b.content).find(x => lnInWeek(date, x)); if (w) LN.wk = w;
+  lnSave(); render(); setTimeout(() => $('#lnReelAdd [name=rtitle]')?.focus(), 0);
+});
 // ---------- Производство на телефоне: лента проектов + этапы сверху вниз ----------
 function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage, curSub }){
   const key = mine ? 'myProject' : 'prodProject';
@@ -4530,6 +4877,7 @@ function openBell(){
   ${mrByTask.length ? `<h3>Материалы на проверку <span class="ntf-n">${mr.length}</span></h3>${mrByTask.slice(0, 8).map(g => `<button class="ntf" data-task="${g.t.id}"><span class="sw blue"></span><span><b>${esc(g.p.name)}</b><small>${esc(g.t.title)}: ${g.n} ${plural(g.n, 'материал', 'материала', 'материалов')} от ${esc([...g.who].join(', '))}</small></span></button>`).join('')}` : ''}
   ${rq.length ? `<h3>Запросы на переход <span class="ntf-n">${rq.length}</span></h3>${rq.map(({ p, s }) => gateReqItem(p, s)).join('')}` : ''}
   ${(() => { const nw = new Set(a.fresh.map(i => i.id)); return sec('Новые задачи', a.fresh) + sec('Просрочено', a.over.filter(i => !nw.has(i.id))) + sec('На сегодня', a.today.filter(i => !nw.has(i.id))); })()}
+  ${(() => { let la = { late:[], today:[] }; try { if (!GUEST) la = lnAlerts(); } catch(e) {} const l = [...la.late, ...la.today]; return l.length ? `<h3>Воронка: сроки <span class="ntf-n">${l.length}</span></h3>${l.slice(0, 8).map(x => `<button class="ntf" data-lntask="${x.scope}|${x.pid}|${x.t.id}"><span class="sw ${lnUrg(x.t) === 'late' ? 'red' : 'yellow'}"></span><span><b>${esc(x.t.t)}</b><small>${esc(x.where)} · ${esc(x.t.who || 'не назначено')} · ${lnUrg(x.t) === 'late' ? 'просрочено, ' : 'сегодня, '}${fmt(x.t.due)}</small></span></button>`).join('')}` : ''; })()}
   ${!a.fresh.length && !a.over.length && !a.today.length ? '<h3>Мои задачи</h3><p class="hint" style="padding:0 8px">Срочного нет. Все задачи — во вкладке «Задачи».</p>' : ''}
   <button class="link ntf-all" data-ntfday="1">Все мои задачи</button>
   ${perm === 'default' ? '<button class="ghost ntf-perm" id="ntfPerm">Включить уведомления на этом устройстве</button>' : perm === 'denied' ? '<p class="hint" style="padding:4px 8px">Уведомления браузера выключены в настройках сайта.</p>' : ''}
@@ -4541,7 +4889,9 @@ function openBell(){
   const seen = readSet(NSEEN_KEY()); myTodo().forEach(i => seen.add(i.id)); writeSet(NSEEN_KEY(), seen); paintBell();
 }
 function paintBell(){
-  const n = (GUEST ? 0 : hotStages().length) + gateRequests().length + matsToReview().length + stageSubmissions().length + alertCount();
+  let la = { late:[], today:[] };
+  try { if (!GUEST && !LN.loaded && cloud.uid) lnLoad(); if (!GUEST) la = lnAlerts(); } catch(e) {}
+  const n = (GUEST ? 0 : hotStages().length) + gateRequests().length + matsToReview().length + stageSubmissions().length + alertCount() + la.late.length + la.today.length;
   const b = $('#bellCount'); if (b) b.innerHTML = n ? `<span class="badge">${n}</span>` : '';
 }
 document.addEventListener('click', e => {
@@ -6834,6 +7184,9 @@ function pushNotify(){
   const a = myAlerts(); const sent = readSet(NSENT_KEY());
   a.fresh.filter(i => !sent.has('new:' + i.id)).slice(0, 3).forEach(i => { try { new Notification('Новая задача', { body:`${i.title}${i.p ? ` — ${i.p.name}` : ''}${i.due ? `, срок ${fmt(i.due)}` : ''}`, tag:'kz-' + i.id }); } catch(e) {} sent.add('new:' + i.id); });
   const day = 'day:' + today(); const n = a.over.length + a.today.length;
+  try { const la = lnAlerts(); [...la.late, ...la.today].filter(x => !sent.has('ln:' + x.t.id + ':' + today())).slice(0, 5).forEach(x => {
+    try { new Notification(lnUrg(x.t) === 'late' ? 'Воронка: просрочено' : 'Воронка: срок сегодня', { body:`${x.t.t} — ${x.t.who || 'не назначено'} (${x.where})`, tag:'kz-ln-' + x.t.id }); } catch(e) {}
+    sent.add('ln:' + x.t.id + ':' + today()); }); } catch(e) {}
   if (n && !sent.has(day)){ try { new Notification('Задачи на сегодня', { body:`${a.today.length ? `Сегодня: ${a.today.length}. ` : ''}${a.over.length ? `Просрочено: ${a.over.length}.` : ''}`.trim(), tag:'kz-day' }); } catch(e) {} sent.add(day); }
   const mr = matsToReview().filter(i => !sent.has('mat:' + i.m.id));
   if (mr.length){ const byP = [...new Set(mr.map(i => i.p.name))];
@@ -8772,6 +9125,7 @@ const MNAV = {
   matrix:['Матрица', MI('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>')],
   kanban:['Канбан', MI('<rect x="3" y="3" width="5" height="15" rx="1.5"/><rect x="10" y="3" width="5" height="10" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/>')],
   production:['Произв.', MI('<path d="M3 12h4l3-8 4 16 3-8h4"/>')],
+  launch:['Воронка', MI('<path d="M3 4h18l-7 8.5V19l-4 2v-8.5Z"/>')],
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
   assign:['Поручения', MI('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2 2 4-4M8.5 17h7"/>')],
