@@ -80,6 +80,15 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.ok(/Приостановлено.*Статья.*Ждём интервью.*из-за этого стоят/.test(D.querySelector('.fl-urgent li').textContent)); ok('«Срочно»: приостановленный — первым, с причиной');
   const sel2 = D.querySelector('[data-flst="f1"]'); sel2.value = 'work'; sel2.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
   assert.notEqual(E(`flowState(infoBoard()).get('f1').key`), 'paused'); ok('снова «В работе»');
+  // финальный дедлайн инфоповода: название и дата, задачи после него — в «Срочно», линия на таймлайне
+  const gn = D.querySelector('[data-goalname]'); gn.value = 'Открытие окна продаж'; gn.dispatchEvent(new w.Event('change', { bubbles:true }));
+  const gd = D.querySelector('[data-goaldate]'); gd.value = E('addDays(today(), 5)'); gd.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
+  assert.equal(E('infoBoard().goalName'), 'Открытие окна продаж'); ok('название финального дедлайна');
+  assert.equal(E('infoBoard().deadline'), E('addDays(today(), 5)')); ok('дата финального дедлайна');
+  assert.ok(/После дедлайна.*позже, чем «Открытие окна продаж»/.test(D.querySelector('.fl-urgent').textContent)); ok('задачи позже дедлайна — в «Срочно»');
+  E(`ui.infoMode = 'timeline'; render()`);
+  assert.ok(/Открытие окна продаж/.test(D.querySelector('.tl-goal')?.textContent || '')); ok('дедлайн — линией на таймлайне');
+  E(`ui.infoMode = 'board'; render()`);
   // таймлайн: все задачи с датой на одной шкале, связи стрелками
   E(`ui.infoMode = 'timeline'; render()`);
   assert.ok(D.querySelector('.tl') && !D.querySelector('.pf-board')); ok('«Таймлайн» вместо доски');

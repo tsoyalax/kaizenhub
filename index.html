@@ -1169,6 +1169,14 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .fl-node.k-idle,.fl-node.k-done{opacity:.85}
 .fl-why{color:var(--pl-b,var(--b))!important}
 .fl-sum{font-size:13px;color:var(--muted)}
+.fl-goal{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border-radius:12px;background:var(--fbg,var(--surface-2));border:1px solid var(--line);font-size:13.5px}
+.fl-goal svg{width:16px;height:16px;flex:none;color:var(--brand)}
+.fl-goal input{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit;font-size:13.5px}
+.fl-goal .fl-gname{flex:0 1 240px;min-width:140px;font-weight:600}
+.fl-goal.near b{color:var(--y)}.fl-goal.past b{color:var(--r)}
+.tl-goal{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--r);z-index:2}
+.tl-goal span{position:absolute;top:4px;left:6px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:11.5px;font-weight:600;color:var(--r);background:var(--surface);padding:1px 6px;border-radius:6px;border:1px solid color-mix(in srgb,var(--r) 40%,transparent)}
+.tl-goal svg{width:12px;height:12px}
 .fl-node .pill{justify-self:start}
 .fl-node small{font-size:12px;color:var(--muted)}
 .fl-urgent{border-top:1px solid var(--line);padding-top:12px}
@@ -4508,7 +4516,7 @@ const TL_DW = 34, TL_ROW = 30;
 function timelineHtml(p){
   const st = flowState(p); const list = [...st.values()]; const t0 = today();
   const dated = list.flatMap(v => v.items.filter(i => i.due).map(i => i.due));
-  let from = [addDays(t0, -7), ...dated].sort()[0], to = [addDays(t0, 21), ...dated].sort().at(-1);
+  let from = [addDays(t0, -7), ...dated].sort()[0], to = [addDays(t0, 21), ...dated, ...(p.deadline ? [p.deadline] : [])].sort().at(-1);
   from = addDays(from, -1); to = addDays(to, 2);
   const nd = diffDays(to, from) + 1; const W = nd * TL_DW;
   const xOf = d => diffDays(d, from) * TL_DW + TL_DW / 2;
@@ -4543,6 +4551,7 @@ function timelineHtml(p){
       <div class="tl-body" style="height:${H}px">${shade}
         ${lanes.map(l => `<div class="tl-lane" style="top:${l.top}px;height:${l.h}px"></div>`).join('')}
         <i class="tl-today" style="left:${xOf(t0)}px"></i>
+        ${p.deadline ? `<i class="tl-goal" style="left:${xOf(p.deadline)}px"><span>${FLAG}${esc(goalName(p))} · ${fmt(p.deadline)}</span></i>` : ''}
         <svg class="tl-svg" width="${W}" height="${H}" aria-hidden="true"><defs>
           <marker id="tlHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="tl-hd"/></marker>
           <marker id="tlHeadR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="tl-hd red"/></marker></defs>${arrows}</svg>
@@ -4587,6 +4596,7 @@ function flowPanelHtml(p){
   const why = v => !v.n ? 'нет задач' : v.over.length ? `${v.over.length} ${plural(v.over.length, 'задача просрочена', 'задачи просрочены', 'задач просрочено')}` : '';
   const urgent = list.filter(v => v.own === 'red' || v.own === 'paused').sort((a, b) => (b.own === 'paused') - (a.own === 'paused') || b.down.length - a.down.length || b.over.length - a.over.length);
   const cnt = k => list.filter(v => (v.s.dept?.st || 'work') === k).length;
+  const late = p.deadline ? list.flatMap(v => v.open.filter(i => i.due && i.due > p.deadline).map(i => ({ ...i, sid:v.s.id }))) : [];
   const soon = list.filter(v => v.own === 'yellow');
   const node = v => `<div class="fl-node k-${v.key}">
       <button class="fl-name" data-flgo="${v.s.id}" title="Показать на доске"><b>${esc(v.s.name)}</b></button>${flowPill(v)}
@@ -4599,16 +4609,36 @@ function flowPanelHtml(p){
       <span class="fl-sum">Отделы: в работе ${cnt('work')}${cnt('pause') ? ` · приостановлено ${cnt('pause')}` : ''}${cnt('idle') ? ` · не начато ${cnt('idle')}` : ''}${cnt('done') ? ` · готово ${cnt('done')}` : ''}</span>
       <span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${ui.infoMode !== 'timeline'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline'}">Таймлайн</button></span>
       <button class="ghost" data-flwedit aria-pressed="${!!ui.flowEdit}">${ICON_EDIT}Связи</button></div>
+    ${goalHtml(p)}
     <div class="fl-chain">${list.map((v, i) => node(v) + (i < list.length - 1 ? '<span class="fl-arr" aria-hidden="true">→</span>' : '')).join('')}</div>
     ${ui.flowEdit ? `<div class="fl-edit"><p class="hint">Отметьте, от чего зависит каждый этап: если этап-источник встал, зависимые подсветятся «ждёт».</p>
       ${list.map(v => `<div class="fl-erow"><b>${esc(v.s.name)}</b><span>зависит от:</span>${list.filter(o => o !== v).map(o => `<label class="fl-dep"><input type="checkbox" data-fldep="${v.s.id}|${o.s.id}" ${flowDeps(p, v.s).includes(o.s.id) ? 'checked' : ''}>${esc(o.s.name)}</label>`).join('')}</div>`).join('')}
       <button class="ghost" data-flreset>Как по порядку колонок</button></div>` : ''}
-    ${urgent.length || soon.length ? `<div class="fl-urgent"><h3>Срочно</h3><ol>
+    ${urgent.length || soon.length || late.length ? `<div class="fl-urgent"><h3>Срочно</h3><ol>
+      ${late.length ? `<li class="k-red"><span class="pill st-pill s-red">${STATUS_ICO.red}После дедлайна</span>${late.length} ${plural(late.length, 'задача заканчивается', 'задачи заканчиваются', 'задач заканчиваются')} позже, чем «${esc(goalName(p))}» (${fmt(p.deadline)})
+        <div class="fl-tasks">${late.slice(0, 6).map(i => `<button class="fl-task" data-pfsub="${i.sid}|${i.x.id}">${esc(i.x.name)} <small>срок ${fmt(i.due)}</small></button>`).join('')}</div></li>` : ''}
       ${urgent.map(v => `<li class="k-red">${flowPill(v)}<button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: ${v.own === 'paused' ? `приостановлено${v.s.dept.note ? ` — ${esc(v.s.dept.note)}` : ''}` : why(v)}${v.down.length ? ` → из-за этого стоят: ${v.down.map(nm).join(', ')}` : ''}
         ${v.over.length ? `<div class="fl-tasks">${v.over.slice(0, 4).map(i => `<button class="fl-task" data-pfsub="${v.s.id}|${i.x.id}">${esc(i.x.name)} <small>срок ${fmt(i.due)}</small></button>`).join('')}</div>` : ''}</li>`).join('')}
       ${soon.map(v => `<li class="k-yellow"><span class="pill st-pill s-yellow">${STATUS_ICO.yellow}Горит</span><button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: срок сегодня или завтра — ${v.soon.map(i => esc(i.x.name)).slice(0, 3).join(', ')}</li>`).join('')}
     </ol></div>` : ''}</section>`;
 }
+// ---------- Финальный дедлайн инфоповода (например, «Открытие окна продаж»): p.deadline + p.goalName ----------
+const goalName = p => p.goalName || 'Финальный дедлайн';
+function goalHtml(p){
+  const d = p.deadline; const left = d ? diffDays(d, today()) : null;
+  const txt = left == null ? 'дата не задана' : left > 0 ? `через ${days(left)}` : left === 0 ? 'сегодня' : `прошёл ${days(-left)} назад`;
+  return `<div class="fl-goal${left != null && left < 0 ? ' past' : left != null && left <= 7 ? ' near' : ''}">${FLAG}
+    <input class="fl-gname" data-goalname value="${esc(goalName(p))}" aria-label="Название финального дедлайна" maxlength="80">
+    <input type="date" data-goaldate value="${esc(d || '')}" aria-label="Дата финального дедлайна">
+    <b>${txt}</b></div>`;
+}
+document.addEventListener('change', e => {
+  const d = e.target.dataset || {}; if (!('goalname' in d) && !('goaldate' in d)) return;
+  const p = infoBoard(); if (!p) return;
+  if ('goalname' in d){ const v = e.target.value.trim(); p.goalName = v && v !== 'Финальный дедлайн' ? v : ''; addLog(p, `Финальный дедлайн называется «${goalName(p)}»`); commit(); return; }
+  const v = e.target.value; if (!v) return; const old = p.deadline; p.deadline = v;
+  addLog(p, `${goalName(p)}: ${old ? fmt(old) + ' → ' : ''}${fmt(v)}`); commit(); toast(`${goalName(p)}: ${fmt(v)}`);
+});
 // статус отдела: «Приостановлено» спрашивает причину (необязательно)
 document.addEventListener('change', e => {
   const sid = e.target.dataset?.flst; if (!sid) return;
