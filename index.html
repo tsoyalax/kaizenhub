@@ -480,6 +480,51 @@ body.selecting #app{padding-bottom:90px}
 .send-btn small{color:var(--muted);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sh-link .send-row{margin:6px 0 0}
 .st-lead{display:inline-block;font-size:12px;font-weight:600;color:var(--b);background:var(--b-bg);border-radius:6px;padding:1px 7px;margin-bottom:3px}
+.og-nav{display:flex;gap:6px}.og-nav .ghost{min-width:38px}
+.og-mode{margin-left:auto}
+.og-chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.og-chip{border:1px solid var(--line);background:var(--fbg,var(--surface));color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.og-chip b{color:var(--muted);font-weight:600;margin-left:4px}.og-chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff}.og-chip[aria-pressed="true"] b{color:#fff}
+.og-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--dc,var(--brand));margin-right:6px;vertical-align:middle}
+.og-legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted);margin:0 0 10px}.og-legend i{display:inline-block;width:18px;height:8px;border-radius:4px;margin-right:6px;vertical-align:middle;background:var(--ok)}
+.og{--ok:var(--brand)}.og .k-now{--ok:var(--brand)}.og .k-next{--ok:color-mix(in srgb,var(--muted) 45%,transparent)}.og .k-late{--ok:var(--r,#EF4444)}.og .k-done{--ok:var(--g,#22C55E)}
+.og-done{margin-left:auto;display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--ink)}
+.og-scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.og-grid{min-width:640px;padding:4px 0 10px}
+.og-row{display:grid;grid-template-columns:minmax(220px,300px) 1fr;align-items:center;gap:12px;padding:6px 14px;min-height:46px}
+.og-row.k-now,.og-row.k-late{background:color-mix(in srgb,var(--brand) 6%,transparent)}
+.og-hd{position:sticky;top:0;min-height:30px;border-bottom:1px solid var(--line);background:var(--surface);z-index:2}
+.og-lane{position:relative;height:22px}.og-hd .og-lane{height:20px}
+.og-wk{position:absolute;top:2px;font-size:11.5px;color:var(--muted);white-space:nowrap;padding-left:4px;border-left:1px solid var(--line)}
+.og-today{position:absolute;top:-12px;bottom:-12px;width:0;border-left:2px solid var(--r,#EF4444);z-index:1}
+.og-today b{position:absolute;top:-2px;left:4px;font-size:11px;color:var(--r,#EF4444);white-space:nowrap}
+.og-bar{position:absolute;top:3px;height:16px;border-radius:6px;background:var(--ok);min-width:6px}
+.og-bar.rep{top:7px;height:8px;opacity:.6}
+.og-bar em{position:absolute;left:100%;top:-1px;margin-left:6px;font-style:normal;font-size:11.5px;font-weight:600;color:var(--brand);white-space:nowrap}
+.og-bar.k-done{opacity:.55}
+.og-name{display:flex;align-items:center;gap:10px;min-width:0;background:none;border:0;padding:0;text-align:left;color:inherit;font:inherit;cursor:pointer}
+.og-name>span{display:grid;min-width:0}.og-name b,.og-name small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.og-name b{font-size:13.5px}.og-name small{color:var(--muted);font-size:12px}
+.og-k{font-weight:600;color:var(--ok)}.k-next .og-k{color:var(--muted)}
+.og-grp h3{margin:12px 14px 2px;font-size:13px;text-transform:uppercase;letter-spacing:.03em}.og-grp h3 small{text-transform:none;letter-spacing:0;color:var(--muted);font-weight:500;margin-left:6px}
+.og-late{color:var(--r,#EF4444)}
+.og-first{max-width:660px}.og-addf{display:flex;gap:8px;margin-top:12px}.og-addf input,.og-addcol input{flex:1;min-width:0;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);padding:0 10px;font:inherit}
+.og-tip{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.og-col h3{border-top:3px solid var(--dc,var(--line));padding-top:8px}
+.og-newtask{width:100%;margin:0 0 8px;justify-content:center}
+.og-card{display:grid;gap:4px}.og-card .og-top{display:flex;gap:8px;align-items:flex-start}.og-card .og-top .rt-chk{margin-top:3px}
+.og-card .og-t{background:none;border:0;padding:0;text-align:left;font:inherit;font-weight:600;color:var(--ink);cursor:pointer}
+.og-card .meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.og-card .og-st{display:block}.og-card .og-st .rt-freq{display:inline-flex;gap:3px;align-items:center}.og-card .og-st .rt-freq svg{width:12px;height:12px}
+.og-addcol{display:flex;flex-direction:column;gap:8px;align-items:stretch;padding:12px;min-width:220px}
+.og-empty{margin:4px 0}
+.og-prog{display:block;height:4px;border-radius:3px;background:color-mix(in srgb,var(--muted) 25%,transparent);overflow:hidden}.og-prog i{display:block;height:100%;background:var(--g,#22C55E)}
+.og-pj{font-size:12.5px;text-align:left}.og-subs{white-space:nowrap}
+.og-ava{width:32px;height:32px;border-radius:9px;flex:none;background:color-mix(in srgb,var(--dc) 22%,transparent);border:2px solid var(--dc)}
+.og-sublist{list-style:none;margin:0 0 6px;padding:0;display:grid;gap:4px}.og-sublist li{display:flex;gap:8px;align-items:center}.og-sublist input[type=text]{flex:1;min-width:0;height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit}
+.og-sublist .tx{border:0;background:none;color:var(--muted);cursor:pointer;font-size:18px}
+.form .og-sublist input[type=checkbox]{width:18px;height:18px;min-height:0;flex:none;margin:0;padding:0}.form .og-sublist input[type=text]{width:auto;flex:1;height:32px;min-height:0}.form .og-sublist .tx{width:auto;height:auto;padding:0 4px}
+#ogDesc{min-height:60px}
+.og-prod{border:1px dashed var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:8px}
+@media (max-width:640px){.og-row{grid-template-columns:180px 1fr}.og-grid{min-width:560px}}
 .lead-check{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
 .lead-check input{margin-top:3px}.lead-check span{display:grid;gap:2px}.lead-check small{color:var(--muted);font-size:12.5px}
 .td-title{font-size:18px;font-weight:600;margin:0}
@@ -2020,6 +2065,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
+    <button data-view="depts">Отделы</button>
     <button data-view="mytasks" id="myTasksTab">Мои задачи</button>
     <button data-view="review" id="reviewTab">Приёмка</button>
     <button data-view="assign">Поручения</button>
@@ -2128,8 +2174,8 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 function health(s, now = new Date()){
   if (isMaint(s)){
     if (s.status !== 'in_progress') return { key:'gray', label:'Не начат', note:'после воронки' };
-    const rt = s.rtasks || []; const t0 = today(); const over = rt.filter(r => r.due_date && r.due_date < t0).length;
-    if (over) return { key:'red', label:'Просрочено', note:`регулярных задач просрочено: ${over}` };
+    const rt = (s.rtasks || []).filter(rOpen); const t0 = today(); const over = rt.filter(r => r.due_date && r.due_date < t0).length;
+    if (over) return { key:'red', label:'Просрочено', note:`задач ведения просрочено: ${over}` };
     if (rt.some(r => r.due_date && r.due_date <= addDays(t0, 1))) return { key:'yellow', label:'Ведение', note:'есть задача на сегодня или завтра' };
     return { key:'maint', label:'Ведение', note:rt.length ? `регулярных задач: ${rt.length}` : 'бессрочно' };
   }
@@ -2460,7 +2506,8 @@ document.addEventListener('submit', e => {
 });
 const plannedEnd = p => p.stages.reduce((m,s) => !isMaint(s) && s.due_date > m ? s.due_date : m, '');
 const isMaint = s => s?.system === 'maint';
-const FREQ = { weekly:['Раз в неделю', 7], biweekly:['Раз в 2 недели', 14], monthly:['Раз в месяц', 0] };
+const FREQ = { once:['Разовая', 0], weekly:['Раз в неделю', 7], biweekly:['Раз в 2 недели', 14], monthly:['Раз в месяц', 0] };
+const rOpen = r => !(r.frequency === 'once' && r.status === 'done');
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 // следующий цикл: от срока (если выполнили вовремя) или от сегодня (если с опозданием)
 function nextCycle(due, freq){
@@ -3029,35 +3076,43 @@ function moveToDone(p){
   p.stages.forEach(s => { if (s.status !== 'done'){ s.status='done'; s.completed_at=t; s.started_at = s.started_at || t; completeStage(p, s); } });
   syncState(p); addLog(p, 'Все этапы отмечены завершёнными'); commit();
 }
-// ---------- Регулярные задачи ведения (абонентка): s.rtasks этапа ведения ----------
+// ---------- Задачи ведения (операционные): s.rtasks этапа ведения — регулярные и разовые, у задачи свой отдел (r.dept) ----------
 const canManageR = p => p && (p._ext ? canEditProject(p) : !GUEST);
 const rWho = (p, id) => p._ext ? ((p._team || []).find(m => m.id === id)?.name || '') : (id ? short(id) : 'Не назначен');
 function rtaskBlock(p, s, compact = false, who = ''){
-  const rt = (s.rtasks || []).filter(r => !who || r.assignee_id === who).slice().sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999'));
+  const rt = (s.rtasks || []).filter(r => rOpen(r) && (!who || r.assignee_id === who)).slice().sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999'));
   const list = compact ? rt.slice(0, 4) : rt;
-  return `<div class="rt-block${compact ? ' compact' : ''}">${compact ? '' : '<h4>Регулярные задачи (абонентка)</h4>'}
+  return `<div class="rt-block${compact ? ' compact' : ''}">${compact ? '' : '<h4>Задачи ведения</h4>'}
     ${list.length ? `<ul class="rt-list">${list.map(r => `<li class="rt-row">
       <input type="checkbox" class="rt-chk" data-rdone="${p.id}|${r.id}" aria-label="Выполнено в этом цикле: ${esc(r.title)}">
-      <button class="rt-main" data-redit="${p.id}|${r.id}"><b>${esc(r.title)}</b><small><span class="rt-freq">${RT_ICO}${FREQ[r.frequency]?.[0] || ''}</span>${compact ? ` · ${dueTxt(r.due_date)}` : ` · ${esc(rWho(p, r.assignee_id))}${r.last_done ? ` · последний раз ${fmt(r.last_done)}` : ''}`}</small></button>
+      <button class="rt-main" data-redit="${p.id}|${r.id}"><b>${esc(r.title)}</b><small><span class="rt-freq">${RT_ICO}${FREQ[r.frequency]?.[0] || ''}</span>${deptById(r.dept) ? ` · ${esc(deptById(r.dept).name)}` : ''}${compact ? ` · ${dueTxt(r.due_date)}` : ` · ${esc(rWho(p, r.assignee_id))}${r.last_done ? ` · последний раз ${fmt(r.last_done)}` : ''}`}</small></button>
       ${compact ? '' : dueTxt(r.due_date)}</li>`).join('')}</ul>${compact && rt.length > list.length ? `<p class="hint">и ещё ${rt.length - list.length}</p>` : ''}`
-    : `<p class="hint">${s.status === 'in_progress' ? 'Регулярных задач пока нет.' : 'Задачи начнутся после завершения воронки — их можно подготовить заранее.'}</p>`}
-    ${canManageR(p) ? `<button class="link rt-add" data-radd="${p.id}">+ Добавить регулярную задачу</button>` : ''}</div>`;
+    : `<p class="hint">${s.status === 'in_progress' ? 'Задач пока нет.' : 'Задачи начнутся после завершения воронки — их можно подготовить заранее.'}</p>`}
+    ${canManageR(p) ? `<button class="link rt-add" data-radd="${p.id}">+ Добавить задачу</button>` : ''}</div>`;
 }
 const RT_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>';
-function openRtask(pid, rid){
-  const p = projById(pid); const s = p?.stages.find(isMaint); if (!s) return;
+function openRtask(pid, rid, pre = {}){
+  // без проекта (из «Отделов») — проект выбирается в форме из проектов с ведением
+  const opts = pid ? [] : maintProjects();
+  if (!pid && !opts.length){ toast('Нет проектов с ведением: включите «Ведение» в карточке проекта'); return; }
+  const p = projById(pid || opts[0].id); const s = p?.stages.find(isMaint); if (!s) return;
   const r = rid ? (s.rtasks || []).find(x => x.id === rid) : null; const manage = canManageR(p);
-  const v = r || { title:'', frequency:'weekly', assignee_id:s.assignee_id || p.worker_id || '', due_date:nextCycle('', 'weekly') };
+  const v = r || { title:'', frequency:'once', assignee_id:s.assignee_id || p.worker_id || '', due_date:addDays(today(), 7), start:'', dept:pre.dept || '' };
   const ro = manage ? '' : 'disabled';
   const people = p._ext ? `<option value="">Не назначен</option>${(p._team || []).map(m => `<option value="${m.id}" ${m.id === v.assignee_id ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}` : peopleOpts(v.assignee_id, 'Не назначен');
   layer.innerHTML = `<div class="backdrop" data-close></div>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rtT">
-    <h2 id="rtT">${r ? 'Регулярная задача' : 'Новая регулярная задача'}</h2><p class="lead">${esc(p.name)} · Ведение / Поддержка</p>
-    <form class="form" id="rtForm" data-pid="${p.id}" data-rid="${r ? r.id : ''}" novalidate>
-      <div class="field"><label for="rtTitle">Название</label><input id="rtTitle" value="${esc(v.title)}" maxlength="200" placeholder="Например: еженедельный отчёт по ROMI" ${ro} autocomplete="off"></div>
+    <h2 id="rtT">${r ? 'Задача ведения' : 'Новая задача ведения'}</h2>${pid ? `<p class="lead">${esc(p.name)} · Ведение / Поддержка</p>` : ''}
+    <form class="form" id="rtForm" data-pid="${pid ? p.id : ''}" data-rid="${r ? r.id : ''}" novalidate>
+      ${pid ? '' : `<div class="field"><label for="rtProj">Проект на ведении</label><select id="rtProj">${opts.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></div>`}
+      <div class="field"><label for="rtTitle">Название</label><input id="rtTitle" value="${esc(v.title)}" maxlength="200" placeholder="Например: запустить рекламную кампанию или еженедельный отчёт по ROMI" ${ro} autocomplete="off"></div>
       <div class="two">
+        <div class="field"><label for="rtDept">Отдел</label><select id="rtDept" ${ro}><option value="">Без отдела</option>${deptList().map(d => `<option value="${d.id}" ${d.id === v.dept ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}</select></div>
         <div class="field"><label for="rtFreq">Как часто</label><select id="rtFreq" ${ro}>${Object.entries(FREQ).map(([k, [l]]) => `<option value="${k}" ${k === v.frequency ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-        <div class="field"><label for="rtDue">Срок текущего цикла</label><input id="rtDue" type="date" value="${esc(v.due_date || '')}" ${ro}></div>
+      </div>
+      <div class="two">
+        <div class="field"><label for="rtStart">Начало</label><input id="rtStart" type="date" value="${esc(v.start || '')}" ${ro}></div>
+        <div class="field"><label for="rtDue">Срок${v.frequency === 'once' ? '' : ' текущего цикла'}</label><input id="rtDue" type="date" value="${esc(v.due_date || '')}" ${ro}></div>
       </div>
       <div class="field"><label for="rtWho">Исполнитель</label><select id="rtWho" ${ro}>${people}</select></div>
       ${r ? `<p class="hint">Выполнено циклов: ${r.done_count || 0}${r.last_done ? `, последний раз ${fmt(r.last_done)}` : ''}</p>` : ''}
@@ -3065,9 +3120,12 @@ function openRtask(pid, rid){
       <div class="actions">${r && manage ? '<button type="button" class="ghost danger m-out" id="rtDel">Удалить</button>' : ''}<button type="button" class="ghost" data-close>${manage ? 'Отмена' : 'Закрыть'}</button>${manage ? `<button class="primary">${r ? 'Сохранить' : 'Добавить'}</button>` : ''}</div>
     </form></div>`;
   if (manage) $('#rtTitle').focus();
+  const fq = $('#rtFreq'); if (fq) fq.onchange = () => { const l = $('label[for="rtDue"]'); if (l) l.textContent = fq.value === 'once' ? 'Срок' : 'Срок текущего цикла'; };
 }
 function completeRtask(p, r){
   const now = new Date().toISOString();
+  if (r.frequency === 'once'){ r.status = 'done'; r.last_done = today(); r.done_at = now; r.done_count = 1; r.updated_at = now;
+    addLog(p, `Задача ведения «${r.title}» выполнена`); commit(); toast(`«${r.title}» — готово`); return; }
   r.last_done = today(); r.done_count = (r.done_count || 0) + 1; r.status = 'todo'; r.updated_at = now;
   r.due_date = nextCycle(r.due_date, r.frequency);
   addLog(p, `Регулярная задача «${r.title}» выполнена, следующий раз ${fmt(r.due_date)}`); commit();
@@ -3075,15 +3133,16 @@ function completeRtask(p, r){
 }
 document.addEventListener('submit', e => {
   if (e.target.id !== 'rtForm') return; e.preventDefault();
-  const p = projById(e.target.dataset.pid); const s = p?.stages.find(isMaint); if (!s || !canManageR(p)) return;
+  const p = projById(e.target.dataset.pid || $('#rtProj')?.value); const s = p?.stages.find(isMaint); if (!s || !canManageR(p)) return;
   const title = $('#rtTitle').value.trim(); if (!title){ $('#rtErr').textContent = 'Укажите название'; return; }
-  const due = $('#rtDue').value; if (!due){ $('#rtErr').textContent = 'Укажите срок текущего цикла'; return; }
+  const due = $('#rtDue').value; if (!due){ $('#rtErr').textContent = 'Укажите срок'; return; }
+  const start = $('#rtStart')?.value || ''; if (start && start > due){ $('#rtErr').textContent = 'Начало не может быть позже срока'; return; }
   const now = new Date().toISOString(); s.rtasks = s.rtasks || [];
   const r = s.rtasks.find(x => x.id === e.target.dataset.rid);
-  const data = { title, frequency:$('#rtFreq').value, assignee_id:$('#rtWho').value || null, due_date:due, status:'todo', updated_at:now };
+  const data = { title, frequency:$('#rtFreq').value, assignee_id:$('#rtWho').value || null, due_date:due, start:start || null, dept:$('#rtDept')?.value || null, status:'todo', updated_at:now };
   if (r) Object.assign(r, data); else s.rtasks.push({ id:'r' + uid(), project_id:p.id, created_at:now, done_count:0, ...data });
-  addLog(p, `${r ? 'Изменена' : 'Добавлена'} регулярная задача «${title}» (${FREQ[data.frequency][0].toLowerCase()})`);
-  layer.innerHTML = ''; commit(); if (ui.open === p.id) renderDrawer(); toast(r ? 'Сохранено' : 'Регулярная задача добавлена');
+  addLog(p, `${r ? 'Изменена' : 'Добавлена'} задача ведения «${title}» (${FREQ[data.frequency][0].toLowerCase()}${deptById(data.dept) ? `, отдел «${deptById(data.dept).name}»` : ''})`);
+  layer.innerHTML = ''; commit(); if (ui.open === p.id) renderDrawer(); toast(r ? 'Сохранено' : 'Задача добавлена');
 });
 document.addEventListener('change', e => {
   const k = e.target.dataset?.rdone; if (!k) return;
@@ -3094,8 +3153,8 @@ document.addEventListener('click', e => {
   const a = e.target.closest?.('[data-radd]'); if (a){ e.stopPropagation(); openRtask(a.dataset.radd, null); return; }
   const ed = e.target.closest?.('[data-redit]'); if (ed && !e.target.closest('input, select, label')){ e.stopPropagation(); const [pid, rid] = ed.dataset.redit.split('|'); openRtask(pid, rid); return; }
   if (e.target.id === 'rtDel'){ const f = $('#rtForm'); const p = projById(f.dataset.pid); const s = p.stages.find(isMaint); const r = s.rtasks.find(x => x.id === f.dataset.rid);
-    askConfirm({ title:`Удалить «${r.title}»?`, text:'Регулярная задача перестанет появляться в ведении проекта.', ok:'Удалить' }).then(y => { if (!y) return;
-      s.rtasks = s.rtasks.filter(x => x !== r); addLog(p, `Удалена регулярная задача «${r.title}»`); layer.innerHTML = ''; commit(); if (ui.open === p.id) renderDrawer(); toast('Удалено'); });
+    askConfirm({ title:`Удалить «${r.title}»?`, text:'Задача пропадёт из ведения проекта и из «Отделов».', ok:'Удалить' }).then(y => { if (!y) return;
+      s.rtasks = s.rtasks.filter(x => x !== r); addLog(p, `Удалена задача ведения «${r.title}»`); layer.innerHTML = ''; commit(); if (ui.open === p.id) renderDrawer(); toast('Удалено'); });
   }
 }, true);
 
@@ -3257,7 +3316,7 @@ function render(){
   renderFilters();
   const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер');
   if (!isCRM()) ui.crmStage = null;
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, depts:renderDepts, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
   if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST && !(ui.view === 'matrix' && density() === 'funnel')) app.insertAdjacentHTML('afterbegin', crmSumHtml());
   if (ui.open) renderDrawer();
@@ -3897,6 +3956,244 @@ document.addEventListener('click', e => {
   const p = projById(b.dataset.unarch); restoreProject(p); commit(); toast(`Проект «${p.name}» снова в работе`);
 });
 document.addEventListener('input', e => { if (e.target.id !== 'archQ') return; ui.archQ = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#archQ'); q?.focus(); q?.setSelectionRange(pos, pos); });
+// ---------- Отделы: операционные задачи по отделам ----------
+// Отделы пространства — db.prefs.depts = [{ id, name, at }]. В отделе два вида задач:
+//  • задача отдела — внутренняя задача (it/…, itSave) с полями dept, start, subs [{ id, title, done }], space; сама по себе,
+//    галочкой «В производство» из неё создаётся проект / видео (t.pid) — он идёт по своему процессу в «Производстве»;
+//  • задача ведения проекта после запуска (s.rtasks этапа «Ведение / Поддержка», r.dept) — разовые и регулярные.
+// Вид — канбан (колонки = отделы) или таймлайн по датам: общий по всем отделам или по одному (чипы).
+const deptList = () => db.prefs?.depts || [];
+const deptById = id => id ? deptList().find(d => d.id === id) : null;
+const deptColor = d => d ? hashColor(d.id + 'dept') : 'var(--line)';
+function addDept(name){
+  db.prefs = db.prefs || {}; db.prefs.depts = [...deptList(), { id:'d' + uid().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10), name, at:new Date().toISOString() }];
+  commit(); return db.prefs.depts.at(-1);
+}
+const maintProjects = () => db.projects.filter(p => p.state !== 'archived' && !p._ext && p.stages.some(isMaint));
+const OG_NONE = '_';
+const KO = { late:0, now:1, next:2, done:3 };
+const OK_TXT = { done:'Сделано', now:'Сейчас', late:'Просрочено', next:'Дальше' };
+// длина цикла регулярной задачи — от начала цикла до срока
+const cycleLen = f => f === 'monthly' ? 30 : FREQ[f]?.[1] || 1;
+const d10 = v => v ? String(v).slice(0, 10) : '';
+const ogSpace = () => curSpaceKey();
+const ogTasks = () => itAll().filter(t => t.space === ogSpace() || (!t.space && deptById(t.dept)));
+const subsDoneN = t => (t.subs || []).filter(x => x.done).length;
+function opItems(){
+  const t0 = today(), out = [];
+  ogTasks().forEach(t => {
+    const due = t.due_date || t.start || ''; if (!due) return;
+    const from = t.start && t.start <= due ? t.start : due;
+    const done = t.status === 'done'; const to = done && t.done_at ? d10(t.done_at) : due;
+    const k = done ? 'done' : due < t0 ? 'late' : from <= t0 || t.status === 'in_progress' || t.status === 'review' ? 'now' : 'next';
+    out.push({ type:'task', t, p:t.pid ? projById(t.pid) : null, dept:deptById(t.dept) ? t.dept : OG_NONE, from:from <= to ? from : to, to, k });
+  });
+  maintProjects().forEach(p => {
+    const s = p.stages.find(isMaint);
+    (s.rtasks || []).forEach(r => {
+      if (!r.due_date) return;
+      const done = !rOpen(r);
+      const from = r.start && r.start <= r.due_date ? r.start : r.frequency === 'once' ? r.due_date : addDays(r.due_date, 1 - cycleLen(r.frequency));
+      const to = done && r.last_done ? r.last_done : r.due_date;
+      const k = done ? 'done' : to < t0 ? 'late' : from <= t0 ? 'now' : 'next';
+      out.push({ type:'maint', p, s, r, dept:deptById(r.dept) ? r.dept : OG_NONE, from:from <= to ? from : to, to, k });
+    });
+  });
+  return out;
+}
+const ogWho = x => x.type === 'task' ? (x.t.assignee_id ? ` · ${esc(userById(x.t.assignee_id)?.name || 'Вы')}` : '') : x.r.assignee_id ? ` · ${esc(rWho(x.p, x.r.assignee_id))}` : '';
+// подписи элемента: название, «где» (проект ведения / в производстве), прогресс подзадач
+const ogTitle = x => x.type === 'task' ? x.t.title : x.r.title;
+const ogKey = x => x.type === 'task' ? `t|${x.t.id}` : `${x.p.id}|${x.r.id}`;
+const ogWhere = x => x.type === 'maint' ? `${esc(x.p.name)} · ведение` : x.p ? `В производстве: ${esc(x.p.name)}${currentStage(x.p) ? ` · ${esc(currentStage(x.p).name)}` : ''}` : '';
+const ogSubs = x => x.type === 'task' && (x.t.subs || []).length ? `<span class="og-subs">Подзадачи ${subsDoneN(x.t)}/${x.t.subs.length}</span>` : '';
+// следующие повторы регулярной задачи до конца окна таймлайна
+function repeats(x, end){
+  if (x.type === 'task' || x.r.frequency === 'once' || x.k === 'done') return [];
+  const out = []; let d = x.to;
+  for (let i = 0; i < 12; i++){ const n = nextCycle(d, x.r.frequency); if (n <= d || n > end) break; out.push(n); d = n; }
+  return out;
+}
+function renderDepts(){
+  const depts = deptList(), mode = ui.dtMode === 'timeline' ? 'timeline' : 'kanban';
+  const all = opItems(), t0 = today(), proj = maintProjects();
+  const cols = [...depts, ...(all.some(x => x.dept === OG_NONE && x.k !== 'done') ? [{ id:OG_NONE, name:'Без отдела' }] : [])];
+  const head = `<div class="fn-head-row"><h2 class="td-title">Отделы</h2>
+      <div class="seg-toggle og-mode" role="group" aria-label="Вид"><button data-dtmode="kanban" aria-pressed="${mode === 'kanban'}">Канбан</button><button data-dtmode="timeline" aria-pressed="${mode === 'timeline'}">Таймлайн</button></div>
+      ${mode === 'timeline' ? `<div class="og-nav"><button class="ghost" data-dtoff="-1" aria-label="Раньше">‹</button><button class="ghost" data-dtoff="0">Сегодня</button><button class="ghost" data-dtoff="1" aria-label="Позже">›</button></div>` : ''}</div>`;
+  const addForm = cls => `<form class="${cls}" id="ogAddForm"><input id="ogAddName" placeholder="${depts.length ? '+ Новый отдел' : 'Название отдела, например «Отдел контента»'}" maxlength="60" aria-label="Название отдела"><button class="${depts.length ? 'ghost' : 'primary'}">${depts.length ? 'Добавить' : 'Создать отдел'}</button></form>`;
+  if (!depts.length){
+    app.innerHTML = `<div class="og">${head}<div class="note-box og-first"><p><b>Операционные задачи по отделам.</b> Создайте свои отделы — «Контент», «Трафик», «Челлендж с Сэмом»… — и ставьте им задачи с подзадачами и сроками. Задачу, связанную с роликом или проектом, галочкой «В производство» можно сразу отправить в «Производство». Сюда же попадают задачи ведения проектов после запуска. Канбан — что у кого в работе, таймлайн — сроки по датам, общий или по одному отделу.</p>
+      ${addForm('og-addf')}</div></div>`;
+    return;
+  }
+  if (mode === 'kanban'){
+    const card = x => `<article class="card og-card k-${x.k}" draggable="true" data-ogcard="${ogKey(x)}">
+        <div class="og-top">${x.k === 'done' ? '' : x.type === 'task' ? `<input type="checkbox" class="rt-chk" data-ogdone="${x.t.id}" aria-label="Выполнено: ${esc(x.t.title)}">` : `<input type="checkbox" class="rt-chk" data-rdone="${x.p.id}|${x.r.id}" aria-label="Выполнено: ${esc(x.r.title)}">`}
+          <button class="og-t" ${x.type === 'task' ? `data-ogopen="${x.t.id}"` : `data-redit="${x.p.id}|${x.r.id}"`}>${esc(ogTitle(x))}</button></div>
+        ${ogWhere(x) ? `<div class="meta">${x.p ? projAva(x.p, 'xs') : ''}${x.p ? `<button class="link og-pj" data-open="${x.p.id}">${ogWhere(x)}</button>` : ogWhere(x)}</div>` : ''}
+        ${x.type === 'task' && (x.t.subs || []).length ? `<span class="og-prog" aria-hidden="true"><i style="width:${Math.round(subsDoneN(x.t) / x.t.subs.length * 100)}%"></i></span>` : ''}
+        <div class="meta og-st"><span class="og-k">${OK_TXT[x.k]}</span> · ${x.k === 'done' ? fmt(x.to) : `до ${fmt(x.to)}`}${x.type === 'maint' && x.r.frequency !== 'once' ? ` · <span class="rt-freq">${RT_ICO}${FREQ[x.r.frequency][0]}</span>` : ''}${ogWho(x)}${ogSubs(x) ? ` · ${ogSubs(x)}` : ''}</div></article>`;
+    const colItems = id => all.filter(x => x.dept === id && (x.k !== 'done' || ui.dtDone)).sort((a, b) => KO[a.k] - KO[b.k] || a.to.localeCompare(b.to));
+    app.innerHTML = `<div class="og">${head}
+      <p class="hint og-tip">Задачи отделов и задачи ведения проектов после запуска. Перетащите карточку в другой отдел, галочка — выполнено.
+        <label class="og-done"><input type="checkbox" data-dtdone ${ui.dtDone ? 'checked' : ''}> показывать выполненные</label></p>
+      <div class="kb og-kb">${cols.map(d => { const it = colItems(d.id); const own = d.id !== OG_NONE; return `<section class="col og-col" data-ogcol="${d.id}" style="--dc:${own ? deptColor(d) : 'var(--line)'}">
+        <h3><span class="cname">${own ? '<i class="og-dot"></i>' : ''}${esc(d.name)}</span><span class="cnt">${it.filter(x => x.k !== 'done').length}</span>
+          ${own ? `<span class="col-tools"><button data-ogren="${d.id}" aria-label="Переименовать отдел «${esc(d.name)}»">${ICON_EDIT}</button><button data-ogdel="${d.id}" aria-label="Удалить отдел «${esc(d.name)}»">${ICON_X}</button></span>` : ''}</h3>
+        ${own ? `<button class="ghost og-newtask" data-ognew="${d.id}">+ Задача</button>` : ''}
+        ${it.map(card).join('') || '<p class="hint og-empty">Пока пусто</p>'}</section>`; }).join('')}
+        ${addForm('col-add og-addcol')}</div>
+</div>`;
+    return;
+  }
+  // таймлайн: 5 недель, линия «сегодня»; общий по всем отделам или по одному
+  const wk = 7, off = ui.dtOff || 0;
+  const from = addDays(mondayOf(t0), (off - 1) * wk), to = addDays(from, 5 * wk - 1), span = diffDays(to, from) + 1;
+  const inRange = all.filter(x => (x.to >= from && x.from <= to || repeats(x, to).some(d => d >= from)) && (ui.dtDone || x.k !== 'done'));
+  const sel = cols.some(d => d.id === ui.dtDept) ? ui.dtDept : '';
+  const list = sel ? inRange.filter(x => x.dept === sel) : inRange;
+  const X = d => Math.max(0, Math.min(100, diffDays(d, from) / span * 100));
+  const WD = (a, b) => Math.max(100 / span, X(addDays(b, 1)) - X(a));
+  const weeks = Array.from({ length:5 }, (_, i) => addDays(from, i * wk));
+  const tX = t0 >= from && t0 <= to ? X(t0) + 50 / span : null;
+  const row = x => { const rp = repeats(x, to); return `<div class="og-row k-${x.k}">
+      <button class="og-name" ${x.type === 'task' ? `data-ogopen="${x.t.id}"` : `data-redit="${x.p.id}|${x.r.id}"`}>${x.p ? projAva(x.p, 'sm') : `<span class="og-ava" style="--dc:${deptColor(deptById(x.dept))}"></span>`}<span><b>${esc(ogTitle(x))}</b>
+        <small>${[ogWhere(x), ogWho(x).replace(/^ · /, ''), x.type === 'maint' && x.r.frequency !== 'once' ? FREQ[x.r.frequency][0].toLowerCase() : '', ogSubs(x)].filter(Boolean).join(' · ') || 'Задача отдела'}</small>
+        <small><span class="og-k">${OK_TXT[x.k]}</span> · ${x.k === 'done' ? fmt(x.to) : `${fmt(x.from)} – ${fmt(x.to)}`}${rp.length ? ` · дальше ${fmt(rp[0])}` : ''}</small></span></button>
+      <div class="og-lane">${tX !== null ? `<i class="og-today" style="left:${tX}%"></i>` : ''}
+        ${x.to >= from && x.from <= to ? `<span class="og-bar k-${x.k}" style="left:${X(x.from)}%;width:${WD(x.from, x.to)}%" title="${esc(ogTitle(x))}: ${fmt(x.from)} – ${fmt(x.to)} · ${OK_TXT[x.k]}">${x.k === 'now' ? '<em>сейчас</em>' : ''}</span>` : ''}
+        ${rp.filter(d => d >= from).map(d => { const a = addDays(d, 1 - cycleLen(x.r.frequency)); return `<span class="og-bar rep k-next" style="left:${X(a)}%;width:${WD(a, d)}%" title="Повтор: до ${fmt(d)}"></span>`; }).join('')}</div></div>`; };
+  const groups = cols.map(d => ({ d, rows:list.filter(x => x.dept === d.id).sort((a, b) => KO[a.k] - KO[b.k] || a.from.localeCompare(b.from)) })).filter(g => g.rows.length);
+  app.innerHTML = `<div class="og">${head}
+    <div class="og-chips" role="group" aria-label="Отдел"><button class="og-chip" data-dtdept="" aria-pressed="${!sel}">Все отделы <b>${inRange.filter(x => x.k !== 'done').length}</b></button>
+      ${cols.map(d => `<button class="og-chip" data-dtdept="${d.id}" aria-pressed="${sel === d.id}" style="--dc:${d.id !== OG_NONE ? deptColor(d) : 'var(--line)'}">${d.id !== OG_NONE ? '<i class="og-dot"></i>' : ''}${esc(d.name)} <b>${inRange.filter(x => x.dept === d.id && x.k !== 'done').length}</b></button>`).join('')}</div>
+    <div class="og-legend">${['now', 'next', 'late', 'done'].map(k => `<span class="k-${k}"><i></i>${OK_TXT[k]}</span>`).join('')}
+      <label class="og-done"><input type="checkbox" data-dtdone ${ui.dtDone ? 'checked' : ''}> показывать выполненные</label></div>
+    <div class="og-scroll"><div class="og-grid">
+      <div class="og-row og-hd"><span></span><div class="og-lane">${weeks.map(w => `<span class="og-wk" style="left:${X(w)}%">${fmt(w)}</span>`).join('')}${tX !== null ? `<i class="og-today" style="left:${tX}%"><b>Сегодня</b></i>` : ''}</div></div>
+      ${groups.length ? groups.map(g => `<section class="og-grp" style="--dc:${g.d.id !== OG_NONE ? deptColor(g.d) : 'var(--line)'}"><h3>${g.d.id !== OG_NONE ? '<i class="og-dot"></i>' : ''}${esc(g.d.name)} <small>сейчас ${g.rows.filter(x => x.k === 'now').length} · дальше ${g.rows.filter(x => x.k === 'next').length}${g.rows.some(x => x.k === 'late') ? ` · <span class="og-late">просрочено ${g.rows.filter(x => x.k === 'late').length}</span>` : ''}</small></h3>${g.rows.map(row).join('')}</section>`).join('')
+        : `<div class="empty">В эти недели у ${sel ? `отдела «${esc(cols.find(d => d.id === sel)?.name || '')}»` : 'отделов'} нет задач.</div>`}
+    </div></div></div>`;
+}
+document.addEventListener('click', e => {
+  const m = e.target.closest?.('[data-dtmode]'); if (m){ ui.dtMode = m.dataset.dtmode; render(); return; }
+  const o = e.target.closest?.('[data-dtoff]'); if (o){ ui.dtOff = +o.dataset.dtoff ? (ui.dtOff || 0) + +o.dataset.dtoff : 0; render(); return; }
+  const d = e.target.closest?.('[data-dtdept]'); if (d){ ui.dtDept = d.dataset.dtdept; render(); return; }
+  const n = e.target.closest?.('[data-ognew]'); if (n){ openOpTask(null, { dept:n.dataset.ognew }); return; }
+  const ot = e.target.closest?.('[data-ogopen]'); if (ot){ openOpTask(ot.dataset.ogopen); return; }
+  const r = e.target.closest?.('[data-ogren]');
+  if (r){ const dp = deptById(r.dataset.ogren); const v = prompt('Название отдела', dp.name); if (v && v.trim()){ dp.name = v.trim().slice(0, 60); commit(); } return; }
+  const x = e.target.closest?.('[data-ogdel]');
+  if (x){ const dp = deptById(x.dataset.ogdel); const n2 = opItems().filter(i => i.dept === dp.id).length;
+    askConfirm({ title:`Удалить отдел «${dp.name}»?`, text:n2 ? `Задачи отдела (${n2}) останутся в ведении проектов — в колонке «Без отдела».` : 'Колонка отдела исчезнет.', ok:'Удалить' }).then(yes => {
+      if (!yes) return; db.prefs.depts = deptList().filter(v => v.id !== dp.id);
+      maintProjects().forEach(p => (p.stages.find(isMaint).rtasks || []).forEach(t => { if (t.dept === dp.id) t.dept = null; }));
+      ogTasks().filter(t => t.dept === dp.id).forEach(t => itSave({ ...t, dept:null, space:t.space || ogSpace() }));
+      if (ui.dtDept === dp.id) ui.dtDept = ''; commit(); toast('Отдел удалён'); });
+  }
+});
+document.addEventListener('change', e => { if (e.target.matches?.('[data-dtdone]')){ ui.dtDone = e.target.checked; render(); } });
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'ogAddForm') return; e.preventDefault();
+  const v = $('#ogAddName').value.trim(); if (!v) return;
+  if (deptList().some(d => norm(d.name) === norm(v))){ toast('Такой отдел уже есть'); return; }
+  addDept(v.slice(0, 60)); toast(`Отдел «${v}» создан`); setTimeout(() => $('#ogAddName')?.focus(), 0);
+});
+// перетаскивание задачи между отделами
+document.addEventListener('dragstart', e => { const c = e.target.closest?.('[data-ogcard]'); if (!c) return; ui.ogDrag = c.dataset.ogcard; e.dataTransfer?.setData('text/plain', c.dataset.ogcard); });
+document.addEventListener('dragover', e => { if (ui.ogDrag && e.target.closest?.('[data-ogcol]')) e.preventDefault(); });
+document.addEventListener('drop', e => {
+  const col = e.target.closest?.('[data-ogcol]'); if (!col || !ui.ogDrag) return; e.preventDefault();
+  const [pid, rid] = ui.ogDrag.split('|'); ui.ogDrag = null;
+  if (pid === 't'){ const t = itAll().find(x => x.id === rid); const d = deptById(col.dataset.ogcol);
+    if (t && (t.dept || null) !== (d ? d.id : null)){ itSave({ ...t, dept:d ? d.id : null }); render(); toast(`«${t.title}» → ${d ? d.name : 'Без отдела'}`); } return; }
+  moveOpTask(pid, rid, col.dataset.ogcol);
+});
+// задача отдела: название, описание, отдел, исполнитель, начало/срок, статус, подзадачи, «В производство»
+function openOpTask(id, pre = {}){
+  const t = id ? itAll().find(x => x.id === id) : null; const manage = itCanManage(t); const ro = manage ? '' : 'disabled';
+  const v = t || { title:'', description:'', dept:pre.dept || '', assignee_id:ME, start:today(), due_date:addDays(today(), 7), status:'todo', subs:[] };
+  ui.ogSubs = clone(v.subs || []);
+  const linked = t?.pid && projById(t.pid);
+  const tpls = db.templates.filter(x => x.id !== CRM_TPL_ID);
+  layer.innerHTML = `<div class="backdrop" data-close></div>
+  <div class="modal it-modal" role="dialog" aria-modal="true" aria-labelledby="ogT">
+    <h2 id="ogT">${t ? (manage ? 'Задача отдела' : esc(t.title)) : 'Новая задача отдела'}</h2>
+    <form class="form" id="ogForm" data-ogid="${t ? t.id : ''}" novalidate>
+      <div class="field"><label for="ogTitle">Название</label><input id="ogTitle" value="${esc(v.title)}" maxlength="200" ${ro} autocomplete="off" placeholder="Например: запустить челлендж с Сэмом"></div>
+      <div class="field"><label for="ogDesc">Описание</label><textarea id="ogDesc" rows="2" maxlength="4000" ${ro}>${esc(v.description || '')}</textarea></div>
+      <div class="two">
+        <div class="field"><label for="ogDept">Отдел</label><select id="ogDept" ${ro}><option value="">Без отдела</option>${deptList().map(d => `<option value="${d.id}" ${d.id === v.dept ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}</select></div>
+        <div class="field"><label for="ogWho">Исполнитель</label><select id="ogWho" ${ro}>${peopleOpts(v.assignee_id)}</select></div>
+      </div>
+      <div class="two">
+        <div class="field"><label for="ogStart">Начало</label><input id="ogStart" type="date" value="${esc(v.start || '')}" ${ro}></div>
+        <div class="field"><label for="ogDue">Срок</label><input id="ogDue" type="date" value="${esc(v.due_date || '')}" ${ro}></div>
+      </div>
+      <div class="field"><label for="ogStatus">Статус</label><select id="ogStatus">${Object.entries(IT_STATUS).map(([k, x]) => `<option value="${k}" ${k === v.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>Подзадачи</label><ul class="og-sublist" id="ogSubs"></ul>${manage ? '<input id="ogSubNew" placeholder="+ Подзадача и Enter" maxlength="200" autocomplete="off" style="width:100%;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit">' : ''}</div>
+      ${linked ? `<p class="og-prod">В производстве: <button type="button" class="link" data-open="${linked.id}">${esc(linked.name)}</button>${currentStage(linked) ? ` — этап «${esc(currentStage(linked).name)}»` : ''}</p>`
+        : manage && tpls.length ? `<div class="og-prod"><label class="check"><input type="checkbox" id="ogProd"> <span><b>В производство</b> — задача связана с ${W('проектом', 'роликом', 'блогером')}: создать ${W('проект', 'видео', 'карточку')} по процессу, он появится в «Производстве»</span></label>
+          <select id="ogTpl" hidden aria-label="Процесс">${tpls.map(x => `<option value="${x.id}" ${x.id === (isSMM() ? SMM_TPL_ID : '') ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>` : ''}
+      <div class="err" id="ogErr" aria-live="polite"></div>
+      <div class="actions">${t && manage ? '<button type="button" class="ghost danger m-out" id="ogDel">Удалить</button>' : ''}<button type="button" class="ghost" data-close>Отмена</button><button class="primary">${t ? 'Сохранить' : 'Поставить задачу'}</button></div>
+    </form></div>`;
+  paintOgSubs(manage);
+  $('#ogProd')?.addEventListener('change', e => { $('#ogTpl').hidden = !e.target.checked; });
+  $('#ogSubNew')?.addEventListener('keydown', e => { if (e.key !== 'Enter') return; e.preventDefault(); const val = e.target.value.trim(); if (!val) return;
+    ui.ogSubs.push({ id:'s' + uid(), title:val, done:false }); e.target.value = ''; paintOgSubs(manage); });
+  (t ? $('#ogStatus') : $('#ogTitle')).focus();
+}
+function paintOgSubs(manage){
+  const ul = $('#ogSubs'); if (!ul) return;
+  ul.innerHTML = ui.ogSubs.map((x, i) => `<li><input type="checkbox" data-ogsub="${i}" ${x.done ? 'checked' : ''} aria-label="Готово: ${esc(x.title)}">
+    ${manage ? `<input type="text" data-ogsubt="${i}" value="${esc(x.title)}" maxlength="200" aria-label="Подзадача ${i + 1}"><button type="button" class="tx" data-ogsubdel="${i}" aria-label="Удалить подзадачу">×</button>` : `<span>${esc(x.title)}</span>`}</li>`).join('')
+    || '<li class="hint">Пока нет — разбейте задачу на шаги</li>';
+}
+document.addEventListener('change', e => {
+  const i = e.target.dataset?.ogsub; if (i !== undefined && ui.ogSubs?.[+i]){ ui.ogSubs[+i].done = e.target.checked; return; }
+  const d = e.target.dataset?.ogdone; if (!d) return;
+  const t = itAll().find(x => x.id === d); if (!t) return;
+  itSave({ ...t, status:'done', done_at:new Date().toISOString() }); render(); toast(`«${t.title}» — готово`);
+});
+document.addEventListener('input', e => { const i = e.target.dataset?.ogsubt; if (i !== undefined && ui.ogSubs?.[+i]) ui.ogSubs[+i].title = e.target.value; });
+document.addEventListener('click', e => {
+  const d = e.target.closest?.('[data-ogsubdel]'); if (d){ ui.ogSubs.splice(+d.dataset.ogsubdel, 1); paintOgSubs(true); return; }
+  if (e.target.id === 'ogDel'){ const t = itAll().find(x => x.id === $('#ogForm').dataset.ogid);
+    askConfirm({ title:`Удалить «${t.title}»?`, text:'Задача отдела будет удалена.', ok:'Удалить' }).then(y => { if (!y) return; itDelete(t); layer.innerHTML = ''; render(); toast('Удалено'); }); }
+});
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'ogForm') return; e.preventDefault();
+  const id = e.target.dataset.ogid; const old = id ? itAll().find(x => x.id === id) : null;
+  const subs = (ui.ogSubs || []).map(x => ({ ...x, title:x.title.trim() })).filter(x => x.title);
+  const status = $('#ogStatus').value;
+  if (old && !itCanManage(old)){ itSave({ ...old, status, subs, ...(status === 'done' && old.status !== 'done' ? { done_at:new Date().toISOString() } : {}) }); layer.innerHTML = ''; render(); toast('Сохранено'); return; }
+  const title = $('#ogTitle').value.trim(); if (!title){ $('#ogErr').textContent = 'Укажите название задачи'; return; }
+  const start = $('#ogStart').value, due = $('#ogDue').value;
+  if (!due){ $('#ogErr').textContent = 'Укажите срок'; return; }
+  if (start && start > due){ $('#ogErr').textContent = 'Начало не может быть позже срока'; return; }
+  const now = new Date().toISOString(), who = $('#ogWho').value || ME;
+  const t = { ...(old || { id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Руководитель', created_at:now, priority:'medium', category:'other', space:ogSpace() }),
+    title, description:$('#ogDesc').value.trim(), dept:$('#ogDept').value || null, assignee_id:who, start:start || null, due_date:due, status, subs };
+  if (status === 'done' && old?.status !== 'done') t.done_at = now;
+  if (old && old.assignee_id !== who) delete t._members;
+  // «В производство»: проект / видео по процессу, связан с задачей
+  if ($('#ogProd')?.checked && !t.pid){
+    const tpl = tplById($('#ogTpl').value);
+    if (tpl){ const p = createProject({ name:title, client:deptById(t.dept)?.name || 'Внутренняя задача', template_id:tpl.id, start_date:start || today(), pm_id:ME, worker_id:who !== ME ? who : null, priority:'medium' });
+      if (due >= (start || today())){ p.deadline = due; if (plannedEnd(p) > due) fitToDeadline(p); }
+      addLog(p, `Создан из задачи отдела «${title}»`); t.pid = p.id; save(); }
+  }
+  itSave(t); layer.innerHTML = ''; render();
+  toast(t.pid && !old?.pid ? `Задача поставлена и отправлена в «Производство»: «${title}»` : old ? 'Сохранено' : 'Задача поставлена');
+});
+function moveOpTask(pid, rid, dept){
+  const p = projById(pid); const r = p?.stages.find(isMaint)?.rtasks?.find(x => x.id === rid); if (!r) return;
+  const d = deptById(dept); const to = d ? d.id : null; if ((r.dept || null) === to) return;
+  r.dept = to; r.updated_at = new Date().toISOString();
+  addLog(p, `Задача ведения «${r.title}» → ${d ? `отдел «${d.name}»` : 'без отдела'}`); commit(); toast(`«${r.title}» → ${d ? d.name : 'Без отдела'}`);
+}
 // ---------- Производство на телефоне: лента проектов + этапы сверху вниз ----------
 function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage, curSub }){
   const key = mine ? 'myProject' : 'prodProject';
@@ -5565,7 +5862,8 @@ function renderTemplates(){
         <input type="text" data-f="name" value="${esc(s.name)}" aria-label="Название этапа ${i+1}" placeholder="Название этапа">
         ${useTplD ? `<label class="tdays"><input type="number" min="1" data-f="days" value="${s.days}" aria-label="Дней на этап ${i+1}">дн.</label>` : ''}
         <span class="tflags"><label class="tappr" title="Этап требует согласования клиента"><input type="checkbox" data-f="approval" ${s.approval?'checked':''}> согласование</label>
-          <label class="tappr" title="Исполнитель не закрывает этап сам: отправляет запрос, руководитель одобряет переход на следующий этап"><input type="checkbox" data-f="gate" ${s.gate?'checked':''}> запрос перехода</label></span>
+          <label class="tappr" title="Исполнитель не закрывает этап сам: отправляет запрос, руководитель одобряет переход на следующий этап"><input type="checkbox" data-f="gate" ${s.gate?'checked':''}> запрос перехода</label>
+</span>
         <button class="tx" data-del aria-label="Удалить этап ${esc(s.name)}" title="Удалить этап">×</button>
       </div>${tplSubsHtml(s, i)}</div>`).join('')}</div>
       <p><button class="ghost" id="tAdd">Добавить этап</button></p>
@@ -6632,7 +6930,7 @@ function dayProjectItems(who){
     const c = currentStage(p); if (!c) return;
     const mine = p._ext ? myTeamIds(p) : null;
     if (isMaint(c)){
-      (c.rtasks || []).forEach(r => { const w = r.assignee_id;
+      (c.rtasks || []).filter(rOpen).forEach(r => { const w = r.assignee_id;
         if (p._ext){ if (!mine.includes(w)) return; } else if (who && w !== who) return;
         out.push({ kind:'p', id:`r|${p.id}|${r.id}`, p, s:c, r, x:null, t:null, who:w, done:false, own:r.due_date, due:r.due_date, title:r.title }); });
       return;
@@ -6730,7 +7028,7 @@ function renderTodo(who){
       ${GUEST ? '' : `<select id="dayAs" aria-label="Смотреть как"><option value="">Смотреть как: я</option>${db.users.filter(u => u.id !== ME).map(u => `<option value="${u.id}" ${u.id === ui.dayAs ? 'selected' : ''}>Как видит: ${esc(u.name || 'Без имени')}</option>`).join('')}</select>`}
       <label class="inl hint"><input type="checkbox" id="dayDone" ${showDone ? 'checked' : ''}> Выполненные${doneN ? ` (${doneN})` : ''}</label></div>
     ${asU ? `<div class="as-note">Так видит свои задачи <b>${esc(asU.name || 'сотрудник')}</b>${asU.account_id ? '' : ' (ещё не вошёл в приложение)'}. <button class="link" data-dayas="">Вернуться к моим</button></div>` : ''}
-    <p class="fn-sum">${mtab ? 'Регулярные задачи проектов на ведении. Отметьте галочкой — задача уйдёт на следующий цикл.' : list.filter(i => !i.done).length ? `Задач: ${list.filter(i => !i.done).length}${overN ? `, просрочено: ${overN}` : ''}. Отметьте галочкой, когда сделано.` : 'Все задачи выполнены.'}</p>
+    <p class="fn-sum">${mtab ? 'Задачи ведения проектов (разовые и регулярные). Отметьте галочкой — задача уйдёт на следующий цикл.' : list.filter(i => !i.done).length ? `Задач: ${list.filter(i => !i.done).length}${overN ? `, просрочено: ${overN}` : ''}. Отметьте галочкой, когда сделано.` : 'Все задачи выполнены.'}</p>
     ${list.length ? `<ul class="td-list">${list.map(row).join('')}</ul>` : '<div class="empty">Задач нет.</div>'}`;
 }
 // галочка «выполнено»: внутренняя — статус «Готово»; карточка — все пункты чек-листа; подэтап — отметка подэтапа
@@ -6764,7 +7062,7 @@ function renderAssignMaint(who){
       <button data-daytab="all">Все (Мой день)</button><button data-daytab="p">Проектные</button><button data-daytab="i">Внутренние</button><button data-daytab="m" aria-pressed="true">Ведение</button></div>
     <select id="dayWho" aria-label="Исполнитель"><option value="">Исполнитель: все</option>${db.users.map(u => `<option value="${u.id}" ${u.id === who ? 'selected' : ''}>${esc(u.id === ME ? `${u.name || 'Вы'} (вы)` : u.name || 'Без имени')}</option>`).join('')}</select></div>`;
   app.innerHTML = head + `<p class="fn-sum">Проекты на абонентском ведении и их регулярные задачи. Задача по проекту ставится кнопкой «+ Добавить регулярную задачу».</p>`
-    + (list.length ? list.map(p => { const ms = p.stages.find(isMaint); const h = health(ms); const n = (ms.rtasks || []).filter(r => !who || r.assignee_id === who).length;
+    + (list.length ? list.map(p => { const ms = p.stages.find(isMaint); const h = health(ms); const n = (ms.rtasks || []).filter(r => rOpen(r) && (!who || r.assignee_id === who)).length;
         return `<section class="dt-proj-sec m-sec" data-mproj="${p.id}"><header class="dt-ph"><span class="dt-fold">${projAva(p, 'xs')}<b>${esc(p.name)}</b><small>${esc(p.client || '')}</small></span>
           <span class="pill st-pill s-${h.key}">${STATUS_ICO[h.key] || STATUS_ICO.maint}${ms.status === 'in_progress' ? h.label : 'Ещё в воронке'}</span><span class="dt-cnt">${n} ${plural(n, 'регулярная задача', 'регулярные задачи', 'регулярных задач')}</span>
           <button class="link" data-open="${p.id}" data-stage="${ms.id}">Открыть проект</button></header>${rtaskBlock(p, ms, false, who)}</section>`; }).join('')
@@ -8772,6 +9070,7 @@ const MNAV = {
   matrix:['Матрица', MI('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>')],
   kanban:['Канбан', MI('<rect x="3" y="3" width="5" height="15" rx="1.5"/><rect x="10" y="3" width="5" height="10" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/>')],
   production:['Произв.', MI('<path d="M3 12h4l3-8 4 16 3-8h4"/>')],
+  depts:['Отделы', MI('<path d="M3 6h7M3 12h11M3 18h5"/><path d="M14 4v4M18 10v4M10 16v4"/>')],
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
   assign:['Поручения', MI('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2 2 4-4M8.5 17h7"/>')],
