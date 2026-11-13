@@ -480,6 +480,61 @@ body.selecting #app{padding-bottom:90px}
 .send-btn small{color:var(--muted);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sh-link .send-row{margin:6px 0 0}
 .st-lead{display:inline-block;font-size:12px;font-weight:600;color:var(--b);background:var(--b-bg);border-radius:6px;padding:1px 7px;margin-bottom:3px}
+.rm{--rm-live:var(--g,#22C55E);--rm-build:var(--y,#F59E0B);--rm-todo:color-mix(in srgb,var(--muted) 45%,transparent)}
+.rm-title{font-weight:600}.rm-acts{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.rm-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:12px 0 6px}
+.rm-kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:2px}.rm-kpi b{font-size:22px}.rm-kpi small{color:var(--muted);font-size:12.5px}
+.rm-kpi.warn{border-color:color-mix(in srgb,var(--r,#EF4444) 45%,var(--line))}.rm-kpi.warn b{color:var(--r,#EF4444)}
+.rm-h{margin:20px 0 10px;font-size:15px}.rm-h small{color:var(--muted);font-weight:500;margin-left:6px;font-size:12.5px}
+.rm-pipe{display:flex;align-items:stretch;gap:6px;overflow-x:auto;padding:4px 2px 10px}
+.rm-arrow{align-self:center;color:var(--muted);font-size:18px;flex:none}
+.rm-blk{position:relative;flex:none;width:178px;display:grid;gap:4px;align-content:start;text-align:left;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--rm-todo);border-radius:12px;padding:10px 11px 11px;cursor:pointer}
+.rm-blk.st-build{border-top-color:var(--rm-build)}.rm-blk.st-live{border-top-color:var(--rm-live)}
+.rm-blk.on{box-shadow:0 0 0 2px var(--brand)}
+.rm-blk.bn{background:color-mix(in srgb,var(--rm-build) 7%,var(--surface))}
+.rm-blk.bn-hot{background:color-mix(in srgb,var(--r,#EF4444) 7%,var(--surface));border-color:color-mix(in srgb,var(--r,#EF4444) 40%,var(--line))}
+.rm-n{font-size:11.5px;color:var(--muted);font-weight:600}.rm-blk b{font-size:14px;line-height:1.25}.rm-hint{color:var(--muted);font-size:12px}
+.rm-st{font-size:12px;font-weight:600;color:var(--muted)}.st-build .rm-st{color:var(--y-ink,#B45309)}.st-live .rm-st{color:var(--g-ink,#15803D)}
+.rm-meta{display:flex;gap:6px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+.rm-en{border:1px solid var(--line);border-radius:6px;padding:0 5px;font-weight:700;opacity:.55}.rm-en.on{opacity:1;color:var(--brand);border-color:var(--brand)}
+.rm-prog{height:4px;border-radius:3px;background:color-mix(in srgb,var(--muted) 22%,transparent);overflow:hidden}.rm-prog i{display:block;height:100%;background:var(--rm-live)}
+.rm-dl{font-size:11.5px;color:var(--muted)}.rm-dl.approved{color:var(--ink)}
+.rm-bn{font-size:11.5px;font-weight:600;color:var(--y-ink,#B45309)}.bn-hot .rm-bn{color:var(--r,#EF4444)}
+.rm-addblk{flex:none;min-width:110px;border:1px dashed var(--line);border-radius:12px;background:none;color:var(--muted);font:inherit;cursor:pointer}
+.rm-orbit{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.rm-orbit .rm-blk{width:auto}.rm-orbit .rm-addblk{min-height:90px}
+.rm-detail{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin:6px 0 4px}
+.rm-dh{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.rm-dh input{height:36px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);padding:0 10px;font:inherit}
+.rm-name{font-weight:600;font-size:15px;flex:1 1 200px}.rm-hintin{flex:1 1 220px;color:var(--muted)}.rm-dh .ghost{margin-left:auto}
+.rm-bnline{margin:10px 0 0;font-size:13px;color:var(--r,#EF4444)}
+.rm-fields{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:center;margin:12px 0;font-size:13px;color:var(--muted)}
+.rm-fields label{display:flex;gap:6px;align-items:center}.rm-fields select,.rm-fields input[type=date]{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;padding:0 6px}
+.rm-entog{color:var(--ink)}.rm-entog b{color:var(--brand)}
+.rm-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:16px}.rm-add{min-width:0}.rm-task .rm-tt{min-width:120px}.rm-cols h4{margin:0 0 6px;font-size:13px}.rm-cols h4 small{color:var(--muted);font-weight:500}
+.rm-tasks{list-style:none;margin:0 0 6px;padding:0;display:grid;gap:4px}
+.rm-task{display:flex;gap:6px;align-items:center}.rm-task input[type=checkbox]{width:16px;height:16px;flex:none}
+.rm-task .rm-tt{flex:1;min-width:0;height:30px;border:1px solid transparent;border-radius:7px;background:none;color:var(--ink);font:inherit;font-size:13px;padding:0 6px}.rm-task .rm-tt:hover,.rm-task .rm-tt:focus{border-color:var(--line);background:var(--surface)}
+.rm-task.done .rm-tt{text-decoration:line-through;color:var(--muted)}
+.rm-task select,.rm-task input[type=date]{height:30px;max-width:130px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font:inherit;font-size:12px;padding:0 4px}
+.rm-flowi svg{width:14px;height:14px;color:var(--brand)}
+.rm-kind{height:26px;border:1px dashed var(--line);border-radius:7px;background:none;font:inherit;font-size:11.5px;color:var(--muted);cursor:pointer;padding:0 6px}.rm-kind.approved{border-style:solid;color:var(--ink)}
+.rm-task .tx{border:0;background:none;color:var(--muted);cursor:pointer;font-size:17px}
+.rm-add input{width:100%;height:32px;border:1px dashed var(--line);border-radius:8px;background:none;color:var(--ink);font:inherit;font-size:13px;padding:0 8px}
+.rm-dfoot{margin:10px 0 0}
+.rm-gantt{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.rm-ggrid{min-width:680px;padding:4px 0 10px}
+.rm-grow{display:grid;grid-template-columns:220px 1fr;gap:12px;align-items:center;padding:4px 14px;min-height:34px}.rm-grow.bn{background:color-mix(in srgb,var(--rm-build) 6%,transparent)}
+.rm-ghd{border-bottom:1px solid var(--line);min-height:28px}
+.rm-gname{display:grid;text-align:left;background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;min-width:0}.rm-gname b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rm-gname small{font-size:11.5px;color:var(--muted)}
+.rm-glane{position:relative;height:20px}
+.rm-gwk{position:absolute;top:2px;font-size:11.5px;color:var(--muted);padding-left:4px;border-left:1px solid var(--line);white-space:nowrap}
+.rm-gtoday{position:absolute;top:-8px;height:2000px;border-left:2px solid var(--r,#EF4444);z-index:1;pointer-events:none}.rm-gtoday b{position:absolute;left:4px;top:-2px;font-size:11px;color:var(--r,#EF4444);white-space:nowrap}
+.rm-ggrid{position:relative;overflow:hidden}
+.rm-gbar{position:absolute;top:3px;height:14px;border-radius:5px;background:var(--rm-todo)}.rm-gbar.st-build{background:var(--rm-build)}.rm-gbar.st-live{background:var(--rm-live)}
+.rm-gbar.proposed{background-image:repeating-linear-gradient(135deg,transparent 0 5px,rgba(255,255,255,.55) 5px 9px)}
+.rm-gdot{position:absolute;top:5px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--surface);border:2px solid var(--ink)}.rm-gdot.proposed{border-color:var(--muted)}.rm-gdot.done{background:var(--rm-live);border-color:var(--rm-live)}
+.rm-gsep{padding:8px 14px 2px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-top:1px solid var(--line);margin-top:4px}
+.rm-gfin{border-top:1px solid var(--line);margin-top:4px}.rm-gstar{position:absolute;top:0;font-style:normal;font-weight:700;font-size:12.5px;color:var(--brand);white-space:nowrap;transform:translateX(-6px)}
+@media (max-width:640px){.rm-cols{grid-template-columns:1fr}.rm-grow{grid-template-columns:140px 1fr}.rm-acts{margin-left:0}}
 .og-nav{display:flex;gap:6px}.og-nav .ghost{min-width:38px}
 .og-mode{margin-left:auto}
 .og-chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
@@ -2079,6 +2134,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
   <div class="brand"><button class="space-name" id="spaceName" hidden title="Пространство — сменить в настройках"></button></div>
   <nav class="tabs" aria-label="Разделы">
+    <button data-view="roadmap" id="rmTab" hidden>Дорожная карта</button>
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
@@ -2227,11 +2283,13 @@ const projAva = (p, size = 'sm') => p?.image
 // группировка по неделям месяца и блок «План / Факт» (сколько снято и опубликовано за месяц против плана).
 const VIDEO_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3"/></svg>';
 const FUNNEL_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5Z"/></svg>';
-const KINDS = { agency:['Агентство', 'проекты'], smm:['SMM', 'видео'], crm:['CRM', 'блогеры'] };
+const KINDS = { agency:['Агентство', 'проекты'], smm:['SMM', 'видео'], crm:['CRM', 'блогеры'], roadmap:['Дорожная карта', 'воронка запуска'] };
 const normKind = k => KINDS[k] ? k : 'agency';
-const KIND_ICO = k => k === 'smm' ? VIDEO_ICO : k === 'crm' ? FUNNEL_ICO : '';
+const RM_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><path d="M7 12h3M14 12h3"/><circle cx="12" cy="12" r="8" stroke-dasharray="2 3"/></svg>';
+const KIND_ICO = k => k === 'smm' ? VIDEO_ICO : k === 'crm' ? FUNNEL_ICO : k === 'roadmap' ? RM_ICO : '';
 const isSMM = () => (typeof db !== 'undefined' && db?.prefs?.kind === 'smm');
 const isCRM = () => (typeof db !== 'undefined' && db?.prefs?.kind === 'crm');
+const isRM = () => (typeof db !== 'undefined' && db?.prefs?.kind === 'roadmap');
 // подпись: «проект» в агентстве, «видео» в SMM, «блогер» в CRM (не задано для CRM — как в агентстве)
 const W = (agency, smm, crm) => isSMM() ? smm : isCRM() && crm !== undefined ? crm : agency;
 const SMM_TPL_ID = 'tsmm';
@@ -2247,7 +2305,7 @@ function crmTemplate(){
     .map(([n, d]) => ({ id:uid(), name:n, days:d, approval:false, subs:[] })) };
 }
 function ensureCrmTemplate(d){ d.templates = d.templates || []; if (!d.templates.some(t => t.id === CRM_TPL_ID || RX_CRM.test(t.name))) d.templates.unshift(crmTemplate()); }
-function ensureKindTemplate(d, k){ if (k === 'smm') ensureSmmTemplate(d); else if (k === 'crm') ensureCrmTemplate(d); }
+function ensureKindTemplate(d, k){ if (k === 'smm') ensureSmmTemplate(d); else if (k === 'crm') ensureCrmTemplate(d); else if (k === 'roadmap') ensureRoadmap(d); }
 const crmTpl = () => db.templates.find(t => t.id === CRM_TPL_ID) || db.templates.find(t => RX_CRM.test(t.name)) || db.templates[0];
 // позиция блогера в воронке: номер текущего этапа (по названию этапа шаблона CRM); names.length — все этапы пройдены
 function crmPos(p, names){
@@ -3321,6 +3379,8 @@ function restoreView(){
 }
 function render(){
   if (GUEST && !guestViews().includes(ui.view)) ui.view = 'mine';
+  if (ui.view === 'roadmap' && (GUEST || !isRM())) ui.view = 'matrix';
+  if (isRM() && !GUEST && !ui.rmSeen){ ui.rmSeen = true; if (ui.view === 'matrix') ui.view = 'roadmap'; }
   try { renderSide(); } catch(e) {}
   setTimeout(() => { try { paintReviewBadge(); } catch(e) {} }, 0);
   try { paintPhoneHead(); } catch(e) {}
@@ -3329,11 +3389,12 @@ function render(){
   document.body.dataset.view = ui.view;
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
+  { const rt = $('#rmTab'); if (rt) rt.hidden = GUEST || !isRM(); }
   $('#myTasksTab').hidden = false;
   renderFilters();
   const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер');
   if (!isCRM()) ui.crmStage = null;
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, depts:renderDepts, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, depts:renderDepts, roadmap:renderRoadmap, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
   if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST && !(ui.view === 'matrix' && density() === 'funnel')) app.insertAdjacentHTML('afterbegin', crmSumHtml());
   if (ui.open) renderDrawer();
@@ -3973,6 +4034,234 @@ document.addEventListener('click', e => {
   const p = projById(b.dataset.unarch); restoreProject(p); commit(); toast(`Проект «${p.name}» снова в работе`);
 });
 document.addEventListener('input', e => { if (e.target.id !== 'archQ') return; ui.archQ = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#archQ'); q?.focus(); q?.setSelectionRange(pos, pos); });
+// ---------- Дорожная карта (тип пространства 'roadmap'): Ядро (сквозная воронка) + Орбита (модули) + единый таймлайн ----------
+// Схема (хранится в db.prefs — синхронизируется вместе с настройками пространства):
+//  db.prefs.roadmaps = [Roadmap], db.prefs.rmCur = id открытой карты, db.prefs.rmTpls = [RoadmapTemplate]
+//  Roadmap  = { id, name, founder, created_at, core:[Block], orbit:[Block] }
+//  Block    = { id, name, hint, status:'todo'|'build'|'live', owner_id, start, deadline, dlKind:'approved'|'proposed', en:boolean, tasks:[Task] }
+//  Task     = { id, title, kind:'once'|'flow', done, owner_id, due, dueKind:'approved'|'proposed', freq:'weekly'|'biweekly'|'monthly' (у регулярных) }
+//  Template = { id, name, at, core:[{ name, hint, tasks:[{ title, kind, freq }] }], orbit:[…] } — только структура, без статусов, дат и людей
+// Узкое горлышко: этап ядра, где не закрыты разовые задачи (сборка). Самое левое — место, где обрывается путь клиента.
+const RM_ST = { todo:'Не начато', build:'В сборке', live:'Работает / На потоке' };
+const RM_FREQ = { weekly:'раз в неделю', biweekly:'раз в 2 недели', monthly:'раз в месяц' };
+const rmId = p => p + uid().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10);
+// структура по умолчанию: [название, подпись, [разовые], [регулярные]]
+const RM_CORE = [
+  ['Контент и трафик', 'Рилсы, посты', ['Нанять автора', 'Поставить цели по охватам'], ['Озвучка рилс от Игоря', 'Публикация вне плана']],
+  ['Статья', 'Конвертер / прогрев', ['Написать статью', 'Дизайн и вёрстка'], ['Обновлять кейсы в статье']],
+  ['Кодовое слово', 'Триггер входа в воронку', ['Выбрать слово и механику', 'Настроить автоответ'], []],
+  ['Квалификация', 'Бот / анкета / фильтр', ['Сценарий бота', 'Анкета и фильтр', 'Передача заявок менеджерам'], []],
+  ['VSL', 'Продающее видео', ['Сценарий VSL', 'Съёмка', 'Монтаж'], []],
+  ['Трипваер ($50)', 'Входной продукт', ['Упаковка продукта', 'Страница оплаты'], ['Апдейты продукта']],
+  ['Созвон с менеджером', 'Диагностика и продажа', ['Скрипт созвона', 'Календарь записи'], ['Разбор записей звонков']],
+  ['Дожим после созвона', 'Касания до оплаты', ['Цепочка дожима'], ['Разбор отказов']],
+  ['Оплата', 'Платёжка и договор', ['Подключить платёжку', 'Договор-оферта'], []]];
+const RM_ORBIT = [
+  ['Эфиры и инфоповоды', 'Челленджи, прогревы, крупные события', ['План челленджа', 'Эфир-прогрев перед запуском'], ['Инфоповод недели']],
+  ['Отдел продаж (ОП)', 'Скрипты, найм и обучение менеджеров, регламенты', ['Скрипты продаж', 'Найм менеджеров', 'Регламент ОП'], ['Обучение и разбор звонков']],
+  ['Техничка и аналитика', 'Боты, платёжки, трекинг конверсий', ['Бот', 'Платёжка', 'Трекинг конверсий (UTM)'], ['Отчёт по конверсиям']]];
+const RM_BUILTIN = { id:'rmt-std', name:'Сквозная воронка запуска (стандарт)',
+  core:RM_CORE.map(([name, hint, o, f]) => ({ name, hint, tasks:[...o.map(title => ({ title, kind:'once' })), ...f.map(title => ({ title, kind:'flow', freq:'weekly' }))] })),
+  orbit:RM_ORBIT.map(([name, hint, o, f]) => ({ name, hint, tasks:[...o.map(title => ({ title, kind:'once' })), ...f.map(title => ({ title, kind:'flow', freq:'weekly' }))] })) };
+// карта из шаблона: блоки идут друг за другом по неделе, дедлайны предложенные
+function rmFromTpl(tpl, name, founder, demo){
+  const t0 = today(); let at = t0;
+  const mk = (b, i, orbit) => {
+    const start = orbit ? t0 : at, deadline = addDays(start, orbit ? 21 + i * 7 : 7); if (!orbit) at = addDays(at, 5);
+    return { id:rmId('b'), name:b.name, hint:b.hint || '', status:'todo', owner_id:null, start, deadline, dlKind:'proposed', en:false,
+      tasks:(b.tasks || []).map((x, j) => ({ id:rmId('k'), title:x.title, kind:x.kind === 'flow' ? 'flow' : 'once', done:false, owner_id:null,
+        due:x.kind === 'flow' ? null : addDays(start, Math.min(6, 2 + j * 2)), dueKind:'proposed', ...(x.kind === 'flow' ? { freq:x.freq || 'weekly' } : {}) })) };
+  };
+  const r = { id:rmId('m'), name, founder:founder || '', created_at:new Date().toISOString(), core:tpl.core.map((b, i) => mk(b, i, false)), orbit:tpl.orbit.map((b, i) => mk(b, i, true)) };
+  if (demo) rmDemo(r);
+  return r;
+}
+// тестовые данные: контент идёт, кодовое слово работает, VSL и квалификация в сборке — видно, где обрывается путь клиента
+function rmDemo(r){
+  const t0 = today(), set = (b, st, doneN, en, dl) => { b.status = st; b.tasks.filter(x => x.kind === 'once').forEach((x, i) => { x.done = i < doneN; }); b.en = !!en; if (dl) b.dlKind = 'approved'; b.owner_id = ME; };
+  const [c, a, w, q, v, tw, call, push, pay] = r.core;
+  set(c, 'live', 9, true, 1); c.start = addDays(t0, -21); c.deadline = addDays(t0, -7);
+  set(a, 'build', 1, false, 1); a.start = addDays(t0, -10); a.deadline = addDays(t0, 3);
+  set(w, 'live', 9, true, 1); w.start = addDays(t0, -14); w.deadline = addDays(t0, -3);
+  set(q, 'build', 1, false, 0); set(v, 'build', 0, false, 0); set(pay, 'build', 1, false, 1);
+  c.tasks.push({ id:rmId('k'), title:'Поставить цели на месяц', kind:'once', done:true, owner_id:ME, due:addDays(t0, -8), dueKind:'approved' });
+  r.orbit[0].status = 'build'; r.orbit[1].status = 'todo'; r.orbit[2].status = 'build'; r.orbit[2].tasks[0].done = true; r.orbit[0].dlKind = 'approved';
+  // сроки разовых задач — внутри срока своего блока, у утверждённых блоков утверждены и задачи
+  rmBlocks(r).forEach(b => { const o = rmOnce(b), n = Math.max(1, diffDays(b.deadline, b.start));
+    o.forEach((x, i) => { x.due = addDays(b.start, Math.round(n * (i + 1) / o.length)); x.dueKind = b.dlKind; if (b.owner_id) x.owner_id = b.owner_id; }); });
+}
+function ensureRoadmap(d){
+  d.prefs = d.prefs || {};
+  if (!(d.prefs.roadmaps || []).length){ const r = rmFromTpl(RM_BUILTIN, 'Запуск: сквозная воронка', '', true); d.prefs.roadmaps = [r]; d.prefs.rmCur = r.id; }
+}
+const rmList = () => db.prefs?.roadmaps || [];
+const rmCur = () => rmList().find(r => r.id === db.prefs?.rmCur) || rmList()[0] || null;
+const rmBlocks = r => [...r.core, ...r.orbit];
+const rmBlock = (r, id) => rmBlocks(r).find(b => b.id === id);
+const rmOnce = b => b.tasks.filter(x => x.kind === 'once');
+const rmClosed = b => rmOnce(b).every(x => x.done) && b.status !== 'todo';
+// горлышко: этап ядра не закрыт по разовым задачам; «обрыв» — самый левый такой этап
+function rmBottlenecks(r){
+  const open = r.core.filter(b => !rmClosed(b)); const first = open[0]?.id;
+  return new Map(open.map(b => [b.id, { first:b.id === first, hot:b.id === first }]));
+}
+// общая дата готовности: самый поздний дедлайн блоков и разовых задач; «утверждённая» — если все сроки утверждены
+function rmReady(r){
+  const dates = [], kinds = [];
+  rmBlocks(r).forEach(b => { if (b.deadline){ dates.push(b.deadline); kinds.push(b.dlKind); } rmOnce(b).forEach(x => { if (x.due && !x.done){ dates.push(x.due); kinds.push(x.dueKind); } }); });
+  return dates.length ? { date:dates.sort().at(-1), approved:kinds.every(k => k === 'approved') } : null;
+}
+const rmSave = () => { commit(); };
+function renderRoadmap(){
+  ensureRoadmap(db);
+  const r = rmCur(); const bn = rmBottlenecks(r); const ready = rmReady(r); const open = ui.rmOpen && rmBlock(r, ui.rmOpen) ? ui.rmOpen : '';
+  const live = r.core.filter(b => b.status === 'live').length, en = r.core.filter(b => b.en).length;
+  const firstBn = r.core.find(b => bn.get(b.id)?.first);
+  const card = (b, i, orbit) => { const o = rmOnce(b), fl = b.tasks.filter(x => x.kind === 'flow'), B = bn.get(b.id);
+    return `<button class="rm-blk st-${b.status}${B ? (B.hot ? ' bn-hot' : ' bn') : ''}${open === b.id ? ' on' : ''}" data-rmopen="${b.id}" aria-expanded="${open === b.id}">
+      <span class="rm-n">${orbit ? '◎' : i + 1}</span>
+      <b>${esc(b.name)}</b><small class="rm-hint">${esc(b.hint)}</small>
+      <span class="rm-st">${RM_ST[b.status]}</span>
+      <span class="rm-meta"><span title="Разовые задачи (сборка)">Сборка ${o.filter(x => x.done).length}/${o.length}</span>${fl.length ? `<span title="Регулярные задачи (поток)">Поток ${fl.length}</span>` : ''}<span class="rm-en${b.en ? ' on' : ''}" title="Английская версия этапа">EN</span></span>
+      <span class="rm-prog"><i style="width:${o.length ? Math.round(o.filter(x => x.done).length / o.length * 100) : b.status === 'live' ? 100 : 0}%"></i></span>
+      <span class="rm-dl ${b.dlKind}">${b.deadline ? `до ${fmt(b.deadline)}` : 'без срока'}${b.dlKind === 'approved' ? '' : ' · предложен'}${userById(b.owner_id) ? ` · ${esc(userById(b.owner_id).name || 'Вы')}` : ''}</span>
+      ${B ? `<span class="rm-bn">${B.first ? 'Путь клиента обрывается здесь' : 'Узкое горлышко'}</span>` : ''}</button>`; };
+  const people = v => peopleOpts(v, 'Не назначен');
+  const taskRow = (b, x) => `<li class="rm-task${x.done ? ' done' : ''}">
+      ${x.kind === 'once' ? `<input type="checkbox" data-rmdone="${b.id}|${x.id}" ${x.done ? 'checked' : ''} aria-label="Готово: ${esc(x.title)}">` : `<span class="rm-flowi" title="Регулярная">${RT_ICO}</span>`}
+      <input class="rm-tt" data-rmtt="${b.id}|${x.id}" value="${esc(x.title)}" maxlength="200" aria-label="Задача">
+      <select data-rmtown="${b.id}|${x.id}" aria-label="Ответственный">${people(x.owner_id)}</select>
+      ${x.kind === 'once' ? `<input type="date" data-rmtdue="${b.id}|${x.id}" value="${esc(x.due || '')}" aria-label="Дедлайн">
+        <button type="button" class="rm-kind ${x.dueKind}" data-rmtkind="${b.id}|${x.id}" title="Утверждённый / предложенный срок">${x.dueKind === 'approved' ? 'утв.' : 'предл.'}</button>`
+        : `<select data-rmtfreq="${b.id}|${x.id}" aria-label="Как часто">${Object.entries(RM_FREQ).map(([k, l]) => `<option value="${k}" ${x.freq === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`}
+      <button type="button" class="tx" data-rmtdel="${b.id}|${x.id}" aria-label="Удалить задачу">×</button></li>`;
+  const detail = b => { const B = bn.get(b.id);
+    return `<section class="rm-detail" aria-label="Этап «${esc(b.name)}»">
+      <header class="rm-dh"><input class="rm-name" data-rmf="name" value="${esc(b.name)}" maxlength="80" aria-label="Название"><input class="rm-hintin" data-rmf="hint" value="${esc(b.hint)}" maxlength="120" aria-label="Подпись">
+        <button class="ghost" data-rmclose aria-label="Свернуть">Свернуть</button></header>
+      ${B ? `<p class="rm-bnline">${B.first ? 'Путь клиента обрывается здесь: ' : 'Узкое горлышко: '}не закрыты разовые задачи — ${rmOnce(b).filter(x => !x.done).map(x => `«${esc(x.title)}»`).join(', ') || 'этап не начат'}.</p>` : ''}
+      <div class="rm-fields">
+        <div class="seg-toggle" role="group" aria-label="Статус">${Object.entries(RM_ST).map(([k, l]) => `<button type="button" data-rmst="${k}" aria-pressed="${b.status === k}">${l}</button>`).join('')}</div>
+        <label>Ответственный <select data-rmf="owner_id">${people(b.owner_id)}</select></label>
+        <label>Старт <input type="date" data-rmf="start" value="${esc(b.start || '')}"></label>
+        <label>Дедлайн <input type="date" data-rmf="deadline" value="${esc(b.deadline || '')}"></label>
+        <div class="seg-toggle" role="group" aria-label="Срок"><button type="button" data-rmdl="approved" aria-pressed="${b.dlKind === 'approved'}">Утверждён</button><button type="button" data-rmdl="proposed" aria-pressed="${b.dlKind !== 'approved'}">Предложен</button></div>
+        <label class="rm-entog"><input type="checkbox" data-rmen ${b.en ? 'checked' : ''}> <b>[EN]</b> этап переведён и адаптирован на английский</label>
+      </div>
+      <div class="rm-cols">
+        <div><h4>Разовые <small>сборка</small></h4><ul class="rm-tasks">${b.tasks.filter(x => x.kind === 'once').map(x => taskRow(b, x)).join('') || '<li class="hint">Нет разовых задач</li>'}</ul>
+          <form class="rm-add" data-rmadd="once"><input placeholder="+ Разовая задача, например «нанять автора»" maxlength="200" aria-label="Новая разовая задача"></form></div>
+        <div><h4>Регулярные <small>поток</small></h4><ul class="rm-tasks">${b.tasks.filter(x => x.kind === 'flow').map(x => taskRow(b, x)).join('') || '<li class="hint">Нет регулярных задач</li>'}</ul>
+          <form class="rm-add" data-rmadd="flow"><input placeholder="+ Регулярная задача, например «публикация вне плана»" maxlength="200" aria-label="Новая регулярная задача"></form></div>
+      </div>
+      <p class="rm-dfoot"><button class="link danger" data-rmbdel>Удалить ${r.core.includes(b) ? 'этап' : 'модуль'}</button></p></section>`; };
+  // единый таймлайн
+  const all = rmBlocks(r).filter(b => b.start || b.deadline);
+  const dts = all.flatMap(b => [b.start, b.deadline, ...b.tasks.map(x => x.due)]).filter(Boolean).concat([today()]).sort();
+  const from = addDays(mondayOf(dts[0]), 0), to = addDays(dts.at(-1), 7), span = Math.max(14, diffDays(to, from) + 1);
+  const X = d => Math.max(0, Math.min(100, diffDays(d, from) / span * 100));
+  const wks = []; for (let d = from; diffDays(d, from) < span; d = addDays(d, 7)) wks.push(d);
+  const gRow = (b, lbl) => { const a = b.start || b.deadline, z = b.deadline || b.start;
+    return `<div class="rm-grow${bn.get(b.id) ? ' bn' : ''}"><button class="rm-gname" data-rmopen="${b.id}"><b>${esc(lbl)}</b><small>${RM_ST[b.status]}${b.en ? ' · EN' : ''}</small></button>
+      <div class="rm-glane"><span class="rm-gbar st-${b.status} ${b.dlKind}" style="left:${X(a)}%;width:${Math.max(1.2, X(addDays(z, 1)) - X(a))}%" title="${esc(b.name)}: ${fmt(a)} – ${fmt(z)} · срок ${b.dlKind === 'approved' ? 'утверждён' : 'предложен'}"></span>
+        ${rmOnce(b).filter(x => x.due).map(x => `<i class="rm-gdot${x.done ? ' done' : ''} ${x.dueKind}" style="left:${X(x.due)}%" title="${esc(x.title)} — ${fmt(x.due)}${x.done ? ' · готово' : ''}"></i>`).join('')}</div></div>`; };
+  const tX = X(today()) + 50 / span;
+  app.innerHTML = `<div class="rm">
+    <div class="fn-head-row"><h2 class="td-title">Дорожная карта</h2>
+      ${rmList().length > 1 ? `<select id="rmSel" aria-label="Карта">${rmList().map(x => `<option value="${x.id}" ${x.id === r.id ? 'selected' : ''}>${esc(x.name)}${x.founder ? ` — ${esc(x.founder)}` : ''}</option>`).join('')}</select>` : `<span class="rm-title">${esc(r.name)}${r.founder ? ` — ${esc(r.founder)}` : ''}</span>`}
+      <span class="rm-acts"><button class="ghost" data-rmnew>+ Новая карта</button><button class="ghost" data-rmclone>Клонировать структуру</button><button class="ghost" data-rmtpl>Сохранить как шаблон</button></span></div>
+    <div class="rm-sum">
+      <div class="rm-kpi"><b>${ready ? fmt(ready.date) : '—'}</b><small>готовность системы к запуску${ready ? (ready.approved ? ' · утверждено' : ' · предварительно') : ''}</small></div>
+      <div class="rm-kpi"><b>${live} / ${r.core.length}</b><small>этапов воронки работает</small></div>
+      <div class="rm-kpi${bn.size ? ' warn' : ''}"><b>${bn.size}</b><small>${firstBn ? `узких горлышек · обрыв на «${esc(firstBn.name)}»` : 'узких горлышек — путь клиента собран'}</small></div>
+      <div class="rm-kpi"><b>${en} / ${r.core.length}</b><small>этапов готовы на EN</small></div></div>
+    <h3 class="rm-h">Контур 1 · Сквозная воронка <small>ядро — путь клиента слева направо</small></h3>
+    <div class="rm-pipe">${r.core.map((b, i) => card(b, i, false)).join('<span class="rm-arrow" aria-hidden="true">→</span>')}
+      <button class="rm-addblk" data-rmaddblk="core" aria-label="Добавить этап воронки">+ Этап</button></div>
+    ${open && r.core.some(b => b.id === open) ? detail(rmBlock(r, open)) : ''}
+    <h3 class="rm-h">Контур 2 · Орбита <small>модули, которые питают воронку и обрабатывают трафик</small></h3>
+    <div class="rm-orbit">${r.orbit.map((b, i) => card(b, i, true)).join('')}<button class="rm-addblk" data-rmaddblk="orbit">+ Модуль</button></div>
+    ${open && r.orbit.some(b => b.id === open) ? detail(rmBlock(r, open)) : ''}
+    <h3 class="rm-h">Единый таймлайн <small>сплошная полоса — утверждённый срок, штриховка — предложенный; точки — разовые задачи</small></h3>
+    <div class="rm-gantt"><div class="rm-ggrid">
+      <div class="rm-grow rm-ghd"><span></span><div class="rm-glane">${wks.map(w => `<span class="rm-gwk" style="left:${X(w)}%">${fmt(w)}</span>`).join('')}<i class="rm-gtoday" style="left:${tX}%"><b>Сегодня</b></i></div></div>
+      ${r.core.map((b, i) => gRow(b, `${i + 1}. ${b.name}`)).join('')}
+      <div class="rm-gsep">Орбита</div>
+      ${r.orbit.map(b => gRow(b, b.name)).join('')}
+      ${ready ? `<div class="rm-grow rm-gfin"><span class="rm-gname"><b>Запуск системы</b><small>${ready.approved ? 'утверждено' : 'предварительно'}</small></span><div class="rm-glane"><i class="rm-gstar" style="left:${X(ready.date)}%" title="Готовность: ${fmt(ready.date)}">◆ ${fmt(ready.date)}</i></div></div>` : ''}
+    </div></div></div>`;
+}
+// правки карты
+const rmEdit = (fn) => { const r = rmCur(); if (!r) return; fn(r); rmSave(); };
+const rmBT = k => { const [bid, tid] = k.split('|'); const r = rmCur(); const b = rmBlock(r, bid); return { r, b, x:b?.tasks.find(t => t.id === tid) }; };
+document.addEventListener('click', e => {
+  if (ui.view !== 'roadmap') return;
+  const o = e.target.closest('[data-rmopen]'); if (o){ ui.rmOpen = ui.rmOpen === o.dataset.rmopen ? '' : o.dataset.rmopen; render(); if (ui.rmOpen) setTimeout(() => document.querySelector('.rm-detail')?.scrollIntoView({ block:'nearest', behavior:'smooth' }), 0); return; }
+  if (e.target.closest('[data-rmclose]')){ ui.rmOpen = ''; render(); return; }
+  const st = e.target.closest('[data-rmst]'); if (st){ rmEdit(r => { rmBlock(r, ui.rmOpen).status = st.dataset.rmst; }); return; }
+  const dl = e.target.closest('[data-rmdl]'); if (dl){ rmEdit(r => { rmBlock(r, ui.rmOpen).dlKind = dl.dataset.rmdl; }); return; }
+  const tk = e.target.closest('[data-rmtkind]'); if (tk){ const { x } = rmBT(tk.dataset.rmtkind); if (x){ x.dueKind = x.dueKind === 'approved' ? 'proposed' : 'approved'; rmSave(); } return; }
+  const td = e.target.closest('[data-rmtdel]'); if (td){ const { b, x } = rmBT(td.dataset.rmtdel); if (x){ b.tasks = b.tasks.filter(t => t !== x); rmSave(); } return; }
+  const ab = e.target.closest('[data-rmaddblk]');
+  if (ab){ const nb = { id:rmId('b'), name:ab.dataset.rmaddblk === 'core' ? 'Новый этап' : 'Новый модуль', hint:'', status:'todo', owner_id:null, start:today(), deadline:addDays(today(), 14), dlKind:'proposed', en:false, tasks:[] };
+    rmEdit(r => { r[ab.dataset.rmaddblk].push(nb); }); ui.rmOpen = nb.id; render(); setTimeout(() => document.querySelector('.rm-name')?.select(), 0); return; }
+  if (e.target.closest('[data-rmbdel]')){ const r = rmCur(); const b = rmBlock(r, ui.rmOpen);
+    askConfirm({ title:`Удалить «${b.name}»?`, text:'Блок и его задачи исчезнут из этой карты.', ok:'Удалить' }).then(y => { if (!y) return; r.core = r.core.filter(x => x !== b); r.orbit = r.orbit.filter(x => x !== b); ui.rmOpen = ''; rmSave(); }); return; }
+  if (e.target.closest('[data-rmtpl]')){ const r = rmCur(); const name = prompt('Название шаблона', r.name); if (!name || !name.trim()) return;
+    const strip = b => ({ name:b.name, hint:b.hint, tasks:b.tasks.map(x => ({ title:x.title, kind:x.kind, ...(x.freq ? { freq:x.freq } : {}) })) });
+    db.prefs.rmTpls = [...(db.prefs.rmTpls || []), { id:rmId('t'), name:name.trim().slice(0, 80), at:new Date().toISOString(), core:r.core.map(strip), orbit:r.orbit.map(strip) }];
+    rmSave(); toast(`Шаблон «${name.trim()}» сохранён — из него можно развернуть карту под другой проект`); return; }
+  if (e.target.closest('[data-rmclone]')){ const r = rmCur(); openRmNew({ from:r.id }); return; }
+  if (e.target.closest('[data-rmnew]')){ openRmNew({}); return; }
+});
+document.addEventListener('change', e => {
+  if (ui.view !== 'roadmap' && !e.target.closest?.('#rmNewForm')) return;
+  const el = e.target;
+  if (el.id === 'rmSel'){ db.prefs.rmCur = el.value; ui.rmOpen = ''; rmSave(); return; }
+  if (el.dataset.rmdone){ const { r, b, x } = rmBT(el.dataset.rmdone); if (!x) return; x.done = el.checked;
+    if (el.checked && rmOnce(b).every(t => t.done) && b.status !== 'live'){ b.status = 'live'; toast(`«${b.name}»: сборка закрыта — этап работает`); }
+    else if (!el.checked && b.status === 'todo') b.status = 'build';
+    else if (el.checked && b.status === 'todo') b.status = 'build';
+    rmSave(); return; }
+  if (el.dataset.rmtown){ const { x } = rmBT(el.dataset.rmtown); if (x){ x.owner_id = el.value || null; rmSave(); } return; }
+  if (el.dataset.rmtdue){ const { x } = rmBT(el.dataset.rmtdue); if (x){ x.due = el.value || null; rmSave(); } return; }
+  if (el.dataset.rmtfreq){ const { x } = rmBT(el.dataset.rmtfreq); if (x){ x.freq = el.value; rmSave(); } return; }
+  if (el.dataset.rmtt){ const { x } = rmBT(el.dataset.rmtt); if (x && el.value.trim()){ x.title = el.value.trim(); rmSave(); } return; }
+  if (el.matches('[data-rmen]')){ rmEdit(r => { rmBlock(r, ui.rmOpen).en = el.checked; }); return; }
+  const f = el.dataset.rmf; if (f){ rmEdit(r => { const b = rmBlock(r, ui.rmOpen); if (f === 'name' && !el.value.trim()) return; b[f] = f === 'owner_id' ? (el.value || null) : f === 'name' || f === 'hint' ? el.value.trim() : el.value || null; }); }
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest?.('[data-rmadd]'); if (!f) return; e.preventDefault();
+  const v = f.querySelector('input').value.trim(); if (!v) return;
+  rmEdit(r => { const b = rmBlock(r, ui.rmOpen); const kind = f.dataset.rmadd;
+    b.tasks.push({ id:rmId('k'), title:v.slice(0, 200), kind, done:false, owner_id:b.owner_id || null, due:kind === 'once' ? (b.deadline || null) : null, dueKind:'proposed', ...(kind === 'flow' ? { freq:'weekly' } : {}) });
+    if (kind === 'once' && b.status === 'live') b.status = 'build'; });
+  setTimeout(() => document.querySelector(`[data-rmadd="${f.dataset.rmadd}"] input`)?.focus(), 0);
+});
+// новая карта: из шаблона (стандарт / сохранённые) или клон текущей структуры
+function openRmNew({ from }){
+  const src = from ? rmList().find(x => x.id === from) : null;
+  const tpls = [RM_BUILTIN, ...(db.prefs.rmTpls || [])];
+  layer.innerHTML = `<div class="backdrop" data-close></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rmNT"><h2 id="rmNT">${src ? 'Клонировать структуру' : 'Новая дорожная карта'}</h2>
+    <p class="lead">${src ? `Те же этапы, модули и задачи, что в «${esc(src.name)}», — без отметок, людей и сроков (сроки предложенные, от сегодня).` : 'Карта разворачивается из шаблона: этапы воронки, модули орбиты и задачи.'}</p>
+    <form class="form" id="rmNewForm" novalidate>
+      <div class="field"><label for="rmNName">Название</label><input id="rmNName" value="${src ? esc(src.name) + ' (копия)' : 'Запуск'}" maxlength="80"></div>
+      <div class="field"><label for="rmNFounder">Проект / фаундер</label><input id="rmNFounder" placeholder="Например, Рома Рукунов" maxlength="80"></div>
+      ${src ? '' : `<div class="field"><label for="rmNTpl">Шаблон</label><select id="rmNTpl">${tpls.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div>`}
+      <div class="actions">${!src && (db.prefs.rmTpls || []).length ? '<button type="button" class="ghost danger m-out" id="rmTplDel">Удалить выбранный шаблон</button>' : ''}<button type="button" class="ghost" data-close>Отмена</button><button class="primary">${src ? 'Клонировать' : 'Создать карту'}</button></div>
+    </form></div>`;
+  $('#rmNewForm').onsubmit = ev => {
+    ev.preventDefault(); const name = $('#rmNName').value.trim() || 'Запуск';
+    const strip = b => ({ name:b.name, hint:b.hint, tasks:b.tasks.map(x => ({ title:x.title, kind:x.kind, freq:x.freq })) });
+    const tpl = src ? { core:src.core.map(strip), orbit:src.orbit.map(strip) } : tpls.find(t => t.id === $('#rmNTpl').value) || RM_BUILTIN;
+    const r = rmFromTpl(tpl, name, $('#rmNFounder').value.trim(), false);
+    db.prefs.roadmaps = [...rmList(), r]; db.prefs.rmCur = r.id; ui.rmOpen = ''; layer.innerHTML = ''; rmSave(); toast(`Карта «${name}» готова`);
+  };
+  const td = $('#rmTplDel'); if (td) td.onclick = () => { const id = $('#rmNTpl').value; if (id === RM_BUILTIN.id){ toast('Стандартный шаблон удалить нельзя'); return; }
+    db.prefs.rmTpls = (db.prefs.rmTpls || []).filter(t => t.id !== id); save(); openRmNew({}); toast('Шаблон удалён'); };
+  $('#rmNName').focus();
+}
 // ---------- Отделы: операционные задачи по отделам ----------
 // Отделы пространства — db.prefs.depts = [{ id, name, at }]. В отделе два вида задач:
 //  • задача отдела — внутренняя задача (it/…, itSave) с полями dept, start, subs [{ id, title, done }], space; сама по себе,
@@ -5644,7 +5933,8 @@ document.addEventListener('click', e => {
   db.prefs = db.prefs || {}; db.prefs.kind = k; ensureKindTemplate(db, k); ui.group = 'auto'; ui.crmStage = null;
   if (k === 'crm') db.prefs.density = 'compact'; else if (db.prefs.density === 'funnel') delete db.prefs.density;
   if (k === 'crm') ui.kbTpl = crmTpl()?.id || ui.kbTpl;
-  commit(); toast({ smm:'Тип: SMM — вместо проектов видео, недели и план / факт', crm:'Тип: CRM — вместо проектов блогеры и воронка общения', agency:'Тип: Агентство — проекты' }[k]);
+  if (k === 'roadmap') ui.view = 'roadmap'; else if (ui.view === 'roadmap') ui.view = 'matrix';
+  commit(); toast({ smm:'Тип: SMM — вместо проектов видео, недели и план / факт', crm:'Тип: CRM — вместо проектов блогеры и воронка общения', roadmap:'Тип: Дорожная карта — сквозная воронка запуска, модули вокруг неё и единый таймлайн', agency:'Тип: Агентство — проекты' }[k]);
   if (!cloud.store || !cloud.uid || ORG) return;
   if (SPACE){ const x = spaces.list.find(v => v.id === SPACE); if (x) x.kind = k; cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${SPACE}`).update({ kind:k }).catch(() => {}); }
   else { spaces.mainKind = k; cloud.store.doc(`data/users/${cloud.uid}/spaces/main`).set(mainDoc()).catch(() => {}); }
@@ -9195,6 +9485,7 @@ const MNAV = {
   matrix:['Матрица', MI('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>')],
   kanban:['Канбан', MI('<rect x="3" y="3" width="5" height="15" rx="1.5"/><rect x="10" y="3" width="5" height="10" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/>')],
   production:['Произв.', MI('<path d="M3 12h4l3-8 4 16 3-8h4"/>')],
+  roadmap:['Дорожная карта', MI('<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><path d="M7 12h3M14 12h3"/><path d="M5 18a9 9 0 0 0 14 0"/>')],
   depts:['Отделы', MI('<path d="M3 6h7M3 12h11M3 18h5"/><path d="M14 4v4M18 10v4M10 16v4"/>')],
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
