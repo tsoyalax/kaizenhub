@@ -24,6 +24,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.ok(E(`projById('infoboard').stages.some(s => s.name === 'Вебинар')`)); ok('этап из шаблона появился на доске');
   // «Контент»: видео — карточки колонки «Контент» на доске; отметка в одном месте видна в другом
   assert.ok(!D.querySelector('.tabs [data-view="content"]').hidden); ok('в меню есть «Контент»');
+  E(`ui.ctMode = null; ui.view = 'content'; render()`);
+  assert.equal(D.querySelector('.ct-mode [aria-pressed="true"]')?.textContent, 'План / Факт'); ok('«Контент» открывается «План / Факт»');
   E(`ui.view = 'content'; render()`);
   D.getElementById('ctName').value = 'Ролик'; D.getElementById('ctN').value = '12';
   D.getElementById('ctAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(50);
@@ -118,6 +120,15 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   addIn().querySelector('input').value = 'Запросить отзывы'; addIn().dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
   assert.deepEqual(E('boardSubs(infoBoard(), contentStage()).slice(0, 2).map(x => x.name)'), ['Запросить отзывы', 'Сценарий вебинара']); ok('свои задачи «Контента» — наверху, новые первыми');
   assert.ok(E('boardSubs(infoBoard(), contentStage()).slice(-3).every(x => x.cycle)')); ok('видео — ниже своих задач');
+  // перетаскивание карточки на доске инфобизнеса в другую колонку
+  E(`ui.view = 'production'; ui.infoMode = 'board'; render()`);
+  { const dt = { setData(){}, getData(){ return ''; }, types:['text/kz-card'], effectAllowed:'' };
+    const ev = (type, el) => { const e = new w.Event(type, { bubbles:true, cancelable:true }); Object.defineProperty(e, 'dataTransfer', { value:dt }); el.dispatchEvent(e); };
+    const fromSid = E(`infoBoard().stages[1].id`), toSid = E(`infoBoard().stages[3].id`), xid = E(`infoBoard().stages[1].subs[0].id`);
+    const card = D.querySelector(`[data-pfdrag="${fromSid}|${xid}"]`); assert.ok(card && card.getAttribute('draggable') === 'true'); ok('карточки доски перетаскиваются');
+    ev('dragstart', card); const col = D.querySelector(`[data-pfcol="${toSid}"]`); ev('dragover', col); ev('drop', col); await wait(20);
+    assert.ok(E(`infoBoard().stages[3].subs.some(x => x.id === '${xid}') && !infoBoard().stages[1].subs.some(x => x.id === '${xid}')`)); ok('карточка переехала в другую колонку');
+  }
   // инфоповоды: новый — своя доска с теми же колонками и связями, «Контент» — у выбранного
   E(`infoBoard().name = 'Контент Игоря'; ui.view = 'production'; ui.ipNew = true; render()`);
   D.getElementById('ipName').value = 'Челлендж Эма'; D.getElementById('ipNew').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
@@ -133,6 +144,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.deepEqual(cj.extra, { n:2, pub:0 }); ok('доп. контент считается отдельно');
   E(`ui.view = 'content'; ui.ctMode = 'board'; render()`);
   assert.equal(D.querySelectorAll('.ct-card .ct-x').length, 2); ok('на доске видео доп. контент с пометкой «доп.»');
+  assert.ok(D.querySelectorAll('.ct-card .ct-ico').length >= 6 && D.querySelector('.ct-add .ct-sw')); ok('у видео — значок видео, форма добавления — карточкой с переключателем «Доп. контент»');
   assert.ok(!D.querySelector('[data-vidsync]')); ok('кнопки «Обновить из SMM» нет');
   E(`db.prefs.kind = 'agency'; render()`);
   assert.ok(!D.querySelector('.tabs [data-view="matrix"]').hidden); ok('в агентстве матрица на месте');

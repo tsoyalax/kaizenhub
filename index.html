@@ -1137,12 +1137,31 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 body[data-kind="info"] .pf{grid-template-columns:minmax(0,1fr)}
 body[data-kind="info"] :is(.pf-list,.pf-select,#newBtn,.pm-cnt,.pm-nav>.icon-btn:first-child,.pm-nav>.icon-btn:last-child){display:none!important}
 body[data-kind="info"] [data-pmpick]{pointer-events:none}
-.ct-add{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.ct-add input:not([type=date]):not([type=number]){flex:1 1 220px;min-width:0}
-.ct-add input[type=number]{width:70px}
-.ct-add label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
-.ct-add .hint{flex-basis:100%}
 .ct-wk{margin-top:14px}
+.ct-ico{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;flex:none;margin-right:6px;vertical-align:-5px;background:color-mix(in srgb,var(--brand) 14%,transparent);color:var(--brand)}
+.ct-ico svg{width:14px;height:14px}
+.ct-ico.x{background:var(--pl-m-bg,color-mix(in srgb,var(--m) 14%,transparent));color:var(--pl-m,var(--m))}
+.ct-ico.lg{width:40px;height:40px;border-radius:12px;margin:0}.ct-ico.lg svg{width:22px;height:22px}
+.ct-card .ct-open{display:flex;align-items:center;gap:0}
+.ct-row .ct-ico{margin-right:0}
+.ct-add{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:12px;margin-top:4px}
+.ct-add-hd{display:flex;align-items:center;gap:12px}
+.ct-add-hd b{display:block;font-size:15px}.ct-add-hd small{color:var(--muted);font-size:12.5px}
+.ct-add-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.ct-f{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+.ct-f.grow{flex:1 1 220px}
+.ct-f input{height:38px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 10px;font:inherit;font-size:14px}
+.ct-f input[type=number]{width:84px}
+.ct-sw{display:flex;align-items:center;gap:10px;cursor:pointer;margin-right:auto;font-size:14px}
+.ct-sw input{position:absolute;opacity:0;pointer-events:none}
+.ct-sw i{width:38px;height:22px;border-radius:11px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.ct-sw i::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .15s}
+.ct-sw input:checked + i{background:var(--m)}.ct-sw input:checked + i::after{left:19px}
+.ct-sw small{display:block;color:var(--muted);font-size:12px}
+.ct-add .primary{height:38px;padding:0 18px}
+.pf-card[draggable="true"]{cursor:grab}
+.pf-card.dragging{opacity:.4}
+.pf-card.drop-before{box-shadow:0 -3px 0 var(--brand)}
 .ct-x{display:inline-block;font-size:11px;font-weight:600;padding:1px 6px;border-radius:6px;background:var(--pl-m-bg,color-mix(in srgb,var(--m) 14%,transparent));color:var(--pl-m,var(--m));vertical-align:1px}
 .ip-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .ip-l{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-right:4px}
@@ -2459,7 +2478,7 @@ function contentBoardHtml(s, items){
       <header><div><b>${ci + 1}. ${esc(c.name)}</b></div><small>${list.length} ${plural(list.length, 'видео', 'видео', 'видео')}${(c.subs || []).length ? ` · подэтапов ${c.subs.length}` : ''}</small></header>
       <div class="pf-cards">${list.map(x => { const t = taskFor(infoBoard().id, s.id, x.id);
         return `<div class="pf-card ct-card${x.done ? ' done' : ''}" draggable="true" data-ctdrag="${x.id}">
-          <button class="ct-open" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}</b>${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</button>
+          <button class="ct-open" data-pfsub="${s.id}|${x.id}"><span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><b>${esc(x.name)}</b>${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</button>
           <small>${x.due_date ? `публикация ${fmt(x.due_date)}` : 'без даты'}${t?.assignee_id ? ` · ${esc(short(t.assignee_id))}` : ''}</small>
           ${(c.subs || []).length && !x.done ? `<div class="ct-subs">${c.subs.map(y => `<label><input type="checkbox" data-ctvs="${x.id}|${y.id}" ${x.vs?.[y.id] ? 'checked' : ''}><span>${esc(y.name)}</span></label>`).join('')}</div>` : ''}
           <select class="pf-status" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}">${cs.map(y => `<option value="${y.id}" ${y === c ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select></div>`; }).join('') || '<p class="hint">Пусто</p>'}</div></section>`; }).join('')}</div>`;
@@ -2482,28 +2501,34 @@ function renderContentBody(){
   ui.prodProject = p.id;
   const c = ctCur(); const cs = ctCycles(); const i = cs.indexOf(c);
   const addForm = `<form class="ct-add" id="ctAdd">
-      <input id="ctName" placeholder="Название видео или «Ролик»" aria-label="Название видео" required>
-      <label>Сколько <input type="number" id="ctN" min="1" max="200" value="1" aria-label="Сколько видео"></label>
-      <label class="ct-extra"><input type="checkbox" id="ctExtra" ${ui.ctExtra ? 'checked' : ''}> Доп. контент (вне плана)</label>
-      <label>Старт <input type="date" id="ctStart" value="${c && today() > cycleEnd(c) ? today() : (c || today())}" aria-label="Дата старта"></label>
-      <button class="primary">Добавить видео</button>
-      <small class="hint">Несколько видео распределятся поровну на 4 недели от даты старта и появятся карточками в колонке «${esc(s.name)}» на доске. Доп. контент — сверх плана: виден с пометкой «доп.» и считается отдельно.</small></form>`;
-  if (!c){ app.innerHTML = `<section class="smm-pf"><div class="smm-hd"><h2>Контент</h2></div><p class="hint">Видео пока нет. Добавьте первые — например, 12 роликов на месяц.</p>${addForm}</section>`; return; }
+      <div class="ct-add-hd"><span class="ct-ico lg">${VIDEO_ICO}</span><div><b>Новые видео</b><small>Появятся карточками в колонке «${esc(s.name)}» на доске и в плане по неделям</small></div></div>
+      <div class="ct-add-row">
+        <label class="ct-f grow"><span>Название</span><input id="ctName" placeholder="Например, Рилс" required></label>
+        <label class="ct-f"><span>Сколько</span><input type="number" id="ctN" min="1" max="200" value="1"></label>
+        <label class="ct-f"><span>Старт</span><input type="date" id="ctStart" value="${c && today() > cycleEnd(c) ? today() : (c || today())}"></label>
+      </div>
+      <div class="ct-add-row">
+        <label class="ct-sw"><input type="checkbox" id="ctExtra" ${ui.ctExtra ? 'checked' : ''}><i aria-hidden="true"></i><span>Доп. контент <small>вне плана, считается отдельно</small></span></label>
+        <button class="primary">Добавить</button>
+      </div>
+      <small class="hint">Несколько видео распределятся поровну на 4 недели от даты старта.</small></form>`;
+  if (!c){ app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2></div><p class="hint">Видео пока нет. Добавьте первые — например, 12 роликов на месяц.</p>${addForm}`; return; }
   const st = ctStats(c); const pct = st.plan ? Math.min(100, Math.round(st.pub / st.plan * 100)) : 0;
   const t = today(); const live = t >= c && t <= cycleEnd(c); const nowW = live ? weekOfDate(c, t) : 0;
   const due = live ? st.weeks.slice(0, nowW).reduce((m, x) => m + x.plan, 0) : t > cycleEnd(c) ? st.plan : 0;
   const pace = !st.plan || (!live && t < c) ? '' : st.pub >= due ? 'идём по плану' : `отстаём на ${due - st.pub}`;
   const row = x => `<li class="ct-row${x.done ? ' done' : ''}">
       <input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="Опубликовано: ${esc(x.name)}">
-      <button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>
+      <span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>
       <input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
-  const modeSeg = `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode !== 'plan'}">Доска</button><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode === 'plan'}">План / Факт</button></span>`;
-  if (ui.ctMode !== 'plan'){
+  // по умолчанию — «План / Факт», доска — вторым видом
+  const modeSeg = `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode !== 'board'}">План / Факт</button><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode === 'board'}">Доска</button></span>`;
+  if (ui.ctMode === 'board'){
     app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>
       <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>${modeSeg}
       <button class="ghost" data-ctaddx>+ Доп. контент</button></div>
       ${contentBoardHtml(s, ctItems().filter(x => x.cycle === c))}
-      <section class="smm-pf">${addForm}</section>`;
+      ${addForm}`;
     return;
   }
   app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>${modeSeg}</div><section class="smm-pf" aria-label="Контент: план и факт">
@@ -2524,7 +2549,7 @@ function renderContentBody(){
     </tbody></table></section>
     ${st.weeks.filter(x => x.items.length).map(x => `<section class="ct-wk"><h3>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></h3>
       <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}
-    <section class="smm-pf">${addForm}</section>`;
+    ${addForm}`;
 }
 function addContent(name, n, start, extra = false){
   const p = infoBoard(); const s = contentStage(p); if (!p || !s || !name) return;
@@ -4582,6 +4607,28 @@ function timelineHtml(p){
       </div></div></div></div>`;
 }
 document.addEventListener('click', e => { const m = e.target.closest?.('[data-infomode]'); if (m){ ui.infoMode = m.dataset.infomode; render(); } });
+// ---------- Перетаскивание карточек на доске инфобизнеса: в другую колонку и на другое место в колонке ----------
+// Карточка = подэтап x; переносим его в s.subs другого этапа (перед карточкой под курсором), задача карточки едет с ним (t.stage_id).
+let pfDrag = null;
+document.addEventListener('dragstart', e => { const c = e.target.closest?.('[data-pfdrag]'); if (!c) return; pfDrag = c.dataset.pfdrag; e.dataTransfer.setData('text/kz-card', pfDrag); e.dataTransfer.effectAllowed = 'move'; setTimeout(() => c.classList.add('dragging'), 0); });
+document.addEventListener('dragend', e => { e.target.closest?.('[data-pfdrag]')?.classList.remove('dragging'); app.querySelectorAll('.pf-col.drop-on').forEach(x => x.classList.remove('drop-on')); app.querySelectorAll('.pf-card.drop-before').forEach(x => x.classList.remove('drop-before')); pfDrag = null; });
+const dropBefore = (col, y) => [...col.querySelectorAll('[data-pfdrag]')].filter(c => !c.classList.contains('dragging')).find(c => { const r = c.getBoundingClientRect(); return y < r.top + r.height / 2; });
+document.addEventListener('dragover', e => {
+  const col = e.target.closest?.('[data-pfcol]'); if (!col || !pfDrag) return; e.preventDefault();
+  app.querySelectorAll('.pf-col.drop-on').forEach(x => x !== col && x.classList.remove('drop-on')); col.classList.add('drop-on');
+  app.querySelectorAll('.pf-card.drop-before').forEach(x => x.classList.remove('drop-before')); dropBefore(col, e.clientY)?.classList.add('drop-before');
+});
+document.addEventListener('drop', e => {
+  const col = e.target.closest?.('[data-pfcol]'); if (!col || !pfDrag) return; e.preventDefault();
+  const [fromSid, xid] = pfDrag.split('|'); const toSid = col.dataset.pfcol; const before = dropBefore(col, e.clientY)?.dataset.pfdrag?.split('|')[1];
+  const p = projById(ui.prodProject); const from = p?.stages.find(z => z.id === fromSid), to = p?.stages.find(z => z.id === toSid); if (!from || !to) return;
+  const i = from.subs.findIndex(z => z.id === xid); if (i < 0) return; const [x] = from.subs.splice(i, 1);
+  to.subs = to.subs || []; const j = before ? to.subs.findIndex(z => z.id === before) : -1; if (j < 0) to.subs.push(x); else to.subs.splice(j, 0, x);
+  if (from !== to){ (db.tasks || []).filter(t => t.project_id === p.id && t.stage_id === from.id && t.substage_id === x.id).forEach(t => { t.stage_id = to.id; });
+    if (to === contentStage(p) && !x.cycle) x.at = new Date().toISOString();                    // своя задача в «Контенте» — наверх, как новая
+    addLog(p, `«${x.name}»: «${from.name}» → «${to.name}»`); }
+  pfDrag = null; commit();
+});
 // ---------- Инфобизнес: связи этапов доски и «где срочно» ----------
 // Этапы доски — части воронки (Контент → Статья → VSL → Платный канал → Отдел продаж → Эфиры). p.flow = { этап: [этапы, от которых он зависит] };
 // нет записи — этап зависит от предыдущего. Состояние этапа — по его задачам: просрочено / срок сегодня-завтра / нет задач;
@@ -8267,6 +8314,7 @@ function renderProjectFocus(mine = false){
       <span class="pf-mini" aria-hidden="true"><i style="width:${xp.pct}%"></i></span></button></div>`;
   }).join('');
 
+  const dnd = canEditProject(p) && !mine && isInfo() && !GUEST;     // доски инфобизнеса: карточки перетаскиваются между колонками
   const cols = p.stages.map(s => {
     const h = health(s); const isCur = s.id === cur.stageId;
     const subs = boardSubs(p, s);
@@ -8276,15 +8324,15 @@ function renderProjectFocus(mine = false){
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
       if (mine && !t) return tickCard(p, s, x, here);
-      return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
+      return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" ${dnd ? `draggable="true" data-pfdrag="${s.id}|${x.id}"` : ''} aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
-        <b>${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
+        <b>${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
         <small>${esc(short(whoId(p, s, t)))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">срок ${fmt(t.due_date)}</span>` : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
       </button>`;
     }).join('');
-    return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
+    return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" ${dnd ? `data-pfcol="${s.id}"` : ''} aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
