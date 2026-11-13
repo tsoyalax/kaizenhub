@@ -187,6 +187,15 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.equal(D.querySelectorAll('.ct-card .ct-x').length, 2); ok('на доске видео доп. контент с пометкой «доп.»');
   assert.ok(D.querySelectorAll('.ct-card .ct-ico').length >= 6 && D.querySelector('.ct-add .ct-sw')); ok('у видео — значок видео, форма добавления — карточкой с переключателем «Доп. контент»');
   assert.ok(!D.querySelector('[data-vidsync]')); ok('кнопки «Обновить из SMM» нет');
+  // ответственный за весь контент: один выбор — на всех видео его плашка, и все они у него в «Моих задачах»
+  E(`ui.view = 'content'; ui.ctMode = 'board'; render()`);
+  const cw = D.querySelector('.ct-who select'); cw.value = 'me'; cw.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
+  assert.equal(E('contentStage().assignee_id'), 'me'); ok('ответственный за контент назначен на колонку «Контент»');
+  const cards = [...D.querySelectorAll('.ct-card')]; assert.ok(cards.length && cards.every(c => c.querySelector('.who-chip:not(.none)'))); ok('на всех видео — плашка ответственного');
+  // «Мои задачи»: задачи из всех колонок доски инфобизнеса, а не только текущего этапа
+  E(`(() => { const p = infoBoard(); const s = p.stages.find(z => z !== contentStage(p) && !isMaint(z)); s.subs = s.subs || []; s.subs.push({ id:'mine1', name:'Моя задача в другой колонке', done:false }); s.assignee_id = 'me'; })()`);
+  assert.ok(E(`dayProjectItems('me').some(i => i.title === 'Моя задача в другой колонке')`)); ok('«Мои задачи»: видны задачи из любой колонки доски');
+  assert.ok(E(`dayProjectItems('me').filter(i => i.s === contentStage(infoBoard())).length >= 3`)); ok('и все видео, где вы ответственный за контент');
   E(`db.prefs.kind = 'agency'; render()`);
   assert.ok(!D.querySelector('.tabs [data-view="matrix"]').hidden); ok('в агентстве матрица на месте');
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
