@@ -94,6 +94,40 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   w.eval(`ui.dtMode = 'kanban'; render();`); await wait(50);
   const dc = $(`[data-ogdone="${t1.id}"]`); dc.checked = true; fire(dc, 'change'); await wait(50);
   assert.equal(w.eval(`itAll().find(t => t.id === '${t1.id}').status`), 'done'); ok('задача отдела выполняется галочкой');
+  // причинно-следственные связи: цель «Челлендж М» из задач разных отделов
+  w.eval(`ui.dtMode = 'kanban'; render();`); await wait(50);
+  $(`[data-ognew="${dC}"]`).click(); await wait(50);
+  $('#ogTitle').value = 'Челлендж М'; $('#ogDue').value = w.eval('addDays(today(), 20)'); fire($('#ogForm'), 'submit'); await wait(100);
+  const gid = w.eval(`itAll().find(t => t.title === 'Челлендж М').id`);
+  const mkPart = async (title, dept, after, startOff, dueOff) => {
+    $(`[data-ognew="${dept}"]`).click(); await wait(50);
+    $('#ogTitle').value = title; $('#ogParent').value = gid; $('#ogStart').value = w.eval(`addDays(today(), ${startOff})`); $('#ogDue').value = w.eval(`addDays(today(), ${dueOff})`);
+    after.forEach(a => { const c = D.querySelector(`[data-ogafter="${w.eval(`itAll().find(t => t.title === '${a}').id`)}"]`); c.checked = true; fire(c, 'change'); });
+    fire($('#ogForm'), 'submit'); await wait(100);
+    return w.eval(`itAll().find(t => t.title === '${title}')`);
+  };
+  const m1 = await mkPart('Механика', dC, [], 0, 3);
+  const m2 = await mkPart('Лендинг', dT, ['Механика'], 4, 8);
+  const m3 = await mkPart('Анонс', dC, ['Лендинг'], 2, 10);
+  assert.ok(m2.parent === gid && m2.after.includes(m1.id)); ok('часть цели: «входит в» и «начинается после» сохраняются');
+  assert.equal(w.eval(`opItems().find(x => x.type === 'task' && x.t.id === '${m2.id}').k`), 'wait'); ok('пока предыдущая не готова — статус «Ждёт»');
+  assert.ok(/Ждёт: «Механика»/.test([...D.querySelectorAll('.og-card')].find(c => c.querySelector('.og-t').textContent === 'Лендинг').textContent)); ok('на карточке видно, кого ждёт');
+  assert.ok(/Держит: «Лендинг»/.test([...D.querySelectorAll('.og-card')].find(c => c.querySelector('.og-t').textContent === 'Механика').textContent)); ok('и кого держит');
+  assert.equal(w.eval(`ogConflicts(itAll().find(t => t.id === '${m3.id}')).length`), 1); ok('начало раньше конца предыдущей — конфликт сроков');
+  // замкнутый круг запрещён
+  w.eval(`openOpTask('${m1.id}')`); await wait(50);
+  const cyc = D.querySelector(`[data-ogafter="${m3.id}"]`); cyc.checked = true; fire(cyc, 'change'); fire($('#ogForm'), 'submit'); await wait(50);
+  assert.ok(/замкнутый круг/.test($('#ogErr').textContent)); ok('связь по кругу не сохраняется');
+  w.eval(`layer.innerHTML = ''`);
+  // вид «Связи»
+  $('[data-dtmode="links"]').click(); await wait(80);
+  const sec = D.querySelector('.og-goalsec');
+  assert.ok(sec && /Челлендж М/.test(sec.querySelector('.og-gh').textContent) && /готово 0 из 3/.test(sec.textContent)); ok('вид «Связи»: цель и прогресс частей');
+  assert.deepEqual([...sec.querySelectorAll('.og-step')].map(s => [...s.querySelectorAll('.og-node b')].map(b => b.textContent)), [['Механика'], ['Лендинг'], ['Анонс'], ['Челлендж М']]); ok('части разложены по шагам до цели');
+  assert.ok(/Тормозит: «Механика»/.test(sec.textContent)); ok('видно, что тормозит запуск');
+  // готово — следующий шаг больше не ждёт
+  w.eval(`itSave({ ...itAll().find(t => t.id === '${m1.id}'), status:'done', done_at:new Date().toISOString() }); render();`); await wait(50);
+  assert.notEqual(w.eval(`opItems().find(x => x.type === 'task' && x.t.id === '${m2.id}').k`), 'wait'); ok('предыдущая готова — следующая больше не ждёт');
   // карточка проекта: задачи ведения с отделом
   w.eval(`openProject('${p2}')`); await wait(100);
   assert.ok(/Задачи ведения/.test(D.body.textContent) && /Отдел трафика/.test(D.querySelector('.rt-block').textContent)); ok('в карточке проекта — задачи ведения с отделом');

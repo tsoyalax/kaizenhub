@@ -487,7 +487,7 @@ body.selecting #app{padding-bottom:90px}
 .og-chip b{color:var(--muted);font-weight:600;margin-left:4px}.og-chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff}.og-chip[aria-pressed="true"] b{color:#fff}
 .og-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--dc,var(--brand));margin-right:6px;vertical-align:middle}
 .og-legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted);margin:0 0 10px}.og-legend i{display:inline-block;width:18px;height:8px;border-radius:4px;margin-right:6px;vertical-align:middle;background:var(--ok)}
-.og{--ok:var(--brand)}.og .k-now{--ok:var(--brand)}.og .k-next{--ok:color-mix(in srgb,var(--muted) 45%,transparent)}.og .k-late{--ok:var(--r,#EF4444)}.og .k-done{--ok:var(--g,#22C55E)}
+.og{--ok:var(--brand)}.og .k-now{--ok:var(--brand)}.og .k-wait{--ok:var(--y,#F59E0B)}.og .k-next{--ok:color-mix(in srgb,var(--muted) 45%,transparent)}.og .k-late{--ok:var(--r,#EF4444)}.og .k-done{--ok:var(--g,#22C55E)}
 .og-done{margin-left:auto;display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--ink)}
 .og-scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
 .og-grid{min-width:640px;padding:4px 0 10px}
@@ -516,6 +516,23 @@ body.selecting #app{padding-bottom:90px}
 .og-card .meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.og-card .og-st{display:block}.og-card .og-st .rt-freq{display:inline-flex;gap:3px;align-items:center}.og-card .og-st .rt-freq svg{width:12px;height:12px}
 .og-addcol{display:flex;flex-direction:column;gap:8px;align-items:stretch;padding:12px;min-width:220px}
 .og-empty{margin:4px 0}
+.og-links{display:grid;gap:2px;font-size:12px;color:var(--muted)}.og-ln b{color:var(--ink);font-weight:600}.og-wait{color:var(--y-ink,#B45309)}
+.og-after summary{cursor:pointer;height:38px;display:flex;align-items:center;border:1px solid var(--line);border-radius:9px;padding:0 10px;background:var(--surface);list-style:none}
+.form .og-afterlist input[type=checkbox]{width:16px;height:16px;min-height:0;flex:none;margin:2px 0 0;padding:0}
+.og-afterlist{display:grid;gap:4px;max-height:180px;overflow:auto;padding:8px 2px}.og-afterlist .check{align-items:flex-start}
+.og-kidlist{margin:0;padding-left:18px;display:grid;gap:2px}
+.og-goalsec{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 14px}
+.og-gh{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}.og-gh b{font-size:15px}.og-gh small{color:var(--muted)}.og-gh .ghost{margin-left:auto}
+.og-gbar{width:120px;height:6px;border-radius:4px;background:color-mix(in srgb,var(--muted) 25%,transparent);overflow:hidden}.og-gbar i{display:block;height:100%;background:var(--g,#22C55E)}
+.og-brake{margin:0 0 10px;font-size:13px}
+.og-chain{position:relative;display:flex;gap:44px;overflow-x:auto;padding:6px 4px 10px;align-items:flex-start}
+.og-step{display:grid;gap:10px;min-width:190px;position:relative;z-index:1}.og-stepn{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.og-node{display:grid;gap:2px;text-align:left;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--dc,var(--line));border-radius:10px;padding:8px 10px;cursor:pointer;width:200px}
+.og-node b{font-size:13.5px}.og-node small{font-size:12px;color:var(--muted)}.og-node .og-nd{color:var(--dc,var(--muted));font-weight:600}
+.og-node.k-wait{background:color-mix(in srgb,var(--y,#F59E0B) 8%,var(--surface))}.og-node.k-late{background:color-mix(in srgb,var(--r,#EF4444) 8%,var(--surface))}.og-node.k-done{opacity:.6}
+.og-goal{border-left-color:var(--brand);border-width:1px 1px 1px 4px;box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 20%,transparent)}
+.og-arrows{position:absolute;left:0;top:0;pointer-events:none;overflow:visible;z-index:0}
+.og-arrows path{fill:none;stroke:var(--g,#22C55E);stroke-width:1.8}.og-arrows path.w{stroke:var(--y,#F59E0B)}.og-arrows path.h{stroke-linejoin:round}
 .og-prog{display:block;height:4px;border-radius:3px;background:color-mix(in srgb,var(--muted) 25%,transparent);overflow:hidden}.og-prog i{display:block;height:100%;background:var(--g,#22C55E)}
 .og-pj{font-size:12.5px;text-align:left}.og-subs{white-space:nowrap}
 .og-ava{width:32px;height:32px;border-radius:9px;flex:none;background:color-mix(in srgb,var(--dc) 22%,transparent);border:2px solid var(--dc)}
@@ -3971,8 +3988,26 @@ function addDept(name){
 }
 const maintProjects = () => db.projects.filter(p => p.state !== 'archived' && !p._ext && p.stages.some(isMaint));
 const OG_NONE = '_';
-const KO = { late:0, now:1, next:2, done:3 };
-const OK_TXT = { done:'Сделано', now:'Сейчас', late:'Просрочено', next:'Дальше' };
+const KO = { late:0, now:1, wait:2, next:3, done:4 };
+const OK_TXT = { done:'Сделано', now:'Сейчас', late:'Просрочено', next:'Дальше', wait:'Ждёт' };
+// ---------- причинно-следственные связи задач отделов ----------
+// t.parent — задача-цель, в которую входит эта («Челлендж М» ← контент, техотдел, съёмка);
+// t.after  — задачи, которые должны быть готовы раньше («начинается после»). Пока они не готовы — статус «Ждёт».
+const ogById = id => id ? itAll().find(t => t.id === id) : null;
+const ogKids = id => ogTasks().filter(t => t.parent === id);
+const ogBlockers = t => (t.after || []).map(ogById).filter(b => b && b.status !== 'done');
+// начало раньше, чем закончится предшественник
+const ogConflicts = t => t.status === 'done' ? [] : (t.after || []).map(ogById).filter(b => b && b.status !== 'done' && t.start && b.due_date && t.start <= b.due_date);
+// цикл: идём от предшественников (и от цели вверх) и ищем саму задачу
+function ogCycle(id, after, parent){
+  const seen = new Set(), st = [...after];
+  while (st.length){ const x = st.pop(); if (x === id) return true; if (seen.has(x)) continue; seen.add(x); st.push(...(ogById(x)?.after || [])); }
+  for (let p = parent, i = 0; p && i < 50; p = ogById(p)?.parent, i++) if (p === id) return true;
+  return false;
+}
+const ogDeptName = t => deptById(t?.dept)?.name || 'Без отдела';
+// прогресс цели: готовые части / все части
+const ogGoal = t => { const k = ogKids(t.id); return k.length ? { n:k.length, done:k.filter(x => x.status === 'done').length, end:k.map(x => x.due_date || '').sort().at(-1) } : null; };
 // длина цикла регулярной задачи — от начала цикла до срока
 const cycleLen = f => f === 'monthly' ? 30 : FREQ[f]?.[1] || 1;
 const d10 = v => v ? String(v).slice(0, 10) : '';
@@ -3985,7 +4020,7 @@ function opItems(){
     const due = t.due_date || t.start || ''; if (!due) return;
     const from = t.start && t.start <= due ? t.start : due;
     const done = t.status === 'done'; const to = done && t.done_at ? d10(t.done_at) : due;
-    const k = done ? 'done' : due < t0 ? 'late' : from <= t0 || t.status === 'in_progress' || t.status === 'review' ? 'now' : 'next';
+    const k = done ? 'done' : due < t0 ? 'late' : ogBlockers(t).length ? 'wait' : from <= t0 || t.status === 'in_progress' || t.status === 'review' ? 'now' : 'next';
     out.push({ type:'task', t, p:t.pid ? projById(t.pid) : null, dept:deptById(t.dept) ? t.dept : OG_NONE, from:from <= to ? from : to, to, k });
   });
   maintProjects().forEach(p => {
@@ -4006,6 +4041,19 @@ const ogWho = x => x.type === 'task' ? (x.t.assignee_id ? ` · ${esc(userById(x.
 const ogTitle = x => x.type === 'task' ? x.t.title : x.r.title;
 const ogKey = x => x.type === 'task' ? `t|${x.t.id}` : `${x.p.id}|${x.r.id}`;
 const ogWhere = x => x.type === 'maint' ? `${esc(x.p.name)} · ведение` : x.p ? `В производстве: ${esc(x.p.name)}${currentStage(x.p) ? ` · ${esc(currentStage(x.p).name)}` : ''}` : '';
+// связи на карточке: ждёт кого, кого держит, из чего состоит, конфликт дат
+function ogLinksHtml(x, short = false){
+  if (x.type !== 'task') return '';
+  const t = x.t, bl = ogBlockers(t), cf = ogConflicts(t), g = ogGoal(t), par = ogById(t.parent);
+  const holds = ogTasks().filter(o => (o.after || []).includes(t.id) && o.status !== 'done');
+  const out = [];
+  if (par) out.push(`<span class="og-ln">Часть: <b>${esc(par.title)}</b></span>`);
+  if (g) out.push(`<span class="og-ln">Состоит из ${g.n} · готово ${g.done}</span>`);
+  if (bl.length) out.push(`<span class="og-ln og-wait">Ждёт: ${bl.map(b => `«${esc(b.title)}» (${esc(ogDeptName(b))})`).join(', ')}</span>`);
+  if (cf.length && !short) out.push(`<span class="og-ln og-late">Начало ${fmt(t.start)} — раньше, чем закончится «${esc(cf[0].title)}» (${fmt(cf[0].due_date)})</span>`);
+  if (holds.length && t.status !== 'done' && !short) out.push(`<span class="og-ln">Держит: ${holds.map(o => `«${esc(o.title)}»`).join(', ')}</span>`);
+  return out.length ? `<div class="og-links">${out.join('')}</div>` : '';
+}
 const ogSubs = x => x.type === 'task' && (x.t.subs || []).length ? `<span class="og-subs">Подзадачи ${subsDoneN(x.t)}/${x.t.subs.length}</span>` : '';
 // следующие повторы регулярной задачи до конца окна таймлайна
 function repeats(x, end){
@@ -4015,11 +4063,11 @@ function repeats(x, end){
   return out;
 }
 function renderDepts(){
-  const depts = deptList(), mode = ui.dtMode === 'timeline' ? 'timeline' : 'kanban';
+  const depts = deptList(), mode = ['timeline', 'links'].includes(ui.dtMode) ? ui.dtMode : 'kanban';
   const all = opItems(), t0 = today(), proj = maintProjects();
   const cols = [...depts, ...(all.some(x => x.dept === OG_NONE && x.k !== 'done') ? [{ id:OG_NONE, name:'Без отдела' }] : [])];
   const head = `<div class="fn-head-row"><h2 class="td-title">Отделы</h2>
-      <div class="seg-toggle og-mode" role="group" aria-label="Вид"><button data-dtmode="kanban" aria-pressed="${mode === 'kanban'}">Канбан</button><button data-dtmode="timeline" aria-pressed="${mode === 'timeline'}">Таймлайн</button></div>
+      <div class="seg-toggle og-mode" role="group" aria-label="Вид"><button data-dtmode="kanban" aria-pressed="${mode === 'kanban'}">Канбан</button><button data-dtmode="timeline" aria-pressed="${mode === 'timeline'}">Таймлайн</button><button data-dtmode="links" aria-pressed="${mode === 'links'}">Связи</button></div>
       ${mode === 'timeline' ? `<div class="og-nav"><button class="ghost" data-dtoff="-1" aria-label="Раньше">‹</button><button class="ghost" data-dtoff="0">Сегодня</button><button class="ghost" data-dtoff="1" aria-label="Позже">›</button></div>` : ''}</div>`;
   const addForm = cls => `<form class="${cls}" id="ogAddForm"><input id="ogAddName" placeholder="${depts.length ? '+ Новый отдел' : 'Название отдела, например «Отдел контента»'}" maxlength="60" aria-label="Название отдела"><button class="${depts.length ? 'ghost' : 'primary'}">${depts.length ? 'Добавить' : 'Создать отдел'}</button></form>`;
   if (!depts.length){
@@ -4027,11 +4075,13 @@ function renderDepts(){
       ${addForm('og-addf')}</div></div>`;
     return;
   }
+  if (mode === 'links'){ app.innerHTML = `<div class="og">${head}${ogLinksView()}</div>`; requestAnimationFrame(drawOgArrows); return; }
   if (mode === 'kanban'){
     const card = x => `<article class="card og-card k-${x.k}" draggable="true" data-ogcard="${ogKey(x)}">
         <div class="og-top">${x.k === 'done' ? '' : x.type === 'task' ? `<input type="checkbox" class="rt-chk" data-ogdone="${x.t.id}" aria-label="Выполнено: ${esc(x.t.title)}">` : `<input type="checkbox" class="rt-chk" data-rdone="${x.p.id}|${x.r.id}" aria-label="Выполнено: ${esc(x.r.title)}">`}
           <button class="og-t" ${x.type === 'task' ? `data-ogopen="${x.t.id}"` : `data-redit="${x.p.id}|${x.r.id}"`}>${esc(ogTitle(x))}</button></div>
         ${ogWhere(x) ? `<div class="meta">${x.p ? projAva(x.p, 'xs') : ''}${x.p ? `<button class="link og-pj" data-open="${x.p.id}">${ogWhere(x)}</button>` : ogWhere(x)}</div>` : ''}
+        ${ogLinksHtml(x)}
         ${x.type === 'task' && (x.t.subs || []).length ? `<span class="og-prog" aria-hidden="true"><i style="width:${Math.round(subsDoneN(x.t) / x.t.subs.length * 100)}%"></i></span>` : ''}
         <div class="meta og-st"><span class="og-k">${OK_TXT[x.k]}</span> · ${x.k === 'done' ? fmt(x.to) : `до ${fmt(x.to)}`}${x.type === 'maint' && x.r.frequency !== 'once' ? ` · <span class="rt-freq">${RT_ICO}${FREQ[x.r.frequency][0]}</span>` : ''}${ogWho(x)}${ogSubs(x) ? ` · ${ogSubs(x)}` : ''}</div></article>`;
     const colItems = id => all.filter(x => x.dept === id && (x.k !== 'done' || ui.dtDone)).sort((a, b) => KO[a.k] - KO[b.k] || a.to.localeCompare(b.to));
@@ -4059,6 +4109,7 @@ function renderDepts(){
   const tX = t0 >= from && t0 <= to ? X(t0) + 50 / span : null;
   const row = x => { const rp = repeats(x, to); return `<div class="og-row k-${x.k}">
       <button class="og-name" ${x.type === 'task' ? `data-ogopen="${x.t.id}"` : `data-redit="${x.p.id}|${x.r.id}"`}>${x.p ? projAva(x.p, 'sm') : `<span class="og-ava" style="--dc:${deptColor(deptById(x.dept))}"></span>`}<span><b>${esc(ogTitle(x))}</b>
+        ${x.type === 'task' && (ogBlockers(x.t).length || x.t.parent) ? `<small class="og-wait">${ogBlockers(x.t).length ? `ждёт «${esc(ogBlockers(x.t)[0].title)}»` : `часть «${esc(ogById(x.t.parent)?.title || '')}»`}</small>` : ''}
         <small>${[ogWhere(x), ogWho(x).replace(/^ · /, ''), x.type === 'maint' && x.r.frequency !== 'once' ? FREQ[x.r.frequency][0].toLowerCase() : '', ogSubs(x)].filter(Boolean).join(' · ') || 'Задача отдела'}</small>
         <small><span class="og-k">${OK_TXT[x.k]}</span> · ${x.k === 'done' ? fmt(x.to) : `${fmt(x.from)} – ${fmt(x.to)}`}${rp.length ? ` · дальше ${fmt(rp[0])}` : ''}</small></span></button>
       <div class="og-lane">${tX !== null ? `<i class="og-today" style="left:${tX}%"></i>` : ''}
@@ -4068,7 +4119,7 @@ function renderDepts(){
   app.innerHTML = `<div class="og">${head}
     <div class="og-chips" role="group" aria-label="Отдел"><button class="og-chip" data-dtdept="" aria-pressed="${!sel}">Все отделы <b>${inRange.filter(x => x.k !== 'done').length}</b></button>
       ${cols.map(d => `<button class="og-chip" data-dtdept="${d.id}" aria-pressed="${sel === d.id}" style="--dc:${d.id !== OG_NONE ? deptColor(d) : 'var(--line)'}">${d.id !== OG_NONE ? '<i class="og-dot"></i>' : ''}${esc(d.name)} <b>${inRange.filter(x => x.dept === d.id && x.k !== 'done').length}</b></button>`).join('')}</div>
-    <div class="og-legend">${['now', 'next', 'late', 'done'].map(k => `<span class="k-${k}"><i></i>${OK_TXT[k]}</span>`).join('')}
+    <div class="og-legend">${['now', 'wait', 'next', 'late', 'done'].map(k => `<span class="k-${k}"><i></i>${OK_TXT[k]}</span>`).join('')}
       <label class="og-done"><input type="checkbox" data-dtdone ${ui.dtDone ? 'checked' : ''}> показывать выполненные</label></div>
     <div class="og-scroll"><div class="og-grid">
       <div class="og-row og-hd"><span></span><div class="og-lane">${weeks.map(w => `<span class="og-wk" style="left:${X(w)}%">${fmt(w)}</span>`).join('')}${tX !== null ? `<i class="og-today" style="left:${tX}%"><b>Сегодня</b></i>` : ''}</div></div>
@@ -4081,6 +4132,7 @@ document.addEventListener('click', e => {
   const o = e.target.closest?.('[data-dtoff]'); if (o){ ui.dtOff = +o.dataset.dtoff ? (ui.dtOff || 0) + +o.dataset.dtoff : 0; render(); return; }
   const d = e.target.closest?.('[data-dtdept]'); if (d){ ui.dtDept = d.dataset.dtdept; render(); return; }
   const n = e.target.closest?.('[data-ognew]'); if (n){ openOpTask(null, { dept:n.dataset.ognew }); return; }
+  const np = e.target.closest?.('[data-ognew-part]'); if (np){ openOpTask(null, { parent:np.dataset.ognewPart }); return; }
   const ot = e.target.closest?.('[data-ogopen]'); if (ot){ openOpTask(ot.dataset.ogopen); return; }
   const r = e.target.closest?.('[data-ogren]');
   if (r){ const dp = deptById(r.dataset.ogren); const v = prompt('Название отдела', dp.name); if (v && v.trim()){ dp.name = v.trim().slice(0, 60); commit(); } return; }
@@ -4110,10 +4162,71 @@ document.addEventListener('drop', e => {
     if (t && (t.dept || null) !== (d ? d.id : null)){ itSave({ ...t, dept:d ? d.id : null }); render(); toast(`«${t.title}» → ${d ? d.name : 'Без отдела'}`); } return; }
   moveOpTask(pid, rid, col.dataset.ogcol);
 });
+// вид «Связи»: каждая цель — цепочка её частей по шагам (кто после кого), стрелки — «начинается после»
+function ogLevels(list){
+  const ids = new Set(list.map(t => t.id)), lv = new Map();
+  const L = (t, d = 0) => { if (lv.has(t.id)) return lv.get(t.id); if (d > 50) return 0;
+    const pre = (t.after || []).filter(a => ids.has(a)).map(a => L(ogById(a), d + 1));
+    const v = pre.length ? Math.max(...pre) + 1 : 0; lv.set(t.id, v); return v; };
+  list.forEach(t => L(t)); return lv;
+}
+function ogLinksView(){
+  const all = ogTasks(), t0 = today();
+  const goals = all.filter(t => ogKids(t.id).length);
+  const linked = all.filter(t => !t.parent && !ogKids(t.id).length && ((t.after || []).length || all.some(o => !o.parent && (o.after || []).includes(t.id))));
+  const node = t => { const x = opItems().find(i => i.type === 'task' && i.t.id === t.id) || { k:t.status === 'done' ? 'done' : 'next', to:t.due_date };
+    return `<button class="og-node k-${x.k}" data-ogopen="${t.id}" data-ognode="${t.id}" style="--dc:${deptColor(deptById(t.dept))}">
+      <small class="og-nd">${esc(ogDeptName(t))}</small><b>${esc(t.title)}</b>
+      <small><span class="og-k">${OK_TXT[x.k]}</span> · ${t.status === 'done' ? 'готово' : `до ${fmt(t.due_date)}`}${userById(t.assignee_id) ? ` · ${esc(userById(t.assignee_id).name || 'Вы')}` : ''}</small>
+      ${ogConflicts(t).length ? '<small class="og-late">сроки пересекаются</small>' : ''}</button>`; };
+  const chain = (list, goal) => {
+    const lv = ogLevels(list), max = Math.max(0, ...lv.values());
+    const cols = Array.from({ length:max + 1 }, (_, i) => list.filter(t => lv.get(t.id) === i).sort((a, b) => String(a.due_date).localeCompare(String(b.due_date))));
+    // последние в цепочке (никого не держат) ведут к цели
+    const ends = list.filter(t => !list.some(o => (o.after || []).includes(t.id))).map(t => t.id);
+    return `<div class="og-chain" data-ogchain>${cols.map((c, i) => `<div class="og-step"><span class="og-stepn">Шаг ${i + 1}</span>${c.map(node).join('')}</div>`).join('')}
+      ${goal ? `<div class="og-step"><span class="og-stepn">Итог</span><button class="og-node og-goal k-${goal.status === 'done' ? 'done' : ogKids(goal.id).every(k => k.status === 'done') ? 'now' : 'wait'}" data-ogopen="${goal.id}" data-ognode="${goal.id}" data-ogends="${ends.join(',')}">
+        <small class="og-nd">Цель</small><b>${esc(goal.title)}</b><small>${ogKids(goal.id).every(k => k.status === 'done') ? 'всё готово — можно запускать' : `ждёт ${ogKids(goal.id).filter(k => k.status !== 'done').length} из ${ogKids(goal.id).length}`}</small></button></div>` : ''}
+      <svg class="og-arrows" aria-hidden="true"></svg></div>`;
+  };
+  // что тормозит цель: незавершённые части, которые сами ничего не ждут (с них всё начинается), просроченные — первыми
+  const brakes = list => list.filter(t => t.status !== 'done' && !ogBlockers(t).length && list.some(o => (o.after || []).includes(t.id) && o.status !== 'done'))
+    .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
+  const goalHtml = g => { const kids = ogKids(g.id), gg = ogGoal(g), br = brakes(kids), late = kids.filter(k => k.status !== 'done' && k.due_date && k.due_date < t0);
+    return `<section class="og-goalsec"><header class="og-gh"><b>${esc(g.title)}</b>
+      <span class="og-gbar" aria-label="Готово ${gg.done} из ${gg.n}"><i style="width:${Math.round(gg.done / gg.n * 100)}%"></i></span><small>готово ${gg.done} из ${gg.n}${gg.end ? ` · финиш частей ${fmt(gg.end)}` : ''}${g.due_date ? ` · цель ${fmt(g.due_date)}` : ''}${gg.end && g.due_date && gg.end > g.due_date ? ' · <span class="og-late">части не успевают к сроку цели</span>' : ''}</small>
+      <button class="ghost" data-ognew-part="${g.id}">+ Часть</button></header>
+      ${br.length || late.length ? `<p class="og-brake">${late.length ? `<span class="og-late">Просрочено: ${late.map(k => `«${esc(k.title)}» (${esc(ogDeptName(k))})`).join(', ')}.</span> ` : ''}${br.length ? `Тормозит: ${br.map(k => `«${esc(k.title)}» (${esc(ogDeptName(k))}, до ${fmt(k.due_date)})`).join(', ')} — от неё ждут следующие шаги.` : ''}</p>` : ''}
+      ${chain(kids, g)}</section>`; };
+  if (!goals.length && !linked.length) return `<div class="note-box og-first"><p><b>Связи между задачами.</b> Пример: цель «Челлендж М» состоит из задач отдела контента, техотдела и съёмки. Создайте задачу-цель, затем в задачах отделов укажите «Входит в: Челлендж М» и «Начинается после» — что должно быть готово раньше. Здесь появится цепочка: кто кого ждёт и что тормозит запуск.</p>
+    <button class="primary" data-ognew="">+ Задача-цель</button></div>`;
+  return `<p class="hint">Цели и их части по шагам: стрелка — «начинается после». «Ждёт» — предыдущий шаг ещё не готов. <button class="link" data-ognew="">+ Задача-цель</button></p>
+    ${goals.map(goalHtml).join('')}
+    ${linked.length ? `<section class="og-goalsec"><header class="og-gh"><b>Связанные задачи без цели</b></header>${chain(linked, null)}</section>` : ''}`;
+}
+// стрелки: от предшественника к задаче, от последних шагов — к цели
+function drawOgArrows(){
+  document.querySelectorAll('[data-ogchain]').forEach(ch => {
+    const svg = ch.querySelector('.og-arrows'); if (!svg) return; const R = ch.getBoundingClientRect(); if (!R.width) return;
+    svg.setAttribute('width', ch.scrollWidth); svg.setAttribute('height', ch.scrollHeight);
+    const pos = id => { const el = ch.querySelector(`[data-ognode="${id}"]`); if (!el) return null; const r = el.getBoundingClientRect();
+      return { x1:r.right - R.left + ch.scrollLeft, x0:r.left - R.left + ch.scrollLeft, y:r.top - R.top + r.height / 2 + ch.scrollTop }; };
+    const lines = [];
+    ch.querySelectorAll('[data-ognode]').forEach(el => {
+      const id = el.dataset.ognode; const t = ogById(id);
+      const from = el.dataset.ogends !== undefined ? el.dataset.ogends.split(',').filter(Boolean) : (t?.after || []);
+      from.forEach(a => { const A = pos(a), B = pos(id); if (!A || !B) return; const mx = (A.x1 + B.x0) / 2;
+        const wait = ogById(a)?.status !== 'done';
+        lines.push(`<path d="M${A.x1},${A.y} C${mx},${A.y} ${mx},${B.y} ${B.x0 - 6},${B.y}" class="${wait ? 'w' : ''}"/><path d="M${B.x0 - 7},${B.y - 4} L${B.x0},${B.y} L${B.x0 - 7},${B.y + 4}" class="h${wait ? ' w' : ''}"/>`); });
+    });
+    svg.innerHTML = lines.join('');
+  });
+}
+addEventListener('resize', () => { if (ui.view === 'depts' && ui.dtMode === 'links') drawOgArrows(); });
 // задача отдела: название, описание, отдел, исполнитель, начало/срок, статус, подзадачи, «В производство»
 function openOpTask(id, pre = {}){
   const t = id ? itAll().find(x => x.id === id) : null; const manage = itCanManage(t); const ro = manage ? '' : 'disabled';
-  const v = t || { title:'', description:'', dept:pre.dept || '', assignee_id:ME, start:today(), due_date:addDays(today(), 7), status:'todo', subs:[] };
+  const v = t || { title:'', description:'', dept:pre.dept || '', assignee_id:ME, start:today(), due_date:addDays(today(), 7), status:'todo', subs:[], parent:pre.parent || '', after:[] };
   ui.ogSubs = clone(v.subs || []);
   const linked = t?.pid && projById(t.pid);
   const tpls = db.templates.filter(x => x.id !== CRM_TPL_ID);
@@ -4131,6 +4244,13 @@ function openOpTask(id, pre = {}){
         <div class="field"><label for="ogStart">Начало</label><input id="ogStart" type="date" value="${esc(v.start || '')}" ${ro}></div>
         <div class="field"><label for="ogDue">Срок</label><input id="ogDue" type="date" value="${esc(v.due_date || '')}" ${ro}></div>
       </div>
+      <div class="two">
+        <div class="field"><label for="ogParent">Входит в цель</label><select id="ogParent" ${ro}><option value="">— сама по себе —</option>${ogTasks().filter(o => o.id !== v.id && o.status !== 'done' && !o.parent).map(o => `<option value="${o.id}" ${o.id === v.parent ? 'selected' : ''}>${esc(o.title)}</option>`).join('')}</select></div>
+        <div class="field"><label>Начинается после</label><details class="og-after"><summary id="ogAfterSum">${(v.after || []).length ? `${(v.after || []).length} ${plural((v.after || []).length, 'задачи', 'задач', 'задач')}` : 'ни от чего не зависит'}</summary>
+          <div class="og-afterlist">${ogTasks().filter(o => o.id !== v.id && o.id !== v.parent && !ogKids(o.id).length && !ogKids(v.id || '-').some(k => k.id === o.id))
+            .sort((a, b) => (b.parent === v.parent && !!v.parent) - (a.parent === v.parent && !!v.parent) || String(a.due_date).localeCompare(String(b.due_date))).map(o => `<label class="check"><input type="checkbox" data-ogafter="${o.id}" ${(v.after || []).includes(o.id) ? 'checked' : ''} ${ro}> <span>${esc(o.title)} <small class="hint">${esc(ogDeptName(o))}${o.status === 'done' ? ' · готово' : o.due_date ? ` · до ${fmt(o.due_date)}` : ''}</small></span></label>`).join('') || '<p class="hint">Других задач пока нет</p>'}</div></details></div>
+      </div>
+      ${t && ogKids(t.id).length ? `<div class="field"><label>Состоит из</label><ul class="og-kidlist">${ogKids(t.id).map(k => `<li><button type="button" class="link" data-ogopen="${k.id}">${esc(k.title)}</button> <small class="hint">${esc(ogDeptName(k))} · ${IT_STATUS[k.status] || ''}${ogBlockers(k).length ? ' · ждёт' : ''}</small></li>`).join('')}</ul></div>` : ''}
       <div class="field"><label for="ogStatus">Статус</label><select id="ogStatus">${Object.entries(IT_STATUS).map(([k, x]) => `<option value="${k}" ${k === v.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
       <div class="field"><label>Подзадачи</label><ul class="og-sublist" id="ogSubs"></ul>${manage ? '<input id="ogSubNew" placeholder="+ Подзадача и Enter" maxlength="200" autocomplete="off" style="width:100%;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit">' : ''}</div>
       ${linked ? `<p class="og-prod">В производстве: <button type="button" class="link" data-open="${linked.id}">${esc(linked.name)}</button>${currentStage(linked) ? ` — этап «${esc(currentStage(linked).name)}»` : ''}</p>`
@@ -4157,11 +4277,14 @@ document.addEventListener('change', e => {
   const t = itAll().find(x => x.id === d); if (!t) return;
   itSave({ ...t, status:'done', done_at:new Date().toISOString() }); render(); toast(`«${t.title}» — готово`);
 });
+document.addEventListener('change', e => { if (!e.target.matches?.('[data-ogafter]')) return; const n = document.querySelectorAll('[data-ogafter]:checked').length; const s2 = $('#ogAfterSum'); if (s2) s2.textContent = n ? `${n} ${plural(n, 'задачи', 'задач', 'задач')}` : 'ни от чего не зависит'; });
 document.addEventListener('input', e => { const i = e.target.dataset?.ogsubt; if (i !== undefined && ui.ogSubs?.[+i]) ui.ogSubs[+i].title = e.target.value; });
 document.addEventListener('click', e => {
   const d = e.target.closest?.('[data-ogsubdel]'); if (d){ ui.ogSubs.splice(+d.dataset.ogsubdel, 1); paintOgSubs(true); return; }
   if (e.target.id === 'ogDel'){ const t = itAll().find(x => x.id === $('#ogForm').dataset.ogid);
-    askConfirm({ title:`Удалить «${t.title}»?`, text:'Задача отдела будет удалена.', ok:'Удалить' }).then(y => { if (!y) return; itDelete(t); layer.innerHTML = ''; render(); toast('Удалено'); }); }
+    askConfirm({ title:`Удалить «${t.title}»?`, text:'Задача отдела будет удалена.', ok:'Удалить' }).then(y => { if (!y) return;
+      ogTasks().filter(o => o.parent === t.id || (o.after || []).includes(t.id)).forEach(o => itSave({ ...o, parent:o.parent === t.id ? null : o.parent, after:(o.after || []).filter(a => a !== t.id) }));
+      itDelete(t); layer.innerHTML = ''; render(); toast('Удалено'); }); }
 });
 document.addEventListener('submit', e => {
   if (e.target.id !== 'ogForm') return; e.preventDefault();
@@ -4175,7 +4298,9 @@ document.addEventListener('submit', e => {
   if (start && start > due){ $('#ogErr').textContent = 'Начало не может быть позже срока'; return; }
   const now = new Date().toISOString(), who = $('#ogWho').value || ME;
   const t = { ...(old || { id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Руководитель', created_at:now, priority:'medium', category:'other', space:ogSpace() }),
-    title, description:$('#ogDesc').value.trim(), dept:$('#ogDept').value || null, assignee_id:who, start:start || null, due_date:due, status, subs };
+    title, description:$('#ogDesc').value.trim(), dept:$('#ogDept').value || null, assignee_id:who, start:start || null, due_date:due, status, subs,
+    parent:$('#ogParent')?.value || null, after:[...document.querySelectorAll('[data-ogafter]:checked')].map(x => x.dataset.ogafter) };
+  if (ogCycle(t.id, t.after, t.parent)){ $('#ogErr').textContent = 'Получается замкнутый круг: задача ждёт сама себя. Уберите одну из связей.'; return; }
   if (status === 'done' && old?.status !== 'done') t.done_at = now;
   if (old && old.assignee_id !== who) delete t._members;
   // «В производство»: проект / видео по процессу, связан с задачей
