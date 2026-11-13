@@ -480,6 +480,32 @@ body.selecting #app{padding-bottom:90px}
 .send-btn small{color:var(--muted);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sh-link .send-row{margin:6px 0 0}
 .st-lead{display:inline-block;font-size:12px;font-weight:600;color:var(--b);background:var(--b-bg);border-radius:6px;padding:1px 7px;margin-bottom:3px}
+.b-top .seg-toggle{margin-left:auto}.b-nav{display:flex;gap:6px}
+.b-tip{margin:-8px 0 12px}
+.b-board{align-items:flex-start}.b-col header .cnt{color:var(--muted);font-weight:500;margin-left:4px}.b-col header .col-tools{float:right}
+.b-col.over{outline:2px dashed var(--brand);outline-offset:-2px}
+.b-donecol header b{color:var(--g)}.b-item.done b{text-decoration:line-through;color:var(--muted)}
+.b-when{font-weight:600}.b-when.k-late{color:var(--r)}.b-when.k-today{color:var(--y)}
+.b-add{display:flex;gap:6px;flex-wrap:wrap}.b-add input[name=bname]{flex:1 1 140px}.b-add input[type=date]{width:130px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:12.5px;padding:0 6px}
+.b-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin:0 0 10px}.b-legend i{display:inline-block;width:18px;height:8px;border-radius:4px;margin-right:6px;vertical-align:middle;background:var(--bk)}
+.k-now{--bk:var(--brand)}.k-today{--bk:var(--y)}.k-late{--bk:var(--r)}.k-next{--bk:color-mix(in srgb,var(--muted) 45%,transparent)}.k-done{--bk:var(--g)}
+.b-gantt{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.b-ggrid{min-width:820px;padding:4px 0 10px;position:relative}
+.b-trow{display:grid;grid-template-columns:220px 270px 1fr;gap:10px;align-items:center;padding:5px 14px;min-height:42px}
+.b-thd{border-bottom:1px solid var(--line);min-height:30px;font-size:12px;color:var(--muted)}
+.b-tgrp{padding:10px 14px 2px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.b-tname{display:grid;text-align:left;background:none;border:0;padding:0;font:inherit;color:var(--ink);cursor:pointer;min-width:0}.b-tname b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.b-tname small{color:var(--muted);font-size:12px}
+.b-tdates{display:flex;gap:6px}.b-tdates input,.b-nd input{height:30px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font:inherit;font-size:12px;padding:0 6px;width:128px}
+.b-lane{position:relative;height:20px}
+.b-wk{position:absolute;top:2px;font-size:11.5px;color:var(--muted);padding-left:4px;border-left:1px solid var(--line);white-space:nowrap}
+.b-today{position:absolute;top:-12px;bottom:-12px;border-left:2px solid var(--r);z-index:1}.b-today b{position:absolute;left:4px;top:-2px;font-size:11px;color:var(--r);white-space:nowrap}
+.b-bar{position:absolute;top:3px;height:14px;border-radius:5px;background:var(--bk);min-width:6px}.b-bar.k-done{opacity:.6}
+.b-nodate{margin-top:12px;display:grid;gap:8px}.b-ndlist{display:flex;gap:8px;flex-wrap:wrap}.b-nd{display:flex;gap:6px;align-items:center;background:var(--surface-2);border-radius:9px;padding:6px 8px}
+body.kind-board .tabs [data-view="matrix"],body.kind-board .tabs [data-view="production"],body.kind-board [data-mview="matrix"],body.kind-board [data-mview="production"]{display:none!important}
+.b-card .b-meta{display:flex;gap:4px 10px;flex-wrap:wrap}.b-late{color:var(--r);font-weight:600}.b-card.b-done .t{color:var(--muted);text-decoration:line-through}
+.b-quick input{width:100%;height:36px;border:1px dashed var(--line);border-radius:9px;background:transparent;color:var(--ink);font:inherit;font-size:13.5px;padding:0 10px}
+.b-quick input:focus{border-style:solid;background:var(--surface);outline:none;border-color:var(--brand)}
+.b-donecol h3 .cname{color:var(--g)}
 .lead-check{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
 .lead-check input{margin-top:3px}.lead-check span{display:grid;gap:2px}.lead-check small{color:var(--muted);font-size:12.5px}
 .td-title{font-size:18px;font-weight:600;margin:0}
@@ -2164,13 +2190,16 @@ const projAva = (p, size = 'sm') => p?.image
 // группировка по неделям месяца и блок «План / Факт» (сколько снято и опубликовано за месяц против плана).
 const VIDEO_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3"/></svg>';
 const FUNNEL_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5Z"/></svg>';
-const KINDS = { agency:['Агентство', 'проекты'], smm:['SMM', 'видео'], crm:['CRM', 'блогеры'] };
+const KINDS = { agency:['Агентство', 'проекты'], smm:['SMM', 'видео'], crm:['CRM', 'блогеры'], board:['Канбан', 'пункты без проектов'] };
 const normKind = k => KINDS[k] ? k : 'agency';
-const KIND_ICO = k => k === 'smm' ? VIDEO_ICO : k === 'crm' ? FUNNEL_ICO : '';
+const BOARD_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="5" height="15" rx="1.5"/><rect x="10" y="3" width="5" height="10" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/></svg>';
+const KIND_ICO = k => k === 'smm' ? VIDEO_ICO : k === 'crm' ? FUNNEL_ICO : k === 'board' ? BOARD_ICO : '';
 const isSMM = () => (typeof db !== 'undefined' && db?.prefs?.kind === 'smm');
 const isCRM = () => (typeof db !== 'undefined' && db?.prefs?.kind === 'crm');
+// «Канбан»: пространство без проектов — сразу доска, пункты вбиваются в колонки (внутри пункт — тот же проект по шаблону «Доска»)
+const isBoard = () => (typeof db !== 'undefined' && db?.prefs?.kind === 'board');
 // подпись: «проект» в агентстве, «видео» в SMM, «блогер» в CRM (не задано для CRM — как в агентстве)
-const W = (agency, smm, crm) => isSMM() ? smm : isCRM() && crm !== undefined ? crm : agency;
+const W = (agency, smm, crm, board) => isSMM() ? smm : isCRM() && crm !== undefined ? crm : isBoard() && board !== undefined ? board : agency;
 const SMM_TPL_ID = 'tsmm';
 function smmTemplate(){
   return { id:SMM_TPL_ID, name:'SMM: видео', stages:[['Идея и сценарий',2],['Съёмка',2],['Монтаж',2],['Согласование',1,1],['Опубликовано',1]]
@@ -2184,7 +2213,11 @@ function crmTemplate(){
     .map(([n, d]) => ({ id:uid(), name:n, days:d, approval:false, subs:[] })) };
 }
 function ensureCrmTemplate(d){ d.templates = d.templates || []; if (!d.templates.some(t => t.id === CRM_TPL_ID || RX_CRM.test(t.name))) d.templates.unshift(crmTemplate()); }
-function ensureKindTemplate(d, k){ if (k === 'smm') ensureSmmTemplate(d); else if (k === 'crm') ensureCrmTemplate(d); }
+const BOARD_TPL_ID = 'tboard';
+function boardTemplate(){ return { id:BOARD_TPL_ID, name:'Доска', stages:['Нужно сделать', 'В работе', 'На проверке', 'Готово'].map(n => ({ id:uid(), name:n, days:1, approval:false, subs:[] })) }; }
+function ensureBoardTemplate(d){ d.templates = d.templates || []; if (!d.templates.some(t => t.id === BOARD_TPL_ID)) d.templates.unshift(boardTemplate()); }
+const boardTpl = () => tplById(BOARD_TPL_ID);
+function ensureKindTemplate(d, k){ if (k === 'smm') ensureSmmTemplate(d); else if (k === 'crm') ensureCrmTemplate(d); else if (k === 'board') ensureBoardTemplate(d); }
 const crmTpl = () => db.templates.find(t => t.id === CRM_TPL_ID) || db.templates.find(t => RX_CRM.test(t.name)) || db.templates[0];
 // позиция блогера в воронке: номер текущего этапа (по названию этапа шаблона CRM); names.length — все этапы пройдены
 function crmPos(p, names){
@@ -3190,7 +3223,7 @@ const visible = () => db.projects.filter(p => baseOk(p) && riskOk(p)).sort(SORTS
 const anyFilter = () => ui.q || ui.pms.length || ui.clients.length || ui.risk || ui.tagF?.length;
 
 function renderFilters(){
-  const show = ui.view === 'matrix' || ui.view === 'kanban';
+  const show = (ui.view === 'matrix' || ui.view === 'kanban') && !isBoard();
   $('#filters').hidden = !show;
   const hot = hotStages();
   try { paintBell(); pushNotify(); } catch(e) { $('#bellCount').innerHTML = hot.length ? `<span class="badge">${hot.length}</span>` : ''; }
@@ -3245,6 +3278,8 @@ function restoreView(){
 }
 function render(){
   if (GUEST && !guestViews().includes(ui.view)) ui.view = 'mine';
+  if (!GUEST && isBoard()){ ensureBoardTemplate(db); ui.kbTpl = BOARD_TPL_ID; if (ui.view === 'matrix' || ui.view === 'production') ui.view = 'kanban'; }
+  document.body.classList.toggle('kind-board', !GUEST && isBoard());
   try { renderSide(); } catch(e) {}
   setTimeout(() => { try { paintReviewBadge(); } catch(e) {} }, 0);
   try { paintPhoneHead(); } catch(e) {}
@@ -3255,7 +3290,7 @@ function render(){
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
   $('#myTasksTab').hidden = false;
   renderFilters();
-  const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер');
+  const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер', 'Новый пункт');
   if (!isCRM()) ui.crmStage = null;
   ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
@@ -4042,7 +4077,116 @@ function renderCompact(list){
 // ---------- Канбан ----------
 const ICON_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+// ---------- «Канбан» без проектов: одна доска как в «Производстве» ----------
+// Внутри пространства — один служебный проект «Доска» (p.board = true) по шаблону «Доска»: колонки — его этапы,
+// пункты — подэтапы со всеми функциями карточки (ответственный, чек-лист, материалы, сдача). Пункт можно перетащить
+// в другую колонку; последняя колонка («Готово») — выполнено. Сроки пункта: x.start и x.due_date (у карточки — t.due_date).
+// Вид «Доска» или «Таймлайн» (ui.bMode).
+function boardProject(){
+  ensureBoardTemplate(db);
+  let p = db.projects.find(x => x.board && x.state !== 'archived');
+  if (!p){ p = makeProject({ name:'Доска', client:'', template_id:BOARD_TPL_ID, start_date:today(), pm_id:ME, worker_id:null, priority:'medium' }); p.board = true; delete p.deadline;   // без commit: иначе render создаёт доску по кругу
+    db.projects.unshift(p); copyCards(p); save(); }
+  return p;
+}
+const bSubDue = (p, s, x) => taskFor(p.id, s.id, x.id)?.due_date || x.due_date || '';
+const bItems = p => p.stages.flatMap((s, i) => (s.subs || []).map(x => ({ s, x, i, t:taskFor(p.id, s.id, x.id), due:bSubDue(p, s, x), start:x.start || '', done:i === p.stages.length - 1 || subDone(p, s, x) })));
+function bState(it){ const t0 = today(); if (it.done) return 'done'; if (it.due && it.due < t0) return 'late'; if (it.due === t0) return 'today'; if (it.start && it.start > t0) return 'next'; return 'now'; }
+const B_TXT = { done:'Готово', late:'Просрочено', today:'Сегодня', now:'В работе', next:'Позже' };
+function renderBoard(){
+  const p = boardProject(); ui.prodProject = p.id; ui.kbTpl = BOARD_TPL_ID; const mode = ui.bMode === 'timeline' ? 'timeline' : 'board';
+  const last = p.stages.length - 1, t0 = today();
+  const head = `<div class="fn-head-row b-top"><h2 class="td-title">${esc(spaceName())}</h2>
+    <div class="seg-toggle" role="group" aria-label="Вид"><button data-bmode="board" aria-pressed="${mode === 'board'}">Доска</button><button data-bmode="timeline" aria-pressed="${mode === 'timeline'}">Таймлайн</button></div>
+    ${mode === 'timeline' ? `<div class="b-nav"><button class="ghost" data-boff="-1" aria-label="Раньше">‹</button><button class="ghost" data-boff="0">Сегодня</button><button class="ghost" data-boff="1" aria-label="Позже">›</button></div>` : ''}</div>`;
+  if (mode === 'timeline') return renderBoardTimeline(p, head);
+  const cols = p.stages.map((s, i) => {
+    const subs = s.subs || []; const isDone = i === last;
+    const cards = subs.map(x => {
+      const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const it = { s, x, i, t, due:bSubDue(p, s, x), start:x.start || '', done:isDone || subDone(p, s, x) }; const st = bState(it);
+      return `<button class="pf-card b-item${it.done ? ' done' : ''} k-${st}" draggable="true" data-bsub="${s.id}|${x.id}" data-pfsub="${s.id}|${x.id}" aria-label="Пункт ${esc(x.name)}">
+        <b>${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
+        <small>${esc(short(whoId(p, s, t)))}</small>
+        ${it.due || it.start ? `<small class="b-when k-${st}">${it.start ? `${fmt(it.start)} – ` : 'до '}${it.due ? fmt(it.due) : '…'}${st === 'late' ? ' · просрочено' : st === 'today' ? ' · сегодня' : ''}</small>` : ''}
+        ${pr && pr.total ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.n} из ${pr.total} выполнено</small>` : ''}
+      </button>`;
+    }).join('');
+    return `<section class="pf-col b-col${isDone ? ' b-donecol' : ''}" data-bcol="${s.id}" aria-label="Колонка ${esc(s.name)}">
+      <header><div><b>${esc(s.name)}</b> <span class="cnt">${subs.length}</span>
+        <span class="col-tools"><button data-colren="${i}" aria-label="Переименовать колонку «${esc(s.name)}»">${ICON_EDIT}</button>${p.stages.length > 2 ? `<button data-coldel="${i}" aria-label="Удалить колонку «${esc(s.name)}»">${ICON_X}</button>` : ''}</span></div></header>
+      <div class="pf-cards">${cards || '<p class="hint">Пусто</p>'}</div>
+      <form class="pf-add b-add" data-badd="${s.id}"><input name="bname" placeholder="+ Добавить пункт" maxlength="200" aria-label="Новый пункт в колонку ${esc(s.name)}"><input type="date" name="bdue" aria-label="Срок"><button class="ghost">Добавить</button></form>
+    </section>`;
+  }).join('');
+  const prevScroll = app.querySelector('.pf-board')?.scrollLeft || 0;
+  app.innerHTML = `${head}<p class="hint b-tip">Впишите пункт в колонку (срок — по желанию) и нажмите Enter. Перетаскивайте карточки между колонками; «${esc(p.stages[last]?.name || 'Готово')}» — выполнено. Нажмите на пункт — ответственный, срок, чек-лист, файлы.</p>
+    <div class="pf-board b-board">${cols}<button class="col-add" id="kbAdd"><span aria-hidden="true">+</span>Колонка</button></div>`;
+  const bd = app.querySelector('.pf-board'); if (bd && prevScroll) bd.scrollLeft = prevScroll;
+}
+// таймлайн: 5 недель, линия «сегодня», пункты по колонкам; срок и начало меняются прямо в строке
+function renderBoardTimeline(p, head){
+  const t0 = today(), wk = 7, off = ui.bOff || 0;
+  const from = addDays(mondayOf(t0), (off - 1) * wk), to = addDays(from, 5 * wk - 1), span = diffDays(to, from) + 1;
+  const X = d => Math.max(0, Math.min(100, diffDays(d, from) / span * 100));
+  const WD = (a, z) => Math.max(100 / span, X(addDays(z, 1)) - X(a));
+  const weeks = Array.from({ length:5 }, (_, i) => addDays(from, i * wk));
+  const tX = t0 >= from && t0 <= to ? X(t0) + 50 / span : null;
+  const items = bItems(p); const noDate = items.filter(it => !it.due && !it.done);
+  const row = it => { const st = bState(it); const a = it.start || it.due, z = it.due || it.start; const t = it.t;
+    return `<div class="b-trow k-${st}"><button class="b-tname" data-pfsub="${it.s.id}|${it.x.id}"><b>${esc(it.x.name)}</b><small>${esc(short(whoId(p, it.s, t)))} · ${B_TXT[st]}</small></button>
+      <span class="b-tdates"><input type="date" data-bstart="${it.s.id}|${it.x.id}" value="${it.start}" aria-label="Начало"><input type="date" data-bdue="${it.s.id}|${it.x.id}" value="${it.due}" aria-label="Срок"></span>
+      <div class="b-lane">${tX !== null ? `<i class="b-today" style="left:${tX}%"></i>` : ''}${a && z && z >= from && a <= to ? `<span class="b-bar k-${st}" style="left:${X(a)}%;width:${WD(a, z)}%" title="${esc(it.x.name)}: ${fmt(a)} – ${fmt(z)}"></span>` : ''}</div></div>`; };
+  const groups = p.stages.map(s => ({ s, rows:items.filter(it => it.s.id === s.id && it.due).sort((a, z) => String(a.start || a.due).localeCompare(String(z.start || z.due))) })).filter(g => g.rows.length);
+  app.innerHTML = `${head}<div class="b-legend">${['now', 'today', 'late', 'next', 'done'].map(k => `<span class="k-${k}"><i></i>${B_TXT[k]}</span>`).join('')}</div>
+    <div class="b-gantt"><div class="b-ggrid">
+      <div class="b-trow b-thd"><span>Пункт</span><span class="b-tdates hint">начало · срок</span><div class="b-lane">${weeks.map(w => `<span class="b-wk" style="left:${X(w)}%">${fmt(w)}</span>`).join('')}${tX !== null ? `<i class="b-today" style="left:${tX}%"><b>Сегодня</b></i>` : ''}</div></div>
+      ${groups.map(g => `<div class="b-tgrp">${esc(g.s.name)}</div>${g.rows.map(row).join('')}`).join('') || '<div class="empty">Пока ни у одного пункта нет срока. Поставьте срок ниже или при добавлении пункта на доске.</div>'}
+    </div></div>
+    ${noDate.length ? `<div class="panel b-nodate"><b>Без срока · ${noDate.length}</b><div class="b-ndlist">${noDate.map(it => `<span class="b-nd"><button class="link" data-pfsub="${it.s.id}|${it.x.id}">${esc(it.x.name)}</button><small class="hint">${esc(it.s.name)}</small><input type="date" data-bdue="${it.s.id}|${it.x.id}" aria-label="Срок «${esc(it.x.name)}»"></span>`).join('')}</div></div>` : ''}`;
+}
+// сроки пункта: у подэтапа и у его карточки (если есть) — одинаково
+function setBoardDate(key, field, v){
+  const p = boardProject(); const [sid, xid] = key.split('|'); const s = p.stages.find(y => y.id === sid); const x = s?.subs?.find(y => y.id === xid); if (!x) return;
+  if (field === 'start'){ x.start = v || null; if (v && bSubDue(p, s, x) && v > bSubDue(p, s, x)){ toast('Начало позже срока'); } }
+  else { x.due_date = v || null; const t = taskFor(p.id, sid, xid); if (t) t.due_date = v || null; }
+  addLog(p, `«${x.name}»: ${field === 'start' ? 'начало' : 'срок'} ${v ? fmt(v) : 'снят'}`); commit();
+}
+// перенос пункта в другую колонку (вместе с его карточкой)
+function moveBoardItem(key, toSid){
+  const p = boardProject(); const [sid, xid] = key.split('|'); if (sid === toSid) return;
+  const from = p.stages.find(y => y.id === sid), to = p.stages.find(y => y.id === toSid); const x = from?.subs?.find(y => y.id === xid); if (!x || !to) return;
+  if ((to.subs || []).some(y => norm(y.name) === norm(x.name))){ toast('В этой колонке уже есть пункт с таким названием'); return; }
+  from.subs = from.subs.filter(y => y !== x); (to.subs = to.subs || []).push(x);
+  const t = taskFor(p.id, sid, xid); if (t) t.stage_id = toSid;
+  const isLast = p.stages.indexOf(to) === p.stages.length - 1; x.done = isLast;
+  addLog(p, `«${x.name}» → ${to.name}`); commit(); if (isLast) toast(`«${x.name}» — готово`);
+}
+document.addEventListener('click', e => {
+  if (!isBoard() || ui.view !== 'kanban') return;
+  const m = e.target.closest?.('[data-bmode]'); if (m){ ui.bMode = m.dataset.bmode; render(); return; }
+  const o = e.target.closest?.('[data-boff]'); if (o){ ui.bOff = +o.dataset.boff ? (ui.bOff || 0) + +o.dataset.boff : 0; render(); }
+});
+document.addEventListener('change', e => {
+  const el = e.target; if (!isBoard()) return;
+  if (el.dataset?.bdue) return setBoardDate(el.dataset.bdue, 'due', el.value);
+  if (el.dataset?.bstart) return setBoardDate(el.dataset.bstart, 'start', el.value);
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest?.('[data-badd]'); if (!f) return; e.preventDefault();
+  const name = f.elements.namedItem('bname').value.trim(); if (!name) return; const due = f.elements.namedItem('bdue').value || null;
+  const p = boardProject(); const s = p.stages.find(y => y.id === f.dataset.badd); if (!s) return;
+  if ((s.subs || []).some(x => norm(x.name) === norm(name))){ toast('Такой пункт уже есть в колонке'); return; }
+  (s.subs = s.subs || []).push({ id:uid(), name, done:p.stages.indexOf(s) === p.stages.length - 1, start:today(), due_date:due });
+  addLog(p, `Добавлен пункт «${name}» в «${s.name}»`); commit();
+  setTimeout(() => app.querySelector(`[data-badd="${s.id}"] input[name=bname]`)?.focus(), 0);
+});
+let bDrag = null;
+document.addEventListener('dragstart', e => { const c = e.target.closest?.('[data-bsub]'); if (!c) return; bDrag = c.dataset.bsub; e.dataTransfer?.setData('text/plain', bDrag); c.classList.add('dragging'); });
+document.addEventListener('dragend', () => { bDrag = null; document.querySelectorAll('.b-col.over,.dragging').forEach(x => x.classList.remove('over', 'dragging')); });
+document.addEventListener('dragover', e => { const col = e.target.closest?.('[data-bcol]'); if (!col || !bDrag) return; e.preventDefault(); document.querySelectorAll('.b-col.over').forEach(x => x !== col && x.classList.remove('over')); col.classList.add('over'); });
+document.addEventListener('drop', e => { const col = e.target.closest?.('[data-bcol]'); if (!col || !bDrag) return; e.preventDefault(); const k = bDrag; bDrag = null; moveBoardItem(k, col.dataset.bcol); });
 function renderKanban(){
+  if (isBoard()) return renderBoard();
   const t = (isCRM() && !ui.kbPicked ? crmTpl() : null) || tplById(ui.kbTpl) || db.templates[0];
   if (!t){ app.innerHTML = `<div class="empty">Создайте шаблон процесса, чтобы увидеть доску</div>`; return; }
   ui.kbTpl = t.id;
@@ -5222,7 +5366,8 @@ document.addEventListener('click', e => {
   db.prefs = db.prefs || {}; db.prefs.kind = k; ensureKindTemplate(db, k); ui.group = 'auto'; ui.crmStage = null;
   if (k === 'crm') db.prefs.density = 'compact'; else if (db.prefs.density === 'funnel') delete db.prefs.density;
   if (k === 'crm') ui.kbTpl = crmTpl()?.id || ui.kbTpl;
-  commit(); toast({ smm:'Тип: SMM — вместо проектов видео, недели и план / факт', crm:'Тип: CRM — вместо проектов блогеры и воронка общения', agency:'Тип: Агентство — проекты' }[k]);
+  if (k === 'board'){ ui.kbTpl = BOARD_TPL_ID; ui.view = 'kanban'; }
+  commit(); toast({ smm:'Тип: SMM — вместо проектов видео, недели и план / факт', crm:'Тип: CRM — вместо проектов блогеры и воронка общения', board:'Тип: Канбан — без проектов: сразу доска, пункты вбиваются в колонки', agency:'Тип: Агентство — проекты' }[k]);
   if (!cloud.store || !cloud.uid || ORG) return;
   if (SPACE){ const x = spaces.list.find(v => v.id === SPACE); if (x) x.kind = k; cloud.store.doc(`data/users/${cloud.uid}/spaces/list/${SPACE}`).update({ kind:k }).catch(() => {}); }
   else { spaces.mainKind = k; cloud.store.doc(`data/users/${cloud.uid}/spaces/main`).set(mainDoc()).catch(() => {}); }
@@ -5610,7 +5755,11 @@ document.querySelector('.tabs').onclick = e => {
   const b = e.target.closest('[data-view]'); if (!b || (GUEST && !guestViews().includes(b.dataset.view))) return;
   ui.view = b.dataset.view; ui.draft = null; render();
 };
-$('#newBtn').onclick = openCreate;
+$('#newBtn').onclick = () => {
+  // «Канбан»: новый пункт — сразу строка ввода в первой колонке доски
+  if (isBoard()){ if (ui.view !== 'kanban' || ui.bMode === 'timeline'){ ui.view = 'kanban'; ui.bMode = 'board'; render(); } const q = app.querySelector('.b-add input[name=bname]'); q?.focus(); q?.scrollIntoView({ block:'nearest' }); return; }
+  openCreate();
+};
 $('#bell').onclick = openBell;
 $('#q').oninput = e => { ui.q = e.target.value; render(); };
 $('#sort').onchange = e => { ui.sort = e.target.value; render(); };
@@ -5800,7 +5949,7 @@ app.addEventListener('drop', e => {
   const p = projById(dragId); const pos = col.dataset.col; const t = tplById(ui.kbTpl);
   if (pos === 'other') return;
   if (pos === 'maint'){ p.is_maintenance = true; moveToDone(p); toast(`«${p.name}»: на ведении`); return; }
-  if (pos === 'done'){ moveToDone(p); toast(p.is_maintenance ? `«${p.name}»: на ведении` : `«${p.name}»: проект завершён`); return; }
+  if (pos === 'done'){ moveToDone(p); toast(isBoard() ? `«${p.name}»: готово` : p.is_maintenance ? `«${p.name}»: на ведении` : `«${p.name}»: проект завершён`); return; }
   if (moveToColumn(p, t, +pos)) toast(`«${p.name}»: этап «${t.stages[+pos].name}»`);
 });
 
