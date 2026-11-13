@@ -1143,6 +1143,31 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ct-add label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
 .ct-add .hint{flex-basis:100%}
 .ct-wk{margin-top:14px}
+.fl{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:14px;display:grid;gap:12px}
+.fl-hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.fl-hd h2{font-size:17px;margin:0}
+.fl-hd .ghost{margin-left:auto;display:inline-flex;align-items:center;gap:6px}
+.fl-hd svg{width:14px;height:14px}
+.fl-chain{display:flex;align-items:stretch;gap:6px;overflow-x:auto;padding-bottom:4px}
+.fl-arr{align-self:center;color:var(--muted);font-size:18px;flex:none}
+.fl-node{flex:1 0 140px;max-width:220px;text-align:left;display:grid;gap:3px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;font:inherit;border-left-width:4px}
+.fl-node b{font-size:14px}
+.fl-node small{font-size:12px;color:var(--muted)}
+.fl-node.k-red{border-left-color:var(--r)}.fl-node.k-yellow{border-left-color:var(--y)}.fl-node.k-green{border-left-color:var(--g)}
+.fl-node.k-red small:first-of-type{color:var(--r)}
+.fl-from{opacity:.8}
+.fl-urgent h3{font-size:14px;margin:0 0 6px}
+.fl-urgent ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:14px}
+.fl-urgent li.k-red::marker{color:var(--r)}.fl-urgent li.k-yellow::marker{color:var(--y)}
+.fl-tasks{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.fl-task{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:4px 8px;font:inherit;font-size:13px;cursor:pointer}
+.fl-task small{color:var(--r)}
+.fl-edit{display:grid;gap:8px;font-size:13px}
+.fl-erow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.fl-erow > span{color:var(--muted)}
+.fl-dep{display:inline-flex;align-items:center;gap:4px}
+.pf-col.fl-flash{outline:2px solid var(--brand);outline-offset:-2px}
+@media (max-width:640px){.fl-chain{flex-direction:column}.fl-arr{transform:rotate(90deg)}.fl-node{max-width:none}}
 .ct-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .ct-top .ct-mode{margin-left:auto}
 .ct-board{margin-bottom:16px}
@@ -4341,7 +4366,67 @@ function openSubsModal(t, i){
 }
 
 // ---------- Производство: доска выбранного проекта (поиск и список всех проектов слева) ----------
-function renderProduction(){ return renderProjectFocus(); }
+function renderProduction(){
+  renderProjectFocus();
+  if (isInfo() && !GUEST && infoBoard() && projById(ui.prodProject) === infoBoard()) app.insertAdjacentHTML('afterbegin', flowPanelHtml(infoBoard()));
+}
+// ---------- Инфобизнес: связи этапов доски и «где срочно» ----------
+// Этапы доски — части воронки (Контент → Статья → VSL → Платный канал → Отдел продаж → Эфиры). p.flow = { этап: [этапы, от которых он зависит] };
+// нет записи — этап зависит от предыдущего. Состояние этапа — по его задачам: просрочено / срок сегодня-завтра / нет задач;
+// красный этап тормозит все, что от него зависят (по цепочке), — это и показывает «Срочно».
+const flowDeps = (p, s) => { const i = p.stages.indexOf(s); const f = p.flow?.[s.id]; return (f || (i > 0 ? [p.stages[i - 1].id] : [])).filter(id => id !== s.id && p.stages.some(x => x.id === id)); };
+function flowState(p){
+  const t0 = today(), t1 = addDays(t0, 1);
+  const st = new Map(p.stages.filter(s => !isMaint(s)).map(s => {
+    const items = (s.subs || []).map(x => { const t = taskFor(p.id, s.id, x.id); return { x, t, done:subDone(p, s, x), due:t?.due_date || x.due_date || '' }; });
+    const open = items.filter(i => !i.done);
+    const over = open.filter(i => i.due && i.due < t0), soon = open.filter(i => i.due && i.due >= t0 && i.due <= t1);
+    return [s.id, { s, items, open, over, soon, n:items.length, done:items.length - open.length }];
+  }));
+  const own = v => v.over.length || !v.n ? 'red' : v.soon.length ? 'yellow' : 'green';
+  st.forEach(v => { v.own = own(v); });
+  // ниже по воронке: кого тормозит этот этап (все, кто зависит от него — напрямую и через другие)
+  const downstream = id => { const out = new Set(), q = [id]; while (q.length){ const c = q.shift(); st.forEach(v => { if (!out.has(v.s.id) && flowDeps(p, v.s).includes(c)){ out.add(v.s.id); q.push(v.s.id); } }); } return [...out]; };
+  st.forEach(v => { v.down = downstream(v.s.id); v.blockedBy = []; });
+  st.forEach(v => { if (v.own === 'red') v.down.forEach(id => st.get(id)?.blockedBy.push(v.s.id)); });
+  st.forEach(v => { v.key = v.own === 'red' ? 'red' : v.blockedBy.length || v.own === 'yellow' ? 'yellow' : 'green'; });
+  return st;
+}
+function flowPanelHtml(p){
+  const st = flowState(p); const list = [...st.values()];
+  const nm = id => esc(st.get(id)?.s.name || '');
+  const why = v => !v.n ? 'нет задач' : v.over.length ? `${v.over.length} ${plural(v.over.length, 'задача просрочена', 'задачи просрочены', 'задач просрочено')}` : '';
+  const urgent = list.filter(v => v.own === 'red').sort((a, b) => b.down.length - a.down.length || b.over.length - a.over.length);
+  const soon = list.filter(v => v.own === 'yellow');
+  const node = v => `<button class="fl-node k-${v.key}" data-flgo="${v.s.id}" title="${esc(v.s.name)}">
+      <b>${esc(v.s.name)}</b><small>${v.n ? `${v.done}/${v.n} готово` : 'нет задач'}${v.over.length ? ` · просрочено ${v.over.length}` : v.soon.length ? ` · срок скоро: ${v.soon.length}` : ''}</small>
+      ${flowDeps(p, v.s).length ? `<small class="fl-from">← ${flowDeps(p, v.s).map(nm).join(', ')}</small>` : ''}</button>`;
+  return `<section class="fl" aria-label="Воронка: связи этапов">
+    <div class="fl-hd"><h2>Воронка</h2><span class="hint">${urgent.length ? `Узких мест: ${urgent.length}` : 'Всё работает'}</span>
+      <button class="ghost" data-flwedit aria-pressed="${!!ui.flowEdit}">${ICON_EDIT}Связи</button></div>
+    <div class="fl-chain">${list.map((v, i) => node(v) + (i < list.length - 1 ? '<span class="fl-arr" aria-hidden="true">→</span>' : '')).join('')}</div>
+    ${ui.flowEdit ? `<div class="fl-edit"><p class="hint">Отметьте, от чего зависит каждый этап: если этап-источник встал, зависимые подсветятся «ждёт».</p>
+      ${list.map(v => `<div class="fl-erow"><b>${esc(v.s.name)}</b><span>зависит от:</span>${list.filter(o => o !== v).map(o => `<label class="fl-dep"><input type="checkbox" data-fldep="${v.s.id}|${o.s.id}" ${flowDeps(p, v.s).includes(o.s.id) ? 'checked' : ''}>${esc(o.s.name)}</label>`).join('')}</div>`).join('')}
+      <button class="ghost" data-flreset>Как по порядку колонок</button></div>` : ''}
+    ${urgent.length || soon.length ? `<div class="fl-urgent"><h3>Срочно</h3><ol>
+      ${urgent.map(v => `<li class="k-red"><button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: ${why(v)}${v.down.length ? ` → из-за этого стоят: ${v.down.map(nm).join(', ')}` : ''}
+        ${v.over.length ? `<div class="fl-tasks">${v.over.slice(0, 4).map(i => `<button class="fl-task" data-pfsub="${v.s.id}|${i.x.id}">${esc(i.x.name)} <small>срок ${fmt(i.due)}</small></button>`).join('')}</div>` : ''}</li>`).join('')}
+      ${soon.map(v => `<li class="k-yellow"><button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: срок сегодня или завтра — ${v.soon.map(i => esc(i.x.name)).slice(0, 3).join(', ')}</li>`).join('')}
+    </ol></div>` : ''}</section>`;
+}
+document.addEventListener('click', e => {
+  if (e.target.closest?.('[data-flwedit]')){ ui.flowEdit = !ui.flowEdit; render(); return; }
+  if (e.target.closest?.('[data-flreset]')){ const p = infoBoard(); if (p){ delete p.flow; addLog(p, 'Связи этапов: как по порядку колонок'); commit(); } return; }
+  const g = e.target.closest?.('[data-flgo]'); if (g){ const col = [...app.querySelectorAll('.pf-col')].find(c => c.querySelector(`[data-pfadd="${g.dataset.flgo}"]`) || c.getAttribute('aria-label')?.endsWith(projById(ui.prodProject)?.stages.find(s => s.id === g.dataset.flgo)?.name));
+    col?.scrollIntoView({ behavior:'smooth', inline:'start', block:'nearest' }); col?.classList.add('fl-flash'); setTimeout(() => col?.classList.remove('fl-flash'), 1200); }
+});
+document.addEventListener('change', e => {
+  const d = e.target.dataset?.fldep; if (!d) return;
+  const p = infoBoard(); if (!p) return; const [sid, dep] = d.split('|'); const s = p.stages.find(x => x.id === sid); if (!s) return;
+  const cur = flowDeps(p, s).filter(id => id !== dep); if (e.target.checked) cur.push(dep);
+  p.flow = { ...(p.flow || {}), [sid]:cur };
+  addLog(p, `Связи: «${s.name}» зависит от ${cur.length ? cur.map(id => `«${p.stages.find(x => x.id === id)?.name}»`).join(', ') : 'ничего'}`); commit();
+});
 
 // ---------- Загрузка команды ----------
 // кто отвечает за этап: свой ответственный, иначе исполнитель проекта (так же, как показано в матрице)

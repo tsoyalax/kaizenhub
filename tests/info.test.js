@@ -56,6 +56,20 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   D.getElementById('remPop').querySelector('[data-remok]').click(); E('checkReminders()');
   assert.ok(!D.getElementById('remPop')); ok('одно напоминание срабатывает один раз');
   E('closeTask()');
+  // связи этапов и «Срочно»: просроченный этап тормозит всех, кто от него зависит
+  E(`(() => { const p = infoBoard(); const t0 = today();
+    p.stages = ['Контент', 'Статья', 'VSL', 'Платный канал', 'Отдел продаж', 'Эфиры'].map((n, i) => ({ id:'f' + i, name:n, position:i, status:'not_started', planned_start:t0, due_date:addDays(t0, 7),
+      subs:i === 5 ? [] : [{ id:'fx' + i, name:'Задача ' + n, done:false, due_date:i === 2 ? addDays(t0, -2) : addDays(t0, 10) }] }));
+    ui.view = 'production'; ui.prodProject = p.id; render(); })()`);
+  const fs = E(`JSON.stringify([...flowState(infoBoard()).values()].map(v => [v.s.name, v.key]))`);
+  assert.deepEqual(JSON.parse(fs), [['Контент','green'],['Статья','green'],['VSL','red'],['Платный канал','yellow'],['Отдел продаж','yellow'],['Эфиры','red']]); ok('VSL просрочен — следующие за ним ждут, этап без задач — красный');
+  assert.ok(D.querySelector('.fl') && /VSL.*из-за этого стоят: Платный канал, Отдел продаж, Эфиры/.test(D.querySelector('.fl-urgent').textContent)); ok('«Срочно» объясняет, что и из-за чего стоит');
+  E(`ui.flowEdit = true; render()`);
+  const cbx = D.querySelector('[data-fldep="f5|f4"]'); cbx.checked = false; cbx.dispatchEvent(new w.Event('change', { bubbles:true }));
+  const cby = D.querySelector('[data-fldep="f5|f0"]'); cby.checked = true; cby.dispatchEvent(new w.Event('change', { bubbles:true }));
+  assert.deepEqual(E(`flowDeps(infoBoard(), infoBoard().stages[5])`), ['f0']); ok('связи меняются: «Эфиры» зависят от «Контента»');
+  assert.ok(!E(`flowState(infoBoard()).get('f2').down.includes('f5')`)); ok('VSL больше не тормозит «Эфиры»');
+  E(`ui.flowEdit = false`);
   E(`db.prefs.kind = 'agency'; render()`);
   assert.ok(!D.querySelector('.tabs [data-view="matrix"]').hidden); ok('в агентстве матрица на месте');
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
