@@ -2307,6 +2307,11 @@ function contentStage(p = infoBoard()){
   return p.stages.find(x => ts && x.tsid === ts.id) || p.stages.find(x => /контент/i.test(x.name)) || null;
 }
 const ctItems = () => contentStage()?.subs || [];
+// колонка «Контент» на доске: свои задачи (без цикла видео) — наверху, новые первыми; ниже — видео
+const boardSubs = (p, s) => { const subs = s.subs || [];
+  if (!isInfo() || s !== contentStage(p)) return subs;
+  const own = subs.filter(x => !x.cycle).sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+  return [...own, ...subs.filter(x => x.cycle)]; };
 const ctCycles = () => [...new Set(ctItems().map(x => x.cycle).filter(Boolean))].sort();
 const ctDoneAt = x => x.done ? String(x.u || x.due_date || today()).slice(0, 10) : '';
 function ctCur(){
@@ -4198,7 +4203,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
   const prevBoard = app.querySelector('.pm-board')?.scrollLeft || 0;
   const cols = p.stages.map(s => {
     const h = health(s); const isCur = s.id === cur.stageId; const passed = s.status === 'done';
-    const subs = s.subs || []; const doneN = subs.filter(x => subDone(p, s, x)).length;
+    const subs = boardSubs(p, s); const doneN = subs.filter(x => subDone(p, s, x)).length;
     const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
@@ -8081,7 +8086,7 @@ function renderProjectFocus(mine = false){
 
   const cols = p.stages.map(s => {
     const h = health(s); const isCur = s.id === cur.stageId;
-    const subs = s.subs || [];
+    const subs = boardSubs(p, s);
     const doneN = subs.filter(x => subDone(p, s, x)).length;
     const passed = s.status === 'done';
     const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
@@ -8144,7 +8149,8 @@ document.addEventListener('submit', e => {
   const v = f.querySelector('input').value.trim(); if (!v) return;
   const p = projById(ui[ui.view === 'mine' ? 'myProject' : 'prodProject']); if (!canEditProject(p)) return; const s = p.stages.find(y => y.id === f.dataset.pfadd);
   if ((s.subs || []).some(x => norm(x.name) === norm(v))){ toast('Такой подэтап уже есть'); return; }
-  (s.subs = s.subs || []).push({ id:uid(), name:v, done:false });
+  const nx = { id:uid(), name:v, done:false, at:new Date().toISOString() };
+  if (isInfo() && s === contentStage(p)) (s.subs = s.subs || []).unshift(nx); else (s.subs = s.subs || []).push(nx);
   addLog(p, `Добавлен подэтап «${v}» в этап «${s.name}» (только в этом проекте)`); commit();
   app.querySelector(`[data-pfadd="${s.id}"] input`)?.focus();
 });

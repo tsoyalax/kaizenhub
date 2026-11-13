@@ -84,6 +84,13 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.deepEqual(E('vidCols().map(c => c.name)'), ['Сценарий', 'Съёмка', 'Публикация']); ok('этапы видео — как в шаблоне SMM-пространства');
   E(`addContent('Рилс', 3, today()); ui.view = 'content'; ui.ctMode = 'board'; render()`);
   assert.ok(/Хук/.test(D.querySelector('.ct-subs')?.textContent || '')); ok('подэтапы этапа SMM — на карточке видео');
+  // свои задачи в колонке «Контент» доски — наверху, над видео; новые первыми
+  E(`ui.view = 'production'; ui.infoMode = 'board'; render()`);
+  const addIn = () => D.querySelector(`[data-pfadd="${E('contentStage().id')}"]`);
+  addIn().querySelector('input').value = 'Сценарий вебинара'; addIn().dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
+  addIn().querySelector('input').value = 'Запросить отзывы'; addIn().dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
+  assert.deepEqual(E('boardSubs(infoBoard(), contentStage()).slice(0, 2).map(x => x.name)'), ['Запросить отзывы', 'Сценарий вебинара']); ok('свои задачи «Контента» — наверху, новые первыми');
+  assert.ok(E('boardSubs(infoBoard(), contentStage()).slice(-3).every(x => x.cycle)')); ok('видео — ниже своих задач');
   E(`db.prefs.kind = 'agency'; render()`);
   assert.ok(!D.querySelector('.tabs [data-view="matrix"]').hidden); ok('в агентстве матрица на месте');
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
