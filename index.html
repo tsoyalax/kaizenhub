@@ -1138,6 +1138,9 @@ body[data-kind="info"] .pf{grid-template-columns:minmax(0,1fr)}
 body[data-kind="info"] :is(.pf-list,.pf-select,#newBtn,.pm-cnt,.pm-nav>.icon-btn:first-child,.pm-nav>.icon-btn:last-child){display:none!important}
 body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ct-wk{margin-top:14px}
+.ct-kpi-ed{display:grid;gap:10px}
+.ct-kpi-ed > .ct-f input,.ct-kpi-w input{height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 10px;font:inherit;font-size:14px;width:120px}
+.ct-kpi-w{display:flex;flex-wrap:wrap;gap:10px}
 .ct-ico{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;flex:none;margin-right:6px;vertical-align:-5px;background:color-mix(in srgb,var(--brand) 14%,transparent);color:var(--brand)}
 .ct-ico svg{width:14px;height:14px}
 .ct-ico.x{background:var(--pl-m-bg,color-mix(in srgb,var(--m) 14%,transparent));color:var(--pl-m,var(--m))}
@@ -2427,14 +2430,18 @@ function ctCur(){
 }
 function ctStats(c){
   const items = ctItems().filter(x => x.cycle === c); const main = items.filter(x => !x.extra), extra = items.filter(x => x.extra);
-  const set = db.prefs?.infoPlans?.[c]; const plan = set != null ? +set || 0 : main.length;
-  const weeks = splitPlan(plan).map((n, i) => ({ w:i + 1, plan:n, pub:0, items:[] }));
+  // недельный KPI (сколько видео в неделю): свой на каждую неделю цикла (p.ctWeeks[цикл]) → общий KPI инфоповода (p.weekKpi)
+  // → старый план на 4 недели (db.prefs.infoPlans) поровну → по числу видео поровну
+  const b = infoBoard(); const own = b?.ctWeeks?.[c]; const kpi = +b?.weekKpi || 0; const set = db.prefs?.infoPlans?.[c];
+  const planW = own ? own.map(n => Math.max(0, +n || 0)) : kpi ? Array(CYCLE_WEEKS).fill(kpi) : splitPlan(set != null ? +set || 0 : main.length);
+  const plan = planW.reduce((m, n) => m + n, 0);
+  const weeks = planW.map((n, i) => ({ w:i + 1, plan:n, pub:0, items:[] }));
   let pub = 0;
   items.forEach(x => {
     weeks[weekOfDate(c, x.due_date || c) - 1].items.push(x);
     const d = ctDoneAt(x); if (d && !x.extra){ pub++; weeks[weekOfDate(c, d < c ? c : d) - 1].pub++; }
   });
-  return { plan, pub, items, weeks, extra:{ n:extra.length, pub:extra.filter(x => x.done).length } };
+  return { plan, pub, items, weeks, kpi, ownWeeks:!!own, extra:{ n:extra.length, pub:extra.filter(x => x.done).length } };
 }
 // доска видео: колонки — этапы шаблона «SMM: видео» (правятся в «Настройках → Шаблоны»), у видео x.vst — id этапа шаблона.
 // Последняя колонка — «Опубликовано»: попасть в неё = отметить видео на основной доске (toggleSub), и наоборот.
@@ -2538,11 +2545,14 @@ function renderContentBody(){
   app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>${modeSeg}</div><section class="smm-pf" aria-label="Контент: план и факт">
     <div class="smm-hd"><h2>План / Факт</h2>
       <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>
-      ${ui.ctEdit === c ? '' : `<button class="ghost smm-edit" data-ctedit>${ICON_EDIT}План</button>`}</div>
-    ${ui.ctEdit === c ? `<form class="smm-ed" id="ctEd"><label>План на 4 недели, видео <input type="number" id="ctPlan" min="0" max="999" value="${st.plan}"></label>
+      ${ui.ctEdit === c ? '' : `<button class="ghost smm-edit" data-ctedit>${ICON_EDIT}KPI на неделю</button>`}</div>
+    ${ui.ctEdit === c ? `<form class="smm-ed ct-kpi-ed" id="ctEd">
+      <label class="ct-f"><span>KPI в неделю — для всех недель</span><input type="number" id="ctKpi" min="0" max="999" value="${st.kpi || ''}" placeholder="например, 5"></label>
+      <div class="ct-kpi-w">${st.weeks.map(x => `<label class="ct-f"><span>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></span><input type="number" min="0" max="999" data-ctwk="${x.w - 1}" value="${x.plan}"></label>`).join('')}</div>
+      <small class="hint">Общий KPI задаёт одинаковый план на каждую неделю этого инфоповода. Если у недели другое число — поменяйте его: тогда этот цикл считается по числам недель.</small>
       <span class="smm-ed-act"><button type="button" class="ghost" data-cteditcancel>Отмена</button><button class="primary">Сохранить</button></span></form>` : ''}
     <div class="smm-kpi">
-      <div><b>${st.plan}</b><small>План</small></div>
+      <div><b>${st.plan}</b><small>План${st.kpi && !st.ownWeeks ? ` · KPI ${st.kpi} в неделю` : st.ownWeeks ? ' · по неделям' : ''}</small></div>
       <div><b>${st.pub} <small>из ${st.plan}</small></b><small>Опубликовано${pace ? ' · ' + pace : ''}</small></div>
       <div><b>${Math.max(0, st.plan - st.pub)}</b><small>Осталось</small></div>
       ${st.extra.n ? `<div><b>${st.extra.pub} <small>из ${st.extra.n}</small></b><small>Доп. контент</small></div>` : ''}
@@ -2571,7 +2581,15 @@ document.addEventListener('submit', e => {
   if (e.target.id === 'ctAdd'){ e.preventDefault();
     const n = Math.max(1, Math.min(200, +$('#ctN').value || 1)); addContent($('#ctName').value.trim(), n, $('#ctStart').value || today(), $('#ctExtra')?.checked); ui.ctExtra = false; return; }
   if (e.target.id === 'ctEd'){ e.preventDefault(); const c = ctCur();
-    db.prefs.infoPlans = { ...(db.prefs.infoPlans || {}), [c]:Math.max(0, +$('#ctPlan').value || 0) }; ui.ctEdit = null; commit(); }
+    const b = infoBoard(); if (!b){ ui.ctEdit = null; render(); return; }
+    const kpi = Math.max(0, +$('#ctKpi').value || 0); const ws = [...document.querySelectorAll('[data-ctwk]')].map(i => Math.max(0, +i.value || 0));
+    const oldW = ctStats(c).weeks.map(x => x.plan); const oldKpi = +b.weekKpi || 0; b.weekKpi = kpi || null;
+    // поменяли только общий KPI — недели берут его; поменяли числа недель — у этого цикла свои числа
+    const weeksTouched = ws.some((n, i) => n !== oldW[i]);
+    b.ctWeeks = { ...(b.ctWeeks || {}) }; if (!weeksTouched || (kpi && ws.every(n => n === kpi))) delete b.ctWeeks[c]; else b.ctWeeks[c] = ws;
+    if (!weeksTouched && !kpi && !oldKpi) b.ctWeeks[c] = ws;     // KPI не задан, недели не трогали — фиксируем как есть
+    addLog(b, `Контент: KPI ${kpi ? `${kpi} в неделю` : 'не задан'}${b.ctWeeks[c] ? `, цикл ${cycleRange(c)} по неделям: ${ws.join(' / ')}` : ''}`);
+    ui.ctEdit = null; commit(); }
 });
 document.addEventListener('click', e => {
   const cy = e.target.closest?.('[data-ctcyc]'); if (cy){ const cs = ctCycles(); ui.ctCycle = cs[cs.indexOf(ctCur()) + +cy.dataset.ctcyc] || ctCur(); render(); return; }
