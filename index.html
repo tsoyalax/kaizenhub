@@ -1133,6 +1133,10 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 
 /* ---------- Производство → Проект ---------- */
 .pf{display:grid;grid-template-columns:270px minmax(0,1fr);gap:16px;align-items:start}
+/* инфобизнес: одна доска — без списка проектов, выбора проекта и «Нового проекта» */
+body[data-kind="info"] .pf{grid-template-columns:minmax(0,1fr)}
+body[data-kind="info"] :is(.pf-list,.pf-select,#newBtn,.pm-cnt,.pm-nav>.icon-btn:first-child,.pm-nav>.icon-btn:last-child){display:none!important}
+body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .pf-list{position:sticky;top:76px;display:grid;gap:8px;max-height:calc(100vh - 100px);grid-template-rows:auto minmax(0,1fr)}
 .pf-list input{height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 11px;font-size:14px;width:100%}
 .pf-items{overflow-y:auto;display:grid;gap:4px;align-content:start;padding-right:2px}
@@ -2164,11 +2168,13 @@ const projAva = (p, size = 'sm') => p?.image
 // группировка по неделям месяца и блок «План / Факт» (сколько снято и опубликовано за месяц против плана).
 const VIDEO_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3"/></svg>';
 const FUNNEL_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5Z"/></svg>';
-const KINDS = { agency:['Агентство', 'проекты'], smm:['SMM', 'видео'], crm:['CRM', 'блогеры'] };
+const BOARD_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>';
+const KINDS = { agency:['Агентство', 'проекты'], smm:['SMM', 'видео'], crm:['CRM', 'блогеры'], info:['Инфобизнес', 'доска'] };
 const normKind = k => KINDS[k] ? k : 'agency';
-const KIND_ICO = k => k === 'smm' ? VIDEO_ICO : k === 'crm' ? FUNNEL_ICO : '';
+const KIND_ICO = k => k === 'smm' ? VIDEO_ICO : k === 'crm' ? FUNNEL_ICO : k === 'info' ? BOARD_ICO : '';
 const isSMM = () => (typeof db !== 'undefined' && db?.prefs?.kind === 'smm');
 const isCRM = () => (typeof db !== 'undefined' && db?.prefs?.kind === 'crm');
+const isInfo = () => (typeof db !== 'undefined' && db?.prefs?.kind === 'info');
 // подпись: «проект» в агентстве, «видео» в SMM, «блогер» в CRM (не задано для CRM — как в агентстве)
 const W = (agency, smm, crm) => isSMM() ? smm : isCRM() && crm !== undefined ? crm : agency;
 const SMM_TPL_ID = 'tsmm';
@@ -2184,7 +2190,26 @@ function crmTemplate(){
     .map(([n, d]) => ({ id:uid(), name:n, days:d, approval:false, subs:[] })) };
 }
 function ensureCrmTemplate(d){ d.templates = d.templates || []; if (!d.templates.some(t => t.id === CRM_TPL_ID || RX_CRM.test(t.name))) d.templates.unshift(crmTemplate()); }
-function ensureKindTemplate(d, k){ if (k === 'smm') ensureSmmTemplate(d); else if (k === 'crm') ensureCrmTemplate(d); }
+function ensureKindTemplate(d, k){ if (k === 'smm') ensureSmmTemplate(d); else if (k === 'crm') ensureCrmTemplate(d); else if (k === 'info') ensureInfoTemplate(d); }
+// ---------- Инфобизнес: одна общая доска ----------
+// В пространстве нет списка проектов и «Нового проекта»: сразу открывается доска «Производства» — один проект-доска
+// (постоянный id INFO_BOARD_ID, чтобы два устройства не создали по своей доске). Колонки — этапы шаблона «Инфобизнес: запуск».
+const INFO_TPL_ID = 'tinfo', INFO_BOARD_ID = 'infoboard';
+const INFO_HIDDEN = ['matrix', 'kanban', 'archive'];
+function infoTemplate(){
+  return { id:INFO_TPL_ID, name:'Инфобизнес: запуск', stages:[['Продукт',7],['Контент',7],['Прогрев',7],['Запуск',7],['Продажи',14],['Сопровождение',14]]
+    .map(([n, d]) => ({ id:uid(), name:n, days:d, approval:false, subs:[] })) };
+}
+function ensureInfoTemplate(d){ d.templates = d.templates || []; if (!d.templates.some(t => t.id === INFO_TPL_ID)) d.templates.unshift(infoTemplate()); }
+// доска создаётся сама, когда данные пространства уже загружены и в нём нет ни одного проекта
+function ensureInfoBoard(){
+  if (!isInfo() || GUEST || !db.onboarded || (cloud.col && !cloud.ready)) return;
+  if (db.projects.some(p => p.id === INFO_BOARD_ID || p.state !== 'archived')) return;
+  ensureInfoTemplate(db);
+  const p = makeProject({ name:spaceName() || 'Инфобизнес', client:'', template_id:INFO_TPL_ID, start_date:today(), pm_id:ME });
+  p.id = INFO_BOARD_ID; addLog(p, 'Доска инфобизнеса создана');
+  db.projects.unshift(p); copyCards(p); ui.prodProject = p.id; save();
+}
 const crmTpl = () => db.templates.find(t => t.id === CRM_TPL_ID) || db.templates.find(t => RX_CRM.test(t.name)) || db.templates[0];
 // позиция блогера в воронке: номер текущего этапа (по названию этапа шаблона CRM); names.length — все этапы пройдены
 function crmPos(p, names){
@@ -3245,6 +3270,9 @@ function restoreView(){
 }
 function render(){
   if (GUEST && !guestViews().includes(ui.view)) ui.view = 'mine';
+  document.body.dataset.kind = GUEST ? '' : (db?.prefs?.kind || 'agency');
+  if (isInfo() && !GUEST){ if (INFO_HIDDEN.includes(ui.view)) ui.view = 'production'; try { ensureInfoBoard(); } catch(e) {} }
+  INFO_HIDDEN.forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = isInfo() && !GUEST; });
   try { renderSide(); } catch(e) {}
   setTimeout(() => { try { paintReviewBadge(); } catch(e) {} }, 0);
   try { paintPhoneHead(); } catch(e) {}
@@ -3934,7 +3962,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
         <span class="pm-cnt">${idx + 1}/${list.length}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
       <div class="pm-nav">
         <button class="icon-btn" ${prev ? `data-pfsel="${prev.id}"` : 'disabled'} aria-label="Предыдущий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
-        <small class="pm-meta">${mine ? `Ваша роль: ${ROLE_RU[role].toLowerCase()}` : `${esc(p.client)} · PM ${esc(short(p.pm_id))} · финиш ${fmt(plannedEnd(p))}`}</small>
+        <small class="pm-meta">${mine ? `Ваша роль: ${ROLE_RU[role].toLowerCase()}` : `${p.client ? `${esc(p.client)} · ` : ''}PM ${esc(short(p.pm_id))} · финиш ${fmt(plannedEnd(p))}`}</small>
         ${!mine ? `<button class="icon-btn" data-open="${p.id}" aria-label="Карточка проекта" title="Карточка проекта"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/></svg></button>
         <button class="icon-btn pf-sharebtn" data-share="${p.id}" aria-label="Поделиться проектом" title="Поделиться">${SHARE_ICON}${shareCount(p) ? `<span class="pm-sc">${shareCount(p)}</span>` : ''}</button>` : ''}
         <button class="icon-btn" ${next ? `data-pfsel="${next.id}"` : 'disabled'} aria-label="Следующий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
@@ -4064,7 +4092,7 @@ function renderKanban(){
     const subsDone = c?.subs?.filter(x => x.done).length ?? 0;
     return `<article class="card" draggable="true" data-card="${p.id}">
       <button class="t" data-open="${p.id}">${projAva(p, 'xs')}${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</button>
-      <div class="meta">${esc(p.client)} · PM ${esc(short(p.pm_id))}</div>
+      <div class="meta">${p.client ? `${esc(p.client)} · ` : ''}PM ${esc(short(p.pm_id))}</div>
       <div class="stline"><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span><span>${h.note}</span></div>
       ${c && c.subs?.length ? `<div class="meta subnow">${curSubTxt(p) ? `Сейчас: ${esc(curSubTxt(p))}` : `Подэтапы ${subsDone} из ${c.subs.length}`}</div>` : ''}
       <div class="ctrl">${statusSel}${moveSel}${c ? `<select class="wide" data-qassign="${p.id}|${c.id}" aria-label="Ответственный за этап ${esc(c.name)}">${peopleOpts(c.assignee_id, 'Ответственный не назначен')}</select>` : ''}</div></article>`;
@@ -4438,6 +4466,7 @@ function closeLayer(){ if (!db.onboarded && !GUEST) return; ui.open = null; ui.f
 
 // ---------- Быстрое создание ----------
 function openCreate(){
+  if (isInfo()){ ui.view = 'production'; render(); return; }        // в инфобизнесе проектов не создают — одна доска
   ui.open = null;
   if (!db.templates.length){ toast('Сначала создайте шаблон процесса'); ui.view = 'templates'; ui.setTab = 'templates'; render(); return; }
   layer.innerHTML = `<div class="backdrop" data-close></div>
@@ -5492,7 +5521,7 @@ function paintTplImport(){
     box.innerHTML = `<h2 id="tiT">Шаблоны из другого пространства</h2>
       <p class="hint">Выберите, откуда взять шаблон — он скопируется сюда вместе с этапами, подэтапами и карточками подэтапов. Оригинал не изменится.</p>
       <div class="ti-src">${sp.map(x => `<button type="button" class="ti-sp" data-tisrc="${x.id || 'main'}"><span class="ti-ico">${KIND_ICO(x.kind) || '<i></i>'}</span><span><b>${esc(x.name)}</b><small>${esc([x.area, KINDS[x.kind][0]].filter(Boolean).join(' · '))}</small></span><span aria-hidden="true">›</span></button>`).join('')}
-        <button type="button" class="ti-sp" data-tisrc="preset"><span class="ti-ico">${FUNNEL_ICO}</span><span><b>Готовые шаблоны</b><small>SMM: видео, CRM: оффер на запуск</small></span><span aria-hidden="true">›</span></button></div>
+        <button type="button" class="ti-sp" data-tisrc="preset"><span class="ti-ico">${FUNNEL_ICO}</span><span><b>Готовые шаблоны</b><small>SMM: видео, CRM: оффер на запуск, Инфобизнес: запуск</small></span><span aria-hidden="true">›</span></button></div>
       <div class="actions"><button type="button" class="ghost" data-close>Закрыть</button></div>`;
     return;
   }
@@ -5523,7 +5552,7 @@ document.addEventListener('click', async e => {
   const src = t.closest('[data-tisrc]');
   if (src){
     const id = src.dataset.tisrc; Object.assign(tplImp, { src:id, sel:new Set(), err:'' });
-    if (id === 'preset'){ tplImp.tpls = [smmTemplate(), crmTemplate()]; tplImp.cards = {}; paintTplImport(); return; }
+    if (id === 'preset'){ tplImp.tpls = [smmTemplate(), crmTemplate(), infoTemplate()]; tplImp.cards = {}; paintTplImport(); return; }
     tplImp.loading = true; paintTplImport();
     try { const r = await loadSpaceTemplates(id === 'main' ? '' : id); if (tplImp.src !== id) return; tplImp.tpls = r.tpls; tplImp.cards = r.cards; }
     catch(err) { tplImp.err = 'Не удалось загрузить шаблоны. Проверьте связь и попробуйте ещё раз.'; tplImp.tpls = []; }
@@ -7650,7 +7679,7 @@ function renderProjectFocus(mine = false){
       <div class="pf-main">
         <div class="pf-head">
           <div><h2>${mine ? esc(p.name) : `<button class="link-plain" data-open="${p.id}">${esc(p.name)}</button>`}</h2>
-            <small>${mine ? `${esc(p.client)}, ваша роль: ${ROLE_RU[role].toLowerCase()}, владелец: <span class="owner-name">…</span>` : `${esc(p.client)}, PM ${esc(short(p.pm_id))}${execTxt(p)}, финиш ${fmt(plannedEnd(p))}`}</small>
+            <small>${mine ? `${esc(p.client)}, ваша роль: ${ROLE_RU[role].toLowerCase()}, владелец: <span class="owner-name">…</span>` : `${p.client ? `${esc(p.client)}, ` : ''}PM ${esc(short(p.pm_id))}${execTxt(p)}, финиш ${fmt(plannedEnd(p))}`}</small>
           </div>
           ${!mine ? `<button class="icon-btn pf-shareic${shareCount(p) ? ' on' : ''}" data-share="${p.id}" title="Поделиться проектом${shareCount(p) ? ` · доступ у ${shareCount(p)}` : ''}" aria-label="Поделиться проектом">${SHARE_ICON}${shareCount(p) ? `<span>${shareCount(p)}</span>` : ''}</button>` : ''}
         </div>
@@ -8782,7 +8811,8 @@ const MNAV = {
   team:['Команда', MI('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>')],
   templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
 };
-const MNAV_MAIN = ['matrix', 'kanban', 'production', 'load'];
+const MNAV_MAIN_ALL = ['matrix', 'kanban', 'production', 'load'];
+const mnavMain = () => isInfo() ? ['production', 'mytasks', 'review', 'load'] : MNAV_MAIN_ALL;
 // иконки в боковом меню (те же, что в нижнем меню телефона)
 const NAV_FULL = { production:'Производство' };
 document.querySelectorAll('.tabs [data-view]').forEach(b => { const m = MNAV[b.dataset.view]; if (m && !b.querySelector('svg')) b.insertAdjacentHTML('afterbegin', m[1]); });
@@ -8819,12 +8849,12 @@ document.addEventListener('click', e => {
   const k = c.dataset.kdrisk; ui.risk = ui.risk === k ? '' : k; render();
 });
 const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>');
-const moreViews = () => ['review', 'mytasks', 'assign', 'mine', 'reports', 'team', 'archive', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
+const moreViews = () => ['review', 'mytasks', 'assign', 'mine', 'reports', 'team', 'archive', 'templates'].filter(v => (v !== 'mine' || !$('#mineTab').hidden) && !mnavMain().includes(v) && !(isInfo() && INFO_HIDDEN.includes(v)));
 function renderMobileNav(){
   const nav = $('#mnav'); if (!nav) return;
   if (GUEST){ nav.innerHTML = guestViews().map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
-  const inMore = !MNAV_MAIN.includes(ui.view);
-  nav.innerHTML = MNAV_MAIN.map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')
+  const inMore = !mnavMain().includes(ui.view);
+  nav.innerHTML = mnavMain().map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')
     + `<button data-mmore aria-current="${inMore ? 'page' : 'false'}" aria-haspopup="dialog">${inMore ? MNAV[ui.view][1] : MORE_ICON}<span>${inMore ? MNAV[ui.view][0] : 'Ещё'}</span></button>`;
   const f = $('#fToggle'); if (f){ const k = ui.pms.length + ui.clients.length; f.classList.toggle('on', !!k); const nb = f.querySelector('.f-n'); if (nb) nb.textContent = k || ''; }
 }
