@@ -1179,6 +1179,7 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .fl{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;display:grid;gap:14px}
 .fl-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .fl-hd h2{font-size:17px;margin:0;font-weight:700}
+.fl-hd.slim{justify-content:flex-end}
 .fl-hd .fl-mode{margin-left:auto}
 .fl-hd .ghost{display:inline-flex;align-items:center;gap:6px}
 .fl-hd svg{width:14px;height:14px}
@@ -4787,10 +4788,9 @@ function flowPanelHtml(p, part = 'prod'){
       <small>${v.n ? `${v.done} из ${v.n} готово` : 'нет задач'}${v.over.length ? ` · просрочено ${v.over.length}` : ''}</small>
       ${a?.reason ? `<small class="fl-ai-why">${esc(a.reason)}</small>` : ''}</div>`; };
   return `<section class="fl" aria-label="Воронка: связи этапов">
-    <div class="fl-hd"><h2>${full ? 'AI-воронка' : 'Статусы этапов'}</h2>${ai && AI_VERDICT[ai.res.verdict] ? `<span class="pill st-pill s-${AI_VERDICT[ai.res.verdict][0]}">${STATUS_ICO[AI_VERDICT[ai.res.verdict][0]]}${AI_VERDICT[ai.res.verdict][1]}</span>` : `<span class="pill st-pill s-${verdict[0]}">${STATUS_ICO[verdict[0]]}${verdict[1]}</span>`}
+    <div class="fl-hd${full ? '' : ' slim'}">${full ? `<h2>AI-воронка</h2>${ai && AI_VERDICT[ai.res.verdict] ? `<span class="pill st-pill s-${AI_VERDICT[ai.res.verdict][0]}">${STATUS_ICO[AI_VERDICT[ai.res.verdict][0]]}${AI_VERDICT[ai.res.verdict][1]}</span>` : `<span class="pill st-pill s-${verdict[0]}">${STATUS_ICO[verdict[0]]}${verdict[1]}</span>`}` : ''}
       ${full ? `<button class="ghost fl-mode" data-flwedit aria-pressed="${!!ui.flowEdit}">${ICON_EDIT}Связи</button>`
-        : `<span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${ui.infoMode !== 'timeline'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline'}">Таймлайн</button></span>
-      <button class="ghost" data-view-go="funnel">AI-разбор →</button>`}</div>
+        : `<span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${ui.infoMode !== 'timeline'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline'}">Таймлайн</button></span>`}</div>
     ${full ? goalHtml(p) : ''}
     <div class="fl-chain">${list.map((v, i) => node(v) + (i < list.length - 1 ? '<span class="fl-arr" aria-hidden="true">→</span>' : '')).join('')}</div>
     ${full && ui.flowEdit ? `<div class="fl-edit"><p class="hint">Отметьте, от чего зависит каждый этап: если этап-источник встал, зависимые подсветятся «ждёт».</p>
