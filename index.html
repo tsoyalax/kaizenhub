@@ -1145,6 +1145,17 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .it-card{display:grid;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
 .it-card:hover{border-color:color-mix(in srgb,var(--ink) 25%,var(--line))}
 .it-card b{font-weight:600;overflow-wrap:anywhere}
+.prod-tabs{display:inline-flex;margin:0 0 12px}
+.pt-n{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;font-size:11px;background:var(--ink);color:var(--surface);margin-left:4px}
+.it-wrap{min-width:0}
+.it-wrap .it-top{margin-bottom:10px}
+.it-repcol{background:color-mix(in srgb,var(--m) 6%,var(--bg))}
+.it-repcol header > div{color:var(--pl-m,var(--m))}.it-repcol header svg{width:14px;height:14px;flex:none}
+.it-repcol .rt-block h4{display:none}
+.it-repcol .rt-row{display:grid!important;grid-template-columns:auto minmax(0,1fr);gap:4px 8px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.it-repcol .rt-row > :nth-child(3){grid-column:2;font-size:12px}
+.it-repcol .rt-main{min-width:0}.it-repcol .rt-main b{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+.it-repcol .rt-list{display:grid;gap:6px;margin:0;padding:0;list-style:none}
 .it-proj{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);min-width:0}
 .it-proj .pava{flex:none}
 .it-pf{height:34px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit;font-size:13.5px;max-width:240px}
@@ -2254,7 +2265,6 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="funnel" hidden>AI-воронка</button>
     <button data-view="content" hidden>Контент</button>
     <button data-view="mytasks" id="myTasksTab">Мои задачи</button>
-    <button data-view="internal">Внутренние задачи</button>
     <button data-view="review" id="reviewTab">Приёмка</button>
     <button data-view="assign">Поручения</button>
     <button data-view="mine" id="mineTab" hidden>Мои проекты</button>
@@ -3826,7 +3836,7 @@ function render(){
   renderFilters();
   const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер');
   if (!isCRM()) ui.crmStage = null;
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, internal:renderInternal, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
   if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST && !(ui.view === 'matrix' && density() === 'funnel')) app.insertAdjacentHTML('afterbegin', crmSumHtml());
   if (ui.open) renderDrawer();
@@ -4708,14 +4718,23 @@ function openSubsModal(t, i){
 }
 
 // ---------- Производство: доска выбранного проекта (поиск и список всех проектов слева) ----------
+// «Производство»: над доской проекта — вкладки «Доска | Внутренние задачи» (внутренние задачи отделов этого проекта и регулярные из «Ведения»)
 function renderProduction(){
   if (isInfo() && !GUEST && infoBoard()) ui.prodProject = infoBoard().id;
   renderProjectFocus();
+  const cur = projById(ui.prodProject);
+  const board = app.querySelector('.pf-main .pf-board, .pm-board');
+  const itab = ui.prodTab === 'internal' && cur && !GUEST && !cur._ext;
+  if (cur && !GUEST && !cur._ext && board){
+    board.insertAdjacentHTML('beforebegin', `<div class="prod-tabs kind-seg" role="tablist" aria-label="Вид"><button type="button" data-prodtab="board" aria-pressed="${!itab}">Доска</button><button type="button" data-prodtab="internal" aria-pressed="${!!itab}">Внутренние задачи${(() => { const n = itAll().filter(t => t.project_id === cur.id && t.status !== 'done').length; return n ? ` <span class="pt-n">${n}</span>` : ''; })()}</button></div>`);
+    if (itab){ board.outerHTML = internalBoardHtml(cur); return; }
+  }
   const p = infoBoard();
   if (!isInfo() || GUEST || !p || projById(ui.prodProject) !== p) return;
   app.insertAdjacentHTML('afterbegin', infoTabsHtml() + flowPanelHtml(p, 'prod'));
   if (ui.infoMode === 'timeline'){ const b = app.querySelector('.pf-board'); if (b) b.outerHTML = timelineHtml(p); }
 }
+document.addEventListener('click', e => { const t = e.target.closest?.('[data-prodtab]'); if (t){ ui.prodTab = t.dataset.prodtab; render(); } });
 // раздел «AI-воронка» (только в инфобизнесе): разбор Claude, финальный дедлайн, статусы и связи отделов
 function renderFunnel(){
   const p = infoBoard(); if (!p){ app.innerHTML = '<div class="empty">Доски пока нет</div>'; return; }
@@ -7801,37 +7820,45 @@ document.addEventListener('click', e => {
 const IT_DEPTS_DEF = [['dmkt', 'Маркетинг'], ['dsmm', 'SMM'], ['dsales', 'Продажи'], ['dadmin', 'Администрирование']];
 const itDepts = () => db.prefs?.itDepts || IT_DEPTS_DEF.map(([id, name]) => ({ id, name }));
 const IT_ICO = { todo:'gray', in_progress:'green', review:'blue', done:'done' };
-function renderInternal(){
+// доска внутренних задач проекта p (вкладка «Внутренние задачи» в «Производстве»):
+// первая колонка — «Регулярные» = регулярные задачи этапа «Ведение» (есть, только если в проекте включено «Ведение»),
+// дальше — отделы с внутренними задачами этого проекта (t.project_id), «+ Задача» ставит задачу сразу в проект и отдел
+function internalBoardHtml(p){
   const deps = itDepts(); const t0 = today();
-  const all = itAll().filter(t => (!ui.itMine || t.assignee_id === ME) && (!ui.itProj || t.project_id === ui.itProj));
-  const projOpts = db.projects.filter(x => x.state !== 'archived');
+  const all = itAll().filter(t => t.project_id === p.id && (!ui.itMine || t.assignee_id === ME));
   const cols = [...deps, ...(all.some(t => !t.dept || !deps.some(d => d.id === t.dept)) ? [{ id:'', name:'Без отдела' }] : [])];
+  const ms = p.stages.find(isMaint);
   const card = t => { const late = t.due_date && t.due_date < t0 && t.status !== 'done';
     return `<div class="it-card${t.status === 'done' ? ' done' : ''}" data-itopen="${t.id}">
-      ${t.project_id && projById(t.project_id) ? `<span class="it-proj">${projAva(projById(t.project_id), 'xs')}${esc(projById(t.project_id).name)}</span>` : ''}
       <b>${esc(t.title)}</b>
       <div class="it-meta">${whoChip(t.assignee_id)}${t.due_date ? `<span class="pf-due${late ? ' late' : ''}">${FLAG}${fmt(t.due_date)}</span>` : ''}${t.priority === 'urgent' || t.priority === 'high' ? `<span class="dt-pri pri-${t.priority}">${IT_PRI[t.priority]}</span>` : ''}</div>
       <select class="pf-status it-st s-${IT_ICO[t.status] || 'gray'}" data-itstatus="${t.id}" aria-label="Статус «${esc(t.title)}»">${Object.entries(IT_STATUS).map(([k, x]) => `<option value="${k}" ${k === t.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`; };
-  app.innerHTML = `<div class="it-top"><h2>Внутренние задачи</h2>
-      <select id="itProjF" class="it-pf" aria-label="Проект"><option value="">Все проекты</option>${projOpts.map(x => `<option value="${x.id}" ${x.id === ui.itProj ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
+  const repCol = `<section class="pf-col it-col it-repcol"><header><div>${RT_ICO}<b>Регулярные</b></div><small>Ведение: отчёты, планёрки, сверки</small></header>
+    ${p.is_maintenance && ms ? rtaskBlock(p, ms) : `<p class="hint">Регулярные задачи появляются, когда у проекта включено «Ведение».</p>${canEditProject(p) && !p._ext ? `<button class="ghost it-add" data-mainton="${p.id}">Включить ведение</button>` : ''}`}</section>`;
+  return `<div class="it-wrap"><div class="it-top">
       <label class="it-f"><input type="checkbox" id="itMine" ${ui.itMine ? 'checked' : ''}> Мои задачи</label>
       <label class="it-f"><input type="checkbox" id="itDone" ${ui.itDoneShow ? 'checked' : ''}> Показать готовые</label>
       ${GUEST ? '' : `<button class="ghost" data-itdeptadd>+ Отдел</button>`}</div>
-    <div class="pf-board it-board">${cols.map(d => { const list = all.filter(t => d.id ? t.dept === d.id : (!t.dept || !deps.some(x => x.id === t.dept)));
+    <div class="pf-board it-board">${repCol}${cols.map(d => { const list = all.filter(t => d.id ? t.dept === d.id : (!t.dept || !deps.some(x => x.id === t.dept)));
       const open = list.filter(t => t.status !== 'done').sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999')); const done = list.filter(t => t.status === 'done');
       return `<section class="pf-col it-col">
         <header><div><b>${esc(d.name)}</b>${d.id && !GUEST ? `<button class="icon-btn ct-ren" data-itdeptren="${d.id}" title="Переименовать отдел" aria-label="Переименовать отдел «${esc(d.name)}»">${PEN_ICO}</button>` : ''}</div>
           <small>${open.length} в работе${done.length ? ` · готово ${done.length}` : ''}</small></header>
         <div class="pf-cards">${open.map(card).join('') || '<p class="hint">Задач нет</p>'}${ui.itDoneShow ? done.map(card).join('') : ''}</div>
-        ${GUEST ? '' : `<button class="ghost it-add" data-itnewdept="${d.id}">+ Задача</button>`}</section>`; }).join('')}</div>`;
+        ${GUEST ? '' : `<button class="ghost it-add" data-itnewdept="${d.id}" data-itproj="${p.id}">+ Задача</button>`}</section>`; }).join('')}</div></div>`;
 }
+// включить «Ведение» прямо отсюда: появится этап «Ведение / Поддержка» с регулярными задачами
+document.addEventListener('click', e => {
+  const m = e.target.closest?.('[data-mainton]'); if (!m) return;
+  const p = projById(m.dataset.mainton); if (!p || !canEditProject(p)) return;
+  p.is_maintenance = true; syncState(p); addLog(p, 'Включено ведение: регулярные задачи — во «Внутренних задачах»'); commit(); toast('Ведение включено — добавьте регулярные задачи');
+});
 document.addEventListener('change', e => {
   if (e.target.id === 'itMine'){ ui.itMine = e.target.checked; render(); }
-  if (e.target.id === 'itProjF'){ ui.itProj = e.target.value; render(); }
   if (e.target.id === 'itDone'){ ui.itDoneShow = e.target.checked; render(); }
 });
 document.addEventListener('click', e => {
-  const nd = e.target.closest?.('[data-itnewdept]'); if (nd){ openItask(null, { dept:nd.dataset.itnewdept, project_id:ui.itProj || '' }); return; }
+  const nd = e.target.closest?.('[data-itnewdept]'); if (nd){ openItask(null, { dept:nd.dataset.itnewdept, project_id:nd.dataset.itproj || '' }); return; }
   if (e.target.closest?.('[data-itdeptadd]')){ askText('Новый отдел', '', v => { db.prefs = db.prefs || {}; db.prefs.itDepts = [...itDepts(), { id:'d' + uid(), name:v }]; commit(); toast(`Отдел «${v}» добавлен`); }); return; }
   const dr = e.target.closest?.('[data-itdeptren]'); if (dr){ e.stopPropagation(); const d = itDepts().find(x => x.id === dr.dataset.itdeptren); if (!d) return;
     askText('Название отдела', d.name, v => { db.prefs = db.prefs || {}; db.prefs.itDepts = itDepts().map(x => x.id === d.id ? { ...x, name:v } : x); commit(); }); }
@@ -9875,7 +9902,7 @@ document.addEventListener('click', e => {
   const k = c.dataset.kdrisk; ui.risk = ui.risk === k ? '' : k; render();
 });
 const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>');
-const moreViews = () => ['review', 'mytasks', 'internal', 'assign', 'mine', 'reports', 'load', 'team', 'archive', 'templates'].filter(v => (v !== 'mine' || !$('#mineTab').hidden) && !mnavMain().includes(v) && !(isInfo() && INFO_HIDDEN.includes(v)));
+const moreViews = () => ['review', 'mytasks', 'assign', 'mine', 'reports', 'load', 'team', 'archive', 'templates'].filter(v => (v !== 'mine' || !$('#mineTab').hidden) && !mnavMain().includes(v) && !(isInfo() && INFO_HIDDEN.includes(v)));
 function renderMobileNav(){
   const nav = $('#mnav'); if (!nav) return;
   if (GUEST){ nav.innerHTML = guestViews().map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
