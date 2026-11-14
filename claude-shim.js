@@ -515,6 +515,13 @@
     }
     throw { code: 'prompt_too_large' };
   }
+  // свой ключ Anthropic из «Настройки → AI» (только в этом браузере) — нашей функции /api/sample, вместо ключа сервера
+  function aiHeaders(token) {
+    var h = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+    var k = ''; try { k = localStorage.getItem('kz-anthropic-key') || ''; } catch (e) { /* ничего */ }
+    if (/^sk-ant-[A-Za-z0-9_\-]{20,300}$/.test(k)) h['x-anthropic-key'] = k;
+    return h;
+  }
   async function callSample(payload) {
     await ensureSession();
     var cur = await sb.auth.getSession();
@@ -523,7 +530,7 @@
     try {
       res = await fetch('/api/sample', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        headers: aiHeaders(token),
         body: JSON.stringify(payload)
       });
     } catch (e) { throw { code: 'unavailable', message: 'Нет связи с сервером. Проверьте интернет.' }; }

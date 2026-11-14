@@ -13,7 +13,7 @@ global.fetch = async (url, opts) => {
   return { ok: anthropicReply.status === 200, status: anthropicReply.status, json: async () => anthropicReply.body };
 };
 const mkRes = () => { const r = { headers: {}, setHeader(k, v) { r.headers[k] = v; }, status(c) { r.code = c; return r; }, json(b) { r.body = b; return r; } }; return r; };
-const call = async (body, auth = 'Bearer tok', method = 'POST') => { const res = mkRes(); await handler({ method, headers: { authorization: auth }, body }, res); return res; };
+const call = async (body, auth = 'Bearer tok', method = 'POST', extra = {}) => { const res = mkRes(); await handler({ method, headers: { authorization: auth, ...extra }, body }, res); return res; };
 let n = 0; const ok = (name) => { n++; console.log('PASS ' + name); };
 
 (async () => {
@@ -34,6 +34,18 @@ let n = 0; const ok = (name) => { n++; console.log('PASS ' + name); };
   assert.equal(calls.find(c => String(c.url).includes('anthropic')).opts.headers['x-api-key'], 'test-key'); ok('запрос к Claude собран верно (модель, картинка+текст, ключ)');
   assert.ok(!JSON.stringify(r.body).includes('test-key')); ok('ключ не утекает в ответ');
 
+  // свой ключ из «Настройки → AI» (заголовок x-anthropic-key) — вместо ключа сервера; неверный — понятная ошибка
+  const own = 'sk-ant-api03-' + 'a'.repeat(40); calls = [];
+  r = await call({ prompt: 'p', mode: 'json' }, 'Bearer tok', 'POST', { 'x-anthropic-key': own });
+  assert.equal(calls.find(c => String(c.url).includes('anthropic')).opts.headers['x-api-key'], own); ok('свой ключ используется вместо ключа сервера');
+  assert.ok(!JSON.stringify(r.body).includes(own)); ok('свой ключ не утекает в ответ');
+  calls = []; await call({ prompt: 'p', mode: 'json' }, 'Bearer tok', 'POST', { 'x-anthropic-key': 'мусор' });
+  assert.equal(calls.find(c => String(c.url).includes('anthropic')).opts.headers['x-api-key'], 'test-key'); ok('кривой ключ игнорируется — ключ сервера');
+  anthropicReply = { status: 401, body: { error: { message: 'invalid x-api-key' } } };
+  r = await call({ prompt: 'p' }, 'Bearer tok', 'POST', { 'x-anthropic-key': own }); assert.equal(r.body.error.code, 'bad_key'); ok('неверный свой ключ — bad_key');
+  const envKey = process.env.ANTHROPIC_API_KEY; delete process.env.ANTHROPIC_API_KEY;
+  r = await call({ prompt: 'p' }); assert.equal(r.body.error.code, 'no_key'); ok('нет ни своего, ни серверного ключа — no_key');
+  process.env.ANTHROPIC_API_KEY = envKey;
   anthropicReply = { status: 200, body: { content: [{ type: 'text', text: '```json\n{"a":1}\n```' }] } };
   r = await call({ prompt: 'p', mode: 'json' }); assert.deepEqual(r.body.json, { a: 1 }); ok('json в ```-обёртке разобран');
   anthropicReply = { status: 200, body: { content: [{ type: 'text', text: 'не json' }] } };

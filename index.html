@@ -1133,6 +1133,181 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 
 /* ---------- Производство → Проект ---------- */
 .pf{display:grid;grid-template-columns:270px minmax(0,1fr);gap:16px;align-items:start}
+/* инфобизнес: одна доска — без списка проектов, выбора проекта и «Нового проекта» */
+body[data-kind="info"] .pf{grid-template-columns:minmax(0,1fr)}
+body[data-kind="info"] :is(.pf-list,.pf-select,#newBtn,.pm-cnt,.pm-nav>.icon-btn:first-child,.pm-nav>.icon-btn:last-child){display:none!important}
+body[data-kind="info"] [data-pmpick]{pointer-events:none}
+.ct-wk{margin-top:14px}
+.ai-key-row input{flex:1;min-width:0;height:40px}
+.ai-key-act{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ct-kpi-ed{display:grid;gap:10px}
+.ct-kpi-ed > .ct-f input,.ct-kpi-w input{height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 10px;font:inherit;font-size:14px;width:120px}
+.ct-kpi-w{display:flex;flex-wrap:wrap;gap:10px}
+.ct-ico{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;flex:none;margin-right:6px;vertical-align:-5px;background:color-mix(in srgb,var(--brand) 14%,transparent);color:var(--brand)}
+.ct-ico svg{width:14px;height:14px}
+.ct-ico.x{background:var(--pl-m-bg,color-mix(in srgb,var(--m) 14%,transparent));color:var(--pl-m,var(--m))}
+.ct-ico.lg{width:40px;height:40px;border-radius:12px;margin:0}.ct-ico.lg svg{width:22px;height:22px}
+.ct-card .ct-open{display:flex;align-items:center;gap:0}
+.ct-row .ct-ico{margin-right:0}
+.ct-add{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:12px;margin-top:4px}
+.ct-add-hd{display:flex;align-items:center;gap:12px}
+.ct-add-hd b{display:block;font-size:15px}.ct-add-hd small{color:var(--muted);font-size:12.5px}
+.ct-add-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.ct-f{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+.ct-f.grow{flex:1 1 220px}
+.ct-f input{height:38px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 10px;font:inherit;font-size:14px}
+.ct-f input[type=number]{width:84px}
+.ct-sw{display:flex;align-items:center;gap:10px;cursor:pointer;margin-right:auto;font-size:14px}
+.ct-sw input{position:absolute;opacity:0;pointer-events:none}
+.ct-sw i{width:38px;height:22px;border-radius:11px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.ct-sw i::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .15s}
+.ct-sw input:checked + i{background:var(--m)}.ct-sw input:checked + i::after{left:19px}
+.ct-sw small{display:block;color:var(--muted);font-size:12px}
+.ct-add .primary{height:38px;padding:0 18px}
+.pf-card[draggable="true"]{cursor:grab}
+.pf-card.dragging{opacity:.4}
+.pf-card.drop-before{box-shadow:0 -3px 0 var(--brand)}
+.ct-x{display:inline-block;font-size:11px;font-weight:600;padding:1px 6px;border-radius:6px;background:var(--pl-m-bg,color-mix(in srgb,var(--m) 14%,transparent));color:var(--pl-m,var(--m));vertical-align:1px}
+.ip-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.ip-l{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-right:4px}
+.ip-chip{display:inline-flex;align-items:center;gap:8px;padding:7px 10px 7px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
+.ip-chip.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink) inset}
+.ip-chip b{font-weight:600}
+.ip-new{display:flex;gap:6px;flex-wrap:wrap}
+.ip-new input{height:36px}
+.ip-card svg{width:16px;height:16px}
+.fl{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;display:grid;gap:14px}
+.fl-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fl-hd h2{font-size:17px;margin:0;font-weight:700}
+.fl-hd.slim{justify-content:flex-end}
+.fl-hd .fl-mode{margin-left:auto}
+.fl-hd .ghost{display:inline-flex;align-items:center;gap:6px}
+.fl-hd svg{width:14px;height:14px}
+.fl-chain{display:flex;align-items:stretch;gap:4px;overflow-x:auto;padding:2px 2px 6px}
+.fl-arr{align-self:center;color:var(--muted);font-size:16px;flex:none}
+.fl-node{flex:1 0 150px;max-width:230px;text-align:left;display:grid;align-content:start;gap:6px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;font:inherit;transition:border-color .15s,box-shadow .15s}
+.fl-node:hover{cursor:default;border-color:color-mix(in srgb,var(--ink) 25%,var(--line));box-shadow:0 4px 14px rgba(10,10,14,.06)}
+.fl-node b{font-size:14px;font-weight:600}
+.fl-name{background:none;border:0;padding:0;text-align:left;color:inherit;font:inherit;cursor:pointer}
+.fl-node .fl-st{margin-top:2px;height:30px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:0 6px}
+.fl-node.k-paused{border-style:dashed}
+.fl-node.k-idle,.fl-node.k-done{opacity:.85}
+.fl-why{color:var(--pl-b,var(--b))!important}
+.fl-sum{font-size:13px;color:var(--muted)}
+.who-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:1px 8px 1px 2px;border-radius:999px;font-size:12px;font-weight:600;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;
+  background:hsl(var(--h) 85% 93%);color:hsl(var(--h) 55% 32%)}
+.who-chip i{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;flex:none;font-style:normal;font-size:8.5px;font-weight:700;background:hsl(var(--h) 60% 50%);color:#fff}
+.who-chip.none{padding:1px 8px;background:transparent;color:var(--muted);font-weight:500;border:1px dashed var(--line)}
+:root[data-theme="dark"] .who-chip:not(.none){background:hsl(var(--h) 35% 22%);color:hsl(var(--h) 75% 80%)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .who-chip:not(.none){background:hsl(var(--h) 35% 22%);color:hsl(var(--h) 75% 80%)}}
+.fl-ai-why{color:var(--ink)!important;opacity:.75}
+.fl-ai{border-radius:14px;padding:12px 14px;display:grid;gap:8px;border:1px solid var(--line)}
+.fl-ai.empty{display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:14px}
+.fl-ai.empty span{flex:1 1 260px}
+.fl-ai.k-red{background:var(--pl-r-bg,color-mix(in srgb,var(--r) 10%,transparent));border-color:color-mix(in srgb,var(--r) 30%,transparent)}
+.fl-ai.k-yellow{background:var(--pl-y-bg,color-mix(in srgb,var(--y) 10%,transparent));border-color:color-mix(in srgb,var(--y) 30%,transparent)}
+.fl-ai.k-green{background:var(--pl-g-bg,color-mix(in srgb,var(--g) 10%,transparent));border-color:color-mix(in srgb,var(--g) 30%,transparent)}
+.fl-ai-hd{display:flex;align-items:flex-start;gap:12px}.fl-ai-hd b{flex:1;font-size:15px;line-height:1.35}
+.fl-ai-btn{flex:none}
+.fl-ai-chain{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.fl-ai-act h3{font-size:12px;margin:2px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.fl-ai-act ol{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14px}
+.fl-ai-act small{color:var(--muted)}
+.fl-ai-at,.fl-ai-err{color:var(--muted);font-size:12px}
+.np-dlg{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:16px}
+.np-bd{position:absolute;inset:0;background:rgba(10,10,14,.35)}
+.np-box{position:relative;width:min(380px,100%);background:var(--surface);color:var(--ink);border-radius:16px;padding:18px;display:grid;gap:10px;box-shadow:0 18px 50px rgba(10,10,14,.25)}
+.np-box h3{margin:0;font-size:17px}
+.np-box input{height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 12px;font:inherit;font-size:15px}
+.np-act{display:flex;justify-content:flex-end;gap:8px}
+.fl-block{height:30px;border:1px dashed var(--line);border-radius:8px;background:transparent;color:var(--ink);padding:0 8px;font:inherit;font-size:12.5px;width:100%;box-sizing:border-box}
+.fl-block:focus{border-style:solid;outline:none;border-color:var(--ink)}
+.fl-node.k-paused .fl-block{border-style:solid;border-color:color-mix(in srgb,var(--b) 45%,var(--line));color:var(--pl-b,var(--b));font-weight:600}
+.fl-why-box{border-radius:14px;padding:12px 14px;display:grid;gap:6px;border:1px solid var(--line)}
+.fl-why-box.k-red{background:var(--pl-r-bg,color-mix(in srgb,var(--r) 10%,transparent));border-color:color-mix(in srgb,var(--r) 30%,transparent)}
+.fl-why-box.k-yellow{background:var(--pl-y-bg,color-mix(in srgb,var(--y) 10%,transparent));border-color:color-mix(in srgb,var(--y) 30%,transparent)}
+.fl-why-box > b{font-size:15px}
+.fl-why-box > small{color:var(--muted)}
+.fl-why-box ol{margin:4px 0 0;padding:0;list-style:none;display:grid;gap:8px;font-size:14px}
+.fl-why-box li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.fl-then{color:var(--muted)}
+.fl-goal{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border-radius:12px;background:var(--fbg,var(--surface-2));border:1px solid var(--line);font-size:13.5px}
+.fl-goal svg{width:16px;height:16px;flex:none;color:var(--brand)}
+.fl-goal input{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit;font-size:13.5px}
+.fl-goal .fl-gname{flex:0 1 240px;min-width:140px;font-weight:600}
+.fl-goal.near b{color:var(--y)}.fl-goal.past b{color:var(--r)}
+.tl-goal{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--r);z-index:2}
+.tl-goal span{position:absolute;top:4px;left:6px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:11.5px;font-weight:600;color:var(--r);background:var(--surface);padding:1px 6px;border-radius:6px;border:1px solid color-mix(in srgb,var(--r) 40%,transparent)}
+.tl-goal svg{width:12px;height:12px}
+.fl-node .pill{justify-self:start}
+.fl-node small{font-size:12px;color:var(--muted)}
+.fl-urgent{border-top:1px solid var(--line);padding-top:12px}
+.fl-urgent h3{font-size:13px;margin:0 0 8px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.fl-urgent ol{margin:0;padding:0;list-style:none;display:grid;gap:8px;font-size:14px}
+.fl-urgent li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.fl-urgent li .pill{flex:none}
+.fl-tasks{display:flex;flex-wrap:wrap;gap:6px;flex-basis:100%}
+.fl-task{border:1px solid var(--line);background:var(--fbg,var(--surface-2));color:var(--ink);border-radius:8px;padding:4px 9px;font:inherit;font-size:13px;cursor:pointer}
+.fl-task small{color:var(--r)}
+.fl-edit{display:grid;gap:8px;font-size:13px;border-top:1px solid var(--line);padding-top:12px}
+.fl-erow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.fl-erow > span{color:var(--muted)}
+.fl-dep{display:inline-flex;align-items:center;gap:4px}
+.pf-col.fl-flash{outline:2px solid var(--brand);outline-offset:-2px}
+/* таймлайн */
+.tl{display:grid;grid-template-columns:170px minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.tl-lbls{border-right:1px solid var(--line)}
+.tl-lbl{box-sizing:border-box;display:grid;align-content:center;gap:4px;padding:0 12px;border-top:1px solid var(--line);font-size:13px;overflow:hidden}
+.tl-lbls,.tl-head,.tl-lane,.tl-d{box-sizing:border-box}
+.tl-lbl .pill{justify-self:start}
+.tl-lbl small{color:var(--muted);font-size:11.5px}
+.tl-scroll{overflow-x:auto}
+.tl-in{position:relative}
+.tl-head{position:relative;height:34px;border-bottom:1px solid var(--line)}
+.tl-d{position:absolute;top:0;width:34px;height:34px;display:grid;place-items:end center;padding-bottom:6px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tl-d em{position:absolute;top:3px;left:4px;font-style:normal;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink);white-space:nowrap}
+.tl-d.wk{color:color-mix(in srgb,var(--muted) 60%,transparent)}
+.tl-d.now{color:var(--brand);font-weight:700}
+.tl-body{position:relative}
+.tl-wk{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--muted) 7%,transparent)}
+.tl-lane{position:absolute;left:0;right:0;border-top:1px solid var(--line)}
+.tl-today{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--brand);opacity:.55}
+.tl-svg{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.tl-arr{fill:none;stroke:color-mix(in srgb,var(--muted) 70%,transparent);stroke-width:1.6;stroke-dasharray:4 3}
+.tl-arr.red{stroke:var(--r);stroke-dasharray:none;opacity:.8}
+.tl-hd{fill:color-mix(in srgb,var(--muted) 70%,transparent)}.tl-hd.red{fill:var(--r)}
+.tl-bar{position:absolute;height:22px;border-radius:11px;background:currentColor;opacity:.18;pointer-events:none}
+.tl-bar.k-red{color:var(--r)}.tl-bar.k-yellow{color:var(--y)}.tl-bar.k-green{color:var(--b)}.tl-bar.k-done{color:var(--g)}
+.tl-task{position:absolute;display:flex;align-items:center;gap:6px;height:22px;padding:0;border:0;background:none;color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.tl-task i{width:14px;height:14px;border-radius:50%;flex:none;border:2px solid var(--surface);box-shadow:0 0 0 1.5px currentColor;background:currentColor}
+.tl-task span{max-width:180px;overflow:hidden;text-overflow:ellipsis;background:color-mix(in srgb,var(--surface) 85%,transparent);border-radius:6px;padding:1px 4px}
+.tl-task.k-red{color:var(--r)}.tl-task.k-yellow{color:var(--y)}.tl-task.k-green{color:var(--b)}.tl-task.k-done{color:var(--g)}
+.tl-task.k-done span{text-decoration:line-through;color:var(--muted)}
+.tl-task span{color:var(--ink)}
+.tl-task.k-red span{color:var(--r)}
+@media (max-width:640px){.fl-chain{flex-direction:column}.fl-arr{transform:rotate(90deg);align-self:flex-start;margin-left:18px}.fl-node{max-width:none}.fl-hd .fl-mode{margin-left:0}.tl{grid-template-columns:110px minmax(0,1fr)}.tl-lbl{padding:0 8px}}
+.ct-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.ct-top .ct-mode{margin-left:auto}
+.vid-st{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:6px;font-size:11.5px;font-weight:600;background:var(--fbg,var(--surface-2));border:1px solid var(--line);color:var(--ink);vertical-align:middle}
+.ct-board{margin-bottom:16px}
+.ct-card{display:grid;gap:6px;cursor:grab}
+.ct-card .ct-open{background:none;border:0;padding:0;text-align:left;color:inherit;cursor:pointer;font:inherit}
+.ct-card small{color:var(--muted);font-size:12px}
+.ct-card select{width:100%}
+.ct-card .who-chip,.pf-card .who-chip{justify-self:start}
+.ct-subs{display:grid;gap:3px;font-size:12.5px}
+.ct-subs label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.ct-subs input{flex:none;margin:0}
+.ct-subs input:checked + span{text-decoration:line-through;color:var(--muted)}
+.pf-col.drop-on{outline:2px dashed var(--brand);outline-offset:-4px}
+.ct-wk h3{font-size:14px;margin:0 0 8px 4px}
+.ct-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ct-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.ct-name{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;color:inherit;display:grid;gap:2px;cursor:pointer}
+.ct-name b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ct-name small{color:var(--muted);font-size:12px}
+.ct-row.done .ct-name b{text-decoration:line-through;color:var(--muted)}
+.ct-date{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:4px 6px;font:inherit;font-size:13px}
 .pf-list{position:sticky;top:76px;display:grid;gap:8px;max-height:calc(100vh - 100px);grid-template-rows:auto minmax(0,1fr)}
 .pf-list input{height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 11px;font-size:14px;width:100%}
 .pf-items{overflow-y:auto;display:grid;gap:4px;align-content:start;padding-right:2px}
@@ -1864,6 +2039,43 @@ svg.clip{width:14px;height:14px;flex:none}
 .tk-who{display:flex;align-items:center;gap:8px;font-size:13px}
 .tk-who > span{color:var(--muted)}
 .tk-who .tk-as{height:34px;max-width:230px}
+.tk-due input{height:34px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit;font-size:13px}
+.tk-due .late{color:var(--r);font-weight:600}
+.pf-due{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
+.pf-due.late{color:var(--r);font-weight:600}
+.pf-due svg{width:12px;height:12px}
+.tk-due svg,.rem-pop svg{width:14px;height:14px;vertical-align:-2px;flex:none}
+.dp-btn{height:34px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+.dp-btn.empty{font-weight:400;color:var(--muted);border-style:dashed}
+.dp-btn.late{color:var(--r);border-color:color-mix(in srgb,var(--r) 45%,var(--line))}
+.dp{position:fixed;z-index:70;width:300px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 50px rgba(10,10,14,.2);padding:12px;display:grid;gap:10px;font-size:13.5px}
+.dp-quick{display:flex;flex-wrap:wrap;gap:6px}
+.dp-quick button,.dp-times button{border:1px solid var(--line);background:var(--fbg,var(--surface-2));color:var(--ink);border-radius:8px;padding:5px 9px;font:inherit;font-size:13px;cursor:pointer}
+.dp-quick button:hover,.dp-times button:hover:not(:disabled){border-color:var(--ink)}
+.dp-hd{display:flex;align-items:center;justify-content:space-between}
+.dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.dp-wd{font-size:11px;color:var(--muted);padding:2px 0}
+.dp-day{height:34px;border:0;border-radius:9px;background:none;color:var(--ink);font:inherit;font-size:13.5px;cursor:pointer;font-variant-numeric:tabular-nums}
+.dp-day:hover{background:var(--fbg,var(--surface-2))}
+.dp-day.past{color:var(--muted)}
+.dp-day.today{box-shadow:inset 0 0 0 1.5px var(--brand);font-weight:700}
+.dp-day.on{background:var(--ink);color:var(--surface);font-weight:700}
+.dp-day.in{background:color-mix(in srgb,var(--ink) 10%,transparent);border-radius:0}
+.dp-hint{color:var(--muted);font-size:12px;text-align:center}
+.dp-times{display:grid;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.dp-times small{color:var(--muted)}
+.dp-times > div{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.dp-times button.on{background:var(--ink);color:var(--surface)}
+.dp-times button:disabled{opacity:.4;cursor:default}
+.dp-times input{height:30px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:0 6px;font:inherit;font-size:13px}
+.dp-ft{display:flex;justify-content:space-between;align-items:center}
+@media (max-width:640px){.dp{left:8px!important;right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);top:auto!important;width:auto}}
+.tk-due > span{display:inline-flex;align-items:center;gap:4px}
+.rem-pop{position:fixed;z-index:60;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);width:min(360px,calc(100% - 32px));background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 50px rgba(10,10,14,.22);padding:14px;display:grid;gap:8px}
+.rem-pop b{font-size:15px}
+.rem-pop small{color:var(--muted)}
+.rem-pop .row{display:flex;gap:8px;justify-content:flex-end}
+@media (max-width:640px){.rem-pop{bottom:calc(env(safe-area-inset-bottom,0px) + 80px)}}
 
 /* приёмка материалов */
 .mat-acc{height:28px;padding:0 10px;font-size:12.5px;display:inline-flex;align-items:center;gap:5px}
@@ -2020,6 +2232,8 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
+    <button data-view="funnel" hidden>AI-воронка</button>
+    <button data-view="content" hidden>Контент</button>
     <button data-view="mytasks" id="myTasksTab">Мои задачи</button>
     <button data-view="review" id="reviewTab">Приёмка</button>
     <button data-view="assign">Поручения</button>
@@ -2164,11 +2378,13 @@ const projAva = (p, size = 'sm') => p?.image
 // группировка по неделям месяца и блок «План / Факт» (сколько снято и опубликовано за месяц против плана).
 const VIDEO_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3"/></svg>';
 const FUNNEL_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5Z"/></svg>';
-const KINDS = { agency:['Агентство', 'проекты'], smm:['SMM', 'видео'], crm:['CRM', 'блогеры'] };
+const BOARD_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>';
+const KINDS = { agency:['Агентство', 'проекты'], smm:['SMM', 'видео'], crm:['CRM', 'блогеры'], info:['Инфобизнес', 'доска'] };
 const normKind = k => KINDS[k] ? k : 'agency';
-const KIND_ICO = k => k === 'smm' ? VIDEO_ICO : k === 'crm' ? FUNNEL_ICO : '';
+const KIND_ICO = k => k === 'smm' ? VIDEO_ICO : k === 'crm' ? FUNNEL_ICO : k === 'info' ? BOARD_ICO : '';
 const isSMM = () => (typeof db !== 'undefined' && db?.prefs?.kind === 'smm');
 const isCRM = () => (typeof db !== 'undefined' && db?.prefs?.kind === 'crm');
+const isInfo = () => (typeof db !== 'undefined' && db?.prefs?.kind === 'info');
 // подпись: «проект» в агентстве, «видео» в SMM, «блогер» в CRM (не задано для CRM — как в агентстве)
 const W = (agency, smm, crm) => isSMM() ? smm : isCRM() && crm !== undefined ? crm : agency;
 const SMM_TPL_ID = 'tsmm';
@@ -2184,7 +2400,281 @@ function crmTemplate(){
     .map(([n, d]) => ({ id:uid(), name:n, days:d, approval:false, subs:[] })) };
 }
 function ensureCrmTemplate(d){ d.templates = d.templates || []; if (!d.templates.some(t => t.id === CRM_TPL_ID || RX_CRM.test(t.name))) d.templates.unshift(crmTemplate()); }
-function ensureKindTemplate(d, k){ if (k === 'smm') ensureSmmTemplate(d); else if (k === 'crm') ensureCrmTemplate(d); }
+function ensureKindTemplate(d, k){ if (k === 'smm') ensureSmmTemplate(d); else if (k === 'crm') ensureCrmTemplate(d); else if (k === 'info') ensureInfoTemplate(d); }
+// ---------- Инфобизнес: одна общая доска ----------
+// В пространстве нет списка проектов и «Нового проекта»: сразу открывается доска «Производства» — один проект-доска
+// (постоянный id INFO_BOARD_ID, чтобы два устройства не создали по своей доске). Колонки — этапы шаблона «Инфобизнес: запуск».
+const INFO_TPL_ID = 'tinfo', INFO_BOARD_ID = 'infoboard';
+const INFO_HIDDEN = ['matrix', 'kanban', 'archive'];
+function infoTemplate(){
+  return { id:INFO_TPL_ID, name:'Инфобизнес: запуск', stages:[['Продукт',7],['Контент',7],['Прогрев',7],['Запуск',7],['Продажи',14],['Сопровождение',14]]
+    .map(([n, d]) => ({ id:uid(), name:n, days:d, approval:false, subs:[] })) };
+}
+function ensureInfoTemplate(d){ d.templates = d.templates || []; if (!d.templates.some(t => t.id === INFO_TPL_ID)) d.templates.unshift(infoTemplate()); ensureSmmTemplate(d); }   // SMM — колонки доски «Контента»
+// ---------- Инфобизнес → «Контент»: видео = карточки (подэтапы) колонки «Контент» на доске «Производства» ----------
+// Одни и те же данные: отметили видео опубликованным здесь — оно отмечено на доске, и наоборот.
+// У видео: x.name, x.due_date — дата публикации, x.cycle — старт 4-недельного цикла, x.done — опубликовано (дата — x.u).
+// План цикла — db.prefs.infoPlans[старт] (по умолчанию — сколько видео в цикле), по неделям поровну, как в SMM.
+// Инфоповоды: каждый — своя доска (проект по шаблону инфобизнеса), «Контент» и воронка — у выбранного (ui.prodProject)
+const infoBoards = () => db.projects.filter(p => p.state !== 'archived' && (p.template_id === INFO_TPL_ID || p.id === INFO_BOARD_ID))
+  .sort((a, b) => String(a.start_date || '').localeCompare(String(b.start_date || '')));
+const infoBoard = () => { const all = infoBoards(); const cur = all.find(p => p.id === ui.prodProject);
+  if (cur) return cur; const t0 = today(); return all.filter(p => (p.start_date || '') <= t0 && p.state !== 'completed').at(-1) || all.find(p => p.id === INFO_BOARD_ID) || all[0]; };
+function infoTabsHtml(){
+  const all = infoBoards(); const cur = infoBoard(); const t0 = today();
+  const stt = p => p.state === 'completed' ? ['done', 'Завершён'] : (p.start_date || '') > t0 ? ['gray', `с ${fmt(p.start_date)}`] : ['green', 'Идёт'];
+  return `<div class="ip-row" role="tablist" aria-label="Инфоповоды"><span class="ip-l">Инфоповоды</span>
+    ${all.map(p => { const [k, l] = stt(p); return `<button class="ip-chip${p === cur ? ' on' : ''}" role="tab" aria-selected="${p === cur}" data-ipsel="${p.id}"><b>${esc(p.name)}</b><span class="pill st-pill s-${k}">${STATUS_ICO[k]}${l}</span></button>`; }).join('')}
+    ${ui.ipNew ? `<form class="ip-new" id="ipNew"><input id="ipName" placeholder="Например, Челлендж Эма" aria-label="Название инфоповода" required><input type="date" id="ipStart" value="${addDays(plannedEnd(cur) || t0, 1) > t0 ? addDays(plannedEnd(cur) || t0, 1) : t0}" aria-label="Старт"><button class="primary">Добавить</button><button type="button" class="ghost" data-ipcancel>Отмена</button></form>`
+      : `<button class="ghost ip-add" data-ipnew>+ Инфоповод</button>`}
+    ${cur ? `<button class="icon-btn ip-card" data-open="${cur.id}" title="Карточка инфоповода: название, даты, архив" aria-label="Карточка инфоповода">${ICON_EDIT}</button>` : ''}</div>`;
+}
+function createInfoBoard(name, start){
+  ensureInfoTemplate(db); const src = infoBoard();
+  const p = makeProject({ name, client:'', template_id:INFO_TPL_ID, start_date:start || today(), pm_id:ME });
+  if (src){ // колонки — как у текущего инфоповода (их могли переименовать прямо на доске), задачи — пустые
+    let cur = p.start_date;
+    p.stages = src.stages.filter(x => !isMaint(x)).map((x, i) => { const n = Math.max(1, +x.days || 7);
+      const st = { id:uid(), position:i, name:x.name, days:n, approval:!!x.approval, gate:!!x.gate, assignee_id:x.assignee_id || null, subs:[],
+        status:'not_started', planned_start:cur, due_date:addDays(cur, n), started_at:null, completed_at:null, tsid:x.tsid };
+      cur = st.due_date; return st; });
+    p.deadline = p.stages.at(-1)?.due_date || p.deadline;
+  }
+  if (src?.flow){ // связи этапов — как у текущего инфоповода (по названию этапа)
+    const byName = n => p.stages.find(x => x.name === n)?.id; const nameOf = id => src.stages.find(x => x.id === id)?.name;
+    p.flow = Object.fromEntries(Object.entries(src.flow).map(([k, v]) => [byName(nameOf(k)), v.map(id => byName(nameOf(id))).filter(Boolean)]).filter(([k]) => k));
+  }
+  addLog(p, `Инфоповод «${name}» создан`); db.projects.push(p); copyCards(p); ui.prodProject = p.id; ui.ctCycle = null; ui.ipNew = false; commit();
+  toast(`Инфоповод «${name}» добавлен`); return p;
+}
+document.addEventListener('click', e => {
+  const s = e.target.closest?.('[data-ipsel]'); if (s){ ui.prodProject = s.dataset.ipsel; ui.ctCycle = null; render(); return; }
+  if (e.target.closest?.('[data-ipnew]')){ ui.ipNew = true; render(); $('#ipName')?.focus(); return; }
+  if (e.target.closest?.('[data-ipcancel]')){ ui.ipNew = false; render(); }
+});
+document.addEventListener('submit', e => { if (e.target.id !== 'ipNew') return; e.preventDefault(); const n = $('#ipName').value.trim(); if (n) createInfoBoard(n, $('#ipStart').value); });
+function contentStage(p = infoBoard()){
+  if (!p) return null;
+  const tpl = tplById(INFO_TPL_ID); const ts = tpl?.stages.find(x => /контент/i.test(x.name));
+  return p.stages.find(x => ts && x.tsid === ts.id) || p.stages.find(x => /контент/i.test(x.name)) || null;
+}
+const ctItems = () => contentStage()?.subs || [];
+// колонка «Контент» на доске: свои задачи (без цикла видео) — наверху, новые первыми; ниже — видео
+const boardSubs = (p, s) => { const subs = s.subs || [];
+  if (!isInfo() || s !== contentStage(p)) return subs;
+  const own = subs.filter(x => !x.cycle).sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+  return [...own, ...subs.filter(x => x.cycle)]; };
+const ctCycles = () => [...new Set(ctItems().map(x => x.cycle).filter(Boolean))].sort();
+const ctDoneAt = x => x.done ? String(x.u || x.due_date || today()).slice(0, 10) : '';
+function ctCur(){
+  const cs = ctCycles(); if (!cs.length) return '';
+  if (ui.ctCycle && cs.includes(ui.ctCycle)) return ui.ctCycle;
+  const t = today(); return cs.filter(c => c <= t && t <= cycleEnd(c)).at(-1) || cs.filter(c => c <= t).at(-1) || cs[0];
+}
+function ctStats(c){
+  const items = ctItems().filter(x => x.cycle === c); const main = items.filter(x => !x.extra), extra = items.filter(x => x.extra);
+  // недельный KPI (сколько видео в неделю): свой на каждую неделю цикла (p.ctWeeks[цикл]) → общий KPI инфоповода (p.weekKpi)
+  // → старый план на 4 недели (db.prefs.infoPlans) поровну → по числу видео поровну
+  const b = infoBoard(); const own = b?.ctWeeks?.[c]; const kpi = +b?.weekKpi || 0; const set = db.prefs?.infoPlans?.[c];
+  const planW = own ? own.map(n => Math.max(0, +n || 0)) : kpi ? Array(CYCLE_WEEKS).fill(kpi) : splitPlan(set != null ? +set || 0 : main.length);
+  const plan = planW.reduce((m, n) => m + n, 0);
+  const weeks = planW.map((n, i) => ({ w:i + 1, plan:n, pub:0, items:[] }));
+  let pub = 0;
+  items.forEach(x => {
+    weeks[weekOfDate(c, x.due_date || c) - 1].items.push(x);
+    const d = ctDoneAt(x); if (d && !x.extra){ pub++; weeks[weekOfDate(c, d < c ? c : d) - 1].pub++; }
+  });
+  return { plan, pub, items, weeks, kpi, ownWeeks:!!own, extra:{ n:extra.length, pub:extra.filter(x => x.done).length } };
+}
+// доска видео: колонки — этапы шаблона «SMM: видео» (правятся в «Настройках → Шаблоны»), у видео x.vst — id этапа шаблона.
+// Последняя колонка — «Опубликовано»: попасть в неё = отметить видео на основной доске (toggleSub), и наоборот.
+const vidTpl = () => db.templates.find(t => t.id === SMM_TPL_ID) || db.templates.find(t => /smm/i.test(t.name));
+const vidCols = () => vidTpl()?.stages || [];
+const vidCol = x => { const cs = vidCols(); if (x.done) return cs.at(-1); return cs.slice(0, -1).find(c => c.id === x.vst) || cs[0]; };
+// этапы и подэтапы доски видео — как в шаблоне SMM-пространства: раз за открытие вкладки берём их оттуда
+// (id этапов сохраняются, поэтому видео не теряют свой этап).
+const smmSpace = () => { try { return otherSpaces().find(x => x.kind === 'smm') || null; } catch(e) { return null; } };
+async function syncVidTplFromSmm(manual){
+  const sp = smmSpace(); if (!sp || !cloud.store || !cloud.uid){ if (manual) toast('Нет SMM-пространства, из которого взять этапы'); return false; }
+  ui.vidSynced = true;
+  try {
+    const { tpls } = await loadSpaceTemplates(sp.id);
+    const src = tpls.find(t => t.id === SMM_TPL_ID) || tpls.find(t => /smm/i.test(t.name)) || tpls[0];
+    if (!src?.stages?.length){ if (manual) toast(`В пространстве «${sp.name}» нет шаблона SMM`); return false; }
+    const cur = vidTpl(); const next = { ...(cur || {}), id:SMM_TPL_ID, name:src.name, stages:clone(src.stages), fromSpace:sp.id };
+    if (cur && JSON.stringify(cur.stages) === JSON.stringify(next.stages)){ if (manual) toast('Этапы уже как в SMM'); return false; }
+    db.templates = [next, ...db.templates.filter(t => t !== cur)];
+    toast(`Этапы видео обновлены из «${sp.name}»`); commit(); return true;
+  } catch(e) { if (manual) toast('Не удалось прочитать шаблоны SMM, проверьте интернет'); return false; }
+}
+// подэтапы текущего этапа видео — галочки на карточке (x.vs = { id подэтапа: true })
+document.addEventListener('change', e => {
+  const v = e.target.dataset?.ctvs; if (!v) return;
+  const [xid, sid] = v.split('|'); const p = infoBoard(); const s = contentStage(p); const x = s?.subs?.find(y => y.id === xid); if (!x) return;
+  x.vs = { ...(x.vs || {}) }; if (e.target.checked) x.vs[sid] = true; else delete x.vs[sid];
+  const name = vidCols().flatMap(c => c.subs || []).find(y => y.id === sid)?.name || '';
+  addLog(p, `Контент: «${x.name}» — ${name}: ${e.target.checked ? 'готово' : 'снова в работе'}`); commit();
+});
+document.addEventListener('click', e => {
+  if (e.target.closest?.('[data-ctaddx]')){ ui.ctExtra = true; const x = $('#ctExtra'); if (x) x.checked = true; $('#ctAdd')?.scrollIntoView({ behavior:'smooth', block:'center' }); $('#ctName')?.focus(); } });
+// ответственный у каждого этапа видео (колонки доски «Контента»): p.vidWho = { id этапа шаблона SMM: id человека }.
+// Ответственный видео — у кого оно сейчас на этапе; свой ответственный в карточке видео важнее.
+const vidWhoOf = (p, x) => (p?.vidWho || {})[vidCol(x)?.id] || null;
+const contentWho = (p, s, x, t) => t?.assignee_id || vidWhoOf(p, x) || s?.assignee_id || p?.worker_id || null;
+document.addEventListener('change', e => {
+  const cid = e.target.dataset?.vidwho; if (!cid) return;
+  const p = infoBoard(); const c = vidCols().find(y => y.id === cid); if (!p || !c) return;
+  p.vidWho = { ...(p.vidWho || {}), [cid]:e.target.value || null };
+  addLog(p, `Контент: на этап «${c.name}» ${e.target.value ? `назначен(а) ${nameOf(e.target.value)}` : 'никто не назначен'}`); commit();
+});
+function moveVideo(xid, colId){
+  const p = infoBoard(); const s = contentStage(p); const x = s?.subs?.find(y => y.id === xid); const cs = vidCols(); const c = cs.find(y => y.id === colId);
+  if (!x || !c) return;
+  const pub = c === cs.at(-1);
+  if (!pub) x.vst = c.id;
+  addLog(p, `Контент: «${x.name}» → «${c.name}»`);
+  if (pub !== !!x.done) toggleSub(p, s, x, pub); else commit();
+}
+function contentBoardHtml(s, items){
+  const cs = vidCols(); if (!cs.length) return '<p class="hint">Нет шаблона «SMM: видео» — добавьте его в «Настройки → Шаблоны → Из другого пространства → Готовые».</p>';
+  return `<div class="pf-board ct-board">${cs.map((c, ci) => { const list = items.filter(x => vidCol(x) === c);
+    return `<section class="pf-col${ci === cs.length - 1 ? ' passed' : ''}" data-ctcol="${c.id}" aria-label="${esc(c.name)}">
+      <header><div><b>${ci + 1}. ${esc(c.name)}</b></div><small>${list.length} ${plural(list.length, 'видео', 'видео', 'видео')}${(c.subs || []).length ? ` · подэтапов ${c.subs.length}` : ''}</small>
+        ${GUEST ? '' : `<select class="pf-status" data-vidwho="${c.id}" aria-label="Ответственный за этап «${esc(c.name)}»">${peopleOpts((infoBoard()?.vidWho || {})[c.id] || '', 'Ответственный не назначен')}</select>`}</header>
+      <div class="pf-cards">${list.map(x => { const t = taskFor(infoBoard().id, s.id, x.id);
+        return `<div class="pf-card ct-card${x.done ? ' done' : ''}" draggable="true" data-ctdrag="${x.id}">
+          <button class="ct-open" data-pfsub="${s.id}|${x.id}"><span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><b>${esc(x.name)}</b>${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</button>
+          <small>${x.due_date ? `публикация ${fmt(x.due_date)}` : 'без даты'}</small>${whoChip(contentWho(infoBoard(), s, x, t))}
+          ${(c.subs || []).length && !x.done ? `<div class="ct-subs">${c.subs.map(y => `<label><input type="checkbox" data-ctvs="${x.id}|${y.id}" ${x.vs?.[y.id] ? 'checked' : ''}><span>${esc(y.name)}</span></label>`).join('')}</div>` : ''}
+          <select class="pf-status" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}">${cs.map(y => `<option value="${y.id}" ${y === c ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select></div>`; }).join('') || '<p class="hint">Пусто</p>'}</div></section>`; }).join('')}</div>`;
+}
+document.addEventListener('change', e => { const v = e.target.dataset?.ctmove; if (v) moveVideo(v, e.target.value); });
+document.addEventListener('dragstart', e => { const c = e.target.closest?.('[data-ctdrag]'); if (c){ e.dataTransfer.setData('text/kz-video', c.dataset.ctdrag); e.dataTransfer.effectAllowed = 'move'; } });
+document.addEventListener('dragover', e => { const col = e.target.closest?.('[data-ctcol]'); if (col && e.dataTransfer?.types?.includes('text/kz-video')){ e.preventDefault(); col.classList.add('drop-on'); } });
+document.addEventListener('dragleave', e => { const col = e.target.closest?.('[data-ctcol]'); if (col && !col.contains(e.relatedTarget)) col.classList.remove('drop-on'); });
+document.addEventListener('drop', e => { const col = e.target.closest?.('[data-ctcol]'); const id = e.dataTransfer?.getData('text/kz-video'); if (!col || !id) return; e.preventDefault(); col.classList.remove('drop-on'); moveVideo(id, col.dataset.ctcol); });
+document.addEventListener('click', e => { const m = e.target.closest?.('[data-ctmode]'); if (m){ ui.ctMode = m.dataset.ctmode; render(); } });
+function renderContent(){
+  renderContentBody();
+  if (isInfo() && !GUEST && infoBoards().length > 1) app.insertAdjacentHTML('afterbegin', infoTabsHtml());
+}
+function renderContentBody(){
+  if (!vidTpl() && !GUEST){ ensureSmmTemplate(db); save(); }
+  if (!ui.vidSynced && !GUEST && smmSpace()) syncVidTplFromSmm(false);
+  const p = infoBoard(); const s = contentStage(p);
+  if (!p || !s){ app.innerHTML = `<div class="empty">На доске нет этапа «Контент».<br>Добавьте его в «Настройки → Шаблоны → Инфобизнес: запуск» — видео будут карточками этого этапа.</div>`; return; }
+  ui.prodProject = p.id;
+  const c = ctCur(); const cs = ctCycles(); const i = cs.indexOf(c);
+  const addForm = `<form class="ct-add" id="ctAdd">
+      <div class="ct-add-hd"><span class="ct-ico lg">${VIDEO_ICO}</span><div><b>Новые видео</b><small>Появятся карточками в колонке «${esc(s.name)}» на доске и в плане по неделям</small></div></div>
+      <div class="ct-add-row">
+        <label class="ct-f grow"><span>Название</span><input id="ctName" placeholder="Например, Рилс" required></label>
+        <label class="ct-f"><span>Сколько</span><input type="number" id="ctN" min="1" max="200" value="1"></label>
+        <label class="ct-f"><span>Старт</span><input type="date" id="ctStart" value="${c && today() > cycleEnd(c) ? today() : (c || today())}"></label>
+      </div>
+      <div class="ct-add-row">
+        <label class="ct-sw"><input type="checkbox" id="ctExtra" ${ui.ctExtra ? 'checked' : ''}><i aria-hidden="true"></i><span>Доп. контент <small>вне плана, считается отдельно</small></span></label>
+        <button class="primary">Добавить</button>
+      </div>
+      <small class="hint">Несколько видео распределятся поровну на 4 недели от даты старта.</small></form>`;
+  if (!c){ app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2></div><p class="hint">Видео пока нет. Добавьте первые — например, 12 роликов на месяц.</p>${addForm}`; return; }
+  const st = ctStats(c); const pct = st.plan ? Math.min(100, Math.round(st.pub / st.plan * 100)) : 0;
+  const t = today(); const live = t >= c && t <= cycleEnd(c); const nowW = live ? weekOfDate(c, t) : 0;
+  const due = live ? st.weeks.slice(0, nowW).reduce((m, x) => m + x.plan, 0) : t > cycleEnd(c) ? st.plan : 0;
+  const pace = !st.plan || (!live && t < c) ? '' : st.pub >= due ? 'идём по плану' : `отстаём на ${due - st.pub}`;
+  const row = x => `<li class="ct-row${x.done ? ' done' : ''}">
+      <input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="Опубликовано: ${esc(x.name)}">
+      <span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>
+      ${whoChip(contentWho(p, s, x, taskFor(p.id, s.id, x.id)))}<input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
+  // по умолчанию — «План / Факт», доска — вторым видом
+  const modeSeg = `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode !== 'board'}">План / Факт</button><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode === 'board'}">Доска</button></span>`;
+  if (ui.ctMode === 'board'){
+    app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>
+      <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>${modeSeg}
+      <button class="ghost" data-ctaddx>+ Доп. контент</button></div>
+      ${contentBoardHtml(s, ctItems().filter(x => x.cycle === c))}
+      ${addForm}`;
+    return;
+  }
+  app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>${modeSeg}</div><section class="smm-pf" aria-label="Контент: план и факт">
+    <div class="smm-hd"><h2>План / Факт</h2>
+      <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>
+      ${ui.ctEdit === c ? '' : `<button class="ghost smm-edit" data-ctedit>${ICON_EDIT}KPI на неделю</button>`}</div>
+    ${ui.ctEdit === c ? `<form class="smm-ed ct-kpi-ed" id="ctEd">
+      <label class="ct-f"><span>KPI в неделю — для всех недель</span><input type="number" id="ctKpi" min="0" max="999" value="${st.kpi || ''}" placeholder="например, 5"></label>
+      <div class="ct-kpi-w">${st.weeks.map(x => `<label class="ct-f"><span>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></span><input type="number" min="0" max="999" data-ctwk="${x.w - 1}" value="${x.plan}"></label>`).join('')}</div>
+      <small class="hint">Общий KPI задаёт одинаковый план на каждую неделю этого инфоповода. Если у недели другое число — поменяйте его: тогда этот цикл считается по числам недель.</small>
+      <span class="smm-ed-act"><button type="button" class="ghost" data-cteditcancel>Отмена</button><button class="primary">Сохранить</button></span></form>` : ''}
+    <div class="smm-kpi">
+      <div><b>${st.plan}</b><small>План${st.kpi && !st.ownWeeks ? ` · KPI ${st.kpi} в неделю` : st.ownWeeks ? ' · по неделям' : ''}</small></div>
+      <div><b>${st.pub} <small>из ${st.plan}</small></b><small>Опубликовано${pace ? ' · ' + pace : ''}</small></div>
+      <div><b>${Math.max(0, st.plan - st.pub)}</b><small>Осталось</small></div>
+      ${st.extra.n ? `<div><b>${st.extra.pub} <small>из ${st.extra.n}</small></b><small>Доп. контент</small></div>` : ''}
+    </div>
+    <div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>
+    <table class="smm-wk"><thead><tr><th>Неделя</th><th>План</th><th>Опубликовано</th></tr></thead><tbody>
+      ${st.weeks.map(x => `<tr class="${x.w === nowW ? 'now' : ''}"><td>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></td><td>${x.plan}</td><td>${x.pub} <small class="hint">из ${x.plan}</small></td></tr>`).join('')}
+    </tbody></table></section>
+    ${st.weeks.filter(x => x.items.length).map(x => `<section class="ct-wk"><h3>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></h3>
+      <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}
+    ${addForm}`;
+}
+function addContent(name, n, start, extra = false){
+  const p = infoBoard(); const s = contentStage(p); if (!p || !s || !name) return;
+  const c = ctCycles().filter(x => start >= x && start <= cycleEnd(x)).at(-1) || start;
+  const w0 = weekOfDate(c, start); let k = 0;                     // поровну на недели от недели старта до конца цикла
+  splitPlan(n, CYCLE_WEEKS - w0 + 1).forEach((m, wi) => { for (let j = 0; j < m; j++){
+    k++; let due = addDays(weekStart(c, w0 + wi), Math.min(6, Math.floor((j + 0.5) * 7 / m)));
+    if (due < start || n === 1) due = start;
+    (s.subs = s.subs || []).push({ id:uid(), name:n > 1 ? `${name} ${k}` : name, done:false, cycle:c, due_date:due, ...(extra ? { extra:true } : {}) });
+  } });
+  addLog(p, `Контент: добавлено ${n} ${plural(n, 'видео', 'видео', 'видео')}${extra ? ' (доп. контент)' : ''} в «${s.name}»`);
+  ui.ctCycle = c; commit();
+}
+document.addEventListener('submit', e => {
+  if (e.target.id === 'ctAdd'){ e.preventDefault();
+    const n = Math.max(1, Math.min(200, +$('#ctN').value || 1)); addContent($('#ctName').value.trim(), n, $('#ctStart').value || today(), $('#ctExtra')?.checked); ui.ctExtra = false; return; }
+  if (e.target.id === 'ctEd'){ e.preventDefault(); const c = ctCur();
+    const b = infoBoard(); if (!b){ ui.ctEdit = null; render(); return; }
+    const kpi = Math.max(0, +$('#ctKpi').value || 0); const ws = [...document.querySelectorAll('[data-ctwk]')].map(i => Math.max(0, +i.value || 0));
+    const oldW = ctStats(c).weeks.map(x => x.plan); const oldKpi = +b.weekKpi || 0; b.weekKpi = kpi || null;
+    // поменяли только общий KPI — недели берут его; поменяли числа недель — у этого цикла свои числа
+    const weeksTouched = ws.some((n, i) => n !== oldW[i]);
+    b.ctWeeks = { ...(b.ctWeeks || {}) }; if (!weeksTouched || (kpi && ws.every(n => n === kpi))) delete b.ctWeeks[c]; else b.ctWeeks[c] = ws;
+    if (!weeksTouched && !kpi && !oldKpi) b.ctWeeks[c] = ws;     // KPI не задан, недели не трогали — фиксируем как есть
+    addLog(b, `Контент: KPI ${kpi ? `${kpi} в неделю` : 'не задан'}${b.ctWeeks[c] ? `, цикл ${cycleRange(c)} по неделям: ${ws.join(' / ')}` : ''}`);
+    ui.ctEdit = null; commit(); }
+});
+document.addEventListener('click', e => {
+  const cy = e.target.closest?.('[data-ctcyc]'); if (cy){ const cs = ctCycles(); ui.ctCycle = cs[cs.indexOf(ctCur()) + +cy.dataset.ctcyc] || ctCur(); render(); return; }
+  if (e.target.closest?.('[data-ctedit]')){ ui.ctEdit = ctCur(); render(); return; }
+  if (e.target.closest?.('[data-cteditcancel]')){ ui.ctEdit = null; render(); }
+});
+document.addEventListener('change', e => {
+  const d = e.target.dataset || {}; if (!d.ctdone && !d.ctdue) return;
+  const p = infoBoard(); const s = contentStage(p); const x = s?.subs?.find(y => y.id === (d.ctdone || d.ctdue)); if (!x) return;
+  if (d.ctdone){ const t = taskFor(p.id, s.id, x.id); if (t?.checklist?.length){ e.target.checked = !!x.done; openTask(t.id); return; }   // с чек-листом — отмечается в карточке
+    toggleSub(p, s, x, e.target.checked); return; }
+  if (e.target.value){ x.due_date = e.target.value; if (!x.cycle) x.cycle = e.target.value; addLog(p, `Контент: «${x.name}» — публикация ${fmt(x.due_date)}`); commit(); }
+});
+// задачи, переименованные до исправления (название менялось только в карточке задачи): карточка на доске берёт название задачи
+function syncInfoNames(){
+  let n = 0;
+  infoBoards().forEach(p => (db.tasks || []).filter(t => t.project_id === p.id && t.title).forEach(t => {
+    const x = p.stages.find(s => s.id === t.stage_id)?.subs?.find(y => y.id === t.substage_id);
+    if (x && x.name !== t.title){ x.name = t.title; n++; }
+  }));
+  if (n) save();
+}
+// доска создаётся сама, когда данные пространства уже загружены и в нём нет ни одного проекта
+function ensureInfoBoard(){
+  if (!isInfo() || GUEST || !db.onboarded || (cloud.col && !cloud.ready)) return;
+  if (db.projects.some(p => p.id === INFO_BOARD_ID || p.state !== 'archived')) return;
+  ensureInfoTemplate(db);
+  const p = makeProject({ name:spaceName() || 'Инфобизнес', client:'', template_id:INFO_TPL_ID, start_date:today(), pm_id:ME });
+  p.id = INFO_BOARD_ID; addLog(p, 'Доска инфобизнеса создана');
+  db.projects.unshift(p); copyCards(p); ui.prodProject = p.id; save();
+}
 const crmTpl = () => db.templates.find(t => t.id === CRM_TPL_ID) || db.templates.find(t => RX_CRM.test(t.name)) || db.templates[0];
 // позиция блогера в воронке: номер текущего этапа (по названию этапа шаблона CRM); names.length — все этапы пройдены
 function crmPos(p, names){
@@ -2494,7 +2984,7 @@ function stampStages(){
 }
 // Карточки подэтапов тоже пишутся целиком: пункт чек-листа получает i.u при отметке/снятии, карточка — t.u при прочих правках
 const taskSig = t => JSON.stringify([t.title, t.description || '', t.assignee_id || null, t.result_link || '', t.video_url || '', t.regulation_link || '',
-  (t.checklist || []).map(i => [i.id, i.text]), (t.mats || []).map(m => [m.id, !!m.ok])]);
+  (t.checklist || []).map(i => [i.id, i.text]), (t.mats || []).map(m => [m.id, !!m.ok]), t.start_date || null, t.due_date || null, t.remind?.at || null]);
 function stampTasks(){
   const now = new Date().toISOString();
   [...(db.tasks || []), ...((typeof ext !== 'undefined' && ext.tasks) || [])].forEach(t => {
@@ -2793,8 +3283,41 @@ function setAssignee(p, s, id){
   addLog(p, `На этап «${s.name}» назначен(а) ${id ? nameOf(id) : 'никто'}`); commit(); assignNote(id, p);
 }
 // список людей для выбора ответственного; «не вошёл» — пока проект ему не откроется
+// ответственный на карточках — цветной плашкой: у каждого человека свой постоянный цвет (по id), «Не назначен» — серым пунктиром
+const whoHue = id => [...String(id || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % 360;
+function whoChip(id){
+  const u = id && userById(id);
+  if (!u) return '<span class="who-chip none">Не назначен</span>';
+  const nm = short(id); const ini = (u.name || 'Вы').split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toUpperCase();
+  return `<span class="who-chip" style="--h:${whoHue(id)}" title="${esc(u.name || 'Вы')}"><i aria-hidden="true">${esc(ini)}</i>${esc(nm)}</span>`;
+}
+const NEW_PERSON = '__newperson';   // пункт «+ Добавить человека…» в списках ответственных
 const peopleOpts = (val, empty) => (empty != null ? `<option value="">${esc(empty)}</option>` : '') + db.users.map(u =>
-  `<option value="${u.id}" ${u.id === val ? 'selected' : ''}>${esc(u.name || 'Вы')}${u.id !== ME && !u.account_id && cloud.store ? ' (не вошёл)' : u.status === 'invited' && !cloud.store ? ' (приглашён)' : ''}</option>`).join('');
+  `<option value="${u.id}" ${u.id === val ? 'selected' : ''}>${esc(u.name || 'Вы')}${u.id !== ME && !u.account_id && cloud.store ? ' (не вошёл)' : u.status === 'invited' && !cloud.store ? ' (приглашён)' : ''}</option>`).join('')
+  + (GUEST ? '' : `<option value="${NEW_PERSON}">+ Добавить человека…</option>`);
+// ---------- «+ Добавить человека…» в любом списке ответственных: имя → человек в «Команде» и сразу выбран ----------
+document.addEventListener('focusin', e => { if (e.target.tagName === 'SELECT') e.target.dataset.prev = e.target.value; });
+document.addEventListener('change', e => {
+  const sel = e.target; if (sel.tagName !== 'SELECT' || sel.value !== NEW_PERSON) return;
+  e.stopImmediatePropagation(); const prev = sel.dataset.prev ?? ''; sel.value = prev === NEW_PERSON ? '' : prev;
+  askPerson(name => {
+    const u = { id:'u' + uid(), name, email:'', role:'specialist', dept:'Другое', capacity:3, status:'active' };
+    db.users.push(u); save(); toast(`${name} добавлен(а) в «Команду»`);
+    if (!sel.isConnected) return render();
+    if (![...sel.options].some(o => o.value === u.id)) sel.insertAdjacentHTML('afterbegin', `<option value="${u.id}">${esc(name)}</option>`);
+    sel.value = u.id; sel.dataset.prev = u.id; sel.dispatchEvent(new Event('change', { bubbles:true }));   // дальше — как обычный выбор ответственного
+  });
+}, true);
+function askPerson(onOk){
+  $('#npDlg')?.remove();
+  document.body.insertAdjacentHTML('beforeend', `<div class="np-dlg" id="npDlg" role="dialog" aria-modal="true" aria-labelledby="npT"><div class="np-bd" data-npclose></div>
+    <form class="np-box" id="npForm"><h3 id="npT">Новый человек</h3><input id="npName" placeholder="Имя и фамилия" maxlength="80" autocomplete="off" required>
+    <small class="hint">Появится в «Команде» и во всех списках «Ответственный». Пригласить в приложение можно потом из «Команды».</small>
+    <div class="np-act"><button type="button" class="ghost" data-npclose>Отмена</button><button class="primary">Добавить</button></div></form></div>`);
+  $('#npName').focus();
+  $('#npForm').onsubmit = ev => { ev.preventDefault(); const v = $('#npName').value.trim(); if (!v) return; $('#npDlg').remove(); onOk(v); };
+}
+document.addEventListener('click', e => { if (e.target.closest?.('[data-npclose]')) $('#npDlg')?.remove(); });
 // после назначения подсказываем, увидит ли человек проект
 function assignNote(id, p){
   const u = userById(id); if (!u || u.id === ME || !cloud.store || GUEST || p?._ext) return;
@@ -3245,6 +3768,11 @@ function restoreView(){
 }
 function render(){
   if (GUEST && !guestViews().includes(ui.view)) ui.view = 'mine';
+  document.body.dataset.kind = GUEST ? '' : (db?.prefs?.kind || 'agency');
+  if (isInfo() && !GUEST){ if (INFO_HIDDEN.includes(ui.view)) ui.view = 'production'; try { ensureInfoBoard(); syncInfoNames(); } catch(e) {} }
+  INFO_HIDDEN.forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = isInfo() && !GUEST; });
+  ['content', 'funnel'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST; });
+  if ((ui.view === 'content' || ui.view === 'funnel') && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
   try { renderSide(); } catch(e) {}
   setTimeout(() => { try { paintReviewBadge(); } catch(e) {} }, 0);
   try { paintPhoneHead(); } catch(e) {}
@@ -3257,7 +3785,7 @@ function render(){
   renderFilters();
   const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер');
   if (!isCRM()) ui.crmStage = null;
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
   if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST && !(ui.view === 'matrix' && density() === 'funnel')) app.insertAdjacentHTML('afterbegin', crmSumHtml());
   if (ui.open) renderDrawer();
@@ -3908,14 +4436,14 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
   const prevBoard = app.querySelector('.pm-board')?.scrollLeft || 0;
   const cols = p.stages.map(s => {
     const h = health(s); const isCur = s.id === cur.stageId; const passed = s.status === 'done';
-    const subs = s.subs || []; const doneN = subs.filter(x => subDone(p, s, x)).length;
+    const subs = boardSubs(p, s); const doneN = subs.filter(x => subDone(p, s, x)).length;
     const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
       if (mine && !t) return tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<b>${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
-        <small>${esc(short(whoId(p, s, t)))}</small>
+        <small>${whoChip(whoId(p, s, t))}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}</button>`;
     }).join('');
@@ -3934,7 +4462,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
         <span class="pm-cnt">${idx + 1}/${list.length}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
       <div class="pm-nav">
         <button class="icon-btn" ${prev ? `data-pfsel="${prev.id}"` : 'disabled'} aria-label="Предыдущий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
-        <small class="pm-meta">${mine ? `Ваша роль: ${ROLE_RU[role].toLowerCase()}` : `${esc(p.client)} · PM ${esc(short(p.pm_id))} · финиш ${fmt(plannedEnd(p))}`}</small>
+        <small class="pm-meta">${mine ? `Ваша роль: ${ROLE_RU[role].toLowerCase()}` : `${p.client ? `${esc(p.client)} · ` : ''}PM ${esc(short(p.pm_id))} · финиш ${fmt(plannedEnd(p))}`}</small>
         ${!mine ? `<button class="icon-btn" data-open="${p.id}" aria-label="Карточка проекта" title="Карточка проекта"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/></svg></button>
         <button class="icon-btn pf-sharebtn" data-share="${p.id}" aria-label="Поделиться проектом" title="Поделиться">${SHARE_ICON}${shareCount(p) ? `<span class="pm-sc">${shareCount(p)}</span>` : ''}</button>` : ''}
         <button class="icon-btn" ${next ? `data-pfsel="${next.id}"` : 'disabled'} aria-label="Следующий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
@@ -4064,7 +4592,7 @@ function renderKanban(){
     const subsDone = c?.subs?.filter(x => x.done).length ?? 0;
     return `<article class="card" draggable="true" data-card="${p.id}">
       <button class="t" data-open="${p.id}">${projAva(p, 'xs')}${esc(p.name)}${p.priority==='high' ? '<span class="hp">Высокий</span>' : ''}</button>
-      <div class="meta">${esc(p.client)} · PM ${esc(short(p.pm_id))}</div>
+      <div class="meta">${p.client ? `${esc(p.client)} · ` : ''}PM ${esc(short(p.pm_id))}</div>
       <div class="stline"><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span><span>${h.note}</span></div>
       ${c && c.subs?.length ? `<div class="meta subnow">${curSubTxt(p) ? `Сейчас: ${esc(curSubTxt(p))}` : `Подэтапы ${subsDone} из ${c.subs.length}`}</div>` : ''}
       <div class="ctrl">${statusSel}${moveSel}${c ? `<select class="wide" data-qassign="${p.id}|${c.id}" aria-label="Ответственный за этап ${esc(c.name)}">${peopleOpts(c.assignee_id, 'Ответственный не назначен')}</select>` : ''}</div></article>`;
@@ -4139,7 +4667,279 @@ function openSubsModal(t, i){
 }
 
 // ---------- Производство: доска выбранного проекта (поиск и список всех проектов слева) ----------
-function renderProduction(){ return renderProjectFocus(); }
+function renderProduction(){
+  if (isInfo() && !GUEST && infoBoard()) ui.prodProject = infoBoard().id;
+  renderProjectFocus();
+  const p = infoBoard();
+  if (!isInfo() || GUEST || !p || projById(ui.prodProject) !== p) return;
+  app.insertAdjacentHTML('afterbegin', infoTabsHtml() + flowPanelHtml(p, 'prod'));
+  if (ui.infoMode === 'timeline'){ const b = app.querySelector('.pf-board'); if (b) b.outerHTML = timelineHtml(p); }
+}
+// раздел «AI-воронка» (только в инфобизнесе): разбор Claude, финальный дедлайн, статусы и связи отделов
+function renderFunnel(){
+  const p = infoBoard(); if (!p){ app.innerHTML = '<div class="empty">Доски пока нет</div>'; return; }
+  ui.prodProject = p.id;
+  app.innerHTML = infoTabsHtml() + flowPanelHtml(p, 'ai');
+  maybeFlowAi(p);
+}
+document.addEventListener('click', e => { const g = e.target.closest?.('[data-view-go]'); if (g){ ui.view = g.dataset.viewGo; render(); scrollTo(0, 0); } });
+// ---------- Инфобизнес: таймлайн — все задачи доски на одной шкале времени ----------
+// Строка — этап, точка — задача в день её срока (t.due_date или x.due_date). Стрелки — связи этапов (p.flow):
+// от последнего срока этапа-источника к первому сроку зависимого. Красное — просрочено, зелёное — сделано, линия — сегодня.
+const TL_DW = 34, TL_ROW = 30;
+function timelineHtml(p){
+  const st = flowState(p); const list = [...st.values()]; const t0 = today();
+  const dated = list.flatMap(v => v.items.filter(i => i.due).map(i => i.due));
+  const starts = list.flatMap(v => v.items.filter(i => i.start).map(i => i.start));
+  let from = [addDays(t0, -7), ...dated, ...starts].sort()[0], to = [addDays(t0, 21), ...dated, ...(p.deadline ? [p.deadline] : [])].sort().at(-1);
+  from = addDays(from, -1); to = addDays(to, 2);
+  const nd = diffDays(to, from) + 1; const W = nd * TL_DW;
+  const xOf = d => diffDays(d, from) * TL_DW + TL_DW / 2;
+  // раскладка: в строке этапа задачи по своим дорожкам, чтобы подписи не налезали
+  let y = 0; const lanes = list.map(v => {
+    const items = v.items.filter(i => i.due).sort((a, b) => a.due.localeCompare(b.due)); const rowsEnd = [];
+    const placed = items.map(i => { const px = xOf(i.due), sx = i.start ? xOf(i.start) : px; let r = rowsEnd.findIndex(e => e < sx - 8); if (r < 0){ r = rowsEnd.length; rowsEnd.push(0); }
+      rowsEnd[r] = px + 14 + Math.min(180, i.x.name.length * 7); return { ...i, px, sx, r }; });
+    const h = Math.max(62, Math.max(1, rowsEnd.length) * TL_ROW + 16); /* не ниже подписи этапа с плашкой */ const lane = { v, top:y, h, placed, nodate:v.items.filter(i => !i.due) }; y += h; return lane;
+  });
+  const H = y; const byId = new Map(lanes.map(l => [l.v.s.id, l]));
+  // связь: от последнего срока этапа-источника — к строке зависимого этапа (туда, где он может продолжаться после источника)
+  const lastPt = l => { const ps = l.placed; if (!ps.length) return null; const i = ps.reduce((m, q) => q.px > m.px ? q : m, ps[0]); return { x:i.px, y:l.top + 8 + i.r * TL_ROW + TL_ROW / 2 }; };
+  const arrows = lanes.flatMap(l => flowDeps(p, l.v.s).map(id => byId.get(id)).filter(Boolean).map(src => {
+    const a = lastPt(src); if (!a) return ''; const red = src.v.own === 'red' || src.v.own === 'paused';
+    const next = l.placed.filter(q => q.px >= a.x).sort((m, q) => m.px - q.px)[0];     // первая задача зависимого после источника
+    const b = next ? { x:next.px - 9, y:l.top + 8 + next.r * TL_ROW + TL_ROW / 2 } : { x:a.x + 26, y:l.top + l.h / 2 };
+    const dy = b.y - a.y;
+    return `<path d="M${a.x},${a.y + Math.sign(dy) * 8} C${a.x},${a.y + dy * 0.6} ${b.x - 24},${b.y} ${b.x},${b.y}" class="tl-arr${red ? ' red' : ''}" marker-end="url(#tlHead${red ? 'R' : ''})"/>`;
+  })).join('');
+  const days = Array.from({ length:nd }, (_, i) => addDays(from, i));
+  const head = days.map(d => { const dt = parse(d); const wk = dt.getDay() === 0 || dt.getDay() === 6;
+    return `<span class="tl-d${wk ? ' wk' : ''}${d === t0 ? ' now' : ''}" style="left:${diffDays(d, from) * TL_DW}px">${dt.getDate() === 1 || d === from ? `<em>${dt.toLocaleDateString('ru-RU', { month:'short' })}</em>` : ''}${dt.getDate()}</span>`; }).join('');
+  const shade = days.map(d => { const g = parse(d).getDay(); return g === 0 || g === 6 ? `<i class="tl-wk" style="left:${diffDays(d, from) * TL_DW}px;width:${TL_DW}px"></i>` : ''; }).join('');
+  const k = i => i.done ? 'done' : i.due < t0 ? 'red' : i.due <= addDays(t0, 1) ? 'yellow' : 'green';
+  return `<div class="tl" aria-label="Таймлайн задач">
+    <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl" style="height:${l.h}px"><b>${esc(l.v.s.name)}</b>
+      ${flowPill(l.v)}
+      ${l.nodate.length ? `<small>без срока: ${l.nodate.length}</small>` : ''}</div>`).join('')}</div>
+    <div class="tl-scroll"><div class="tl-in" style="width:${W}px">
+      <div class="tl-head">${head}</div>
+      <div class="tl-body" style="height:${H}px">${shade}
+        ${lanes.map(l => `<div class="tl-lane" style="top:${l.top}px;height:${l.h}px"></div>`).join('')}
+        <i class="tl-today" style="left:${xOf(t0)}px"></i>
+        ${p.deadline ? `<i class="tl-goal" style="left:${xOf(p.deadline)}px"><span>${FLAG}${esc(goalName(p))} · ${fmt(p.deadline)}</span></i>` : ''}
+        <svg class="tl-svg" width="${W}" height="${H}" aria-hidden="true"><defs>
+          <marker id="tlHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="tl-hd"/></marker>
+          <marker id="tlHeadR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="tl-hd red"/></marker></defs>${arrows}</svg>
+        ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task k-${k(i)}" data-pfsub="${l.v.s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px" title="${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}"><i></i><span>${esc(i.x.name)}</span></button>`)).join('')}
+      </div></div></div></div>`;
+}
+document.addEventListener('click', e => { const m = e.target.closest?.('[data-infomode]'); if (m){ ui.infoMode = m.dataset.infomode; render(); } });
+// ---------- Перетаскивание карточек на доске инфобизнеса: в другую колонку и на другое место в колонке ----------
+// Карточка = подэтап x; переносим его в s.subs другого этапа (перед карточкой под курсором), задача карточки едет с ним (t.stage_id).
+let pfDrag = null;
+document.addEventListener('dragstart', e => { const c = e.target.closest?.('[data-pfdrag]'); if (!c) return; pfDrag = c.dataset.pfdrag; e.dataTransfer.setData('text/kz-card', pfDrag); e.dataTransfer.effectAllowed = 'move'; setTimeout(() => c.classList.add('dragging'), 0); });
+document.addEventListener('dragend', e => { e.target.closest?.('[data-pfdrag]')?.classList.remove('dragging'); app.querySelectorAll('.pf-col.drop-on').forEach(x => x.classList.remove('drop-on')); app.querySelectorAll('.pf-card.drop-before').forEach(x => x.classList.remove('drop-before')); pfDrag = null; });
+const dropBefore = (col, y) => [...col.querySelectorAll('[data-pfdrag]')].filter(c => !c.classList.contains('dragging')).find(c => { const r = c.getBoundingClientRect(); return y < r.top + r.height / 2; });
+document.addEventListener('dragover', e => {
+  const col = e.target.closest?.('[data-pfcol]'); if (!col || !pfDrag) return; e.preventDefault();
+  app.querySelectorAll('.pf-col.drop-on').forEach(x => x !== col && x.classList.remove('drop-on')); col.classList.add('drop-on');
+  app.querySelectorAll('.pf-card.drop-before').forEach(x => x.classList.remove('drop-before')); dropBefore(col, e.clientY)?.classList.add('drop-before');
+});
+document.addEventListener('drop', e => {
+  const col = e.target.closest?.('[data-pfcol]'); if (!col || !pfDrag) return; e.preventDefault();
+  const [fromSid, xid] = pfDrag.split('|'); const toSid = col.dataset.pfcol; const before = dropBefore(col, e.clientY)?.dataset.pfdrag?.split('|')[1];
+  const p = projById(ui.prodProject); const from = p?.stages.find(z => z.id === fromSid), to = p?.stages.find(z => z.id === toSid); if (!from || !to) return;
+  const i = from.subs.findIndex(z => z.id === xid); if (i < 0) return; const [x] = from.subs.splice(i, 1);
+  to.subs = to.subs || []; const j = before ? to.subs.findIndex(z => z.id === before) : -1; if (j < 0) to.subs.push(x); else to.subs.splice(j, 0, x);
+  if (from !== to){ (db.tasks || []).filter(t => t.project_id === p.id && t.stage_id === from.id && t.substage_id === x.id).forEach(t => { t.stage_id = to.id; });
+    if (to === contentStage(p) && !x.cycle) x.at = new Date().toISOString();                    // своя задача в «Контенте» — наверх, как новая
+    addLog(p, `«${x.name}»: «${from.name}» → «${to.name}»`); }
+  pfDrag = null; commit();
+});
+// ---------- Инфобизнес: связи этапов доски и «где срочно» ----------
+// Этапы доски — части воронки (Контент → Статья → VSL → Платный канал → Отдел продаж → Эфиры). p.flow = { этап: [этапы, от которых он зависит] };
+// нет записи — этап зависит от предыдущего. Состояние этапа — по его задачам: просрочено / срок сегодня-завтра / нет задач;
+// красный этап тормозит все, что от него зависят (по цепочке), — это и показывает «Срочно».
+const flowDeps = (p, s) => { const i = p.stages.indexOf(s); const f = p.flow?.[s.id]; return (f || (i > 0 ? [p.stages[i - 1].id] : [])).filter(id => id !== s.id && p.stages.some(x => x.id === id)); };
+function flowState(p){
+  const t0 = today(), t1 = addDays(t0, 1);
+  const st = new Map(p.stages.filter(s => !isMaint(s)).map(s => {
+    const items = (s.subs || []).map(x => { const t = taskFor(p.id, s.id, x.id); return { x, t, done:subDone(p, s, x), due:t?.due_date || x.due_date || '', start:(t?.due_date && t?.start_date && t.start_date < t.due_date) ? t.start_date : '' }; });
+    const open = items.filter(i => !i.done);
+    const over = open.filter(i => i.due && i.due < t0), soon = open.filter(i => i.due && i.due >= t0 && i.due <= t1);
+    return [s.id, { s, items, open, over, soon, n:items.length, done:items.length - open.length }];
+  }));
+  // статус отдела вручную (s.dept.st): приостановлен — тормозит зависимых, как просроченный; не начат и готов — не горят
+  const own = v => { const d = v.s.dept?.st;
+    if (d === 'pause') return 'paused'; if (d === 'idle') return 'idle'; if (d === 'done') return 'done';
+    return v.over.length || !v.n ? 'red' : v.soon.length ? 'yellow' : 'green'; };
+  st.forEach(v => { v.own = own(v); });
+  // ниже по воронке: кого тормозит этот этап (все, кто зависит от него — напрямую и через другие)
+  const downstream = id => { const out = new Set(), q = [id]; while (q.length){ const c = q.shift(); st.forEach(v => { if (!out.has(v.s.id) && flowDeps(p, v.s).includes(c)){ out.add(v.s.id); q.push(v.s.id); } }); } return [...out]; };
+  st.forEach(v => { v.down = downstream(v.s.id); v.blockedBy = []; });
+  st.forEach(v => { if (v.own === 'red' || v.own === 'paused') v.down.forEach(id => st.get(id)?.blockedBy.push(v.s.id)); });
+  st.forEach(v => { v.key = ['red', 'paused', 'idle', 'done'].includes(v.own) ? v.own : v.blockedBy.length || v.own === 'yellow' ? 'yellow' : 'green'; });
+  return st;
+}
+// подписи плашек: [ключ плашки, текст]
+const FLOW_PILL = { red:['red', v => !v.n ? 'Нет задач' : 'Просрочено'], yellow:['yellow', v => v.blockedBy.length && v.own !== 'yellow' ? 'Ждёт' : 'Горит'], green:['green', () => 'В работе'],
+  paused:['blue', () => 'Приостановлено', 'pause'], idle:['gray', () => 'Не начато'], done:['done', () => 'Готово'] };
+const PAUSE_ICO = sico('<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>');
+const flowPill = v => { const [pk, txt, ico] = FLOW_PILL[v.key]; return `<span class="pill st-pill s-${pk}">${ico === 'pause' ? PAUSE_ICO : STATUS_ICO[pk]}${txt(v)}</span>`; };
+const DEPT_ST = [['work', 'В работе'], ['pause', 'Приостановлено'], ['idle', 'Не начато'], ['done', 'Готово']];
+// part: 'prod' — в «Производстве»: статусы отделов сверху и «Срочно сделать»; 'ai' — раздел «AI-воронка»: разбор Claude, дедлайн, связи
+function flowPanelHtml(p, part = 'prod'){
+  const full = part === 'ai';
+  const st = flowState(p); const list = [...st.values()];
+  const ai = p.ai?.res ? p.ai : null;
+  const nm = id => esc(st.get(id)?.s.name || '');
+  const why = v => !v.n ? 'нет задач' : v.over.length ? `${v.over.length} ${plural(v.over.length, 'задача просрочена', 'задачи просрочены', 'задач просрочено')}` : '';
+  const urgent = list.filter(v => v.own === 'red' || v.own === 'paused').sort((a, b) => (b.own === 'paused') - (a.own === 'paused') || b.down.length - a.down.length || b.over.length - a.over.length);
+  const cnt = k => list.filter(v => (v.s.dept?.st || 'work') === k).length;
+  const late = p.deadline ? list.flatMap(v => v.open.filter(i => i.due && i.due > p.deadline).map(i => ({ ...i, sid:v.s.id }))) : [];
+  const soon = list.filter(v => v.own === 'yellow');
+  // вывод: последний этап воронки (от него никто не зависит) встал сам или ждёт вставший — воронка не работает
+  const sinks = list.filter(v => !list.some(o => flowDeps(p, o.s).includes(v.s.id)));
+  const stopped = v => v.own === 'red' || v.own === 'paused' || v.blockedBy.length;
+  const verdict = !urgent.length ? ['green', 'Воронка работает', 'Все отделы работают, ничего не стоит.']
+    : sinks.some(stopped) ? ['red', 'Воронка не работает', `Не доходит до конца: ${sinks.filter(stopped).map(v => `«${esc(v.s.name)}»`).join(', ')} ${sinks.filter(stopped).length > 1 ? 'стоят' : 'стоит'}.`]
+    : ['yellow', 'Работает с перебоями', 'Есть проблемы, но до конца воронки они пока не доходят.'];
+  // причина словами: что мешает (написано в отделе), нет задач, просрочено
+  const cause = v => v.own === 'paused' ? (v.s.dept.note ? esc(v.s.dept.note) : 'приостановлено') : !v.n ? 'нет задач — этап не запущен'
+    : `просрочено: ${v.over.slice(0, 3).map(i => `«${esc(i.x.name)}»`).join(', ')}${v.over.length > 3 ? ` и ещё ${v.over.length - 3}` : ''}`;
+  const chain = v => [...v.down].sort((a, b) => list.findIndex(x => x.s.id === a) - list.findIndex(x => x.s.id === b)).map(nm).join(' → ');
+  const aiSt = ai ? new Map((ai.res.stages || []).map(x => [norm(x.name), x])) : null;
+  const node = v => { const a = aiSt?.get(norm(v.s.name)); const ak = a && AI_ST[a.status];
+    return `<div class="fl-node k-${ak ? ak[0] : v.key}">
+      <button class="fl-name" data-flgo="${v.s.id}" title="Показать на доске"><b>${esc(v.s.name)}</b></button>${ak ? `<span class="pill st-pill s-${ak[1]}">${STATUS_ICO[ak[1]]}${ak[2]}</span>` : flowPill(v)}
+      <small>${v.n ? `${v.done} из ${v.n} готово` : 'нет задач'}${v.over.length ? ` · просрочено ${v.over.length}` : ''}</small>
+      ${a?.reason ? `<small class="fl-ai-why">${esc(a.reason)}</small>` : ''}</div>`; };
+  return `<section class="fl" aria-label="Воронка: связи этапов">
+    <div class="fl-hd${full ? '' : ' slim'}">${full ? `<h2>AI-воронка</h2>${ai && AI_VERDICT[ai.res.verdict] ? `<span class="pill st-pill s-${AI_VERDICT[ai.res.verdict][0]}">${STATUS_ICO[AI_VERDICT[ai.res.verdict][0]]}${AI_VERDICT[ai.res.verdict][1]}</span>` : `<span class="pill st-pill s-${verdict[0]}">${STATUS_ICO[verdict[0]]}${verdict[1]}</span>`}` : ''}
+      ${full ? `<button class="ghost fl-mode" data-flwedit aria-pressed="${!!ui.flowEdit}">${ICON_EDIT}Связи</button>`
+        : `<span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${ui.infoMode !== 'timeline'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline'}">Таймлайн</button></span>`}</div>
+    ${full ? goalHtml(p) : ''}
+    <div class="fl-chain">${list.map((v, i) => node(v) + (i < list.length - 1 ? '<span class="fl-arr" aria-hidden="true">→</span>' : '')).join('')}</div>
+    ${full && ui.flowEdit ? `<div class="fl-edit"><p class="hint">Отметьте, от чего зависит каждый этап: если этап-источник встал, зависимые подсветятся «ждёт».</p>
+      ${list.map(v => `<div class="fl-erow"><b>${esc(v.s.name)}</b><span>зависит от:</span>${list.filter(o => o !== v).map(o => `<label class="fl-dep"><input type="checkbox" data-fldep="${v.s.id}|${o.s.id}" ${flowDeps(p, v.s).includes(o.s.id) ? 'checked' : ''}>${esc(o.s.name)}</label>`).join('')}</div>`).join('')}
+      <button class="ghost" data-flreset>Как по порядку колонок</button></div>` : ''}
+    ${full ? aiBoxHtml(p, ai) : ''}
+    ${full && !ai && urgent.length ? `<div class="fl-why-box k-${verdict[0]}"><b>${verdict[1]}${urgent.length ? ', потому что:' : ''}</b><small>${verdict[2]}</small><ol>
+      ${urgent.map(v => `<li>${flowPill(v)}<button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button> — ${cause(v)}${v.down.length ? `<span class="fl-then"> → поэтому не работают: ${chain(v)}</span>` : ''}</li>`).join('')}</ol></div>` : ''}
+    ${!full && (soon.length || late.length || urgent.some(v => v.over.length)) ? `<div class="fl-urgent"><h3>Срочно сделать</h3><ol>
+      ${late.length ? `<li class="k-red"><span class="pill st-pill s-red">${STATUS_ICO.red}После дедлайна</span>${late.length} ${plural(late.length, 'задача заканчивается', 'задачи заканчиваются', 'задач заканчиваются')} позже, чем «${esc(goalName(p))}» (${fmt(p.deadline)})
+        <div class="fl-tasks">${late.slice(0, 6).map(i => `<button class="fl-task" data-pfsub="${i.sid}|${i.x.id}">${esc(i.x.name)} <small>срок ${fmt(i.due)}</small></button>`).join('')}</div></li>` : ''}
+      ${urgent.filter(v => v.over.length).map(v => `<li class="k-red"><span class="pill st-pill s-red">${STATUS_ICO.red}Просрочено</span><button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: ${why(v)}
+        <div class="fl-tasks">${v.over.slice(0, 4).map(i => `<button class="fl-task" data-pfsub="${v.s.id}|${i.x.id}">${esc(i.x.name)} <small>срок ${fmt(i.due)}</small></button>`).join('')}</div></li>`).join('')}
+      ${soon.map(v => `<li class="k-yellow"><span class="pill st-pill s-yellow">${STATUS_ICO.yellow}Горит</span><button class="link-plain" data-flgo="${v.s.id}"><b>${esc(v.s.name)}</b></button>: срок сегодня или завтра — ${v.soon.map(i => esc(i.x.name)).slice(0, 3).join(', ')}</li>`).join('')}
+    </ol></div>` : ''}</section>`;
+}
+// ---------- Финальный дедлайн инфоповода (например, «Открытие окна продаж»): p.deadline + p.goalName ----------
+const goalName = p => p.goalName || 'Финальный дедлайн';
+function goalHtml(p){
+  const d = p.deadline; const left = d ? diffDays(d, today()) : null;
+  const txt = left == null ? 'дата не задана' : left > 0 ? `через ${days(left)}` : left === 0 ? 'сегодня' : `прошёл ${days(-left)} назад`;
+  return `<div class="fl-goal${left != null && left < 0 ? ' past' : left != null && left <= 7 ? ' near' : ''}">${FLAG}
+    <input class="fl-gname" data-goalname value="${esc(goalName(p))}" aria-label="Название финального дедлайна" maxlength="80">
+    <input type="date" data-goaldate value="${esc(d || '')}" aria-label="Дата финального дедлайна">
+    <b>${txt}</b></div>`;
+}
+document.addEventListener('change', e => {
+  const d = e.target.dataset || {}; if (!('goalname' in d) && !('goaldate' in d)) return;
+  const p = infoBoard(); if (!p) return;
+  if ('goalname' in d){ const v = e.target.value.trim(); p.goalName = v && v !== 'Финальный дедлайн' ? v : ''; addLog(p, `Финальный дедлайн называется «${goalName(p)}»`); commit(); return; }
+  const v = e.target.value; if (!v) return; const old = p.deadline; p.deadline = v;
+  addLog(p, `${goalName(p)}: ${old ? fmt(old) + ' → ' : ''}${fmt(v)}`); commit(); toast(`${goalName(p)}: ${fmt(v)}`);
+});
+// ---------- AI-воронка: Claude читает задачи отделов и объясняет, что стоит, почему и что из-за этого не работает ----------
+// Запрос — через /api/sample (getSample().json, как AI-отчёты). Ответ хранится у инфоповода: p.ai = { at, hash, res }.
+// Разбор сам обновляется при открытии доски, если данные поменялись (не чаще раза в 10 минут); кнопка — вручную.
+const AI_ST = { works:['green', 'green', 'Работает'], at_risk:['yellow', 'yellow', 'Под риском'], waiting:['yellow', 'yellow', 'Ждёт'], stopped:['red', 'red', 'Не работает'] };
+const AI_VERDICT = { works:['green', 'Воронка работает'], partial:['yellow', 'Работает с перебоями'], broken:['red', 'Воронка не работает'] };
+function flowAiInput(p){
+  const st = flowState(p); const t0 = today();
+  const stages = [...st.values()].map(v => ({
+    name:v.s.name, depends_on:flowDeps(p, v.s).map(id => st.get(id)?.s.name).filter(Boolean),
+    note:v.s.dept?.st === 'pause' ? `приостановлено${v.s.dept.note ? ': ' + v.s.dept.note : ''}` : v.s.dept?.st === 'idle' ? 'не начат' : v.s.dept?.st === 'done' ? 'готов' : '',
+    tasks:v.items.map(i => ({ name:i.x.name, done:i.done, ...(i.due ? { due:i.due, overdue:!i.done && i.due < t0 } : {}), ...(i.start ? { start:i.start } : {}),
+      ...(i.t?.checklist?.length ? { checklist:`${i.t.checklist.filter(c => c.done).length}/${i.t.checklist.length}`, open_items:i.t.checklist.filter(c => !c.done).slice(0, 5).map(c => c.text) } : {}) })).slice(0, 40)
+  }));
+  return { launch:p.name, today:t0, final_deadline:p.deadline ? { name:goalName(p), date:p.deadline } : null, stages };
+}
+const flowAiHash = p => hashStr(JSON.stringify(flowAiInput(p)));
+const FLOW_AI_PROMPT = data => `Ты — операционный директор инфобизнеса. Перед тобой воронка запуска «${data.launch}»: отделы по порядку, от чего каждый зависит, и их задачи (сделана ли, срок, просрочена ли, открытые пункты чек-листа). Сегодня ${data.today}.
+
+Пойми по задачам, что реально готово, а что нет, и сделай выводы по цепочке. Пример логики: контент выходит, но статья не дописана (задача «Дописать статью» не закрыта) — значит, трафику некуда вести, VSL не на чем строить, платный канал не запускается, в отдел продаж не приходят заявки и деньги не поступают — отдел продаж фактически стоит. Если отдел зависит от другого, который не работает, он тоже не работает или ждёт. Не придумывай фактов, которых нет в задачах; если задач у отдела нет — он не запущен.
+
+Данные (JSON):
+${JSON.stringify(data)}
+
+Ответь JSON-объектом:
+{"verdict":"works|partial|broken","summary":"1–2 предложения: работает ли воронка и главная причина","stages":[{"name":"точное название отдела","status":"works|at_risk|waiting|stopped","reason":"до 12 слов: почему"}],"chain":["цепочки причин и следствий вида «Статья не дописана → VSL не на чем строить → платный канал не запускается → в продажах нет заявок, деньги не поступают»; 1–3 штуки, только если что-то не работает"],"actions":[{"stage":"отдел","task":"что сделать первым — конкретно, по задачам","why":"что это разблокирует"}]}
+verdict: broken — воронка не доводит до денег; partial — доводит, но есть риски; works — всё работает. actions — не больше 3, по важности. Пиши по-русски, коротко.`;
+const flowAi = { busy:new Set(), err:'' };
+async function runFlowAi(p, manual){
+  if (!p || flowAi.busy.has(p.id)) return;
+  const smp = await getSample(); if (!smp?.json){ if (manual) toast('AI-разбор доступен после входа в аккаунт'); return; }
+  flowAi.busy.add(p.id); flowAi.err = ''; if (ui.view === 'funnel' || ui.view === 'production') render();
+  try {
+    const data = flowAiInput(p); const res = await smp.json(FLOW_AI_PROMPT(data), { modelTier:'default' });
+    if (!res || !Array.isArray(res.stages)) throw new Error('Claude ответил не в том формате');
+    p.ai = { at:new Date().toISOString(), hash:flowAiHash(p), res }; addLog(p, `AI-разбор воронки: ${AI_VERDICT[res.verdict]?.[1] || 'готов'}`); save();
+  } catch(e) { flowAi.err = sampleErr(e); if (manual) toast(flowAi.err); }
+  flowAi.busy.delete(p.id); if (ui.view === 'funnel' || ui.view === 'production') render();
+}
+// сам — при открытии доски, если данные поменялись с прошлого разбора и прошло больше 10 минут
+function maybeFlowAi(p){
+  if (!p || GUEST || flowAi.busy.has(p.id)) return;
+  const fresh = p.ai && p.ai.hash === flowAiHash(p); const recent = p.ai && Date.now() - new Date(p.ai.at) < 6e5;
+  if (!fresh && !recent) setTimeout(() => runFlowAi(p, false), 300);
+}
+function aiBoxHtml(p, ai){
+  const busy = flowAi.busy.has(p.id); const stale = ai && ai.hash !== flowAiHash(p);
+  const btn = `<button class="ghost fl-ai-btn" data-flai ${busy ? 'disabled' : ''}>${busy ? 'Claude разбирает…' : ai ? 'Обновить разбор' : 'AI-разбор воронки'}</button>`;
+  if (!ai) return `<div class="fl-ai empty"><span>Claude прочитает задачи отделов и покажет, где воронка рвётся и почему.</span>${btn}${flowAi.err ? `<small class="fl-ai-err">${esc(flowAi.err)}</small>` : ''}</div>`;
+  const r = ai.res; const v = AI_VERDICT[r.verdict] || AI_VERDICT.partial;
+  return `<div class="fl-ai k-${v[0]}">
+    <div class="fl-ai-hd"><b>${esc(r.summary || v[1])}</b>${btn}</div>
+    ${(r.chain || []).length ? `<ul class="fl-ai-chain">${r.chain.slice(0, 3).map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+    ${(r.actions || []).length ? `<div class="fl-ai-act"><h3>Сделать в первую очередь</h3><ol>${r.actions.slice(0, 3).map(a => `<li><b>${esc(a.stage || '')}</b>: ${esc(a.task || '')}${a.why ? ` <small>— ${esc(a.why)}</small>` : ''}</li>`).join('')}</ol></div>` : ''}
+    <small class="fl-ai-at">Разбор ${new Date(ai.at).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}${stale ? ' · задачи с тех пор менялись' : ''}${flowAi.err ? ` · ${esc(flowAi.err)}` : ''}</small></div>`;
+}
+document.addEventListener('click', e => { if (e.target.closest?.('[data-flai]')) runFlowAi(infoBoard(), true); });
+// «Что мешает?» на отделе: написали — отдел остановлен (приостановлено с этой причиной), стёрли — снова в работе
+document.addEventListener('change', e => {
+  const sid = e.target.dataset?.flblock; if (!sid) return;
+  const p = infoBoard(); const s = p?.stages.find(x => x.id === sid); if (!s) return;
+  const note = e.target.value.trim(); const was = s.dept?.st === 'pause';
+  if (note){ s.dept = { st:'pause', note, at:new Date().toISOString(), by:actorName() }; addLog(p, `Отдел «${s.name}»: мешает — ${note}`); }
+  else if (was){ s.dept = { st:'work', note:'', at:new Date().toISOString(), by:actorName() }; addLog(p, `Отдел «${s.name}»: помеха снята, снова в работе`); }
+  else return;
+  commit();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.dataset?.flblock) e.target.blur(); });
+// статус отдела: «Приостановлено» спрашивает причину (необязательно)
+document.addEventListener('change', e => {
+  const sid = e.target.dataset?.flst; if (!sid) return;
+  const p = infoBoard(); const s = p?.stages.find(x => x.id === sid); if (!s) return;
+  const set = (st, note = '') => { s.dept = { st, note, at:new Date().toISOString(), by:actorName() };
+    addLog(p, `Отдел «${s.name}»: ${DEPT_ST.find(([k]) => k === st)[1].toLowerCase()}${note ? ` — ${note}` : ''}`); commit(); };
+  if (e.target.value === 'pause') return gateDialog(`Приостановить «${esc(s.name)}»`, 'Почему приостановлено (необязательно)', 'Приостановить', note => set('pause', note));
+  set(e.target.value);
+});
+document.addEventListener('click', e => {
+  if (e.target.closest?.('[data-flwedit]')){ ui.flowEdit = !ui.flowEdit; render(); return; }
+  if (e.target.closest?.('[data-flreset]')){ const p = infoBoard(); if (p){ delete p.flow; addLog(p, 'Связи этапов: как по порядку колонок'); commit(); } return; }
+  const g = e.target.closest?.('[data-flgo]'); if (g){ const col = [...app.querySelectorAll('.pf-col')].find(c => c.querySelector(`[data-pfadd="${g.dataset.flgo}"]`) || c.getAttribute('aria-label')?.endsWith(projById(ui.prodProject)?.stages.find(s => s.id === g.dataset.flgo)?.name));
+    col?.scrollIntoView({ behavior:'smooth', inline:'start', block:'nearest' }); col?.classList.add('fl-flash'); setTimeout(() => col?.classList.remove('fl-flash'), 1200); }
+});
+document.addEventListener('change', e => {
+  const d = e.target.dataset?.fldep; if (!d) return;
+  const p = infoBoard(); if (!p) return; const [sid, dep] = d.split('|'); const s = p.stages.find(x => x.id === sid); if (!s) return;
+  const cur = flowDeps(p, s).filter(id => id !== dep); if (e.target.checked) cur.push(dep);
+  p.flow = { ...(p.flow || {}), [sid]:cur };
+  addLog(p, `Связи: «${s.name}» зависит от ${cur.length ? cur.map(id => `«${p.stages.find(x => x.id === id)?.name}»`).join(', ') : 'ничего'}`); commit();
+});
 
 // ---------- Загрузка команды ----------
 // кто отвечает за этап: свой ответственный, иначе исполнитель проекта (так же, как показано в матрице)
@@ -4438,6 +5238,7 @@ function closeLayer(){ if (!db.onboarded && !GUEST) return; ui.open = null; ui.f
 
 // ---------- Быстрое создание ----------
 function openCreate(){
+  if (isInfo()){ ui.view = 'production'; render(); return; }        // в инфобизнесе проектов не создают — одна доска
   ui.open = null;
   if (!db.templates.length){ toast('Сначала создайте шаблон процесса'); ui.view = 'templates'; ui.setTab = 'templates'; render(); return; }
   layer.innerHTML = `<div class="backdrop" data-close></div>
@@ -4550,9 +5351,39 @@ document.addEventListener('click', e => {
 });
 
 // ---------- Шаблоны ----------
+// ---------- Настройки → AI: свой ключ Anthropic ----------
+// Ключ хранится только в этом браузере (localStorage AI_KEY_LS) — не в облаке и не в коде; claude-shim.js отправляет его
+// заголовком x-anthropic-key нашей функции /api/sample, она использует его вместо ключа из Vercel. Без своего ключа — ключ сервера.
+const AI_KEY_LS = 'kz-anthropic-key';
+const aiKey = () => { try { return localStorage.getItem(AI_KEY_LS) || ''; } catch(e) { return ''; } };
+const aiKeyOk = k => /^sk-ant-[A-Za-z0-9_\-]{20,300}$/.test(k);
+function renderAiSettings(){
+  const k = aiKey();
+  app.innerHTML = `${setNav()}<div class="panel set-panel">
+    <h2>AI: ключ Anthropic</h2>
+    <p class="hint">Ключ нужен для AI-воронки, AI-отчётов и распознавания скриншотов. Хранится только в этом браузере: в облако и другим людям не передаётся, на сервер уходит только вместе с запросом к Claude. На другом устройстве ключ нужно ввести заново.</p>
+    <div class="field"><label for="aiKeyIn">Ключ</label>
+      <div class="row ai-key-row"><input type="password" id="aiKeyIn" placeholder="${k ? 'Ключ сохранён: ' + k.slice(0, 10) + '…' + k.slice(-4) : 'sk-ant-…'}" autocomplete="off" spellcheck="false">
+        <button class="primary" id="aiKeySave">Сохранить</button></div>
+      <small class="hint">Создать ключ: console.anthropic.com → API Keys. Запросы оплачиваются с вашего аккаунта Anthropic.</small></div>
+    <div class="row ai-key-act">${k ? '<span class="pill st-pill s-green">' + STATUS_ICO.green + 'Свой ключ задан</span><button class="ghost" id="aiKeyTest">Проверить ключ</button><button class="ghost danger" id="aiKeyDel">Удалить ключ</button>' : '<span class="pill st-pill s-gray">' + STATUS_ICO.gray + 'Используется ключ сервера (если задан)</span>'}</div>
+    <p class="hint" id="aiKeyMsg" aria-live="polite"></p></div>`;
+}
+document.addEventListener('click', async e => {
+  const id = e.target.id;
+  if (id === 'aiKeySave'){ const v = $('#aiKeyIn').value.trim(); if (!v) return toast('Вставьте ключ');
+    if (!aiKeyOk(v)) return toast('Ключ Anthropic начинается с sk-ant-');
+    try { localStorage.setItem(AI_KEY_LS, v); } catch(err) { return toast('Браузер не дал сохранить ключ'); }
+    _sample = undefined; render(); toast('Ключ сохранён в этом браузере'); return; }
+  if (id === 'aiKeyDel'){ try { localStorage.removeItem(AI_KEY_LS); } catch(err) {} _sample = undefined; render(); toast('Ключ удалён'); return; }
+  if (id === 'aiKeyTest'){ const m = $('#aiKeyMsg'); m.textContent = 'Проверяю…';
+    try { const smp = await getSample(); if (!smp) throw { message:'Нужно войти в аккаунт' }; const r = await smp('Ответь одним словом: работает', { modelTier:'fast' }); m.textContent = r?.text ? 'Ключ работает ✓' : 'Ответ пустой'; }
+    catch(err) { m.textContent = sampleErr(err); } }
+});
 const setNav = () => `<div class="set-nav seg-toggle" role="tablist" aria-label="Разделы настроек">
-  <button data-settab="deadlines" aria-pressed="${!ui.setTab || ui.setTab === 'deadlines'}">Дедлайны</button><button data-settab="templates" aria-pressed="${ui.setTab === 'templates'}">Шаблоны</button><button data-settab="categories" aria-pressed="${ui.setTab === 'categories'}">Категории</button><button data-settab="spaces" aria-pressed="${ui.setTab === 'spaces'}">Пространства</button></div>`;
+  <button data-settab="deadlines" aria-pressed="${!ui.setTab || ui.setTab === 'deadlines'}">Дедлайны</button><button data-settab="templates" aria-pressed="${ui.setTab === 'templates'}">Шаблоны</button><button data-settab="categories" aria-pressed="${ui.setTab === 'categories'}">Категории</button><button data-settab="spaces" aria-pressed="${ui.setTab === 'spaces'}">Пространства</button><button data-settab="ai" aria-pressed="${ui.setTab === 'ai'}">AI</button></div>`;
 function renderSettings(){
+  if (ui.setTab === 'ai'){ renderAiSettings(); return; }
   if (ui.setTab === 'templates'){ renderTemplates(); return; }
   if (ui.setTab === 'categories'){ renderCategories(); return; }
   if (ui.setTab === 'spaces'){ renderSpaces(); return; }
@@ -5492,7 +6323,7 @@ function paintTplImport(){
     box.innerHTML = `<h2 id="tiT">Шаблоны из другого пространства</h2>
       <p class="hint">Выберите, откуда взять шаблон — он скопируется сюда вместе с этапами, подэтапами и карточками подэтапов. Оригинал не изменится.</p>
       <div class="ti-src">${sp.map(x => `<button type="button" class="ti-sp" data-tisrc="${x.id || 'main'}"><span class="ti-ico">${KIND_ICO(x.kind) || '<i></i>'}</span><span><b>${esc(x.name)}</b><small>${esc([x.area, KINDS[x.kind][0]].filter(Boolean).join(' · '))}</small></span><span aria-hidden="true">›</span></button>`).join('')}
-        <button type="button" class="ti-sp" data-tisrc="preset"><span class="ti-ico">${FUNNEL_ICO}</span><span><b>Готовые шаблоны</b><small>SMM: видео, CRM: оффер на запуск</small></span><span aria-hidden="true">›</span></button></div>
+        <button type="button" class="ti-sp" data-tisrc="preset"><span class="ti-ico">${FUNNEL_ICO}</span><span><b>Готовые шаблоны</b><small>SMM: видео, CRM: оффер на запуск, Инфобизнес: запуск</small></span><span aria-hidden="true">›</span></button></div>
       <div class="actions"><button type="button" class="ghost" data-close>Закрыть</button></div>`;
     return;
   }
@@ -5523,7 +6354,7 @@ document.addEventListener('click', async e => {
   const src = t.closest('[data-tisrc]');
   if (src){
     const id = src.dataset.tisrc; Object.assign(tplImp, { src:id, sel:new Set(), err:'' });
-    if (id === 'preset'){ tplImp.tpls = [smmTemplate(), crmTemplate()]; tplImp.cards = {}; paintTplImport(); return; }
+    if (id === 'preset'){ tplImp.tpls = [smmTemplate(), crmTemplate(), infoTemplate()]; tplImp.cards = {}; paintTplImport(); return; }
     tplImp.loading = true; paintTplImport();
     try { const r = await loadSpaceTemplates(id === 'main' ? '' : id); if (tplImp.src !== id) return; tplImp.tpls = r.tpls; tplImp.cards = r.cards; }
     catch(err) { tplImp.err = 'Не удалось загрузить шаблоны. Проверьте связь и попробуйте ещё раз.'; tplImp.tpls = []; }
@@ -5805,7 +6636,8 @@ app.addEventListener('drop', e => {
 });
 
 // Пересчёт «светофора» раз в минуту
-setInterval(() => { if (!document.hidden && !layer.innerHTML && !(ui.view === 'reports' && ui.repId)) render(); }, 60000);
+// раз в минуту — свежие сроки; не пока человек печатает в поле на странице (иначе набранное пропадало)
+setInterval(() => { const ae = document.activeElement; if (!document.hidden && !layer.innerHTML && !(ui.view === 'reports' && ui.repId) && !(ae && app.contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))) render(); }, 60000);
 
 // ---------- Тема ----------
 const THEME_KEY = 'agency-theme';
@@ -5852,7 +6684,9 @@ const SAMPLE_ERR = {
   invalid_json:'Claude ответил не в том формате. Попробуйте ещё раз или пришлите скриншот крупнее.',
   images_unavailable:'Распознавание изображений сейчас недоступно. Попробуйте позже или загрузите таблицу CSV/XLSX.',
   image_rejected:'Файл не принят: подходят PNG, JPEG, WebP до 20 МБ.',
-  prompt_too_large:'Слишком много данных для одного запроса.'
+  prompt_too_large:'Слишком много данных для одного запроса.',
+  no_key:'Нет ключа Anthropic. Добавьте его в «Настройки → AI».',
+  bad_key:'Ключ Anthropic не подошёл. Проверьте его в «Настройки → AI».'
 };
 const sampleErr = e => SAMPLE_ERR[e?.code] || e?.message || 'Не удалось связаться с Claude. Попробуйте позже.';
 
@@ -6552,7 +7386,7 @@ function renderTaskBoard(){
       <div class="tk-top"><b>${esc(t.title)}</b>${pr.done ? '<span class="tk-ok">Выполнено</span>' : ''}</div>
       <small>${sub ? `Ведёт подэтап «${esc(sub.name)}»` : 'Отдельная задача этапа'}</small>
       <div class="tk-bar" aria-hidden="true"><i style="width:${pr.pct}%"></i></div>
-      <div class="tk-foot"><span>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</span><span>${esc(short(whoId(p, s, t)))}</span></div>
+      <div class="tk-foot"><span>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</span>${whoChip(whoId(p, s, t))}</div>
       ${t.video_url || t.result_link ? `<div class="tk-tags">${t.video_url ? '<span>видео</span>' : ''}${t.result_link ? '<span>результат сдан</span>' : ''}</div>` : ''}
     </article>`;
   };
@@ -6625,6 +7459,7 @@ const itCanManage = t => !GUEST && (!t || !t._owner || t._owner === OWNER());
 const myTeamIds = p => (p?._team || []).filter(x => x.acc === cloud.uid).map(x => x.id);
 
 // проектные подзадачи — только текущего этапа активных проектов
+const isInfoBoardP = p => !!p && (p.template_id === INFO_TPL_ID || p.id === INFO_BOARD_ID);
 function dayProjectItems(who){
   const out = [];
   const projects = [...(GUEST ? [] : db.projects), ...ext.projects].filter(p => p.state === 'active');
@@ -6637,16 +7472,20 @@ function dayProjectItems(who){
         out.push({ kind:'p', id:`r|${p.id}|${r.id}`, p, s:c, r, x:null, t:null, who:w, done:false, own:r.due_date, due:r.due_date, title:r.title }); });
       return;
     }
+    // доска инфобизнеса: колонки (отделы) работают одновременно — задачи из всех колонок, а не только текущего этапа
+    const stages = isInfoBoardP(p) ? p.stages.filter(z => !isMaint(z)) : [c];
+    stages.forEach(c => {
     const tasks = (p._ext ? ext.tasks : (db.tasks || [])).filter(t => t.project_id === p.id && t.stage_id === c.id);
     const rows = (c.subs || []).map(x => ({ x, t:tasks.find(t => t.substage_id === x.id) || null }))
       .concat(tasks.filter(t => !t.substage_id || !(c.subs || []).some(x => x.id === t.substage_id)).map(t => ({ x:null, t })));
     rows.forEach(({ x, t }) => {
-      const w = whoId(p, c, t);
+      const w = x?.cycle && isInfoBoardP(p) ? contentWho(p, c, x, t) : whoId(p, c, t);   // видео — у кого оно сейчас на этапе
       if (p._ext){ if (!mine.includes(w)) return; }
       else if (who && w !== who) return;
       const pr = t ? taskProgress(t) : null;
       const done = t ? (pr.total ? pr.done : !!x?.done) : !!x?.done;
       out.push({ kind:'p', id:t ? t.id : `${p.id}|${c.id}|${x.id}`, p, s:c, x, t, who:w, done, own:(t?.due_date || x?.due_date || ''), due:(t?.due_date || x?.due_date || c.due_date), title:t ? t.title : x.name });
+    });
     });
   });
   return out;
@@ -6797,7 +7636,7 @@ function dayCard(i){
     <div class="dt-badges"><span class="dt-int">Внутренняя · ${esc(IT_CAT[t.category] || 'Другое')}</span>${t.priority === 'urgent' || t.priority === 'high' ? `<span class="dt-pri pri-${t.priority}">${FLAG}${IT_PRI[t.priority]}</span>` : ''}</div>
     <div class="dt-main"><b>${esc(t.title)}</b></div>
     ${t.description ? `<p class="dt-desc">${esc(t.description.slice(0, 140))}${t.description.length > 140 ? '…' : ''}</p>` : ''}
-    <div class="dt-meta">${t.creator_name ? `<span>от ${esc(t.creator_name)}</span>` : ''}${showWho ? `<span>→ ${esc(short(t.assignee_id))}</span>` : ''}${dueTxt(t.due_date)}
+    <div class="dt-meta">${t.creator_name ? `<span>от ${esc(t.creator_name)}</span>` : ''}${showWho ? `<span>→ ${whoChip(t.assignee_id)}</span>` : ''}${dueTxt(t.due_date)}
       <select class="dt-status st-${t.status}" data-itstatus="${t.id}" aria-label="Статус задачи «${esc(t.title)}»">${Object.entries(IT_STATUS).map(([k, v]) => `<option value="${k}" ${k === t.status ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
   </article>`;
 }
@@ -7192,7 +8031,7 @@ function renderTaskModal(focusSel){
   const d = editable ? ui.taskDraft : null;
   const keepScroll = taskLayer().querySelector('.tk-modal')?.scrollTop;
   const head = `<div class="tk-head">
-      <div class="tk-headtxt"><small>${p?._ext ? esc(p.name) : `<button class="link-plain" data-open="${p.id}" data-stage="${s?.id || ''}">${esc(p.name)}</button>`} · ${esc(s?.name || 'Этап удалён')}${sub ? ` · подэтап «${esc(sub.name)}»` : ''}</small>
+      <div class="tk-headtxt"><small>${p?._ext ? esc(p.name) : `<button class="link-plain" data-open="${p.id}" data-stage="${s?.id || ''}">${esc(p.name)}</button>`} · ${esc(s?.name || 'Этап удалён')}</small>
         <h2 id="tkTitle">${d ? 'Редактирование подэтапа' : esc(t.title)}</h2></div>
       ${!d ? msgIcon(p, t) : ''}
       ${!d && editable ? '<button class="ghost" data-tedit>Редактировать</button>' : ''}
@@ -7204,7 +8043,8 @@ function renderTaskModal(focusSel){
     body = `<div class="tk-meta"><div class="tk-progress"><div class="tk-bar big"><i style="width:${pr.pct}%"></i></div>
         <span>${pr.done ? 'Подэтап выполнен' : pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Без чек-листа'}</span></div>
         ${editable && !p?._ext ? `<label class="tk-who"><span>Ответственный</span><select class="tk-as" data-tqassign="${t.id}" aria-label="Ответственный за подэтап">${peopleOpts(t.assignee_id, s?.assignee_id ? `Как у этапа: ${short(s.assignee_id)}` : 'Как у этапа: не назначен')}</select></label>`
-          : `<span class="tk-who"><span>Ответственный</span><b>${esc(short(whoId(p, s, t)) || 'не назначен')}</b></span>`}</div>
+          : `<span class="tk-who"><span>Ответственный</span>${whoChip(whoId(p, s, t))}</span>`}
+        ${dueRemindHtml(t, editable)}</div>
       <section class="tk-sec"><h3>Задание</h3>
         <div class="tk-text">${t.description ? linkify(t.description) : '<span class="hint">Описания пока нет.</span>'}</div>
         ${reg ? `<p><a class="ghost tk-reg" href="${esc(reg)}" target="_blank" rel="noopener noreferrer">Открыть регламент ↗</a></p>` : ''}
@@ -7221,7 +8061,6 @@ function renderTaskModal(focusSel){
   } else {
     body = `<form class="form tk-form" id="tkForm" novalidate>
       <div class="field"><label for="tdTitle">Название подэтапа</label><input id="tdTitle" data-td="title" value="${esc(d.title)}"></div>
-      <div class="field"><label for="tdSub">Подэтап на доске</label><select id="tdSub" data-td="substage_id"><option value="">Нет</option>${(s?.subs || []).map(x => { const o = taskFor(p.id, s.id, x.id); const busy = o && o.id !== t.id; return `<option value="${x.id}" ${x.id === d.substage_id ? 'selected' : ''} ${busy ? 'disabled' : ''}>${esc(x.name)}${busy ? ' (есть задача)' : ''}</option>`; }).join('')}</select></div>
       <div class="field"><label for="tdDesc">Задание</label><textarea id="tdDesc" data-td="description" rows="6" placeholder="Что сделать, требования, критерии приёмки">${esc(d.description)}</textarea></div>
       ${blocksEditor(d.blocks, 'td')}
       <div class="field"><label>Чек-лист</label>
@@ -7261,6 +8100,9 @@ function saveTaskDraft(){
   });
   syncTaskToSub(t); if (taskProgress(t).done) queueAutoClose(p.id);
   const subX = p.stages.find(x => x.id === t.stage_id)?.subs?.find(x => x.id === t.substage_id);
+  // новое название задачи — и у её карточки на доске (раньше менялось только в карточке задачи, на доске оставалось старое).
+  // Подэтап из шаблона агентства не переименовываем: его название задаёт шаблон (иначе синхронизация вернула бы старое)
+  if (subX && t.title && subX.name !== t.title && (isInfo() || !subX.tsub)){ addLog(p, `«${subX.name}» переименован в «${t.title}»`); subX.name = t.title; }
   let synced = 0;
   // пустая карточка шаблоном не становится — иначе она стёрла бы эту карточку во всех проектах
   const filled = !!(t.description || t.regulation_link || t.video_url || t.checklist.length || (t.blocks || []).length);
@@ -7576,6 +8418,130 @@ document.addEventListener('change', e => {
     t.assignee_id = e.target.value || null; addLog(p, `Подэтап «${t.title}»: ответственный ${t.assignee_id ? nameOf(t.assignee_id) : 'как у этапа'}`);
     commit(); renderTaskModal(); assignNote(t.assignee_id, p); }
 });
+// ---------- Срок и напоминание у задачи (карточки подэтапа) ----------
+// t.due_date — срок; t.remind = { at:'YYYY-MM-DDTHH:MM' (местное время), by, byName } — напоминание.
+// Срабатывает на устройствах того, кто поставил, и ответственного (пока сайт или приложение открыто):
+// окошко с «Открыть» и уведомление браузера; каждое — один раз на устройстве (NSENT_KEY: rem:<задача>:<время>).
+const BELL_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+const remTxt = at => at ? new Date(at).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+const taskDone = t => taskProgress(t).done || (() => { const p = projById(t.project_id); const s = p?.stages.find(x => x.id === t.stage_id); const x = s?.subs?.find(y => y.id === t.substage_id); return !!(s && x && subDone(p, s, x)); })();
+function dueRemindHtml(t, editable){
+  const late = t.due_date && t.due_date < today() && !taskDone(t);
+  const dueTxt = t.due_date ? rangeTxt(t.start_date, t.due_date) : 'не задан';
+  return `<span class="tk-who tk-due"><span>${FLAG} Срок</span>${editable ? `<button type="button" class="dp-btn${late ? ' late' : ''}${t.due_date ? '' : ' empty'}" data-duepick="${t.id}">${dueTxt}</button>` : `<b class="${late ? 'late' : ''}">${dueTxt}</b>`}${late ? '<b class="late">просрочено</b>' : ''}</span>
+    <span class="tk-who tk-due"><span>${BELL_ICO} Напомнить</span><button type="button" class="dp-btn${t.remind?.at ? '' : ' empty'}" data-rempick="${t.id}">${t.remind?.at ? remShort(t.remind.at) : 'нет'}</button></span>`;
+}
+// «13–20 нояб.», «28 нояб. – 3 дек.», один день — «сегодня» / «завтра» / «20 нояб.»
+const dayWord = d => d === today() ? 'сегодня' : d === addDays(today(), 1) ? 'завтра' : fmt(d);
+function rangeTxt(a, b){
+  if (!a || a === b) return dayWord(b);
+  const A = parse(a), B = parse(b);
+  return A.getMonth() === B.getMonth() && A.getFullYear() === B.getFullYear() ? `${A.getDate()}–${fmt(b)}` : `${fmt(a)} – ${fmt(b)}`;
+}
+const remShort = at => { const d = at.slice(0, 10), tm = at.slice(11, 16); return `${d === today() ? 'сегодня' : d === addDays(today(), 1) ? 'завтра' : fmt(d)}, ${tm}`; };
+// сохранить срок / напоминание задачи
+// v — 'YYYY-MM-DD' (один день) или 'YYYY-MM-DD|YYYY-MM-DD' (от и до); t.start_date — начало, t.due_date — конец (срок)
+function setTaskDue(t, v){
+  const p = projById(t.project_id); if (!canEditProject(p)) return;
+  const [a, b] = String(v || '').split('|'); const end = b || a || null; const start = b && a !== b ? a : null;
+  t.due_date = end; t.start_date = start;
+  const txt = end ? rangeTxt(start, end) : '';
+  if (p) addLog(p, `Срок задачи «${t.title}»: ${end ? txt : 'снят'}`);
+  commit(); if (ui.taskId) renderTaskModal(); toast(end ? `Срок: ${txt}` : 'Срок снят');
+}
+function setTaskRemind(t, at){
+  const p = projById(t.project_id);
+  t.remind = at ? { at, by:meKey(), byName:actorName() } : null;
+  if (p) addLog(p, `Напоминание о задаче «${t.title}»: ${at ? remTxt(at) : 'снято'}`);
+  commit(); if (ui.taskId) renderTaskModal();
+  if (at && typeof Notification !== 'undefined' && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
+  toast(at ? `Напомню ${remShort(at)}` : 'Напоминание снято');
+}
+// ---------- Быстрый календарь: быстрые варианты, месяц, для напоминания — время одним нажатием ----------
+const dp = { open:false };
+const DP_TIMES = ['09:00', '10:00', '12:00', '15:00', '18:00', '20:00'];
+const DP_MON = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+function openDatePick(anchor, o){
+  const sel = o.value ? o.value.slice(0, 10) : '';
+  const base = parse(o.from || sel || today());
+  Object.assign(dp, { open:true, anchor, mode:o.mode, sel, from:o.from || '', picking:'', time:o.value?.slice(11, 16) || '', y:base.getFullYear(), m:base.getMonth(), onPick:o.onPick, onClear:o.onClear });
+  paintDatePick();
+}
+function closeDatePick(){ dp.open = false; $('#dpPop')?.remove(); }
+function paintDatePick(){
+  $('#dpPop')?.remove(); if (!dp.open) return;
+  const t0 = today(); const first = new Date(dp.y, dp.m, 1); const lead = (first.getDay() + 6) % 7; const nd = new Date(dp.y, dp.m + 1, 0).getDate();
+  const cells = [...Array(lead).fill(''), ...Array.from({ length:nd }, (_, i) => iso(new Date(dp.y, dp.m, i + 1)))];
+  const dt = dp.mode === 'datetime';
+  const nowPlusH = () => { const d = new Date(Date.now() + 36e5); return `${iso(d)}T${pad(d.getHours())}:${pad(Math.floor(d.getMinutes() / 5) * 5)}`; };
+  const rg = dp.mode === 'range'; const sun = addDays(t0, (7 - parse(t0).getDay()) % 7);
+  const quick = dt ? [['Через час', nowPlusH()], ['Сегодня 18:00', `${t0}T18:00`], ['Завтра 10:00', `${addDays(t0, 1)}T10:00`], ['Через неделю', `${addDays(t0, 7)}T10:00`]]
+    : rg ? [['Сегодня', t0], ['Завтра', addDays(t0, 1)], ['Эта неделя', `${t0}|${sun}`], ['Следующая неделя', `${addDays(sun, 1)}|${addDays(sun, 7)}`], ['3 дня', `${t0}|${addDays(t0, 2)}`]]
+    : [['Сегодня', t0], ['Завтра', addDays(t0, 1)], ['Через 3 дня', addDays(t0, 3)], ['Через неделю', addDays(t0, 7)]];
+  // период: выбрано начало (dp.picking) — подсвечиваем; уже заданный период (dp.from…dp.sel) — тоже
+  const lo = rg ? (dp.picking || dp.from || dp.sel) : '', hi = rg ? (dp.picking ? '' : dp.sel) : '';
+  const inR = d => rg && lo && hi && d > lo && d < hi;
+  document.body.insertAdjacentHTML('beforeend', `<div class="dp" id="dpPop" role="dialog" aria-label="${dt ? 'Напоминание' : 'Срок'}">
+    <div class="dp-quick">${quick.map(([l, v]) => `<button type="button" data-dpq="${v}">${l}</button>`).join('')}</div>
+    <div class="dp-hd"><button type="button" class="icon-btn" data-dpnav="-1" aria-label="Предыдущий месяц">‹</button><b>${DP_MON[dp.m]} ${dp.y}</b><button type="button" class="icon-btn" data-dpnav="1" aria-label="Следующий месяц">›</button></div>
+    <div class="dp-grid">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d => `<span class="dp-wd">${d}</span>`).join('')}
+      ${cells.map(d => d ? `<button type="button" class="dp-day${d === t0 ? ' today' : ''}${d === dp.sel || (rg && (d === lo || d === hi)) ? ' on' : ''}${inR(d) ? ' in' : ''}${d < t0 ? ' past' : ''}" data-dpday="${d}">${+d.slice(8)}</button>` : '<span></span>').join('')}</div>
+    ${rg ? `<small class="dp-hint">${dp.picking ? `С ${fmt(dp.picking)} — теперь нажмите день окончания (тот же день — срок на один день)` : 'Нажмите день начала, потом день окончания'}</small>` : ''}
+    ${dt ? `<div class="dp-times${dp.sel ? '' : ' off'}"><small>${dp.sel ? `${fmt(dp.sel)} — во сколько?` : 'Сначала выберите день'}</small>
+      <div>${DP_TIMES.map(tm => `<button type="button" data-dptime="${tm}" ${dp.sel ? '' : 'disabled'} class="${dp.time === tm ? 'on' : ''}">${tm}</button>`).join('')}
+      <input type="time" id="dpTime" value="${dp.time}" ${dp.sel ? '' : 'disabled'} aria-label="Своё время"></div></div>` : ''}
+    <div class="dp-ft">${dp.onClear ? `<button type="button" class="link" data-dpclear>Убрать</button>` : ''}<button type="button" class="ghost" data-dpclose>Закрыть</button></div></div>`);
+  const pop = $('#dpPop'); const r = dp.anchor?.getBoundingClientRect?.();
+  if (r && innerWidth > 640){ const w = pop.offsetWidth, h = pop.offsetHeight;
+    pop.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left)) + 'px';
+    pop.style.top = (r.bottom + h + 8 < innerHeight ? r.bottom + 6 : Math.max(8, r.top - h - 6)) + 'px'; }
+}
+const dpDone = v => { const f = dp.onPick; closeDatePick(); f?.(v); };
+document.addEventListener('click', e => {
+  const due = e.target.closest?.('[data-duepick]'); if (due){ const t = taskById(due.dataset.duepick); if (t) openDatePick(due, { mode:'range', value:t.due_date || '', from:t.start_date || '', onPick:v => setTaskDue(t, v), onClear:t.due_date ? () => setTaskDue(t, '') : null }); return; }
+  const rem = e.target.closest?.('[data-rempick]'); if (rem){ const t = taskById(rem.dataset.rempick); if (t) openDatePick(rem, { mode:'datetime', value:t.remind?.at || '', onPick:v => setTaskRemind(t, v), onClear:t.remind?.at ? () => setTaskRemind(t, '') : null }); return; }
+  if (!dp.open) return;
+  if (!e.target.closest('#dpPop')){ closeDatePick(); return; }
+  const q = e.target.closest('[data-dpq]'); if (q) return dpDone(q.dataset.dpq);
+  const n = e.target.closest('[data-dpnav]'); if (n){ const d = new Date(dp.y, dp.m + +n.dataset.dpnav, 1); dp.y = d.getFullYear(); dp.m = d.getMonth(); paintDatePick(); return; }
+  const day = e.target.closest('[data-dpday]'); if (day){ const d = day.dataset.dpday;
+    if (dp.mode === 'date') return dpDone(d);
+    if (dp.mode === 'range'){ if (!dp.picking || d < dp.picking){ dp.picking = d; paintDatePick(); return; } return dpDone(d === dp.picking ? d : `${dp.picking}|${d}`); }
+    dp.sel = d; paintDatePick(); return; }
+  const tm = e.target.closest('[data-dptime]'); if (tm && dp.sel) return dpDone(`${dp.sel}T${tm.dataset.dptime}`);
+  if (e.target.closest('[data-dpclear]')){ const f = dp.onClear; closeDatePick(); f?.(); return; }
+  if (e.target.closest('[data-dpclose]')) closeDatePick();
+}, true);
+document.addEventListener('change', e => { if (e.target.id === 'dpTime' && dp.open && dp.sel && e.target.value) dpDone(`${dp.sel}T${e.target.value}`); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && dp.open){ e.stopPropagation(); closeDatePick(); } }, true);
+// кому напоминать: тому, кто поставил, и ответственному за задачу
+const remindMine = t => t.remind?.at && (t.remind.by === meKey() || (() => { const p = projById(t.project_id); const s = p?.stages.find(x => x.id === t.stage_id); const w = whoId(p, s, t); return GUEST ? (p?._ext && myTeamIds(p).includes(w)) : w === ME; })());
+function checkReminders(){
+  if (typeof db === 'undefined' || !db) return;
+  const now = new Date(); const sent = readSet(NSENT_KEY()); let fired = null;
+  [...(db.tasks || []), ...ext.tasks].forEach(t => {
+    if (!remindMine(t) || new Date(t.remind.at) > now) return;
+    const key = 'rem:' + t.id + ':' + t.remind.at; if (sent.has(key)) return;
+    sent.add(key); if (new Date(t.remind.at) < now - 864e5 || taskDone(t)) return;   // старые и выполненные — молча
+    fired = t; const p = projById(t.project_id);
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') try { new Notification('Напоминание', { body:`${t.title}${p ? ` — ${p.name}` : ''}${t.due_date ? `, срок ${fmt(t.due_date)}` : ''}`, tag:'kz-rem-' + t.id }); } catch(e) {}
+  });
+  writeSet(NSENT_KEY(), sent);
+  if (fired) showReminder(fired);
+}
+function showReminder(t){
+  const p = projById(t.project_id); $('#remPop')?.remove();
+  document.body.insertAdjacentHTML('beforeend', `<div class="rem-pop" id="remPop" role="alertdialog" aria-label="Напоминание">
+    <small>${BELL_ICO} Напоминание · ${remTxt(t.remind.at)}</small><b>${esc(t.title)}</b>
+    <small>${esc(p?.name || '')}${t.due_date ? ` · срок ${fmt(t.due_date)}` : ''}</small>
+    <div class="row"><button class="ghost" data-remok>Понятно</button><button class="primary" data-remopen="${t.id}">Открыть</button></div></div>`);
+}
+document.addEventListener('click', e => {
+  if (e.target.closest?.('[data-remok]')){ $('#remPop')?.remove(); return; }
+  const o = e.target.closest?.('[data-remopen]'); if (o){ $('#remPop')?.remove(); openTask(o.dataset.remopen); }
+});
+setInterval(() => { try { checkReminders(); } catch(e) {} }, 30000);
+setTimeout(() => { try { checkReminders(); } catch(e) {} }, 4000);
 // «Мои проекты»: исполнитель сам меняет статус этапа и отмечает подэтапы без чек-листа — владелец видит это сразу
 const stageStatusSelect = (p, s) => !canEditProject(p) && s.status === 'done' ? '' : `<select class="pf-status" data-mstatus="${p.id}|${s.id}" aria-label="Статус этапа ${esc(s.name)}">${Object.entries(STATUS).filter(([k]) => canEditProject(p) || k !== 'done').map(([k,v]) => `<option value="${k}" ${s.status===k?'selected':''}>${v}</option>`).join('')}</select>`;
 const tickCard = (p, s, x, here) => `<label class="pf-card pf-tick${x.done ? ' done' : ''}${here ? ' here' : ''}">
@@ -7618,24 +8584,25 @@ function renderProjectFocus(mine = false){
       <span class="pf-mini" aria-hidden="true"><i style="width:${xp.pct}%"></i></span></button></div>`;
   }).join('');
 
+  const dnd = canEditProject(p) && !mine && isInfo() && !GUEST;     // доски инфобизнеса: карточки перетаскиваются между колонками
   const cols = p.stages.map(s => {
     const h = health(s); const isCur = s.id === cur.stageId;
-    const subs = s.subs || [];
+    const subs = boardSubs(p, s);
     const doneN = subs.filter(x => subDone(p, s, x)).length;
     const passed = s.status === 'done';
     const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
       if (mine && !t) return tickCard(p, s, x, here);
-      return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
+      return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" ${dnd ? `draggable="true" data-pfdrag="${s.id}|${x.id}"` : ''} aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
-        <b>${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
-        <small>${esc(short(whoId(p, s, t)))}</small>
+        <b>${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
+        <small>${x.cycle && isInfoBoardP(p) && vidCol(x) ? `<span class="vid-st">${esc(vidCol(x).name)}</span>` : ''}${whoChip(x.cycle && isInfoBoardP(p) ? contentWho(p, s, x, t) : whoId(p, s, t))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : `срок ${fmt(t.due_date)}`}</span>` : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
       </button>`;
     }).join('');
-    return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
+    return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" ${dnd ? `data-pfcol="${s.id}"` : ''} aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
@@ -7650,7 +8617,7 @@ function renderProjectFocus(mine = false){
       <div class="pf-main">
         <div class="pf-head">
           <div><h2>${mine ? esc(p.name) : `<button class="link-plain" data-open="${p.id}">${esc(p.name)}</button>`}</h2>
-            <small>${mine ? `${esc(p.client)}, ваша роль: ${ROLE_RU[role].toLowerCase()}, владелец: <span class="owner-name">…</span>` : `${esc(p.client)}, PM ${esc(short(p.pm_id))}${execTxt(p)}, финиш ${fmt(plannedEnd(p))}`}</small>
+            <small>${mine ? `${esc(p.client)}, ваша роль: ${ROLE_RU[role].toLowerCase()}, владелец: <span class="owner-name">…</span>` : `${p.client ? `${esc(p.client)}, ` : ''}PM ${esc(short(p.pm_id))}${execTxt(p)}, финиш ${fmt(plannedEnd(p))}`}</small>
           </div>
           ${!mine ? `<button class="icon-btn pf-shareic${shareCount(p) ? ' on' : ''}" data-share="${p.id}" title="Поделиться проектом${shareCount(p) ? ` · доступ у ${shareCount(p)}` : ''}" aria-label="Поделиться проектом">${SHARE_ICON}${shareCount(p) ? `<span>${shareCount(p)}</span>` : ''}</button>` : ''}
         </div>
@@ -7683,7 +8650,8 @@ document.addEventListener('submit', e => {
   const v = f.querySelector('input').value.trim(); if (!v) return;
   const p = projById(ui[ui.view === 'mine' ? 'myProject' : 'prodProject']); if (!canEditProject(p)) return; const s = p.stages.find(y => y.id === f.dataset.pfadd);
   if ((s.subs || []).some(x => norm(x.name) === norm(v))){ toast('Такой подэтап уже есть'); return; }
-  (s.subs = s.subs || []).push({ id:uid(), name:v, done:false });
+  const nx = { id:uid(), name:v, done:false, at:new Date().toISOString() };
+  if (isInfo() && s === contentStage(p)) (s.subs = s.subs || []).unshift(nx); else (s.subs = s.subs || []).push(nx);
   addLog(p, `Добавлен подэтап «${v}» в этап «${s.name}» (только в этом проекте)`); commit();
   app.querySelector(`[data-pfadd="${s.id}"] input`)?.focus();
 });
@@ -8772,6 +9740,8 @@ const MNAV = {
   matrix:['Матрица', MI('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>')],
   kanban:['Канбан', MI('<rect x="3" y="3" width="5" height="15" rx="1.5"/><rect x="10" y="3" width="5" height="10" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/>')],
   production:['Произв.', MI('<path d="M3 12h4l3-8 4 16 3-8h4"/>')],
+  funnel:['AI-воронка', MI('<path d="M3 4h18l-7 8.5V19l-4 2v-7.5Z"/><path d="M18 2.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6Z"/>')],
+  content:['Контент', MI('<rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3"/>')],
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
   mine:['Мои проекты', MI('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>')],
   assign:['Поручения', MI('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2 2 4-4M8.5 17h7"/>')],
@@ -8782,7 +9752,8 @@ const MNAV = {
   team:['Команда', MI('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>')],
   templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
 };
-const MNAV_MAIN = ['matrix', 'kanban', 'production', 'load'];
+const MNAV_MAIN_ALL = ['matrix', 'kanban', 'production', 'load'];
+const mnavMain = () => isInfo() ? ['production', 'funnel', 'content', 'mytasks'] : MNAV_MAIN_ALL;
 // иконки в боковом меню (те же, что в нижнем меню телефона)
 const NAV_FULL = { production:'Производство' };
 document.querySelectorAll('.tabs [data-view]').forEach(b => { const m = MNAV[b.dataset.view]; if (m && !b.querySelector('svg')) b.insertAdjacentHTML('afterbegin', m[1]); });
@@ -8819,12 +9790,12 @@ document.addEventListener('click', e => {
   const k = c.dataset.kdrisk; ui.risk = ui.risk === k ? '' : k; render();
 });
 const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>');
-const moreViews = () => ['review', 'mytasks', 'assign', 'mine', 'reports', 'team', 'archive', 'templates'].filter(v => v !== 'mine' || !$('#mineTab').hidden);
+const moreViews = () => ['review', 'mytasks', 'assign', 'mine', 'reports', 'load', 'team', 'archive', 'templates'].filter(v => (v !== 'mine' || !$('#mineTab').hidden) && !mnavMain().includes(v) && !(isInfo() && INFO_HIDDEN.includes(v)));
 function renderMobileNav(){
   const nav = $('#mnav'); if (!nav) return;
   if (GUEST){ nav.innerHTML = guestViews().map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
-  const inMore = !MNAV_MAIN.includes(ui.view);
-  nav.innerHTML = MNAV_MAIN.map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')
+  const inMore = !mnavMain().includes(ui.view);
+  nav.innerHTML = mnavMain().map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join('')
     + `<button data-mmore aria-current="${inMore ? 'page' : 'false'}" aria-haspopup="dialog">${inMore ? MNAV[ui.view][1] : MORE_ICON}<span>${inMore ? MNAV[ui.view][0] : 'Ещё'}</span></button>`;
   const f = $('#fToggle'); if (f){ const k = ui.pms.length + ui.clients.length; f.classList.toggle('on', !!k); const nb = f.querySelector('.f-n'); if (nb) nb.textContent = k || ''; }
 }
