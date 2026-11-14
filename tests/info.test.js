@@ -202,6 +202,11 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   // «Мои задачи»: задачи из всех колонок доски инфобизнеса, а не только текущего этапа
   E(`(() => { const p = infoBoard(); const s = p.stages.find(z => z !== contentStage(p) && !isMaint(z)); s.subs = s.subs || []; s.subs.push({ id:'mine1', name:'Моя задача в другой колонке', done:false }); s.assignee_id = 'me'; })()`);
   assert.ok(E(`dayProjectItems('me').some(i => i.title === 'Моя задача в другой колонке')`)); ok('«Мои задачи»: видны задачи из любой колонки доски');
+  // переименование видео в «Контенте»: подэтап и его задача
+  E(`ui.view = 'content'; ui.ctMode = 'board'; render()`);
+  const rb = D.querySelector('[data-ctren]'); const rid = rb.dataset.ctren; rb.click();
+  D.getElementById('npName').value = 'Рилс про кейс клиента с очень длинным названием'; D.getElementById('npForm').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
+  assert.equal(E(`contentStage().subs.find(x => x.id === '${rid}').name`), 'Рилс про кейс клиента с очень длинным названием'); ok('видео переименовывается прямо в «Контенте»');
   E(`db.prefs.kind = 'agency'; render()`);
   assert.ok(!D.querySelector('.tabs [data-view="matrix"]').hidden); ok('в агентстве матрица на месте');
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');

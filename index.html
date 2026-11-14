@@ -1304,7 +1304,11 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ct-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .ct-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
 .ct-name{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;color:inherit;display:grid;gap:2px;cursor:pointer}
-.ct-name b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ct-name b{font-weight:600;overflow-wrap:anywhere}
+.ct-title{display:flex;align-items:flex-start;gap:4px}
+.ct-title .ct-open{flex:1;min-width:0;align-items:flex-start}
+.ct-open b{overflow-wrap:anywhere;white-space:normal}
+.ct-ren{flex:none;width:26px;height:26px;opacity:.55}.ct-ren:hover{opacity:1}.ct-ren svg{width:14px;height:14px}
 .ct-name small{color:var(--muted);font-size:12px}
 .ct-row.done .ct-name b{text-decoration:line-through;color:var(--muted)}
 .ct-date{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:4px 6px;font:inherit;font-size:13px}
@@ -2543,7 +2547,7 @@ function contentBoardHtml(s, items){
         ${GUEST ? '' : `<select class="pf-status" data-vidwho="${c.id}" aria-label="Ответственный за этап «${esc(c.name)}»">${peopleOpts((infoBoard()?.vidWho || {})[c.id] || '', 'Ответственный не назначен')}</select>`}</header>
       <div class="pf-cards">${list.map(x => { const t = taskFor(infoBoard().id, s.id, x.id);
         return `<div class="pf-card ct-card${x.done ? ' done' : ''}" draggable="true" data-ctdrag="${x.id}">
-          <button class="ct-open" data-pfsub="${s.id}|${x.id}"><span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><b>${esc(x.name)}</b>${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</button>
+          <div class="ct-title"><button class="ct-open" data-pfsub="${s.id}|${x.id}"><span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><b>${esc(x.name)}</b>${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}</div>
           <small>${x.due_date ? `публикация ${fmt(x.due_date)}` : 'без даты'}</small>${whoChip(contentWho(infoBoard(), s, x, t))}
           ${(c.subs || []).length && !x.done ? `<div class="ct-subs">${c.subs.map(y => `<label><input type="checkbox" data-ctvs="${x.id}|${y.id}" ${x.vs?.[y.id] ? 'checked' : ''}><span>${esc(y.name)}</span></label>`).join('')}</div>` : ''}
           <select class="pf-status" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}">${cs.map(y => `<option value="${y.id}" ${y === c ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select></div>`; }).join('') || '<p class="hint">Пусто</p>'}</div></section>`; }).join('')}</div>`;
@@ -2584,7 +2588,7 @@ function renderContentBody(){
   const pace = !st.plan || (!live && t < c) ? '' : st.pub >= due ? 'идём по плану' : `отстаём на ${due - st.pub}`;
   const row = x => `<li class="ct-row${x.done ? ' done' : ''}">
       <input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="Опубликовано: ${esc(x.name)}">
-      <span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>
+      <span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}
       ${whoChip(contentWho(p, s, x, taskFor(p.id, s.id, x.id)))}<input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
   // по умолчанию — «План / Факт», доска — вторым видом
   const modeSeg = `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode !== 'board'}">План / Факт</button><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode === 'board'}">Доска</button></span>`;
@@ -3308,6 +3312,24 @@ document.addEventListener('change', e => {
     sel.value = u.id; sel.dataset.prev = u.id; sel.dispatchEvent(new Event('change', { bubbles:true }));   // дальше — как обычный выбор ответственного
   });
 }, true);
+// переименовать видео: подэтап колонки «Контент» и его задача — одно название
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-ctren]'); if (!b) return; e.stopPropagation();
+  const p = infoBoard(); const s = contentStage(p); const x = s?.subs?.find(y => y.id === b.dataset.ctren); if (!x) return;
+  askText('Название видео', x.name, v => {
+    if (v === x.name) return; const old = x.name; x.name = v;
+    const t = taskFor(p.id, s.id, x.id); if (t) t.title = v;
+    addLog(p, `«${old}» переименован в «${v}»`); commit();
+  });
+}, true);
+function askText(title, value, onOk){
+  $('#npDlg')?.remove();
+  document.body.insertAdjacentHTML('beforeend', `<div class="np-dlg" id="npDlg" role="dialog" aria-modal="true" aria-labelledby="npT"><div class="np-bd" data-npclose></div>
+    <form class="np-box" id="npForm"><h3 id="npT">${esc(title)}</h3><input id="npName" value="${esc(value || '')}" maxlength="200" autocomplete="off" required>
+    <div class="np-act"><button type="button" class="ghost" data-npclose>Отмена</button><button class="primary">Сохранить</button></div></form></div>`);
+  const i = $('#npName'); i.focus(); i.select();
+  $('#npForm').onsubmit = ev => { ev.preventDefault(); const v = $('#npName').value.trim(); if (!v) return; $('#npDlg').remove(); onOk(v); };
+}
 function askPerson(onOk){
   $('#npDlg')?.remove();
   document.body.insertAdjacentHTML('beforeend', `<div class="np-dlg" id="npDlg" role="dialog" aria-modal="true" aria-labelledby="npT"><div class="np-bd" data-npclose></div>
