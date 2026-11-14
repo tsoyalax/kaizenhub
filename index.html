@@ -660,8 +660,8 @@ body.side-pinned .side-btn{color:var(--ink)}
 .side-spnames button i{width:9px;height:9px;border-radius:50%;flex:none}
 .side-spnames button:hover{background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink)}
 .side-spnames button.cur{color:var(--ink);font-weight:500}
-/* закреплённая панель: сдвигает страницу, верхние вкладки не дублируются */
-@media (min-width:1101px){
+/* закреплённая панель: сдвигает страницу, верхние вкладки не дублируются (закреплена всегда шире 640px) */
+@media (min-width:641px){
   body.side-pinned{padding-left:280px}
   body.side-pinned .side{animation:none;box-shadow:none;z-index:6}
   body.side-pinned .top .tabs{display:none}
@@ -5940,7 +5940,9 @@ function watchSpaces(){
 // =====================================================================
 const SIDE_PIN = 'kz-side-pin';
 let sideOpen = false;
-const sidePinned = () => { if (innerWidth <= 1100) return false; try { const v = localStorage.getItem(SIDE_PIN); return v === null ? true : v === '1'; } catch(e) { return true; } };
+// панель слева: кнопка ☰ слева вверху сразу закрепляет её (сдвигает страницу) или убирает; выбор запоминается (kz-side-pin).
+// Выдвигания поверх страницы и по наведению на край больше нет. На телефоне — нижнее меню.
+const sidePinned = () => { if (innerWidth <= 640) return false; try { return localStorage.getItem(SIDE_PIN) !== '0'; } catch(e) { return true; } };
 const setPin = on => { try { localStorage.setItem(SIDE_PIN, on ? '1' : '0'); } catch(e) {} };
 function sideViews(){
   if (GUEST) return guestViews();
@@ -5972,7 +5974,7 @@ function renderSide(){
   const all = GUEST ? [] : sideSpaces();
   const cur = all.find(x => x.cur) || { name:mainName(), color:spColor(''), icon:spIcon('') };
   el.innerHTML = `${GUEST ? '' : areaBar()}<div class="side-head"><span class="side-sp" style="--c:${cur.color}"><span class="side-sp-ico">${spIco(GUEST ? 'briefcase' : cur.icon)}</span><b>${esc(GUEST ? 'Мои проекты' : cur.name)}</b></span>
-      ${innerWidth > 1100 ? `<button class="icon-btn side-pin" data-sidepin aria-pressed="${pinned}" title="${pinned ? 'Открепить панель' : 'Закрепить панель'}" aria-label="${pinned ? 'Открепить панель' : 'Закрепить панель'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${pinned ? '<path d="M15 6l-6 6 6 6"/>' : '<path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3z"/>'}</svg></button>` : ''}
+      ${false ? `<button class="icon-btn side-pin" data-sidepin aria-pressed="${pinned}" title="${pinned ? 'Открепить панель' : 'Закрепить панель'}" aria-label="${pinned ? 'Открепить панель' : 'Закрепить панель'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${pinned ? '<path d="M15 6l-6 6 6 6"/>' : '<path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3z"/>'}</svg></button>` : ''}
       ${pinned ? '' : '<button class="icon-btn" data-sideclose aria-label="Закрыть меню">×</button>'}</div>
     <nav class="side-nav" aria-label="Разделы">${sideViews().map(v => `<button data-sideview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v]?.[1] || ''}<span>${label(v)}</span></button>`).join('')}</nav>
     ${all.length ? `<div class="side-spaces"><div class="side-spl"><span>Пространства</span><button class="link" data-sidespset>Настроить</button></div>
@@ -5995,7 +5997,7 @@ function openSide(){ sideOpen = true; renderSide(); }
 function closeSide(){ if (!sideOpen) return; sideOpen = false; renderSide(); }
 document.addEventListener('click', e => {
   if (layer.querySelector('.more-sheet') && e.target.closest?.('.more-sheet [data-sideme], .more-sheet [data-sidecloud], .more-sheet [data-sidesp], .more-sheet [data-sidespset]')) layer.innerHTML = '';
-  if (e.target.closest?.('#sideBtn')){ if (sidePinned()){ setPin(false); sideOpen = false; renderSide(); render(); } else { sideOpen = !sideOpen; renderSide(); } return; }
+  if (e.target.closest?.('#sideBtn')){ setPin(!sidePinned()); sideOpen = false; renderSide(); render(); return; }
   if (e.target.closest?.('#sideBack') || e.target.closest?.('[data-sideclose]')){ closeSide(); return; }
   if (e.target.closest?.('[data-sideme]')){ if (!sidePinned()) closeSide(); openProfile(false); return; }
   if (e.target.closest?.('[data-areamenu]')){ ui.areaMenu = !ui.areaMenu; renderSide(); if (layer.querySelector('.more-sheet')) openMore(); return; }
@@ -6019,6 +6021,7 @@ document.addEventListener('click', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && sideOpen) closeSide(); });
 // как в Arc: подвели мышь к левому краю — панель выглядывает
 document.addEventListener('mousemove', e => {
+  return;   // по наведению на край панель больше не выдвигается — только кнопкой
   if (sidePinned() || sideOpen || innerWidth <= 1100 || layer.innerHTML || e.clientX > 4 || e.buttons) return;
   clearTimeout(window.__sideT); window.__sideT = setTimeout(() => { if (!sideOpen) { sideOpen = true; window.__sideHover = true; renderSide(); } }, 180);
 });
