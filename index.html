@@ -9760,8 +9760,12 @@ async function acceptTeam(code, inv){
   if (inv.role === 'arealead' && inv.area){
     // руководитель области: вписываем себя (база проверяет ссылку и область) и открываем первое пространство области
     const at = new Date().toISOString();
-    await cloud.store.doc(`team/${inv.ownerId}/areas/${inv.area}/${cloud.uid}`).set({ code, memberId:inv.memberId || '', at });
-    await cloud.store.doc(`team/${inv.ownerId}/members/${cloud.uid}`).set({ code, memberId:inv.memberId || '', role:'arealead', at }).catch(() => {});
+    // доступ к этой области уже есть (повторный вход по ссылке) — база не даст записать ещё раз: просто открываем область
+    const had = await cloud.store.doc(`team/${inv.ownerId}/areas/${inv.area}/${cloud.uid}`).get().then(x => x.exists, () => false);
+    if (!had){
+      await cloud.store.doc(`team/${inv.ownerId}/areas/${inv.area}/${cloud.uid}`).set({ code, memberId:inv.memberId || '', at });
+      await cloud.store.doc(`team/${inv.ownerId}/members/${cloud.uid}`).set({ code, memberId:inv.memberId || '', role:'arealead', at }).catch(() => {});
+    }
     await cloud.store.doc(`data/users/${cloud.uid}/links/area/${inv.ownerId}.${inv.area}`).set({ owner:inv.ownerId, area:inv.area, memberId:inv.memberId || '', at });
     try { history.replaceState(null, '', location.pathname); } catch(e) {}
     const first = (await areaOrgs([{ owner:inv.ownerId, area:inv.area }]))[0];
@@ -9772,8 +9776,11 @@ async function acceptTeam(code, inv){
   if (inv.role === 'lead'){
     // руководитель: вписываем себя (база проверяет ссылку), запоминаем команду и открываем проекты владельца
     const at = new Date().toISOString();
-    await cloud.store.doc(`team/${inv.ownerId}/managers/${cloud.uid}`).set({ code, at });
-    await cloud.store.doc(`team/${inv.ownerId}/members/${cloud.uid}`).set({ code, memberId:inv.memberId || '', role:'lead', at }).catch(() => {});
+    const had = await cloud.store.doc(`team/${inv.ownerId}/managers/${cloud.uid}`).get().then(x => x.exists, () => false);   // уже руководитель — не перезаписываем
+    if (!had){
+      await cloud.store.doc(`team/${inv.ownerId}/managers/${cloud.uid}`).set({ code, at });
+      await cloud.store.doc(`team/${inv.ownerId}/members/${cloud.uid}`).set({ code, memberId:inv.memberId || '', role:'lead', at }).catch(() => {});
+    }
     await cloud.store.doc(`data/users/${cloud.uid}/links/lead/${inv.ownerId}`).set({ memberId:inv.memberId || '', at });
     cloud.store.doc(`inv/${code}`).delete().catch(() => {});        // ссылка одноразовая
     try { history.replaceState(null, '', location.pathname); } catch(e) {}
