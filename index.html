@@ -7850,11 +7850,21 @@ function internalBoardHtml(p){
       const open = list.filter(t => t.status !== 'done').sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999')); const done = list.filter(t => t.status === 'done');
       return `<section class="pf-col it-col">
         <header><div><b>${esc(d.name)}</b>${d.id && !GUEST ? `<button class="icon-btn ct-ren" data-itdeptren="${d.id}" title="Переименовать отдел" aria-label="Переименовать отдел «${esc(d.name)}»">${PEN_ICO}</button><button class="icon-btn ct-ren it-del" data-itdeptdel="${d.id}" title="Удалить отдел" aria-label="Удалить отдел «${esc(d.name)}»">×</button>` : ''}</div>
-          <small>${open.length} в работе${done.length ? ` · готово ${done.length}` : ''}</small></header>
+          <small>${open.length} в работе${done.length ? ` · готово ${done.length}` : ''}</small>
+          ${d.id && !GUEST ? `<select class="pf-status" data-itdeptwho="${p.id}|${d.id}" aria-label="Ответственный за отдел «${esc(d.name)}» в проекте">${peopleOpts((p.itDeptWho || {})[d.id] || '', p.worker_id ? `Как у проекта: ${short(p.worker_id)}` : 'Как у проекта: не назначен')}</select>` : ''}</header>
         <div class="pf-cards">${open.map(card).join('') || '<p class="hint">Задач нет</p>'}${ui.itDoneShow ? done.map(card).join('') : ''}</div>
         ${GUEST ? '' : `<button class="ghost it-add" data-itnewdept="${d.id}" data-itproj="${p.id}">+ Задача</button>`}</section>`; }).join('')}
       ${GUEST ? '' : `<button class="pf-col it-newcol" data-itdeptadd><span>+</span>Отдел</button>`}</div></div>`;
 }
+// ответственный за отдел в проекте: p.itDeptWho = { отдел: человек }; не выбран — исполнитель проекта (p.worker_id)
+const itDeptWho = (p, dept) => (p?.itDeptWho || {})[dept] || p?.worker_id || null;
+document.addEventListener('change', e => {
+  const v = e.target.dataset?.itdeptwho; if (!v) return;
+  const [pid, did] = v.split('|'); const p = projById(pid); if (!p || !canEditProject(p)) return;
+  p.itDeptWho = { ...(p.itDeptWho || {}), [did]:e.target.value || null };
+  const dn = itDepts().find(d => d.id === did)?.name || '';
+  addLog(p, `Внутренние задачи, отдел «${dn}»: ответственный — ${e.target.value ? nameOf(e.target.value) : 'как у проекта'}`); commit();
+});
 // включить «Ведение» прямо отсюда: появится этап «Ведение / Поддержка» с регулярными задачами
 document.addEventListener('click', e => {
   const m = e.target.closest?.('[data-mainton]'); if (!m) return;
@@ -7866,7 +7876,8 @@ document.addEventListener('change', e => {
   if (e.target.id === 'itDone'){ ui.itDoneShow = e.target.checked; render(); }
 });
 document.addEventListener('click', e => {
-  const nd = e.target.closest?.('[data-itnewdept]'); if (nd){ openItask(null, { dept:nd.dataset.itnewdept, project_id:nd.dataset.itproj || '' }); return; }
+  const nd = e.target.closest?.('[data-itnewdept]'); if (nd){ const p = projById(nd.dataset.itproj);
+    openItask(null, { dept:nd.dataset.itnewdept, project_id:nd.dataset.itproj || '', assignee_id:itDeptWho(p, nd.dataset.itnewdept) || ME }); return; }
   if (e.target.closest?.('[data-itdeptadd]')){ askText('Новый отдел', '', v => { db.prefs = db.prefs || {}; db.prefs.itDepts = [...itDepts(), { id:'d' + uid(), name:v }]; commit(); toast(`Отдел «${v}» добавлен`); }); return; }
   const dd = e.target.closest?.('[data-itdeptdel]'); if (dd){ e.stopPropagation(); const d = itDepts().find(x => x.id === dd.dataset.itdeptdel); if (!d) return;
     const n = itAll().filter(t => t.dept === d.id).length;

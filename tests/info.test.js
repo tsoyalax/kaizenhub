@@ -223,7 +223,14 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.ok(D.querySelector('[data-mainton]')); ok('без «Ведения» — подсказка и «Включить ведение»');
   D.querySelector('[data-mainton]').click(); await wait(20);
   assert.ok(E(`projById('${ap}').is_maintenance`) && D.querySelector('.it-repcol .rt-block')); ok('«Включить ведение» — в «Регулярных» появляются регулярные задачи проекта');
+  // ответственный за отдел: по умолчанию — исполнитель проекта, можно выбрать своего; новая задача назначается ему
+  E(`projById('${ap}').worker_id = 'me'; render()`);
+  assert.ok(/Как у проекта/.test(D.querySelector(`[data-itdeptwho="${ap}|${smmId}"]`).selectedOptions[0].textContent)); ok('отдел: по умолчанию — исполнитель проекта');
+  E(`if (!db.users.some(u => u.id === 'uyu')) db.users.push({ id:'uyu', name:'Юля Ан', role:'specialist', status:'active' })`);
+  const dw = D.querySelector(`[data-itdeptwho="${ap}|${smmId}"]`); dw.value = 'uyu'; dw.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
+  assert.equal(E(`projById('${ap}').itDeptWho['${smmId}']`), 'uyu'); ok('у отдела в проекте — свой ответственный');
   D.querySelector(`[data-itnewdept="${smmId}"]`).click(); await wait(20);
+  assert.equal(D.getElementById('itWho').value, 'uyu'); ok('новая задача отдела — сразу на ответственного отдела');
   assert.equal(D.getElementById('itDept').value, smmId); assert.equal(D.getElementById('itProj').value, ap); ok('«+ Задача» в SMM — отдел и проект уже выбраны');
   D.getElementById('itTitle').value = 'Контент-план на декабрь'; D.getElementById('itForm').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
   const smmCol = [...D.querySelectorAll('.it-col')].find(c => /SMM/.test(c.querySelector('header b').textContent));
