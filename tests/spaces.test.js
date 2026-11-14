@@ -63,22 +63,18 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(keys.some(k => k.startsWith(`data/users/${A}/spaces/list/${sid}/items/p_`))); ok('проект нового пространства сохраняется в его папку');
   assert.equal(keys.filter(k => /^data\/users\/[^/]+\/p_/.test(k)).length, mainProjects); ok('основное пространство не тронуто');
   // меню-панель как в Arc
-  assert.ok($2('#sideBtn') && $2('#side').hidden); ok('панель: есть кнопка меню, панель скрыта');
-  $2('#sideBtn').click(); await wait(80);
-  assert.ok(!$2('#side').hidden && $2('.side-nav [data-sideview="matrix"]') && /Личные проекты/.test($2('.side-head').textContent)); ok('панель: открывается, в ней разделы и текущее пространство');
+  // панель слева: по умолчанию закреплена (сдвигает страницу); кнопка ☰ сразу убирает или закрепляет её, выбор запоминается
+  assert.ok($2('#sideBtn') && D2.body.classList.contains('side-pinned') && !$2('#side').hidden); ok('панель по умолчанию закреплена');
+  assert.ok($2('.side-nav [data-sideview="matrix"]') && /Личные проекты/.test($2('.side-head').textContent)); ok('панель: разделы и текущее пространство');
   assert.equal(D2.querySelectorAll('.side-dots [data-sidesp]').length, 2); assert.ok($2('.side-dot.cur')); ok('панель: пространства цветными кружками, текущее отмечено');
   $2('.side-nav [data-sideview="kanban"]').click(); await wait(80);
-  assert.ok(D2.body.dataset.view === 'kanban' && $2('#side').hidden); ok('панель: выбор раздела переключает его и прячет панель');
-  assert.ok(D2.querySelector('.top .tabs') && w2.getComputedStyle(D2.querySelector('.top .tabs')).display === 'none' && $2('#viewName').textContent === 'Канбан'); ok('верхнего меню нет, в шапке — название раздела');
-  Object.defineProperty(w2, 'innerWidth', { value: 1400, configurable: true }); w2.dispatchEvent(new w2.Event('resize')); await wait(50);
-  assert.ok(D2.body.classList.contains('side-pinned') && !$2('#side').hidden); ok('на широком экране панель по умолчанию закреплена');
-  $2('[data-sidepin]').click(); await wait(80);
-  assert.ok(!D2.body.classList.contains('side-pinned') && w2.localStorage.getItem('kz-side-pin') === '0'); ok('открепили — браузер это запомнил');
-  $2('#sideBtn').click(); await wait(50); $2('[data-sidepin]').click(); await wait(80);
-  assert.ok(D2.body.classList.contains('side-pinned') && !$2('#side').hidden && w2.localStorage.getItem('kz-side-pin') === '1'); ok('панель: закрепляется и остаётся открытой');
-  $2('[data-sidepin]').click(); await wait(80);
-  assert.ok(!D2.body.classList.contains('side-pinned') && $2('#side').hidden); ok('панель: открепляется');
-  Object.defineProperty(w2, 'innerWidth', { value: 1024, configurable: true }); w2.dispatchEvent(new w2.Event('resize')); await wait(50);
+  assert.ok(D2.body.dataset.view === 'kanban' && !$2('#side').hidden); ok('панель: выбор раздела переключает его, панель остаётся');
+  assert.ok(w2.getComputedStyle(D2.querySelector('.top .tabs')).display === 'none' && $2('#viewName').textContent === 'Канбан'); ok('верхнего меню нет, в шапке — название раздела');
+  assert.ok(!$2('[data-sidepin]')); ok('отдельной кнопки «закрепить» нет — только ☰');
+  $2('#sideBtn').click(); await wait(80);
+  assert.ok(!D2.body.classList.contains('side-pinned') && $2('#side').hidden && w2.localStorage.getItem('kz-side-pin') === '0'); ok('☰ убирает панель, браузер это запомнил');
+  $2('#sideBtn').click(); await wait(80);
+  assert.ok(D2.body.classList.contains('side-pinned') && !$2('#side').hidden && w2.localStorage.getItem('kz-side-pin') === '1'); ok('☰ ещё раз — панель сразу закреплена');
   // цвет пространства
   D2.querySelector('.tabs [data-view="templates"]').click(); await wait(100); $2('[data-settab="spaces"]').click(); await wait(200);
   const cBtn = $2(`[data-spcolor="${sid}|#EF4444"]`); assert.ok(cBtn); cBtn.click(); await wait(300);
@@ -87,12 +83,10 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   // иконка пространства
   const iBtn = $2(`[data-spicon="${sid}|rocket"]`); assert.ok(iBtn); iBtn.click(); await wait(300);
   assert.equal(be.rows.get(`data/users/${A}/spaces/list/${sid}`).data.icon, 'rocket'); ok('иконка пространства выбирается и сохраняется');
-  $2('#sideBtn').click(); await wait(50);
   assert.ok($2('.side-dot.cur svg') && !$2('.side-spnames button') && $2('.side-dot.cur').getAttribute('title') === 'Личные проекты'); ok('панель: пространства — кружки с иконками, без списка названий (название — в подсказке)');
-  $2('[data-sideclose]').click(); await wait(50);
   // переключение пространства кружком
   let re1 = 0; w2.kzReloadHook = () => { re1++; };
-  $2('#sideBtn').click(); await wait(50); $2('.side-dots [data-sidesp=""]').click(); await wait(400);
+  $2('.side-dots [data-sidesp=""]').click(); await wait(400);
   assert.ok(re1 === 1 && !w2.localStorage.getItem('kz-space')); ok('панель: нажатие на кружок открывает другое пространство');
   w2.localStorage.setItem('kz-space', sid);
   // 3) раздел страницы помнится при обновлении

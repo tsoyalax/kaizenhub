@@ -80,7 +80,12 @@ const dump = w => { const o = {}; for (let i = 0; i < w.localStorage.length; i++
   assert.ok(![...be.rows.keys()].some(k => k.startsWith(`data/users/${A}/p_`) && JSON.parse(be.rows.get(k).data.json || '{}').name === 'Правка Вики')); ok('основное пространство не тронуто');
   v2.w.document.querySelector('[data-view="team"]').click(); await wait(100);
   assert.ok(!$(v2, '#commonLink')); v2.w.document.querySelector('[data-invite]').click(); await wait(50);
-  assert.ok(!$(v2, '#iLead')); ok('Вика не раздаёт доступы руководителя');
+  assert.ok($(v2, '#iLead') && /этой области/.test($(v2, '.lead-check').textContent)); ok('Вика может пригласить руководителя только своей области');
+  $(v2, '#iName').value = 'Юля Область'; $(v2, '#iEmail').value = 'yo@x.y'; $(v2, '#iLead').checked = true;
+  $(v2, '#iForm').dispatchEvent(new v2.w.Event('submit', { bubbles:true, cancelable:true })); await wait(1500);
+  const vinv = [...be.rows.values()].find(r => r.path.startsWith('inv/') && r.data.name === 'Юля Область');
+  assert.ok(vinv && vinv.data.role === 'arealead' && vinv.data.area === area && vinv.data.ownerId === A); ok('её ссылка — руководитель той же области от имени владельца');
+  v2.w.document.querySelector('[data-close]')?.click(); await wait(50);
   // владелец в основном пространстве: обычная галочка «Доступ руководителя»
   const o2 = openApp(be, A, 'https://kz.test/', { meta: { name: 'Александр Владелец' } }, { ...store0, 'kz-pick-seen': '1' }); await wait(4500);
   $(o2, '#spPick')?.remove();

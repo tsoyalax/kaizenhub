@@ -137,7 +137,7 @@ function openApp(backend, userId, keepStorage, session) {
   assert.ok(!pick.querySelector('[data-pickws]')); ok('разделов больше нет');
   areas[0].click(); await wait(100);
   assert.ok(!$2('#spPick')); ok('нажатие на текущую область сразу открывает рабочий экран');
-  $2('#sideBtn').click(); await wait(80);
+  if ($2('#side').hidden){ $2('#sideBtn').click(); await wait(80); }   // панель закреплена по умолчанию
   const dots = [...D2.querySelectorAll('.side-dots [data-sidesp]')].map(b => b.dataset.sidesp);
   assert.deepEqual(dots, ['', 'sabcde1', 'sabcde2']); ok('в панели кружками все пространства области «Мой бизнес»');
   $2('[data-areamenu]').click(); await wait(50);

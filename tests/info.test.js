@@ -103,6 +103,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   const fs = E(`JSON.stringify([...flowState(infoBoard()).values()].map(v => [v.s.name, v.key]))`);
   assert.deepEqual(JSON.parse(fs), [['Контент','green'],['Статья','green'],['VSL','red'],['Платный канал','yellow'],['Отдел продаж','yellow'],['Эфиры','red']]); ok('VSL просрочен — следующие за ним ждут, этап без задач — красный');
   assert.ok(D.querySelector('.fl-chain') && !/Воронка|AI-разбор/.test(D.querySelector('.fl-hd').textContent) && !D.querySelector('.fl-why-box') && !D.querySelector('.fl-ai')); ok('в «Производстве» — только статусы этапов и «Срочно», без вывода воронки и AI-разбора');
+  assert.ok(D.querySelector('.tabs [data-view="funnel"]').hidden); ok('пункт «AI-воронка» пока скрыт из меню');
+  E('SHOW_AI_FUNNEL = true');   // дальше проверяем сам раздел
   E(`ui.view = 'funnel'; render()`);
   assert.ok(/AI-воронка/.test(D.querySelector('.fl-hd').textContent)); ok('разбор — в отдельном разделе «AI-воронка»');
   assert.ok(/VSL — просрочено.*поэтому не работают: Платный канал → Отдел продаж → Эфиры/.test(D.querySelector('.fl-why-box').textContent)); ok('воронка объясняет, что и из-за чего не работает');
@@ -202,8 +204,58 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   // «Мои задачи»: задачи из всех колонок доски инфобизнеса, а не только текущего этапа
   E(`(() => { const p = infoBoard(); const s = p.stages.find(z => z !== contentStage(p) && !isMaint(z)); s.subs = s.subs || []; s.subs.push({ id:'mine1', name:'Моя задача в другой колонке', done:false }); s.assignee_id = 'me'; })()`);
   assert.ok(E(`dayProjectItems('me').some(i => i.title === 'Моя задача в другой колонке')`)); ok('«Мои задачи»: видны задачи из любой колонки доски');
+  // переименование видео в «Контенте»: подэтап и его задача
+  E(`ui.view = 'content'; ui.ctMode = 'board'; render()`);
+  const rb = D.querySelector('[data-ctren]'); const rid = rb.dataset.ctren; rb.click();
+  D.getElementById('npName').value = 'Рилс про кейс клиента с очень длинным названием'; D.getElementById('npForm').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
+  assert.equal(E(`contentStage().subs.find(x => x.id === '${rid}').name`), 'Рилс про кейс клиента с очень длинным названием'); ok('видео переименовывается прямо в «Контенте»');
+  // «Приоритеты»: все задачи инфоповода по группам, приоритет меняется в строке, значок — на доске
+  assert.ok(!D.querySelector('.tabs [data-view="priority"]').hidden); ok('в меню инфобизнеса есть «Приоритеты»');
+  E(`ui.view = 'priority'; render()`);
+  const prow = D.querySelector('.pr-grp:last-of-type [data-tpri]'); const pkey = prow.dataset.tpri;
+  assert.ok(![...prow.options].some(o => o.value === 'urgent')); ok('приоритеты: высокий, средний, низкий — без «Срочно»');
+  prow.value = 'high'; prow.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
+  const [, psid, pxid] = pkey.split('|');
+  assert.equal(E(`taskFor(infoBoard().id, '${psid}', '${pxid}').priority`), 'high'); ok('приоритет ставится прямо в списке');
+  assert.ok(/Высокий/.test(D.querySelector('.pr-grp h3').textContent)); ok('задача — в группе «Высокий» наверху');
+  E(`ui.view = 'production'; ui.prodTab = 'board'; ui.infoMode = 'board'; render()`);
+  assert.ok(D.querySelector(`[data-pfsub="${psid}|${pxid}"] .tpri-r`)); ok('на доске — значок приоритета');
   E(`db.prefs.kind = 'agency'; render()`);
   assert.ok(!D.querySelector('.tabs [data-view="matrix"]').hidden); ok('в агентстве матрица на месте');
+  // «Внутренние задачи» — вкладка в «Производстве» у проекта: отделы + «Регулярные» из «Ведения»
+  assert.ok(!D.querySelector('.tabs [data-view="internal"]')); ok('отдельного пункта меню нет — вкладка в «Производстве»');
+  const ap = E(`db.projects.find(p => p.state === 'active' && !p.is_maintenance).id`);
+  E(`ui.view = 'production'; ui.prodProject = '${ap}'; ui.prodTab = 'board'; render()`);
+  D.querySelector('[data-prodtab="internal"]').click(); await wait(20);
+  assert.deepEqual([...D.querySelectorAll('.it-col header b')].map(b => b.textContent), ['Регулярные']); ok('по умолчанию — только «Регулярные» и «+ Отдел»');
+  for (const nm of ['Маркетинг', 'SMM']){ D.querySelector('[data-itdeptadd]').click(); await wait(10); D.getElementById('npName').value = nm; D.getElementById('npForm').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20); }
+  assert.deepEqual([...D.querySelectorAll('.it-col header b')].map(b => b.textContent), ['Регулярные', 'Маркетинг', 'SMM']); ok('отделы добавляются плюсиком');
+  const smmId = E(`itDepts().find(d => d.name === 'SMM').id`);
+  assert.ok(D.querySelector('[data-mainton]')); ok('без «Ведения» — подсказка и «Включить ведение»');
+  D.querySelector('[data-mainton]').click(); await wait(20);
+  assert.ok(E(`projById('${ap}').is_maintenance`) && D.querySelector('.it-repcol .rt-block')); ok('«Включить ведение» — в «Регулярных» появляются регулярные задачи проекта');
+  // ответственный за отдел: по умолчанию — исполнитель проекта, можно выбрать своего; новая задача назначается ему
+  E(`projById('${ap}').worker_id = 'me'; render()`);
+  assert.ok(/Как у проекта/.test(D.querySelector(`[data-itdeptwho="${ap}|${smmId}"]`).selectedOptions[0].textContent)); ok('отдел: по умолчанию — исполнитель проекта');
+  E(`if (!db.users.some(u => u.id === 'uyu')) db.users.push({ id:'uyu', name:'Юля Ан', role:'specialist', status:'active' })`);
+  const dw = D.querySelector(`[data-itdeptwho="${ap}|${smmId}"]`); dw.value = 'uyu'; dw.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
+  assert.equal(E(`projById('${ap}').itDeptWho['${smmId}']`), 'uyu'); ok('у отдела в проекте — свой ответственный');
+  D.querySelector(`[data-itnewdept="${smmId}"]`).click(); await wait(20);
+  assert.equal(D.getElementById('itWho').value, 'uyu'); ok('новая задача отдела — сразу на ответственного отдела');
+  assert.equal(D.getElementById('itDept').value, smmId); assert.equal(D.getElementById('itProj').value, ap); ok('«+ Задача» в SMM — отдел и проект уже выбраны');
+  D.getElementById('itTitle').value = 'Контент-план на декабрь'; D.getElementById('itForm').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
+  const smmCol = [...D.querySelectorAll('.it-col')].find(c => /SMM/.test(c.querySelector('header b').textContent));
+  assert.ok(/Контент-план на декабрь/.test(smmCol.textContent) && smmCol.querySelector('.who-chip')); ok('задача — в колонке SMM этого проекта');
+  const itId = E(`itAll().find(t => t.title === 'Контент-план на декабрь').id`);
+  const sts = D.querySelector(`[data-itstatus="${itId}"]`); sts.value = 'done'; sts.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
+  assert.equal(E(`itAll().find(t => t.id === '${itId}').status`), 'done'); ok('статус меняется прямо на карточке');
+  assert.ok(!/Контент-план на декабрь/.test([...D.querySelectorAll('.it-col')].find(c => /SMM/.test(c.querySelector('header b').textContent)).querySelector('.pf-cards').textContent)); ok('готовые скрыты, пока не включить «Показать готовые»');
+  const mk = E(`itDepts().find(d => d.name === 'Маркетинг').id`); D.querySelector(`[data-itdeptdel="${mk}"]`).click(); await wait(20);
+  assert.deepEqual(E('itDepts().map(d => d.name)'), ['SMM']); ok('пустой отдел удаляется крестиком');
+  const op = E(`db.projects.find(p => p.state === 'active' && p.id !== '${ap}').id`);
+  E(`ui.prodProject = '${op}'; render()`);
+  assert.ok(!/Контент-план на декабрь/.test(D.getElementById('app').textContent)); ok('у другого проекта — свои внутренние задачи');
+  E(`ui.prodTab = 'board'`);
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });

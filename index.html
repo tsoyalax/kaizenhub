@@ -660,8 +660,8 @@ body.side-pinned .side-btn{color:var(--ink)}
 .side-spnames button i{width:9px;height:9px;border-radius:50%;flex:none}
 .side-spnames button:hover{background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink)}
 .side-spnames button.cur{color:var(--ink);font-weight:500}
-/* закреплённая панель: сдвигает страницу, верхние вкладки не дублируются */
-@media (min-width:1101px){
+/* закреплённая панель: сдвигает страницу, верхние вкладки не дублируются (закреплена всегда шире 640px) */
+@media (min-width:641px){
   body.side-pinned{padding-left:280px}
   body.side-pinned .side{animation:none;box-shadow:none;z-index:6}
   body.side-pinned .top .tabs{display:none}
@@ -1138,6 +1138,49 @@ body[data-kind="info"] .pf{grid-template-columns:minmax(0,1fr)}
 body[data-kind="info"] :is(.pf-list,.pf-select,#newBtn,.pm-cnt,.pm-nav>.icon-btn:first-child,.pm-nav>.icon-btn:last-child){display:none!important}
 body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ct-wk{margin-top:14px}
+.it-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.it-top h2{margin:0 auto 0 0;font-size:20px}
+.it-f{display:inline-flex;align-items:center;gap:6px;font-size:14px;cursor:pointer}
+.it-col header > div{display:flex;align-items:center;gap:4px}
+.it-card{display:grid;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
+.it-card:hover{border-color:color-mix(in srgb,var(--ink) 25%,var(--line))}
+.it-card b{font-weight:600;overflow-wrap:anywhere}
+.prod-tabs{display:inline-flex;margin:0 0 12px}
+.pt-n{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;font-size:11px;background:var(--ink);color:var(--surface);margin-left:4px}
+.it-wrap{min-width:0}
+.it-wrap .it-top{margin-bottom:10px}
+.it-repcol{background:color-mix(in srgb,var(--m) 6%,var(--bg))}
+.it-repcol header > div{color:var(--pl-m,var(--m))}.it-repcol header svg{width:14px;height:14px;flex:none}
+.it-repcol .rt-block h4{display:none}
+.it-repcol .rt-row{display:grid!important;grid-template-columns:auto minmax(0,1fr);gap:4px 8px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.it-repcol .rt-row > :nth-child(3){grid-column:2;font-size:12px}
+.it-repcol .rt-main{min-width:0}.it-repcol .rt-main b{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+.it-repcol .rt-list{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.it-proj{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);min-width:0}
+.it-proj .pava{flex:none}
+.it-pf{height:34px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit;font-size:13.5px;max-width:240px}
+.it-card.done{opacity:.6}.it-card.done b{text-decoration:line-through}
+.it-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px}
+.it-meta svg{width:12px;height:12px}
+.it-card .it-st{width:100%}
+.it-add{width:100%;margin-top:8px;border-style:dashed}
+.tpri{display:inline-grid;place-items:center;width:18px;height:18px;flex:none;margin-right:6px;vertical-align:-3px}
+.tpri svg{width:18px;height:18px}
+.tpri-r{color:var(--r)}.tpri-y{color:var(--y)}.tpri-b{color:var(--b)}
+.tpri-off{border:1px dashed var(--line);border-radius:5px;width:16px;height:16px}
+.pr-grp{margin-bottom:16px}
+.pr-grp h3{display:flex;align-items:center;gap:4px;font-size:15px;margin:0 0 8px 4px}
+.pr-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.pr-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.pr-row.done{opacity:.55}
+.pr-name{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer;display:grid;gap:3px}
+.pr-name b{font-weight:600;overflow-wrap:anywhere}.pr-name small{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px}
+.pr-row .tpri-sel{width:auto;max-width:150px}
+@media (max-width:640px){.pr-row{flex-wrap:wrap}.pr-row .tpri-sel{width:100%;max-width:none}}
+.it-newcol{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:140px;border:1.5px dashed var(--line);background:transparent;color:var(--muted);font:inherit;font-size:14px;font-weight:600;cursor:pointer;border-radius:16px}
+.it-newcol span{font-size:28px;line-height:1;font-weight:400}
+.it-newcol:hover{color:var(--ink);border-color:color-mix(in srgb,var(--ink) 30%,var(--line))}
+.it-del{font-size:16px;line-height:1}
 .ai-key-row input{flex:1;min-width:0;height:40px}
 .ai-key-act{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
 .ct-kpi-ed{display:grid;gap:10px}
@@ -1304,7 +1347,11 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ct-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .ct-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
 .ct-name{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;color:inherit;display:grid;gap:2px;cursor:pointer}
-.ct-name b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ct-name b{font-weight:600;overflow-wrap:anywhere}
+.ct-title{display:flex;align-items:flex-start;gap:4px}
+.ct-title .ct-open{flex:1;min-width:0;align-items:flex-start}
+.ct-open b{overflow-wrap:anywhere;white-space:normal}
+.ct-ren{flex:none;width:26px;height:26px;opacity:.55}.ct-ren:hover{opacity:1}.ct-ren svg{width:14px;height:14px}
 .ct-name small{color:var(--muted);font-size:12px}
 .ct-row.done .ct-name b{text-decoration:line-through;color:var(--muted)}
 .ct-date{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:4px 6px;font:inherit;font-size:13px}
@@ -2233,6 +2280,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
     <button data-view="funnel" hidden>AI-воронка</button>
+    <button data-view="priority" hidden>Приоритеты</button>
     <button data-view="content" hidden>Контент</button>
     <button data-view="mytasks" id="myTasksTab">Мои задачи</button>
     <button data-view="review" id="reviewTab">Приёмка</button>
@@ -2406,6 +2454,8 @@ function ensureKindTemplate(d, k){ if (k === 'smm') ensureSmmTemplate(d); else i
 // (постоянный id INFO_BOARD_ID, чтобы два устройства не создали по своей доске). Колонки — этапы шаблона «Инфобизнес: запуск».
 const INFO_TPL_ID = 'tinfo', INFO_BOARD_ID = 'infoboard';
 const INFO_HIDDEN = ['matrix', 'kanban', 'archive'];
+// раздел «AI-воронка» пока скрыт из меню (по просьбе); код остался — вернуть: SHOW_AI_FUNNEL = true
+let SHOW_AI_FUNNEL = false;
 function infoTemplate(){
   return { id:INFO_TPL_ID, name:'Инфобизнес: запуск', stages:[['Продукт',7],['Контент',7],['Прогрев',7],['Запуск',7],['Продажи',14],['Сопровождение',14]]
     .map(([n, d]) => ({ id:uid(), name:n, days:d, approval:false, subs:[] })) };
@@ -2543,7 +2593,7 @@ function contentBoardHtml(s, items){
         ${GUEST ? '' : `<select class="pf-status" data-vidwho="${c.id}" aria-label="Ответственный за этап «${esc(c.name)}»">${peopleOpts((infoBoard()?.vidWho || {})[c.id] || '', 'Ответственный не назначен')}</select>`}</header>
       <div class="pf-cards">${list.map(x => { const t = taskFor(infoBoard().id, s.id, x.id);
         return `<div class="pf-card ct-card${x.done ? ' done' : ''}" draggable="true" data-ctdrag="${x.id}">
-          <button class="ct-open" data-pfsub="${s.id}|${x.id}"><span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><b>${esc(x.name)}</b>${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</button>
+          <div class="ct-title"><button class="ct-open" data-pfsub="${s.id}|${x.id}"><span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><b>${esc(x.name)}</b>${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}</div>
           <small>${x.due_date ? `публикация ${fmt(x.due_date)}` : 'без даты'}</small>${whoChip(contentWho(infoBoard(), s, x, t))}
           ${(c.subs || []).length && !x.done ? `<div class="ct-subs">${c.subs.map(y => `<label><input type="checkbox" data-ctvs="${x.id}|${y.id}" ${x.vs?.[y.id] ? 'checked' : ''}><span>${esc(y.name)}</span></label>`).join('')}</div>` : ''}
           <select class="pf-status" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}">${cs.map(y => `<option value="${y.id}" ${y === c ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select></div>`; }).join('') || '<p class="hint">Пусто</p>'}</div></section>`; }).join('')}</div>`;
@@ -2584,7 +2634,7 @@ function renderContentBody(){
   const pace = !st.plan || (!live && t < c) ? '' : st.pub >= due ? 'идём по плану' : `отстаём на ${due - st.pub}`;
   const row = x => `<li class="ct-row${x.done ? ' done' : ''}">
       <input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="Опубликовано: ${esc(x.name)}">
-      <span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>
+      <span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}
       ${whoChip(contentWho(p, s, x, taskFor(p.id, s.id, x.id)))}<input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
   // по умолчанию — «План / Факт», доска — вторым видом
   const modeSeg = `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode !== 'board'}">План / Факт</button><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode === 'board'}">Доска</button></span>`;
@@ -2984,7 +3034,7 @@ function stampStages(){
 }
 // Карточки подэтапов тоже пишутся целиком: пункт чек-листа получает i.u при отметке/снятии, карточка — t.u при прочих правках
 const taskSig = t => JSON.stringify([t.title, t.description || '', t.assignee_id || null, t.result_link || '', t.video_url || '', t.regulation_link || '',
-  (t.checklist || []).map(i => [i.id, i.text]), (t.mats || []).map(m => [m.id, !!m.ok]), t.start_date || null, t.due_date || null, t.remind?.at || null]);
+  (t.checklist || []).map(i => [i.id, i.text]), (t.mats || []).map(m => [m.id, !!m.ok]), t.start_date || null, t.due_date || null, t.remind?.at || null, t.priority || null]);
 function stampTasks(){
   const now = new Date().toISOString();
   [...(db.tasks || []), ...((typeof ext !== 'undefined' && ext.tasks) || [])].forEach(t => {
@@ -3308,6 +3358,24 @@ document.addEventListener('change', e => {
     sel.value = u.id; sel.dataset.prev = u.id; sel.dispatchEvent(new Event('change', { bubbles:true }));   // дальше — как обычный выбор ответственного
   });
 }, true);
+// переименовать видео: подэтап колонки «Контент» и его задача — одно название
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-ctren]'); if (!b) return; e.stopPropagation();
+  const p = infoBoard(); const s = contentStage(p); const x = s?.subs?.find(y => y.id === b.dataset.ctren); if (!x) return;
+  askText('Название видео', x.name, v => {
+    if (v === x.name) return; const old = x.name; x.name = v;
+    const t = taskFor(p.id, s.id, x.id); if (t) t.title = v;
+    addLog(p, `«${old}» переименован в «${v}»`); commit();
+  });
+}, true);
+function askText(title, value, onOk){
+  $('#npDlg')?.remove();
+  document.body.insertAdjacentHTML('beforeend', `<div class="np-dlg" id="npDlg" role="dialog" aria-modal="true" aria-labelledby="npT"><div class="np-bd" data-npclose></div>
+    <form class="np-box" id="npForm"><h3 id="npT">${esc(title)}</h3><input id="npName" value="${esc(value || '')}" maxlength="200" autocomplete="off" required>
+    <div class="np-act"><button type="button" class="ghost" data-npclose>Отмена</button><button class="primary">Сохранить</button></div></form></div>`);
+  const i = $('#npName'); i.focus(); i.select();
+  $('#npForm').onsubmit = ev => { ev.preventDefault(); const v = $('#npName').value.trim(); if (!v) return; $('#npDlg').remove(); onOk(v); };
+}
 function askPerson(onOk){
   $('#npDlg')?.remove();
   document.body.insertAdjacentHTML('beforeend', `<div class="np-dlg" id="npDlg" role="dialog" aria-modal="true" aria-labelledby="npT"><div class="np-bd" data-npclose></div>
@@ -3771,12 +3839,13 @@ function render(){
   document.body.dataset.kind = GUEST ? '' : (db?.prefs?.kind || 'agency');
   if (isInfo() && !GUEST){ if (INFO_HIDDEN.includes(ui.view)) ui.view = 'production'; try { ensureInfoBoard(); syncInfoNames(); } catch(e) {} }
   INFO_HIDDEN.forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = isInfo() && !GUEST; });
-  ['content', 'funnel'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST; });
-  if ((ui.view === 'content' || ui.view === 'funnel') && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
+  ['content', 'funnel', 'priority'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST || (v === 'funnel' && !SHOW_AI_FUNNEL); });
+  if (['content', 'funnel', 'priority'].includes(ui.view) && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
+  if (ui.view === 'funnel' && !SHOW_AI_FUNNEL) ui.view = 'production';
   try { renderSide(); } catch(e) {}
   setTimeout(() => { try { paintReviewBadge(); } catch(e) {} }, 0);
   try { paintPhoneHead(); } catch(e) {}
-  try { const vn = $('#viewName'); if (vn) vn.textContent = ({ production:'Производство', templates:'Настройки' })[ui.view] || MNAV[ui.view]?.[0] || ''; } catch(e) {}
+  try { const vn = $('#viewName'); if (vn) vn.textContent = ({ production:'Производство', templates:'Настройки', internal:'Внутренние задачи' })[ui.view] || MNAV[ui.view]?.[0] || ''; } catch(e) {}
   paintSpace(); rememberView();
   document.body.dataset.view = ui.view;
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
@@ -3785,7 +3854,7 @@ function render(){
   renderFilters();
   const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер');
   if (!isCRM()) ui.crmStage = null;
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, priority:renderPriority, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
   if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST && !(ui.view === 'matrix' && density() === 'funnel')) app.insertAdjacentHTML('afterbegin', crmSumHtml());
   if (ui.open) renderDrawer();
@@ -4667,14 +4736,40 @@ function openSubsModal(t, i){
 }
 
 // ---------- Производство: доска выбранного проекта (поиск и список всех проектов слева) ----------
+// «Производство»: над доской проекта — вкладки «Доска | Внутренние задачи» (внутренние задачи отделов этого проекта и регулярные из «Ведения»)
 function renderProduction(){
   if (isInfo() && !GUEST && infoBoard()) ui.prodProject = infoBoard().id;
   renderProjectFocus();
+  const cur = projById(ui.prodProject);
+  const board = app.querySelector('.pf-main .pf-board, .pm-board');
+  const itab = ui.prodTab === 'internal' && cur && !GUEST && !cur._ext;
+  if (cur && !GUEST && !cur._ext && board){
+    board.insertAdjacentHTML('beforebegin', `<div class="prod-tabs kind-seg" role="tablist" aria-label="Вид"><button type="button" data-prodtab="board" aria-pressed="${!itab}">Доска</button><button type="button" data-prodtab="internal" aria-pressed="${!!itab}">Внутренние задачи${(() => { const n = itAll().filter(t => t.project_id === cur.id && t.status !== 'done').length; return n ? ` <span class="pt-n">${n}</span>` : ''; })()}</button></div>`);
+    if (itab){ board.outerHTML = internalBoardHtml(cur); return; }
+  }
   const p = infoBoard();
   if (!isInfo() || GUEST || !p || projById(ui.prodProject) !== p) return;
   app.insertAdjacentHTML('afterbegin', infoTabsHtml() + flowPanelHtml(p, 'prod'));
   if (ui.infoMode === 'timeline'){ const b = app.querySelector('.pf-board'); if (b) b.outerHTML = timelineHtml(p); }
 }
+document.addEventListener('click', e => { const t = e.target.closest?.('[data-prodtab]'); if (t){ ui.prodTab = t.dataset.prodtab; render(); } });
+// раздел «Приоритеты» (инфобизнес): все задачи инфоповода по приоритету, приоритет меняется в строке
+function renderPriority(){
+  const p = infoBoard(); if (!p){ app.innerHTML = '<div class="empty">Доски пока нет</div>'; return; }
+  ui.prodProject = p.id; const t0 = today();
+  const items = p.stages.filter(s => !isMaint(s)).flatMap(s => (s.subs || []).map(x => { const t = taskFor(p.id, s.id, x.id);
+    return { s, x, t, done:subDone(p, s, x), pri:normPri(t?.priority), due:t?.due_date || x.due_date || '' }; })).filter(i => ui.priDone || !i.done);
+  const row = i => { const who = i.x.cycle ? contentWho(p, i.s, i.x, i.t) : whoId(p, i.s, i.t); const late = i.due && i.due < t0 && !i.done;
+    return `<li class="pr-row${i.done ? ' done' : ''}">${priIco(i.pri) || '<span class="tpri tpri-off"></span>'}
+      <button class="pr-name" data-pfsub="${i.s.id}|${i.x.id}"><b>${esc(i.x.name)}</b><small><span class="vid-st">${esc(i.s.name)}</span>${i.due ? `<span class="pf-due${late ? ' late' : ''}">${FLAG}${fmt(i.due)}</span>` : ''}</small></button>
+      ${whoChip(who)}${priSel(`${p.id}|${i.s.id}|${i.x.id}`, i.pri)}</li>`; };
+  app.innerHTML = infoTabsHtml() + `<div class="it-top"><h2>Приоритеты</h2><label class="it-f"><input type="checkbox" id="priDone" ${ui.priDone ? 'checked' : ''}> Показать сделанные</label></div>
+    ${TPRI_ORDER.map(k => { const list = items.filter(i => i.pri === k).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
+      if (!list.length && k) return '';
+      return `<section class="pr-grp"><h3>${k ? `${priIco(k)}${TPRI[k][0]}` : 'Без приоритета'} <span class="hint">${list.length}</span></h3>
+        ${list.length ? `<ul class="pr-list">${list.map(row).join('')}</ul>` : '<p class="hint">Все задачи распределены</p>'}</section>`; }).join('')}`;
+}
+document.addEventListener('change', e => { if (e.target.id === 'priDone'){ ui.priDone = e.target.checked; render(); } });
 // раздел «AI-воронка» (только в инфобизнесе): разбор Claude, финальный дедлайн, статусы и связи отделов
 function renderFunnel(){
   const p = infoBoard(); if (!p){ app.innerHTML = '<div class="empty">Доски пока нет</div>'; return; }
@@ -5051,7 +5146,7 @@ function renderTeam(){
       <div><span class="mlabel">Статус</span>${memberStatus(u, isMe)}<br><span class="hint">в ${r.cur} ${plural(r.cur,'проекте','проектах','проектах')} из ${u.capacity}</span></div>
       <div class="acts">
         ${isMe ? `<button class="ghost" data-editme>Изменить профиль</button>` : ''}
-        ${!isMe && !u.account_id && online && !ORGSP ? `<button class="ghost" data-tlink="${u.id}">${u.invite?.code ? 'Ссылка-приглашение' : 'Пригласить по ссылке'}</button>` : ''}
+        ${!isMe && !u.account_id && online && (!ORGSP || (u.lead && u.area)) ? `<button class="ghost" data-tlink="${u.id}">${u.invite?.code ? 'Ссылка-приглашение' : 'Пригласить по ссылке'}</button>` : ''}
         ${u.status === 'invited' && !online ? `<button class="ghost" data-accept="${u.id}">Отметить принявшим</button>` : ''}
         ${!isMe ? `<button class="ghost danger" data-remove="${u.id}">${u.status === 'invited' ? 'Отозвать' : 'Удалить'}</button>` : ''}
       </div></div>`;
@@ -5080,6 +5175,8 @@ function openInvite(){
       </div>
       <div class="field"><label for="iCap">Норма: проектов одновременно</label><input id="iCap" type="number" min="1" max="20" value="3"></div>
       ${cloud.store && !ORG && SPACE ? `<label class="check lead-check"><input type="checkbox" id="iLead"> <span><b>Доступ к области «${esc(areaById(curArea()).name)}»</b><small>Видит и редактирует только пространства этой области: ${esc(spacesOfArea(curArea()).filter(x => x.id).map(x => x.name).join(', '))}. Основное пространство, другие области и ваши личные ссылки ему недоступны.</small></span></label>`
+        : cloud.store && ORGSP ? `<label class="check lead-check"><input type="checkbox" id="iLead"> <span><b>Доступ руководителя этой области</b><small>Видит и редактирует только пространства этой области, как вы.</small></span></label>`
+        : cloud.store && ORG ? `<label class="check lead-check"><input type="checkbox" id="iLead"> <span><b>Доступ руководителя</b><small>Видит и редактирует все проекты основного пространства, шаблоны и команду — как вы.</small></span></label>`
         : cloud.store && !ORG ? `<label class="check lead-check"><input type="checkbox" id="iLead"> <span><b>Доступ руководителя</b><small>Видит и редактирует все проекты основного пространства «${esc(mainName())}», шаблоны и команду, назначает людей. Отдельные пространства и области и ваши личные ссылки остаются только вашими. Чтобы дать доступ только к одной области — приглашайте из пространства этой области.</small></span></label>` : ''}
       <p class="hint" style="margin:0">${cloud.store ? 'После добавления появится ссылка-приглашение: отправьте её человеку. Войдя по ней, он увидит проекты, где вы его назначите.' : 'Письма приложение не отправляет. Чтобы человек увидел свои проекты, откройте нужный проект, нажмите «Поделиться» → «Создать ссылку» и пришлите ему эту ссылку.'}</p>
       <div class="err" id="iErr"></div>
@@ -5096,7 +5193,7 @@ function openInvite(){
     if (!(cap >= 1)) return $('#iErr').textContent = 'Норма — от 1 проекта';
     const lead = !!$('#iLead')?.checked;
     const u = inviteMember({ name, email, role:lead && $('#iRole').value === 'specialist' ? 'pm' : $('#iRole').value, dept:lead && $('#iDept').value === 'Креатив' ? 'Аккаунтинг (PM)' : $('#iDept').value, capacity:cap });
-    if (lead){ u.lead = true; if (SPACE) u.area = curArea(); commit(); }
+    if (lead){ u.lead = true; if (SPACE) u.area = curArea(); if (ORGSP) u.area = cloud.org?.area || ''; commit(); }
     layer.innerHTML = '';
     if (cloud.store && cloud.uid) teamLinkFor(u, true);
     else toast(`${name} в команде. Доступ к проекту откройте ссылкой через «Поделиться»`);
@@ -5880,7 +5977,9 @@ function watchSpaces(){
 // =====================================================================
 const SIDE_PIN = 'kz-side-pin';
 let sideOpen = false;
-const sidePinned = () => { if (innerWidth <= 1100) return false; try { const v = localStorage.getItem(SIDE_PIN); return v === null ? true : v === '1'; } catch(e) { return true; } };
+// панель слева: кнопка ☰ слева вверху сразу закрепляет её (сдвигает страницу) или убирает; выбор запоминается (kz-side-pin).
+// Выдвигания поверх страницы и по наведению на край больше нет. На телефоне — нижнее меню.
+const sidePinned = () => { if (innerWidth <= 640) return false; try { return localStorage.getItem(SIDE_PIN) !== '0'; } catch(e) { return true; } };
 const setPin = on => { try { localStorage.setItem(SIDE_PIN, on ? '1' : '0'); } catch(e) {} };
 function sideViews(){
   if (GUEST) return guestViews();
@@ -5908,11 +6007,11 @@ function renderSide(){
   el.hidden = !(pinned || sideOpen); $('#sideBack').hidden = pinned || !sideOpen;
   $('#sideBtn')?.setAttribute('aria-expanded', String(pinned || sideOpen));
   if (el.hidden) return;
-  const label = v => v === 'production' ? 'Производство' : v === 'templates' ? 'Настройки' : (MNAV[v]?.[0] || v);
+  const label = v => v === 'production' ? 'Производство' : v === 'templates' ? 'Настройки' : v === 'internal' ? 'Внутренние задачи' : (MNAV[v]?.[0] || v);
   const all = GUEST ? [] : sideSpaces();
   const cur = all.find(x => x.cur) || { name:mainName(), color:spColor(''), icon:spIcon('') };
   el.innerHTML = `${GUEST ? '' : areaBar()}<div class="side-head"><span class="side-sp" style="--c:${cur.color}"><span class="side-sp-ico">${spIco(GUEST ? 'briefcase' : cur.icon)}</span><b>${esc(GUEST ? 'Мои проекты' : cur.name)}</b></span>
-      ${innerWidth > 1100 ? `<button class="icon-btn side-pin" data-sidepin aria-pressed="${pinned}" title="${pinned ? 'Открепить панель' : 'Закрепить панель'}" aria-label="${pinned ? 'Открепить панель' : 'Закрепить панель'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${pinned ? '<path d="M15 6l-6 6 6 6"/>' : '<path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3z"/>'}</svg></button>` : ''}
+      ${false ? `<button class="icon-btn side-pin" data-sidepin aria-pressed="${pinned}" title="${pinned ? 'Открепить панель' : 'Закрепить панель'}" aria-label="${pinned ? 'Открепить панель' : 'Закрепить панель'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${pinned ? '<path d="M15 6l-6 6 6 6"/>' : '<path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3z"/>'}</svg></button>` : ''}
       ${pinned ? '' : '<button class="icon-btn" data-sideclose aria-label="Закрыть меню">×</button>'}</div>
     <nav class="side-nav" aria-label="Разделы">${sideViews().map(v => `<button data-sideview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v]?.[1] || ''}<span>${label(v)}</span></button>`).join('')}</nav>
     ${all.length ? `<div class="side-spaces"><div class="side-spl"><span>Пространства</span><button class="link" data-sidespset>Настроить</button></div>
@@ -5935,7 +6034,7 @@ function openSide(){ sideOpen = true; renderSide(); }
 function closeSide(){ if (!sideOpen) return; sideOpen = false; renderSide(); }
 document.addEventListener('click', e => {
   if (layer.querySelector('.more-sheet') && e.target.closest?.('.more-sheet [data-sideme], .more-sheet [data-sidecloud], .more-sheet [data-sidesp], .more-sheet [data-sidespset]')) layer.innerHTML = '';
-  if (e.target.closest?.('#sideBtn')){ if (sidePinned()){ setPin(false); sideOpen = false; renderSide(); render(); } else { sideOpen = !sideOpen; renderSide(); } return; }
+  if (e.target.closest?.('#sideBtn')){ setPin(!sidePinned()); sideOpen = false; renderSide(); render(); return; }
   if (e.target.closest?.('#sideBack') || e.target.closest?.('[data-sideclose]')){ closeSide(); return; }
   if (e.target.closest?.('[data-sideme]')){ if (!sidePinned()) closeSide(); openProfile(false); return; }
   if (e.target.closest?.('[data-areamenu]')){ ui.areaMenu = !ui.areaMenu; renderSide(); if (layer.querySelector('.more-sheet')) openMore(); return; }
@@ -5959,6 +6058,7 @@ document.addEventListener('click', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && sideOpen) closeSide(); });
 // как в Arc: подвели мышь к левому краю — панель выглядывает
 document.addEventListener('mousemove', e => {
+  return;   // по наведению на край панель больше не выдвигается — только кнопкой
   if (sidePinned() || sideOpen || innerWidth <= 1100 || layer.innerHTML || e.clientX > 4 || e.buttons) return;
   clearTimeout(window.__sideT); window.__sideT = setTimeout(() => { if (!sideOpen) { sideOpen = true; window.__sideHover = true; renderSide(); } }, 180);
 });
@@ -7689,9 +7789,9 @@ function pushNotify(){
 const ntfItem = i => i.kind === 'i'
   ? `<button class="ntf" data-itopen="${i.id}"><span class="sw ${i.due && i.due < today() ? 'red' : 'yellow'}"></span><span><b>${esc(i.title)}</b><small>Внутренняя${i.due ? ` · срок ${fmt(i.due)}` : ''}</small></span></button>`
   : `<button class="ntf" ${i.t ? `data-task="${i.t.id}"` : `data-ntfday="1"`}><span class="sw ${i.due && i.due < today() ? 'red' : 'yellow'}"></span><span><b>${esc(i.title)}</b><small>${esc(i.p.name)} · ${esc(i.s.name)}${i.due ? ` · срок ${fmt(i.due)}` : ''}</small></span></button>`;
-function openItask(id){
+function openItask(id, preset = {}){
   const t = id ? itAll().find(x => x.id === id) : null; const manage = itCanManage(t);
-  const v = t || { title:'', description:'', assignee_id:ui.dayWho || ui.dayAs || ME, priority:'medium', category:'admin', status:'todo', due_date:'' };
+  const v = t || { title:'', description:'', assignee_id:ui.dayWho || ui.dayAs || ME, priority:'medium', category:'admin', status:'todo', due_date:'', dept:'', ...preset };
   const ro = manage ? '' : 'disabled';
   layer.innerHTML = `<div class="backdrop" data-close></div>
   <div class="modal it-modal" role="dialog" aria-modal="true" aria-labelledby="itT">
@@ -7707,6 +7807,8 @@ function openItask(id){
         <div class="field"><label for="itPri">Приоритет</label><select id="itPri" ${ro}>${Object.entries(IT_PRI).map(([k, x]) => `<option value="${k}" ${k === v.priority ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
         <div class="field"><label for="itCat">Категория</label><select id="itCat" ${ro}>${Object.entries(IT_CAT).map(([k, x]) => `<option value="${k}" ${k === v.category ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
       </div>
+      ${GUEST ? '' : `<div class="field"><label for="itProj">Проект</label><select id="itProj" ${ro}><option value="">Без проекта</option>${db.projects.filter(x => x.state !== 'archived' || x.id === v.project_id).map(x => `<option value="${x.id}" ${x.id === v.project_id ? 'selected' : ''}>${esc(x.name)}${x.client ? ` — ${esc(x.client)}` : ''}</option>`).join('')}</select></div>`}
+      ${GUEST ? '' : `<div class="field"><label for="itDept">Отдел</label><select id="itDept" ${ro}><option value="">Без отдела</option>${itDepts().map(d => `<option value="${d.id}" ${d.id === v.dept ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}</select></div>`}
       <div class="field"><label for="itStatus">Статус</label><select id="itStatus">${Object.entries(IT_STATUS).map(([k, x]) => `<option value="${k}" ${k === v.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
       ${t ? `<p class="hint">Поставил(а): ${esc(t.creator_name || '—')}, ${new Date(t.created_at).toLocaleDateString('ru-RU')}</p>` : ''}
       <div class="err" id="itErr" aria-live="polite"></div>
@@ -7722,7 +7824,7 @@ document.addEventListener('submit', e => {
   const who = $('#itWho').value; if (!who){ $('#itErr').textContent = 'Выберите исполнителя'; return; }
   const now = new Date().toISOString();
   const t = { ...(old || { id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Руководитель', created_at:now }),
-    title, description:$('#itDesc').value.trim(), assignee_id:who, priority:$('#itPri').value, category:$('#itCat').value, status:$('#itStatus').value, due_date:$('#itDue').value || '' };
+    title, description:$('#itDesc').value.trim(), assignee_id:who, priority:$('#itPri').value, category:$('#itCat').value, status:$('#itStatus').value, due_date:$('#itDue').value || '', dept:$('#itDept')?.value ?? (old?.dept || ''), project_id:$('#itProj')?.value ?? (old?.project_id || '') };
   if (old && old.assignee_id !== who) delete t._members;                    // сменили исполнителя — пересобираем доступ
   itSave(t); layer.innerHTML = ''; render();
   const u = userById(who);
@@ -7752,6 +7854,72 @@ document.addEventListener('click', e => {
   const po = e.target.closest?.('[data-dtopen]'); if (po){ const [pid, sid] = po.dataset.dtopen.split('|'); const q = projById(pid);
     if (q && !q._ext) openProject(pid, sid); else { ui.myProject = pid; ui.view = 'mine'; render(); } }
 });
+// ---------- «Внутренние задачи»: задачи отделов (не по проектам клиентов) — колонками по отделам ----------
+// Задачи — те же внутренние задачи it/<id> (видны исполнителю и в «Поручениях»), у задачи t.dept — id отдела.
+// Отделы — db.prefs.itDepts [{ id, name }] (по умолчанию Маркетинг, SMM, Продажи, Администрирование), правятся здесь же.
+const IT_DEPTS_DEF = [['dmkt', 'Маркетинг'], ['dsmm', 'SMM'], ['dsales', 'Продажи'], ['dadmin', 'Администрирование']];
+// отделы составляет сам человек (по умолчанию — ни одного); из прежних стандартных остаются только те, где уже есть задачи
+const itDepts = () => db.prefs?.itDepts || IT_DEPTS_DEF.filter(([id]) => itAll().some(t => t.dept === id)).map(([id, name]) => ({ id, name }));
+const IT_ICO = { todo:'gray', in_progress:'green', review:'blue', done:'done' };
+// доска внутренних задач проекта p (вкладка «Внутренние задачи» в «Производстве»):
+// первая колонка — «Регулярные» = регулярные задачи этапа «Ведение» (есть, только если в проекте включено «Ведение»),
+// дальше — отделы с внутренними задачами этого проекта (t.project_id), «+ Задача» ставит задачу сразу в проект и отдел
+function internalBoardHtml(p){
+  const deps = itDepts(); const t0 = today();
+  const all = itAll().filter(t => t.project_id === p.id && (!ui.itMine || t.assignee_id === ME));
+  const cols = [...deps, ...(all.some(t => !t.dept || !deps.some(d => d.id === t.dept)) ? [{ id:'', name:'Без отдела' }] : [])];
+  const ms = p.stages.find(isMaint);
+  const card = t => { const late = t.due_date && t.due_date < t0 && t.status !== 'done';
+    return `<div class="it-card${t.status === 'done' ? ' done' : ''}" data-itopen="${t.id}">
+      <b>${esc(t.title)}</b>
+      <div class="it-meta">${whoChip(t.assignee_id)}${t.due_date ? `<span class="pf-due${late ? ' late' : ''}">${FLAG}${fmt(t.due_date)}</span>` : ''}${t.priority === 'urgent' || t.priority === 'high' ? `<span class="dt-pri pri-${t.priority}">${IT_PRI[t.priority]}</span>` : ''}</div>
+      <select class="pf-status it-st s-${IT_ICO[t.status] || 'gray'}" data-itstatus="${t.id}" aria-label="Статус «${esc(t.title)}»">${Object.entries(IT_STATUS).map(([k, x]) => `<option value="${k}" ${k === t.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`; };
+  const repCol = `<section class="pf-col it-col it-repcol"><header><div>${RT_ICO}<b>Регулярные</b></div><small>Ведение: отчёты, планёрки, сверки</small></header>
+    ${p.is_maintenance && ms ? rtaskBlock(p, ms) : `<p class="hint">Регулярные задачи появляются, когда у проекта включено «Ведение».</p>${canEditProject(p) && !p._ext ? `<button class="ghost it-add" data-mainton="${p.id}">Включить ведение</button>` : ''}`}</section>`;
+  return `<div class="it-wrap"><div class="it-top">
+      <label class="it-f"><input type="checkbox" id="itMine" ${ui.itMine ? 'checked' : ''}> Мои задачи</label>
+      <label class="it-f"><input type="checkbox" id="itDone" ${ui.itDoneShow ? 'checked' : ''}> Показать готовые</label></div>
+    <div class="pf-board it-board">${repCol}${cols.map(d => { const list = all.filter(t => d.id ? t.dept === d.id : (!t.dept || !deps.some(x => x.id === t.dept)));
+      const open = list.filter(t => t.status !== 'done').sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999')); const done = list.filter(t => t.status === 'done');
+      return `<section class="pf-col it-col">
+        <header><div><b>${esc(d.name)}</b>${d.id && !GUEST ? `<button class="icon-btn ct-ren" data-itdeptren="${d.id}" title="Переименовать отдел" aria-label="Переименовать отдел «${esc(d.name)}»">${PEN_ICO}</button><button class="icon-btn ct-ren it-del" data-itdeptdel="${d.id}" title="Удалить отдел" aria-label="Удалить отдел «${esc(d.name)}»">×</button>` : ''}</div>
+          <small>${open.length} в работе${done.length ? ` · готово ${done.length}` : ''}</small>
+          ${d.id && !GUEST ? `<select class="pf-status" data-itdeptwho="${p.id}|${d.id}" aria-label="Ответственный за отдел «${esc(d.name)}» в проекте">${peopleOpts((p.itDeptWho || {})[d.id] || '', p.worker_id ? `Как у проекта: ${short(p.worker_id)}` : 'Как у проекта: не назначен')}</select>` : ''}</header>
+        <div class="pf-cards">${open.map(card).join('') || '<p class="hint">Задач нет</p>'}${ui.itDoneShow ? done.map(card).join('') : ''}</div>
+        ${GUEST ? '' : `<button class="ghost it-add" data-itnewdept="${d.id}" data-itproj="${p.id}">+ Задача</button>`}</section>`; }).join('')}
+      ${GUEST ? '' : `<button class="pf-col it-newcol" data-itdeptadd><span>+</span>Отдел</button>`}</div></div>`;
+}
+// ответственный за отдел в проекте: p.itDeptWho = { отдел: человек }; не выбран — исполнитель проекта (p.worker_id)
+const itDeptWho = (p, dept) => (p?.itDeptWho || {})[dept] || p?.worker_id || null;
+document.addEventListener('change', e => {
+  const v = e.target.dataset?.itdeptwho; if (!v) return;
+  const [pid, did] = v.split('|'); const p = projById(pid); if (!p || !canEditProject(p)) return;
+  p.itDeptWho = { ...(p.itDeptWho || {}), [did]:e.target.value || null };
+  const dn = itDepts().find(d => d.id === did)?.name || '';
+  addLog(p, `Внутренние задачи, отдел «${dn}»: ответственный — ${e.target.value ? nameOf(e.target.value) : 'как у проекта'}`); commit();
+});
+// включить «Ведение» прямо отсюда: появится этап «Ведение / Поддержка» с регулярными задачами
+document.addEventListener('click', e => {
+  const m = e.target.closest?.('[data-mainton]'); if (!m) return;
+  const p = projById(m.dataset.mainton); if (!p || !canEditProject(p)) return;
+  p.is_maintenance = true; syncState(p); addLog(p, 'Включено ведение: регулярные задачи — во «Внутренних задачах»'); commit(); toast('Ведение включено — добавьте регулярные задачи');
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'itMine'){ ui.itMine = e.target.checked; render(); }
+  if (e.target.id === 'itDone'){ ui.itDoneShow = e.target.checked; render(); }
+});
+document.addEventListener('click', e => {
+  const nd = e.target.closest?.('[data-itnewdept]'); if (nd){ const p = projById(nd.dataset.itproj);
+    openItask(null, { dept:nd.dataset.itnewdept, project_id:nd.dataset.itproj || '', assignee_id:itDeptWho(p, nd.dataset.itnewdept) || ME }); return; }
+  if (e.target.closest?.('[data-itdeptadd]')){ askText('Новый отдел', '', v => { db.prefs = db.prefs || {}; db.prefs.itDepts = [...itDepts(), { id:'d' + uid(), name:v }]; commit(); toast(`Отдел «${v}» добавлен`); }); return; }
+  const dd = e.target.closest?.('[data-itdeptdel]'); if (dd){ e.stopPropagation(); const d = itDepts().find(x => x.id === dd.dataset.itdeptdel); if (!d) return;
+    const n = itAll().filter(t => t.dept === d.id).length;
+    const drop = () => { db.prefs = db.prefs || {}; db.prefs.itDepts = itDepts().filter(x => x.id !== d.id); commit(); toast(`Отдел «${d.name}» удалён`); };
+    if (!n) return drop();
+    askConfirm({ title:`Удалить отдел «${d.name}»?`, text:`В нём ${n} ${plural(n, 'задача', 'задачи', 'задач')}. Задачи не удалятся — они перейдут в «Без отдела».`, ok:'Удалить отдел' }).then(y => { if (y) drop(); }); return; }
+  const dr = e.target.closest?.('[data-itdeptren]'); if (dr){ e.stopPropagation(); const d = itDepts().find(x => x.id === dr.dataset.itdeptren); if (!d) return;
+    askText('Название отдела', d.name, v => { db.prefs = db.prefs || {}; db.prefs.itDepts = itDepts().map(x => x.id === d.id ? { ...x, name:v } : x); commit(); }); }
+}, true);
 // экран исполнителя: «Проекты | Задачи»
 function renderMine(){ renderProjectFocus(true); }
 
@@ -8425,10 +8593,34 @@ document.addEventListener('change', e => {
 const BELL_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
 const remTxt = at => at ? new Date(at).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
 const taskDone = t => taskProgress(t).done || (() => { const p = projById(t.project_id); const s = p?.stages.find(x => x.id === t.stage_id); const x = s?.subs?.find(y => y.id === t.substage_id); return !!(s && x && subDone(p, s, x)); })();
+// ---------- Приоритет задачи (карточки подэтапа): t.priority urgent / high / medium / low — значком ----------
+// три уровня (по просьбе, без «Срочно»): полоски как сигнал — высокий 3 из 3, средний 2 из 3, низкий 1 из 3; старое «urgent» = высокий
+const TPRI = { high:['Высокий', 'r', 3], medium:['Средний', 'y', 2], low:['Низкий', 'b', 1] };
+const TPRI_ORDER = ['high', 'medium', 'low', ''];
+const normPri = k => k === 'urgent' ? 'high' : (TPRI[k] ? k : '');
+const priIco = k => {
+  k = normPri(k); if (!k) return '';
+  const [label, c, n] = TPRI[k];
+  const svg = [[4, 15, 5], [10, 10, 10], [16, 5, 15]].map(([x, y, h], i) => `<rect x="${x}" y="${y}" width="4.5" height="${h}" rx="1.4" fill="currentColor" opacity="${i < n ? 1 : .22}"/>`).join('');
+  return `<span class="tpri tpri-${c}" title="Приоритет: ${label}" aria-label="Приоритет: ${label}"><svg viewBox="0 0 24 24" aria-hidden="true">${svg}</svg></span>`;
+};
+const priSel = (key, val, cls = '') => `<select class="pf-status tpri-sel ${cls}" data-tpri="${key}" aria-label="Приоритет">${['', ...TPRI_ORDER.slice(0, 3)].map(k => `<option value="${k}" ${k === normPri(val) ? 'selected' : ''}>${k ? TPRI[k][0] : 'Без приоритета'}</option>`).join('')}</select>`;
+// ключ — «pid|sid|xid» подэтапа (нет задачи — создаём) или «t|id» задачи
+document.addEventListener('change', e => {
+  const k = e.target.dataset?.tpri; if (!k) return;
+  let t; let p;
+  if (k.startsWith('t|')){ t = taskById(k.slice(2)); p = t && projById(t.project_id); }
+  else { const [pid, sid, xid] = k.split('|'); p = projById(pid); const s = p?.stages.find(z => z.id === sid); if (!s) return;
+    t = taskFor(p.id, sid, xid); if (!t){ tasksFromSubs(p, { ...s, subs:s.subs.filter(y => y.id === xid) }); t = taskFor(p.id, sid, xid); } }
+  if (!t || !canEditProject(p)) return;
+  t.priority = e.target.value || null; addLog(p, `Приоритет задачи «${t.title}»: ${t.priority ? TPRI[t.priority][0].toLowerCase() : 'снят'}`);
+  commit(); if (ui.taskId) renderTaskModal();
+});
 function dueRemindHtml(t, editable){
   const late = t.due_date && t.due_date < today() && !taskDone(t);
   const dueTxt = t.due_date ? rangeTxt(t.start_date, t.due_date) : 'не задан';
   return `<span class="tk-who tk-due"><span>${FLAG} Срок</span>${editable ? `<button type="button" class="dp-btn${late ? ' late' : ''}${t.due_date ? '' : ' empty'}" data-duepick="${t.id}">${dueTxt}</button>` : `<b class="${late ? 'late' : ''}">${dueTxt}</b>`}${late ? '<b class="late">просрочено</b>' : ''}</span>
+    <span class="tk-who tk-due"><span>${priIco(t.priority) || '<span class="tpri tpri-off"></span>'} Приоритет</span>${editable ? priSel('t|' + t.id, t.priority) : `<b>${normPri(t.priority) ? TPRI[normPri(t.priority)][0] : 'нет'}</b>`}</span>
     <span class="tk-who tk-due"><span>${BELL_ICO} Напомнить</span><button type="button" class="dp-btn${t.remind?.at ? '' : ' empty'}" data-rempick="${t.id}">${t.remind?.at ? remShort(t.remind.at) : 'нет'}</button></span>`;
 }
 // «13–20 нояб.», «28 нояб. – 3 дек.», один день — «сегодня» / «завтра» / «20 нояб.»
@@ -8596,7 +8788,7 @@ function renderProjectFocus(mine = false){
       if (mine && !t) return tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" ${dnd ? `draggable="true" data-pfdrag="${s.id}|${x.id}"` : ''} aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
-        <b>${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
+        <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
         <small>${x.cycle && isInfoBoardP(p) && vidCol(x) ? `<span class="vid-st">${esc(vidCol(x).name)}</span>` : ''}${whoChip(x.cycle && isInfoBoardP(p) ? contentWho(p, s, x, t) : whoId(p, s, t))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : `срок ${fmt(t.due_date)}`}</span>` : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
@@ -9472,10 +9664,11 @@ const avatarOk = u => /^https:\/\//.test(u?.avatar || '');
 const avHtml = (u, cls = 'av') => avatarOk(u) ? `<span class="${cls}"><img src="${esc(u.avatar)}" alt="" referrerpolicy="no-referrer" loading="lazy"></span>` : `<span class="${cls}">${esc(initials(u || {}))}</span>`;
 
 async function createTeamLink(u){
-  if (!cloud.store || !cloud.uid || GUEST || ORGSP) return null;
+  if (!cloud.store || !cloud.uid || GUEST) return null;
+  if (ORGSP && !(u.lead && u.area)) return null;                  // руководитель области приглашает только руководителей своей области
   const code = newCode(), at = new Date().toISOString();
-  const role = u.lead && !ORG ? (u.area ? { role:'arealead', area:u.area } : { role:'lead' }) : {};
-  if (role.area) await markAreaSpaces(role.area);
+  const role = u.lead ? (u.area ? { role:'arealead', area:u.area } : { role:'lead' }) : {};
+  if (role.area && !ORG) await markAreaSpaces(role.area);
   await cloud.store.doc(`inv/${code}`).set({ kind:'team', ownerId:OWNER(), memberId:u.id, name:u.name || '', at, ...role });
   if (u.invite?.code) cloud.store.doc(`inv/${u.invite.code}`).delete().catch(() => {});
   u.invite = { code, at }; commit(); return code;
@@ -9740,6 +9933,7 @@ const MNAV = {
   matrix:['Матрица', MI('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>')],
   kanban:['Канбан', MI('<rect x="3" y="3" width="5" height="15" rx="1.5"/><rect x="10" y="3" width="5" height="10" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/>')],
   production:['Произв.', MI('<path d="M3 12h4l3-8 4 16 3-8h4"/>')],
+  priority:['Приоритеты', MI('<path d="M12 3v12"/><path d="M12 20v.5"/><path d="M5 9l7-6 7 6"/>')],
   funnel:['AI-воронка', MI('<path d="M3 4h18l-7 8.5V19l-4 2v-7.5Z"/><path d="M18 2.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6Z"/>')],
   content:['Контент', MI('<rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3"/>')],
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
@@ -9747,13 +9941,14 @@ const MNAV = {
   assign:['Поручения', MI('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2 2 4-4M8.5 17h7"/>')],
   archive:['Архив', MI('<rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/>')],
   review:['Приёмка', MI('<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>')],
+  internal:['Внутр. задачи', MI('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5M8 13h8M8 17h5"/>')],
   mytasks:['Мои задачи', MI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5 2.5-2.5"/>')],
   reports:['AI-отчёты', MI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')],
   team:['Команда', MI('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>')],
   templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
 };
 const MNAV_MAIN_ALL = ['matrix', 'kanban', 'production', 'load'];
-const mnavMain = () => isInfo() ? ['production', 'funnel', 'content', 'mytasks'] : MNAV_MAIN_ALL;
+const mnavMain = () => isInfo() ? ['production', ...(SHOW_AI_FUNNEL ? ['funnel'] : []), 'content', 'priority'] : MNAV_MAIN_ALL;
 // иконки в боковом меню (те же, что в нижнем меню телефона)
 const NAV_FULL = { production:'Производство' };
 document.querySelectorAll('.tabs [data-view]').forEach(b => { const m = MNAV[b.dataset.view]; if (m && !b.querySelector('svg')) b.insertAdjacentHTML('afterbegin', m[1]); });
