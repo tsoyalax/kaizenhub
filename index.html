@@ -1138,6 +1138,18 @@ body[data-kind="info"] .pf{grid-template-columns:minmax(0,1fr)}
 body[data-kind="info"] :is(.pf-list,.pf-select,#newBtn,.pm-cnt,.pm-nav>.icon-btn:first-child,.pm-nav>.icon-btn:last-child){display:none!important}
 body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ct-wk{margin-top:14px}
+.it-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.it-top h2{margin:0 auto 0 0;font-size:20px}
+.it-f{display:inline-flex;align-items:center;gap:6px;font-size:14px;cursor:pointer}
+.it-col header > div{display:flex;align-items:center;gap:4px}
+.it-card{display:grid;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
+.it-card:hover{border-color:color-mix(in srgb,var(--ink) 25%,var(--line))}
+.it-card b{font-weight:600;overflow-wrap:anywhere}
+.it-card.done{opacity:.6}.it-card.done b{text-decoration:line-through}
+.it-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px}
+.it-meta svg{width:12px;height:12px}
+.it-card .it-st{width:100%}
+.it-add{width:100%;margin-top:8px;border-style:dashed}
 .ai-key-row input{flex:1;min-width:0;height:40px}
 .ai-key-act{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
 .ct-kpi-ed{display:grid;gap:10px}
@@ -2239,6 +2251,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="funnel" hidden>AI-воронка</button>
     <button data-view="content" hidden>Контент</button>
     <button data-view="mytasks" id="myTasksTab">Мои задачи</button>
+    <button data-view="internal">Внутренние задачи</button>
     <button data-view="review" id="reviewTab">Приёмка</button>
     <button data-view="assign">Поручения</button>
     <button data-view="mine" id="mineTab" hidden>Мои проекты</button>
@@ -3801,7 +3814,7 @@ function render(){
   try { renderSide(); } catch(e) {}
   setTimeout(() => { try { paintReviewBadge(); } catch(e) {} }, 0);
   try { paintPhoneHead(); } catch(e) {}
-  try { const vn = $('#viewName'); if (vn) vn.textContent = ({ production:'Производство', templates:'Настройки' })[ui.view] || MNAV[ui.view]?.[0] || ''; } catch(e) {}
+  try { const vn = $('#viewName'); if (vn) vn.textContent = ({ production:'Производство', templates:'Настройки', internal:'Внутренние задачи' })[ui.view] || MNAV[ui.view]?.[0] || ''; } catch(e) {}
   paintSpace(); rememberView();
   document.body.dataset.view = ui.view;
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
@@ -3810,7 +3823,7 @@ function render(){
   renderFilters();
   const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер');
   if (!isCRM()) ui.crmStage = null;
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, internal:renderInternal, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
   if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST && !(ui.view === 'matrix' && density() === 'funnel')) app.insertAdjacentHTML('afterbegin', crmSumHtml());
   if (ui.open) renderDrawer();
@@ -5933,7 +5946,7 @@ function renderSide(){
   el.hidden = !(pinned || sideOpen); $('#sideBack').hidden = pinned || !sideOpen;
   $('#sideBtn')?.setAttribute('aria-expanded', String(pinned || sideOpen));
   if (el.hidden) return;
-  const label = v => v === 'production' ? 'Производство' : v === 'templates' ? 'Настройки' : (MNAV[v]?.[0] || v);
+  const label = v => v === 'production' ? 'Производство' : v === 'templates' ? 'Настройки' : v === 'internal' ? 'Внутренние задачи' : (MNAV[v]?.[0] || v);
   const all = GUEST ? [] : sideSpaces();
   const cur = all.find(x => x.cur) || { name:mainName(), color:spColor(''), icon:spIcon('') };
   el.innerHTML = `${GUEST ? '' : areaBar()}<div class="side-head"><span class="side-sp" style="--c:${cur.color}"><span class="side-sp-ico">${spIco(GUEST ? 'briefcase' : cur.icon)}</span><b>${esc(GUEST ? 'Мои проекты' : cur.name)}</b></span>
@@ -7714,9 +7727,9 @@ function pushNotify(){
 const ntfItem = i => i.kind === 'i'
   ? `<button class="ntf" data-itopen="${i.id}"><span class="sw ${i.due && i.due < today() ? 'red' : 'yellow'}"></span><span><b>${esc(i.title)}</b><small>Внутренняя${i.due ? ` · срок ${fmt(i.due)}` : ''}</small></span></button>`
   : `<button class="ntf" ${i.t ? `data-task="${i.t.id}"` : `data-ntfday="1"`}><span class="sw ${i.due && i.due < today() ? 'red' : 'yellow'}"></span><span><b>${esc(i.title)}</b><small>${esc(i.p.name)} · ${esc(i.s.name)}${i.due ? ` · срок ${fmt(i.due)}` : ''}</small></span></button>`;
-function openItask(id){
+function openItask(id, preset = {}){
   const t = id ? itAll().find(x => x.id === id) : null; const manage = itCanManage(t);
-  const v = t || { title:'', description:'', assignee_id:ui.dayWho || ui.dayAs || ME, priority:'medium', category:'admin', status:'todo', due_date:'' };
+  const v = t || { title:'', description:'', assignee_id:ui.dayWho || ui.dayAs || ME, priority:'medium', category:'admin', status:'todo', due_date:'', dept:'', ...preset };
   const ro = manage ? '' : 'disabled';
   layer.innerHTML = `<div class="backdrop" data-close></div>
   <div class="modal it-modal" role="dialog" aria-modal="true" aria-labelledby="itT">
@@ -7732,6 +7745,7 @@ function openItask(id){
         <div class="field"><label for="itPri">Приоритет</label><select id="itPri" ${ro}>${Object.entries(IT_PRI).map(([k, x]) => `<option value="${k}" ${k === v.priority ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
         <div class="field"><label for="itCat">Категория</label><select id="itCat" ${ro}>${Object.entries(IT_CAT).map(([k, x]) => `<option value="${k}" ${k === v.category ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
       </div>
+      ${GUEST ? '' : `<div class="field"><label for="itDept">Отдел</label><select id="itDept" ${ro}><option value="">Без отдела</option>${itDepts().map(d => `<option value="${d.id}" ${d.id === v.dept ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}</select></div>`}
       <div class="field"><label for="itStatus">Статус</label><select id="itStatus">${Object.entries(IT_STATUS).map(([k, x]) => `<option value="${k}" ${k === v.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
       ${t ? `<p class="hint">Поставил(а): ${esc(t.creator_name || '—')}, ${new Date(t.created_at).toLocaleDateString('ru-RU')}</p>` : ''}
       <div class="err" id="itErr" aria-live="polite"></div>
@@ -7747,7 +7761,7 @@ document.addEventListener('submit', e => {
   const who = $('#itWho').value; if (!who){ $('#itErr').textContent = 'Выберите исполнителя'; return; }
   const now = new Date().toISOString();
   const t = { ...(old || { id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Руководитель', created_at:now }),
-    title, description:$('#itDesc').value.trim(), assignee_id:who, priority:$('#itPri').value, category:$('#itCat').value, status:$('#itStatus').value, due_date:$('#itDue').value || '' };
+    title, description:$('#itDesc').value.trim(), assignee_id:who, priority:$('#itPri').value, category:$('#itCat').value, status:$('#itStatus').value, due_date:$('#itDue').value || '', dept:$('#itDept')?.value ?? (old?.dept || '') };
   if (old && old.assignee_id !== who) delete t._members;                    // сменили исполнителя — пересобираем доступ
   itSave(t); layer.innerHTML = ''; render();
   const u = userById(who);
@@ -7777,6 +7791,43 @@ document.addEventListener('click', e => {
   const po = e.target.closest?.('[data-dtopen]'); if (po){ const [pid, sid] = po.dataset.dtopen.split('|'); const q = projById(pid);
     if (q && !q._ext) openProject(pid, sid); else { ui.myProject = pid; ui.view = 'mine'; render(); } }
 });
+// ---------- «Внутренние задачи»: задачи отделов (не по проектам клиентов) — колонками по отделам ----------
+// Задачи — те же внутренние задачи it/<id> (видны исполнителю и в «Поручениях»), у задачи t.dept — id отдела.
+// Отделы — db.prefs.itDepts [{ id, name }] (по умолчанию Маркетинг, SMM, Продажи, Администрирование), правятся здесь же.
+const IT_DEPTS_DEF = [['dmkt', 'Маркетинг'], ['dsmm', 'SMM'], ['dsales', 'Продажи'], ['dadmin', 'Администрирование']];
+const itDepts = () => db.prefs?.itDepts || IT_DEPTS_DEF.map(([id, name]) => ({ id, name }));
+const IT_ICO = { todo:'gray', in_progress:'green', review:'blue', done:'done' };
+function renderInternal(){
+  const deps = itDepts(); const t0 = today();
+  const all = itAll().filter(t => !ui.itMine || t.assignee_id === ME);
+  const cols = [...deps, ...(all.some(t => !t.dept || !deps.some(d => d.id === t.dept)) ? [{ id:'', name:'Без отдела' }] : [])];
+  const card = t => { const late = t.due_date && t.due_date < t0 && t.status !== 'done';
+    return `<div class="it-card${t.status === 'done' ? ' done' : ''}" data-itopen="${t.id}">
+      <b>${esc(t.title)}</b>
+      <div class="it-meta">${whoChip(t.assignee_id)}${t.due_date ? `<span class="pf-due${late ? ' late' : ''}">${FLAG}${fmt(t.due_date)}</span>` : ''}${t.priority === 'urgent' || t.priority === 'high' ? `<span class="dt-pri pri-${t.priority}">${IT_PRI[t.priority]}</span>` : ''}</div>
+      <select class="pf-status it-st s-${IT_ICO[t.status] || 'gray'}" data-itstatus="${t.id}" aria-label="Статус «${esc(t.title)}»">${Object.entries(IT_STATUS).map(([k, x]) => `<option value="${k}" ${k === t.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`; };
+  app.innerHTML = `<div class="it-top"><h2>Внутренние задачи</h2>
+      <label class="it-f"><input type="checkbox" id="itMine" ${ui.itMine ? 'checked' : ''}> Мои задачи</label>
+      <label class="it-f"><input type="checkbox" id="itDone" ${ui.itDoneShow ? 'checked' : ''}> Показать готовые</label>
+      ${GUEST ? '' : `<button class="ghost" data-itdeptadd>+ Отдел</button>`}</div>
+    <div class="pf-board it-board">${cols.map(d => { const list = all.filter(t => d.id ? t.dept === d.id : (!t.dept || !deps.some(x => x.id === t.dept)));
+      const open = list.filter(t => t.status !== 'done').sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999')); const done = list.filter(t => t.status === 'done');
+      return `<section class="pf-col it-col">
+        <header><div><b>${esc(d.name)}</b>${d.id && !GUEST ? `<button class="icon-btn ct-ren" data-itdeptren="${d.id}" title="Переименовать отдел" aria-label="Переименовать отдел «${esc(d.name)}»">${PEN_ICO}</button>` : ''}</div>
+          <small>${open.length} в работе${done.length ? ` · готово ${done.length}` : ''}</small></header>
+        <div class="pf-cards">${open.map(card).join('') || '<p class="hint">Задач нет</p>'}${ui.itDoneShow ? done.map(card).join('') : ''}</div>
+        ${GUEST ? '' : `<button class="ghost it-add" data-itnewdept="${d.id}">+ Задача</button>`}</section>`; }).join('')}</div>`;
+}
+document.addEventListener('change', e => {
+  if (e.target.id === 'itMine'){ ui.itMine = e.target.checked; render(); }
+  if (e.target.id === 'itDone'){ ui.itDoneShow = e.target.checked; render(); }
+});
+document.addEventListener('click', e => {
+  const nd = e.target.closest?.('[data-itnewdept]'); if (nd){ openItask(null, { dept:nd.dataset.itnewdept }); return; }
+  if (e.target.closest?.('[data-itdeptadd]')){ askText('Новый отдел', '', v => { db.prefs = db.prefs || {}; db.prefs.itDepts = [...itDepts(), { id:'d' + uid(), name:v }]; commit(); toast(`Отдел «${v}» добавлен`); }); return; }
+  const dr = e.target.closest?.('[data-itdeptren]'); if (dr){ e.stopPropagation(); const d = itDepts().find(x => x.id === dr.dataset.itdeptren); if (!d) return;
+    askText('Название отдела', d.name, v => { db.prefs = db.prefs || {}; db.prefs.itDepts = itDepts().map(x => x.id === d.id ? { ...x, name:v } : x); commit(); }); }
+}, true);
 // экран исполнителя: «Проекты | Задачи»
 function renderMine(){ renderProjectFocus(true); }
 
@@ -9772,6 +9823,7 @@ const MNAV = {
   assign:['Поручения', MI('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v3h6V3M8.5 12l2 2 4-4M8.5 17h7"/>')],
   archive:['Архив', MI('<rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/>')],
   review:['Приёмка', MI('<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>')],
+  internal:['Внутр. задачи', MI('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5M8 13h8M8 17h5"/>')],
   mytasks:['Мои задачи', MI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5 2.5-2.5"/>')],
   reports:['AI-отчёты', MI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')],
   team:['Команда', MI('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>')],
@@ -9815,7 +9867,7 @@ document.addEventListener('click', e => {
   const k = c.dataset.kdrisk; ui.risk = ui.risk === k ? '' : k; render();
 });
 const MORE_ICON = MI('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>');
-const moreViews = () => ['review', 'mytasks', 'assign', 'mine', 'reports', 'load', 'team', 'archive', 'templates'].filter(v => (v !== 'mine' || !$('#mineTab').hidden) && !mnavMain().includes(v) && !(isInfo() && INFO_HIDDEN.includes(v)));
+const moreViews = () => ['review', 'mytasks', 'internal', 'assign', 'mine', 'reports', 'load', 'team', 'archive', 'templates'].filter(v => (v !== 'mine' || !$('#mineTab').hidden) && !mnavMain().includes(v) && !(isInfo() && INFO_HIDDEN.includes(v)));
 function renderMobileNav(){
   const nav = $('#mnav'); if (!nav) return;
   if (GUEST){ nav.innerHTML = guestViews().map(v => `<button data-mview="${v}" aria-current="${ui.view === v ? 'page' : 'false'}">${MNAV[v][1]}<span>${MNAV[v][0]}</span></button>`).join(''); return; }
