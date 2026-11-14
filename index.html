@@ -1164,6 +1164,22 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .it-meta svg{width:12px;height:12px}
 .it-card .it-st{width:100%}
 .it-add{width:100%;margin-top:8px;border-style:dashed}
+.tpri{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:6px;flex:none;margin-right:6px;vertical-align:-3px}
+.tpri svg{width:12px;height:12px}
+.tpri-r{background:var(--pl-r-bg,color-mix(in srgb,var(--r) 15%,transparent));color:var(--r)}
+.tpri-y{background:var(--pl-y-bg,color-mix(in srgb,var(--y) 15%,transparent));color:var(--y)}
+.tpri-b{background:var(--pl-b-bg,color-mix(in srgb,var(--b) 15%,transparent));color:var(--b)}
+.tpri-n{background:var(--pl-n-bg,color-mix(in srgb,var(--muted) 15%,transparent));color:var(--muted)}
+.tpri-off{background:transparent;border:1px dashed var(--line);color:var(--muted)}
+.pr-grp{margin-bottom:16px}
+.pr-grp h3{display:flex;align-items:center;gap:4px;font-size:15px;margin:0 0 8px 4px}
+.pr-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.pr-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.pr-row.done{opacity:.55}
+.pr-name{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer;display:grid;gap:3px}
+.pr-name b{font-weight:600;overflow-wrap:anywhere}.pr-name small{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px}
+.pr-row .tpri-sel{width:auto;max-width:150px}
+@media (max-width:640px){.pr-row{flex-wrap:wrap}.pr-row .tpri-sel{width:100%;max-width:none}}
 .it-newcol{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:140px;border:1.5px dashed var(--line);background:transparent;color:var(--muted);font:inherit;font-size:14px;font-weight:600;cursor:pointer;border-radius:16px}
 .it-newcol span{font-size:28px;line-height:1;font-weight:400}
 .it-newcol:hover{color:var(--ink);border-color:color-mix(in srgb,var(--ink) 30%,var(--line))}
@@ -2267,6 +2283,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
     <button data-view="funnel" hidden>AI-воронка</button>
+    <button data-view="priority" hidden>Приоритеты</button>
     <button data-view="content" hidden>Контент</button>
     <button data-view="mytasks" id="myTasksTab">Мои задачи</button>
     <button data-view="review" id="reviewTab">Приёмка</button>
@@ -3020,7 +3037,7 @@ function stampStages(){
 }
 // Карточки подэтапов тоже пишутся целиком: пункт чек-листа получает i.u при отметке/снятии, карточка — t.u при прочих правках
 const taskSig = t => JSON.stringify([t.title, t.description || '', t.assignee_id || null, t.result_link || '', t.video_url || '', t.regulation_link || '',
-  (t.checklist || []).map(i => [i.id, i.text]), (t.mats || []).map(m => [m.id, !!m.ok]), t.start_date || null, t.due_date || null, t.remind?.at || null]);
+  (t.checklist || []).map(i => [i.id, i.text]), (t.mats || []).map(m => [m.id, !!m.ok]), t.start_date || null, t.due_date || null, t.remind?.at || null, t.priority || null]);
 function stampTasks(){
   const now = new Date().toISOString();
   [...(db.tasks || []), ...((typeof ext !== 'undefined' && ext.tasks) || [])].forEach(t => {
@@ -3825,8 +3842,8 @@ function render(){
   document.body.dataset.kind = GUEST ? '' : (db?.prefs?.kind || 'agency');
   if (isInfo() && !GUEST){ if (INFO_HIDDEN.includes(ui.view)) ui.view = 'production'; try { ensureInfoBoard(); syncInfoNames(); } catch(e) {} }
   INFO_HIDDEN.forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = isInfo() && !GUEST; });
-  ['content', 'funnel'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST || (v === 'funnel' && !SHOW_AI_FUNNEL); });
-  if ((ui.view === 'content' || ui.view === 'funnel') && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
+  ['content', 'funnel', 'priority'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST || (v === 'funnel' && !SHOW_AI_FUNNEL); });
+  if (['content', 'funnel', 'priority'].includes(ui.view) && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
   if (ui.view === 'funnel' && !SHOW_AI_FUNNEL) ui.view = 'production';
   try { renderSide(); } catch(e) {}
   setTimeout(() => { try { paintReviewBadge(); } catch(e) {} }, 0);
@@ -3840,7 +3857,7 @@ function render(){
   renderFilters();
   const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер');
   if (!isCRM()) ui.crmStage = null;
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, priority:renderPriority, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
   if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST && !(ui.view === 'matrix' && density() === 'funnel')) app.insertAdjacentHTML('afterbegin', crmSumHtml());
   if (ui.open) renderDrawer();
@@ -4739,6 +4756,23 @@ function renderProduction(){
   if (ui.infoMode === 'timeline'){ const b = app.querySelector('.pf-board'); if (b) b.outerHTML = timelineHtml(p); }
 }
 document.addEventListener('click', e => { const t = e.target.closest?.('[data-prodtab]'); if (t){ ui.prodTab = t.dataset.prodtab; render(); } });
+// раздел «Приоритеты» (инфобизнес): все задачи инфоповода по приоритету, приоритет меняется в строке
+function renderPriority(){
+  const p = infoBoard(); if (!p){ app.innerHTML = '<div class="empty">Доски пока нет</div>'; return; }
+  ui.prodProject = p.id; const t0 = today();
+  const items = p.stages.filter(s => !isMaint(s)).flatMap(s => (s.subs || []).map(x => { const t = taskFor(p.id, s.id, x.id);
+    return { s, x, t, done:subDone(p, s, x), pri:t?.priority || '', due:t?.due_date || x.due_date || '' }; })).filter(i => ui.priDone || !i.done);
+  const row = i => { const who = i.x.cycle ? contentWho(p, i.s, i.x, i.t) : whoId(p, i.s, i.t); const late = i.due && i.due < t0 && !i.done;
+    return `<li class="pr-row${i.done ? ' done' : ''}">${priIco(i.pri) || '<span class="tpri tpri-off"></span>'}
+      <button class="pr-name" data-pfsub="${i.s.id}|${i.x.id}"><b>${esc(i.x.name)}</b><small><span class="vid-st">${esc(i.s.name)}</span>${i.due ? `<span class="pf-due${late ? ' late' : ''}">${FLAG}${fmt(i.due)}</span>` : ''}</small></button>
+      ${whoChip(who)}${priSel(`${p.id}|${i.s.id}|${i.x.id}`, i.pri)}</li>`; };
+  app.innerHTML = infoTabsHtml() + `<div class="it-top"><h2>Приоритеты</h2><label class="it-f"><input type="checkbox" id="priDone" ${ui.priDone ? 'checked' : ''}> Показать сделанные</label></div>
+    ${TPRI_ORDER.map(k => { const list = items.filter(i => i.pri === k).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
+      if (!list.length && k) return '';
+      return `<section class="pr-grp"><h3>${k ? `${priIco(k)}${TPRI[k][0]}` : 'Без приоритета'} <span class="hint">${list.length}</span></h3>
+        ${list.length ? `<ul class="pr-list">${list.map(row).join('')}</ul>` : '<p class="hint">Все задачи распределены</p>'}</section>`; }).join('')}`;
+}
+document.addEventListener('change', e => { if (e.target.id === 'priDone'){ ui.priDone = e.target.checked; render(); } });
 // раздел «AI-воронка» (только в инфобизнесе): разбор Claude, финальный дедлайн, статусы и связи отделов
 function renderFunnel(){
   const p = infoBoard(); if (!p){ app.innerHTML = '<div class="empty">Доски пока нет</div>'; return; }
@@ -8560,10 +8594,28 @@ document.addEventListener('change', e => {
 const BELL_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
 const remTxt = at => at ? new Date(at).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
 const taskDone = t => taskProgress(t).done || (() => { const p = projById(t.project_id); const s = p?.stages.find(x => x.id === t.stage_id); const x = s?.subs?.find(y => y.id === t.substage_id); return !!(s && x && subDone(p, s, x)); })();
+// ---------- Приоритет задачи (карточки подэтапа): t.priority urgent / high / medium / low — значком ----------
+const TPRI = { urgent:['Срочно', 'r', '<path d="M12 4v10"/><path d="M12 19v.5"/>'], high:['Высокий', 'y', '<path d="m6 14 6-6 6 6"/>'],
+  medium:['Средний', 'b', '<path d="M6 12h12"/>'], low:['Низкий', 'n', '<path d="m6 10 6 6 6-6"/>'] };
+const TPRI_ORDER = ['urgent', 'high', 'medium', 'low', ''];
+const priIco = k => TPRI[k] ? `<span class="tpri tpri-${TPRI[k][1]}" title="Приоритет: ${TPRI[k][0]}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${TPRI[k][2]}</svg></span>` : '';
+const priSel = (key, val, cls = '') => `<select class="pf-status tpri-sel ${cls}" data-tpri="${key}" aria-label="Приоритет">${['', ...TPRI_ORDER.slice(0, 4)].map(k => `<option value="${k}" ${k === (val || '') ? 'selected' : ''}>${k ? TPRI[k][0] : 'Без приоритета'}</option>`).join('')}</select>`;
+// ключ — «pid|sid|xid» подэтапа (нет задачи — создаём) или «t|id» задачи
+document.addEventListener('change', e => {
+  const k = e.target.dataset?.tpri; if (!k) return;
+  let t; let p;
+  if (k.startsWith('t|')){ t = taskById(k.slice(2)); p = t && projById(t.project_id); }
+  else { const [pid, sid, xid] = k.split('|'); p = projById(pid); const s = p?.stages.find(z => z.id === sid); if (!s) return;
+    t = taskFor(p.id, sid, xid); if (!t){ tasksFromSubs(p, { ...s, subs:s.subs.filter(y => y.id === xid) }); t = taskFor(p.id, sid, xid); } }
+  if (!t || !canEditProject(p)) return;
+  t.priority = e.target.value || null; addLog(p, `Приоритет задачи «${t.title}»: ${t.priority ? TPRI[t.priority][0].toLowerCase() : 'снят'}`);
+  commit(); if (ui.taskId) renderTaskModal();
+});
 function dueRemindHtml(t, editable){
   const late = t.due_date && t.due_date < today() && !taskDone(t);
   const dueTxt = t.due_date ? rangeTxt(t.start_date, t.due_date) : 'не задан';
   return `<span class="tk-who tk-due"><span>${FLAG} Срок</span>${editable ? `<button type="button" class="dp-btn${late ? ' late' : ''}${t.due_date ? '' : ' empty'}" data-duepick="${t.id}">${dueTxt}</button>` : `<b class="${late ? 'late' : ''}">${dueTxt}</b>`}${late ? '<b class="late">просрочено</b>' : ''}</span>
+    <span class="tk-who tk-due"><span>${priIco(t.priority) || priIco('medium').replace('tpri-b', 'tpri-off')} Приоритет</span>${editable ? priSel('t|' + t.id, t.priority) : `<b>${t.priority ? TPRI[t.priority][0] : 'нет'}</b>`}</span>
     <span class="tk-who tk-due"><span>${BELL_ICO} Напомнить</span><button type="button" class="dp-btn${t.remind?.at ? '' : ' empty'}" data-rempick="${t.id}">${t.remind?.at ? remShort(t.remind.at) : 'нет'}</button></span>`;
 }
 // «13–20 нояб.», «28 нояб. – 3 дек.», один день — «сегодня» / «завтра» / «20 нояб.»
@@ -8731,7 +8783,7 @@ function renderProjectFocus(mine = false){
       if (mine && !t) return tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" ${dnd ? `draggable="true" data-pfdrag="${s.id}|${x.id}"` : ''} aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
-        <b>${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
+        <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
         <small>${x.cycle && isInfoBoardP(p) && vidCol(x) ? `<span class="vid-st">${esc(vidCol(x).name)}</span>` : ''}${whoChip(x.cycle && isInfoBoardP(p) ? contentWho(p, s, x, t) : whoId(p, s, t))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : `срок ${fmt(t.due_date)}`}</span>` : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
@@ -9875,6 +9927,7 @@ const MNAV = {
   matrix:['Матрица', MI('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>')],
   kanban:['Канбан', MI('<rect x="3" y="3" width="5" height="15" rx="1.5"/><rect x="10" y="3" width="5" height="10" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/>')],
   production:['Произв.', MI('<path d="M3 12h4l3-8 4 16 3-8h4"/>')],
+  priority:['Приоритеты', MI('<path d="M12 3v12"/><path d="M12 20v.5"/><path d="M5 9l7-6 7 6"/>')],
   funnel:['AI-воронка', MI('<path d="M3 4h18l-7 8.5V19l-4 2v-7.5Z"/><path d="M18 2.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6Z"/>')],
   content:['Контент', MI('<rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3"/>')],
   load:['Загрузка', MI('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>')],
@@ -9889,7 +9942,7 @@ const MNAV = {
   templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
 };
 const MNAV_MAIN_ALL = ['matrix', 'kanban', 'production', 'load'];
-const mnavMain = () => isInfo() ? ['production', ...(SHOW_AI_FUNNEL ? ['funnel'] : []), 'content', 'mytasks'] : MNAV_MAIN_ALL;
+const mnavMain = () => isInfo() ? ['production', ...(SHOW_AI_FUNNEL ? ['funnel'] : []), 'content', 'priority'] : MNAV_MAIN_ALL;
 // иконки в боковом меню (те же, что в нижнем меню телефона)
 const NAV_FULL = { production:'Производство' };
 document.querySelectorAll('.tabs [data-view]').forEach(b => { const m = MNAV[b.dataset.view]; if (m && !b.querySelector('svg')) b.insertAdjacentHTML('afterbegin', m[1]); });

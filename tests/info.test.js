@@ -209,6 +209,16 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   const rb = D.querySelector('[data-ctren]'); const rid = rb.dataset.ctren; rb.click();
   D.getElementById('npName').value = 'Рилс про кейс клиента с очень длинным названием'; D.getElementById('npForm').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
   assert.equal(E(`contentStage().subs.find(x => x.id === '${rid}').name`), 'Рилс про кейс клиента с очень длинным названием'); ok('видео переименовывается прямо в «Контенте»');
+  // «Приоритеты»: все задачи инфоповода по группам, приоритет меняется в строке, значок — на доске
+  assert.ok(!D.querySelector('.tabs [data-view="priority"]').hidden); ok('в меню инфобизнеса есть «Приоритеты»');
+  E(`ui.view = 'priority'; render()`);
+  const prow = D.querySelector('.pr-grp:last-of-type [data-tpri]'); const pkey = prow.dataset.tpri;
+  prow.value = 'urgent'; prow.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
+  const [, psid, pxid] = pkey.split('|');
+  assert.equal(E(`taskFor(infoBoard().id, '${psid}', '${pxid}').priority`), 'urgent'); ok('приоритет ставится прямо в списке');
+  assert.ok(/Срочно/.test(D.querySelector('.pr-grp h3').textContent)); ok('задача — в группе «Срочно» наверху');
+  E(`ui.view = 'production'; ui.prodTab = 'board'; ui.infoMode = 'board'; render()`);
+  assert.ok(D.querySelector(`[data-pfsub="${psid}|${pxid}"] .tpri-r`)); ok('на доске — значок приоритета');
   E(`db.prefs.kind = 'agency'; render()`);
   assert.ok(!D.querySelector('.tabs [data-view="matrix"]').hidden); ok('в агентстве матрица на месте');
   // «Внутренние задачи» — вкладка в «Производстве» у проекта: отделы + «Регулярные» из «Ведения»
