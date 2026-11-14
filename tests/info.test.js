@@ -103,6 +103,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   const fs = E(`JSON.stringify([...flowState(infoBoard()).values()].map(v => [v.s.name, v.key]))`);
   assert.deepEqual(JSON.parse(fs), [['Контент','green'],['Статья','green'],['VSL','red'],['Платный канал','yellow'],['Отдел продаж','yellow'],['Эфиры','red']]); ok('VSL просрочен — следующие за ним ждут, этап без задач — красный');
   assert.ok(D.querySelector('.fl-chain') && !/Воронка|AI-разбор/.test(D.querySelector('.fl-hd').textContent) && !D.querySelector('.fl-why-box') && !D.querySelector('.fl-ai')); ok('в «Производстве» — только статусы этапов и «Срочно», без вывода воронки и AI-разбора');
+  assert.ok(D.querySelector('.tabs [data-view="funnel"]').hidden); ok('пункт «AI-воронка» пока скрыт из меню');
+  E('SHOW_AI_FUNNEL = true');   // дальше проверяем сам раздел
   E(`ui.view = 'funnel'; render()`);
   assert.ok(/AI-воронка/.test(D.querySelector('.fl-hd').textContent)); ok('разбор — в отдельном разделе «AI-воронка»');
   assert.ok(/VSL — просрочено.*поэтому не работают: Платный канал → Отдел продаж → Эфиры/.test(D.querySelector('.fl-why-box').textContent)); ok('воронка объясняет, что и из-за чего не работает');

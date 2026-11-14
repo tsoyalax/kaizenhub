@@ -2410,6 +2410,8 @@ function ensureKindTemplate(d, k){ if (k === 'smm') ensureSmmTemplate(d); else i
 // (постоянный id INFO_BOARD_ID, чтобы два устройства не создали по своей доске). Колонки — этапы шаблона «Инфобизнес: запуск».
 const INFO_TPL_ID = 'tinfo', INFO_BOARD_ID = 'infoboard';
 const INFO_HIDDEN = ['matrix', 'kanban', 'archive'];
+// раздел «AI-воронка» пока скрыт из меню (по просьбе); код остался — вернуть: SHOW_AI_FUNNEL = true
+let SHOW_AI_FUNNEL = false;
 function infoTemplate(){
   return { id:INFO_TPL_ID, name:'Инфобизнес: запуск', stages:[['Продукт',7],['Контент',7],['Прогрев',7],['Запуск',7],['Продажи',14],['Сопровождение',14]]
     .map(([n, d]) => ({ id:uid(), name:n, days:d, approval:false, subs:[] })) };
@@ -3793,8 +3795,9 @@ function render(){
   document.body.dataset.kind = GUEST ? '' : (db?.prefs?.kind || 'agency');
   if (isInfo() && !GUEST){ if (INFO_HIDDEN.includes(ui.view)) ui.view = 'production'; try { ensureInfoBoard(); syncInfoNames(); } catch(e) {} }
   INFO_HIDDEN.forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = isInfo() && !GUEST; });
-  ['content', 'funnel'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST; });
+  ['content', 'funnel'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST || (v === 'funnel' && !SHOW_AI_FUNNEL); });
   if ((ui.view === 'content' || ui.view === 'funnel') && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
+  if (ui.view === 'funnel' && !SHOW_AI_FUNNEL) ui.view = 'production';
   try { renderSide(); } catch(e) {}
   setTimeout(() => { try { paintReviewBadge(); } catch(e) {} }, 0);
   try { paintPhoneHead(); } catch(e) {}
@@ -9775,7 +9778,7 @@ const MNAV = {
   templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
 };
 const MNAV_MAIN_ALL = ['matrix', 'kanban', 'production', 'load'];
-const mnavMain = () => isInfo() ? ['production', 'funnel', 'content', 'mytasks'] : MNAV_MAIN_ALL;
+const mnavMain = () => isInfo() ? ['production', ...(SHOW_AI_FUNNEL ? ['funnel'] : []), 'content', 'mytasks'] : MNAV_MAIN_ALL;
 // иконки в боковом меню (те же, что в нижнем меню телефона)
 const NAV_FULL = { production:'Производство' };
 document.querySelectorAll('.tabs [data-view]').forEach(b => { const m = MNAV[b.dataset.view]; if (m && !b.querySelector('svg')) b.insertAdjacentHTML('afterbegin', m[1]); });
