@@ -220,11 +220,11 @@
   // Доступ руководителя: у аккаунта уже есть своё пространство (руководители, работающие в сервисе) или роль lead в профиле.
   // Новые аккаунты и исполнители (role guest) руководителями сами не становятся.
   var gating = false, gateWho = null;
-  // ссылка-приглашение руководителя (kind team, role lead) — проверяем один раз
+  // ссылка-приглашение руководителя (kind team, role lead или arealead) — проверяем один раз
   var leadInviteP = null;
   function isLeadInvite() {
     if (!INVITE) return Promise.resolve(false);
-    if (!leadInviteP) leadInviteP = rpc('invite_get', { p_code: INVITE }).then(function (d) { return !!(d && d.kind === 'team' && d.role === 'lead'); }, function () { return false; });
+    if (!leadInviteP) leadInviteP = rpc('invite_get', { p_code: INVITE }).then(function (d) { return !!(d && d.kind === 'team' && (d.role === 'lead' || d.role === 'arealead')); }, function () { return false; });
     return leadInviteP;
   }
   async function isLead(u) {

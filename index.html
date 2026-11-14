@@ -5146,7 +5146,7 @@ function renderTeam(){
       <div><span class="mlabel">Статус</span>${memberStatus(u, isMe)}<br><span class="hint">в ${r.cur} ${plural(r.cur,'проекте','проектах','проектах')} из ${u.capacity}</span></div>
       <div class="acts">
         ${isMe ? `<button class="ghost" data-editme>Изменить профиль</button>` : ''}
-        ${!isMe && !u.account_id && online && !ORGSP ? `<button class="ghost" data-tlink="${u.id}">${u.invite?.code ? 'Ссылка-приглашение' : 'Пригласить по ссылке'}</button>` : ''}
+        ${!isMe && !u.account_id && online && (!ORGSP || (u.lead && u.area)) ? `<button class="ghost" data-tlink="${u.id}">${u.invite?.code ? 'Ссылка-приглашение' : 'Пригласить по ссылке'}</button>` : ''}
         ${u.status === 'invited' && !online ? `<button class="ghost" data-accept="${u.id}">Отметить принявшим</button>` : ''}
         ${!isMe ? `<button class="ghost danger" data-remove="${u.id}">${u.status === 'invited' ? 'Отозвать' : 'Удалить'}</button>` : ''}
       </div></div>`;
@@ -5175,6 +5175,8 @@ function openInvite(){
       </div>
       <div class="field"><label for="iCap">Норма: проектов одновременно</label><input id="iCap" type="number" min="1" max="20" value="3"></div>
       ${cloud.store && !ORG && SPACE ? `<label class="check lead-check"><input type="checkbox" id="iLead"> <span><b>Доступ к области «${esc(areaById(curArea()).name)}»</b><small>Видит и редактирует только пространства этой области: ${esc(spacesOfArea(curArea()).filter(x => x.id).map(x => x.name).join(', '))}. Основное пространство, другие области и ваши личные ссылки ему недоступны.</small></span></label>`
+        : cloud.store && ORGSP ? `<label class="check lead-check"><input type="checkbox" id="iLead"> <span><b>Доступ руководителя этой области</b><small>Видит и редактирует только пространства этой области, как вы.</small></span></label>`
+        : cloud.store && ORG ? `<label class="check lead-check"><input type="checkbox" id="iLead"> <span><b>Доступ руководителя</b><small>Видит и редактирует все проекты основного пространства, шаблоны и команду — как вы.</small></span></label>`
         : cloud.store && !ORG ? `<label class="check lead-check"><input type="checkbox" id="iLead"> <span><b>Доступ руководителя</b><small>Видит и редактирует все проекты основного пространства «${esc(mainName())}», шаблоны и команду, назначает людей. Отдельные пространства и области и ваши личные ссылки остаются только вашими. Чтобы дать доступ только к одной области — приглашайте из пространства этой области.</small></span></label>` : ''}
       <p class="hint" style="margin:0">${cloud.store ? 'После добавления появится ссылка-приглашение: отправьте её человеку. Войдя по ней, он увидит проекты, где вы его назначите.' : 'Письма приложение не отправляет. Чтобы человек увидел свои проекты, откройте нужный проект, нажмите «Поделиться» → «Создать ссылку» и пришлите ему эту ссылку.'}</p>
       <div class="err" id="iErr"></div>
@@ -5191,7 +5193,7 @@ function openInvite(){
     if (!(cap >= 1)) return $('#iErr').textContent = 'Норма — от 1 проекта';
     const lead = !!$('#iLead')?.checked;
     const u = inviteMember({ name, email, role:lead && $('#iRole').value === 'specialist' ? 'pm' : $('#iRole').value, dept:lead && $('#iDept').value === 'Креатив' ? 'Аккаунтинг (PM)' : $('#iDept').value, capacity:cap });
-    if (lead){ u.lead = true; if (SPACE) u.area = curArea(); commit(); }
+    if (lead){ u.lead = true; if (SPACE) u.area = curArea(); if (ORGSP) u.area = cloud.org?.area || ''; commit(); }
     layer.innerHTML = '';
     if (cloud.store && cloud.uid) teamLinkFor(u, true);
     else toast(`${name} в команде. Доступ к проекту откройте ссылкой через «Поделиться»`);
@@ -9662,10 +9664,11 @@ const avatarOk = u => /^https:\/\//.test(u?.avatar || '');
 const avHtml = (u, cls = 'av') => avatarOk(u) ? `<span class="${cls}"><img src="${esc(u.avatar)}" alt="" referrerpolicy="no-referrer" loading="lazy"></span>` : `<span class="${cls}">${esc(initials(u || {}))}</span>`;
 
 async function createTeamLink(u){
-  if (!cloud.store || !cloud.uid || GUEST || ORGSP) return null;
+  if (!cloud.store || !cloud.uid || GUEST) return null;
+  if (ORGSP && !(u.lead && u.area)) return null;                  // руководитель области приглашает только руководителей своей области
   const code = newCode(), at = new Date().toISOString();
-  const role = u.lead && !ORG ? (u.area ? { role:'arealead', area:u.area } : { role:'lead' }) : {};
-  if (role.area) await markAreaSpaces(role.area);
+  const role = u.lead ? (u.area ? { role:'arealead', area:u.area } : { role:'lead' }) : {};
+  if (role.area && !ORG) await markAreaSpaces(role.area);
   await cloud.store.doc(`inv/${code}`).set({ kind:'team', ownerId:OWNER(), memberId:u.id, name:u.name || '', at, ...role });
   if (u.invite?.code) cloud.store.doc(`inv/${u.invite.code}`).delete().catch(() => {});
   u.invite = { code, at }; commit(); return code;
