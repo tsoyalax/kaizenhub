@@ -77,7 +77,11 @@ const dump = w => { const o = {}; for (let i = 0; i < w.localStorage.length; i++
   assert.ok(pinv && pinv.data.ownerId === A); ok('ссылки в проекты руководитель создаёт от имени владельца');
   assert.ok(!$(l2, '[data-view="team"]') || true);
   l2.w.document.querySelector('[data-view="team"]').click(); await wait(100); l2.w.document.querySelector('[data-invite]').click(); await wait(50);
-  assert.ok(!$(l2, '#iLead')); ok('руководитель не может пригласить других руководителей');
+  assert.ok($(l2, '#iLead')); ok('руководитель видит галочку «Доступ руководителя»');
+  $(l2, '#iName').value = 'Юля Руководитель'; $(l2, '#iEmail').value = 'yu@x.y'; $(l2, '#iLead').checked = true;
+  $(l2, '#iForm').dispatchEvent(new l2.w.Event('submit', { bubbles:true, cancelable:true })); await wait(1500);
+  const linv = [...be.rows.values()].find(r => r.path.startsWith('inv/') && r.data.kind === 'team' && r.data.name === 'Юля Руководитель');
+  assert.ok(linv && linv.data.role === 'lead' && linv.data.ownerId === A); ok('руководитель приглашает руководителя: ссылка с ролью руководителя от имени владельца');
   l2.w.document.querySelector('[data-close]')?.click(); await wait(50);
   // 4) владелец видит руководителя в «Команде»
   own.w.document.querySelector('[data-view="team"]').click(); await wait(1500);
