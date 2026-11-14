@@ -1166,7 +1166,7 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .it-add{width:100%;margin-top:8px;border-style:dashed}
 .tpri{display:inline-grid;place-items:center;width:18px;height:18px;flex:none;margin-right:6px;vertical-align:-3px}
 .tpri svg{width:18px;height:18px}
-.tpri-r{color:var(--r)}.tpri-y{color:var(--y)}.tpri-b{color:var(--b)}.tpri-n{color:var(--muted)}
+.tpri-r{color:var(--r)}.tpri-y{color:var(--y)}.tpri-b{color:var(--b)}
 .tpri-off{border:1px dashed var(--line);border-radius:5px;width:16px;height:16px}
 .pr-grp{margin-bottom:16px}
 .pr-grp h3{display:flex;align-items:center;gap:4px;font-size:15px;margin:0 0 8px 4px}
@@ -4758,7 +4758,7 @@ function renderPriority(){
   const p = infoBoard(); if (!p){ app.innerHTML = '<div class="empty">Доски пока нет</div>'; return; }
   ui.prodProject = p.id; const t0 = today();
   const items = p.stages.filter(s => !isMaint(s)).flatMap(s => (s.subs || []).map(x => { const t = taskFor(p.id, s.id, x.id);
-    return { s, x, t, done:subDone(p, s, x), pri:t?.priority || '', due:t?.due_date || x.due_date || '' }; })).filter(i => ui.priDone || !i.done);
+    return { s, x, t, done:subDone(p, s, x), pri:normPri(t?.priority), due:t?.due_date || x.due_date || '' }; })).filter(i => ui.priDone || !i.done);
   const row = i => { const who = i.x.cycle ? contentWho(p, i.s, i.x, i.t) : whoId(p, i.s, i.t); const late = i.due && i.due < t0 && !i.done;
     return `<li class="pr-row${i.done ? ' done' : ''}">${priIco(i.pri) || '<span class="tpri tpri-off"></span>'}
       <button class="pr-name" data-pfsub="${i.s.id}|${i.x.id}"><b>${esc(i.x.name)}</b><small><span class="vid-st">${esc(i.s.name)}</span>${i.due ? `<span class="pf-due${late ? ' late' : ''}">${FLAG}${fmt(i.due)}</span>` : ''}</small></button>
@@ -8592,18 +8592,17 @@ const BELL_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const remTxt = at => at ? new Date(at).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
 const taskDone = t => taskProgress(t).done || (() => { const p = projById(t.project_id); const s = p?.stages.find(x => x.id === t.stage_id); const x = s?.subs?.find(y => y.id === t.substage_id); return !!(s && x && subDone(p, s, x)); })();
 // ---------- Приоритет задачи (карточки подэтапа): t.priority urgent / high / medium / low — значком ----------
-// значок: «Срочно» — красный квадрат с «!»; остальные — полоски уровня (как сигнал): высокий 3 из 3, средний 2 из 3, низкий 1 из 3
-const TPRI = { urgent:['Срочно', 'r', 0], high:['Высокий', 'y', 3], medium:['Средний', 'b', 2], low:['Низкий', 'n', 1] };
-const TPRI_ORDER = ['urgent', 'high', 'medium', 'low', ''];
+// три уровня (по просьбе, без «Срочно»): полоски как сигнал — высокий 3 из 3, средний 2 из 3, низкий 1 из 3; старое «urgent» = высокий
+const TPRI = { high:['Высокий', 'r', 3], medium:['Средний', 'y', 2], low:['Низкий', 'b', 1] };
+const TPRI_ORDER = ['high', 'medium', 'low', ''];
+const normPri = k => k === 'urgent' ? 'high' : (TPRI[k] ? k : '');
 const priIco = k => {
-  if (!TPRI[k]) return '';
+  k = normPri(k); if (!k) return '';
   const [label, c, n] = TPRI[k];
-  const svg = k === 'urgent'
-    ? '<rect x="3" y="3" width="18" height="18" rx="5" fill="currentColor"/><path d="M12 7.5v6" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="17" r="1.5" fill="#fff"/>'
-    : [[4, 15, 5], [10, 10, 10], [16, 5, 15]].map(([x, y, h], i) => `<rect x="${x}" y="${y}" width="4.5" height="${h}" rx="1.4" fill="currentColor" opacity="${i < n ? 1 : .22}"/>`).join('');
+  const svg = [[4, 15, 5], [10, 10, 10], [16, 5, 15]].map(([x, y, h], i) => `<rect x="${x}" y="${y}" width="4.5" height="${h}" rx="1.4" fill="currentColor" opacity="${i < n ? 1 : .22}"/>`).join('');
   return `<span class="tpri tpri-${c}" title="Приоритет: ${label}" aria-label="Приоритет: ${label}"><svg viewBox="0 0 24 24" aria-hidden="true">${svg}</svg></span>`;
 };
-const priSel = (key, val, cls = '') => `<select class="pf-status tpri-sel ${cls}" data-tpri="${key}" aria-label="Приоритет">${['', ...TPRI_ORDER.slice(0, 4)].map(k => `<option value="${k}" ${k === (val || '') ? 'selected' : ''}>${k ? TPRI[k][0] : 'Без приоритета'}</option>`).join('')}</select>`;
+const priSel = (key, val, cls = '') => `<select class="pf-status tpri-sel ${cls}" data-tpri="${key}" aria-label="Приоритет">${['', ...TPRI_ORDER.slice(0, 3)].map(k => `<option value="${k}" ${k === normPri(val) ? 'selected' : ''}>${k ? TPRI[k][0] : 'Без приоритета'}</option>`).join('')}</select>`;
 // ключ — «pid|sid|xid» подэтапа (нет задачи — создаём) или «t|id» задачи
 document.addEventListener('change', e => {
   const k = e.target.dataset?.tpri; if (!k) return;
@@ -8619,7 +8618,7 @@ function dueRemindHtml(t, editable){
   const late = t.due_date && t.due_date < today() && !taskDone(t);
   const dueTxt = t.due_date ? rangeTxt(t.start_date, t.due_date) : 'не задан';
   return `<span class="tk-who tk-due"><span>${FLAG} Срок</span>${editable ? `<button type="button" class="dp-btn${late ? ' late' : ''}${t.due_date ? '' : ' empty'}" data-duepick="${t.id}">${dueTxt}</button>` : `<b class="${late ? 'late' : ''}">${dueTxt}</b>`}${late ? '<b class="late">просрочено</b>' : ''}</span>
-    <span class="tk-who tk-due"><span>${priIco(t.priority) || '<span class="tpri tpri-off"></span>'} Приоритет</span>${editable ? priSel('t|' + t.id, t.priority) : `<b>${t.priority ? TPRI[t.priority][0] : 'нет'}</b>`}</span>
+    <span class="tk-who tk-due"><span>${priIco(t.priority) || '<span class="tpri tpri-off"></span>'} Приоритет</span>${editable ? priSel('t|' + t.id, t.priority) : `<b>${normPri(t.priority) ? TPRI[normPri(t.priority)][0] : 'нет'}</b>`}</span>
     <span class="tk-who tk-due"><span>${BELL_ICO} Напомнить</span><button type="button" class="dp-btn${t.remind?.at ? '' : ' empty'}" data-rempick="${t.id}">${t.remind?.at ? remShort(t.remind.at) : 'нет'}</button></span>`;
 }
 // «13–20 нояб.», «28 нояб. – 3 дек.», один день — «сегодня» / «завтра» / «20 нояб.»
