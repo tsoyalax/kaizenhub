@@ -1164,6 +1164,10 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .it-meta svg{width:12px;height:12px}
 .it-card .it-st{width:100%}
 .it-add{width:100%;margin-top:8px;border-style:dashed}
+.it-newcol{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:140px;border:1.5px dashed var(--line);background:transparent;color:var(--muted);font:inherit;font-size:14px;font-weight:600;cursor:pointer;border-radius:16px}
+.it-newcol span{font-size:28px;line-height:1;font-weight:400}
+.it-newcol:hover{color:var(--ink);border-color:color-mix(in srgb,var(--ink) 30%,var(--line))}
+.it-del{font-size:16px;line-height:1}
 .ai-key-row input{flex:1;min-width:0;height:40px}
 .ai-key-act{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
 .ct-kpi-ed{display:grid;gap:10px}
@@ -7821,7 +7825,8 @@ document.addEventListener('click', e => {
 // Задачи — те же внутренние задачи it/<id> (видны исполнителю и в «Поручениях»), у задачи t.dept — id отдела.
 // Отделы — db.prefs.itDepts [{ id, name }] (по умолчанию Маркетинг, SMM, Продажи, Администрирование), правятся здесь же.
 const IT_DEPTS_DEF = [['dmkt', 'Маркетинг'], ['dsmm', 'SMM'], ['dsales', 'Продажи'], ['dadmin', 'Администрирование']];
-const itDepts = () => db.prefs?.itDepts || IT_DEPTS_DEF.map(([id, name]) => ({ id, name }));
+// отделы составляет сам человек (по умолчанию — ни одного); из прежних стандартных остаются только те, где уже есть задачи
+const itDepts = () => db.prefs?.itDepts || IT_DEPTS_DEF.filter(([id]) => itAll().some(t => t.dept === id)).map(([id, name]) => ({ id, name }));
 const IT_ICO = { todo:'gray', in_progress:'green', review:'blue', done:'done' };
 // доска внутренних задач проекта p (вкладка «Внутренние задачи» в «Производстве»):
 // первая колонка — «Регулярные» = регулярные задачи этапа «Ведение» (есть, только если в проекте включено «Ведение»),
@@ -7840,15 +7845,15 @@ function internalBoardHtml(p){
     ${p.is_maintenance && ms ? rtaskBlock(p, ms) : `<p class="hint">Регулярные задачи появляются, когда у проекта включено «Ведение».</p>${canEditProject(p) && !p._ext ? `<button class="ghost it-add" data-mainton="${p.id}">Включить ведение</button>` : ''}`}</section>`;
   return `<div class="it-wrap"><div class="it-top">
       <label class="it-f"><input type="checkbox" id="itMine" ${ui.itMine ? 'checked' : ''}> Мои задачи</label>
-      <label class="it-f"><input type="checkbox" id="itDone" ${ui.itDoneShow ? 'checked' : ''}> Показать готовые</label>
-      ${GUEST ? '' : `<button class="ghost" data-itdeptadd>+ Отдел</button>`}</div>
+      <label class="it-f"><input type="checkbox" id="itDone" ${ui.itDoneShow ? 'checked' : ''}> Показать готовые</label></div>
     <div class="pf-board it-board">${repCol}${cols.map(d => { const list = all.filter(t => d.id ? t.dept === d.id : (!t.dept || !deps.some(x => x.id === t.dept)));
       const open = list.filter(t => t.status !== 'done').sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999')); const done = list.filter(t => t.status === 'done');
       return `<section class="pf-col it-col">
-        <header><div><b>${esc(d.name)}</b>${d.id && !GUEST ? `<button class="icon-btn ct-ren" data-itdeptren="${d.id}" title="Переименовать отдел" aria-label="Переименовать отдел «${esc(d.name)}»">${PEN_ICO}</button>` : ''}</div>
+        <header><div><b>${esc(d.name)}</b>${d.id && !GUEST ? `<button class="icon-btn ct-ren" data-itdeptren="${d.id}" title="Переименовать отдел" aria-label="Переименовать отдел «${esc(d.name)}»">${PEN_ICO}</button><button class="icon-btn ct-ren it-del" data-itdeptdel="${d.id}" title="Удалить отдел" aria-label="Удалить отдел «${esc(d.name)}»">×</button>` : ''}</div>
           <small>${open.length} в работе${done.length ? ` · готово ${done.length}` : ''}</small></header>
         <div class="pf-cards">${open.map(card).join('') || '<p class="hint">Задач нет</p>'}${ui.itDoneShow ? done.map(card).join('') : ''}</div>
-        ${GUEST ? '' : `<button class="ghost it-add" data-itnewdept="${d.id}" data-itproj="${p.id}">+ Задача</button>`}</section>`; }).join('')}</div></div>`;
+        ${GUEST ? '' : `<button class="ghost it-add" data-itnewdept="${d.id}" data-itproj="${p.id}">+ Задача</button>`}</section>`; }).join('')}
+      ${GUEST ? '' : `<button class="pf-col it-newcol" data-itdeptadd><span>+</span>Отдел</button>`}</div></div>`;
 }
 // включить «Ведение» прямо отсюда: появится этап «Ведение / Поддержка» с регулярными задачами
 document.addEventListener('click', e => {
@@ -7863,6 +7868,11 @@ document.addEventListener('change', e => {
 document.addEventListener('click', e => {
   const nd = e.target.closest?.('[data-itnewdept]'); if (nd){ openItask(null, { dept:nd.dataset.itnewdept, project_id:nd.dataset.itproj || '' }); return; }
   if (e.target.closest?.('[data-itdeptadd]')){ askText('Новый отдел', '', v => { db.prefs = db.prefs || {}; db.prefs.itDepts = [...itDepts(), { id:'d' + uid(), name:v }]; commit(); toast(`Отдел «${v}» добавлен`); }); return; }
+  const dd = e.target.closest?.('[data-itdeptdel]'); if (dd){ e.stopPropagation(); const d = itDepts().find(x => x.id === dd.dataset.itdeptdel); if (!d) return;
+    const n = itAll().filter(t => t.dept === d.id).length;
+    const drop = () => { db.prefs = db.prefs || {}; db.prefs.itDepts = itDepts().filter(x => x.id !== d.id); commit(); toast(`Отдел «${d.name}» удалён`); };
+    if (!n) return drop();
+    askConfirm({ title:`Удалить отдел «${d.name}»?`, text:`В нём ${n} ${plural(n, 'задача', 'задачи', 'задач')}. Задачи не удалятся — они перейдут в «Без отдела».`, ok:'Удалить отдел' }).then(y => { if (y) drop(); }); return; }
   const dr = e.target.closest?.('[data-itdeptren]'); if (dr){ e.stopPropagation(); const d = itDepts().find(x => x.id === dr.dataset.itdeptren); if (!d) return;
     askText('Название отдела', d.name, v => { db.prefs = db.prefs || {}; db.prefs.itDepts = itDepts().map(x => x.id === d.id ? { ...x, name:v } : x); commit(); }); }
 }, true);
