@@ -1145,6 +1145,9 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .it-card{display:grid;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
 .it-card:hover{border-color:color-mix(in srgb,var(--ink) 25%,var(--line))}
 .it-card b{font-weight:600;overflow-wrap:anywhere}
+.it-proj{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);min-width:0}
+.it-proj .pava{flex:none}
+.it-pf{height:34px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit;font-size:13.5px;max-width:240px}
 .it-card.done{opacity:.6}.it-card.done b{text-decoration:line-through}
 .it-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px}
 .it-meta svg{width:12px;height:12px}
@@ -7745,6 +7748,7 @@ function openItask(id, preset = {}){
         <div class="field"><label for="itPri">Приоритет</label><select id="itPri" ${ro}>${Object.entries(IT_PRI).map(([k, x]) => `<option value="${k}" ${k === v.priority ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
         <div class="field"><label for="itCat">Категория</label><select id="itCat" ${ro}>${Object.entries(IT_CAT).map(([k, x]) => `<option value="${k}" ${k === v.category ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
       </div>
+      ${GUEST ? '' : `<div class="field"><label for="itProj">Проект</label><select id="itProj" ${ro}><option value="">Без проекта</option>${db.projects.filter(x => x.state !== 'archived' || x.id === v.project_id).map(x => `<option value="${x.id}" ${x.id === v.project_id ? 'selected' : ''}>${esc(x.name)}${x.client ? ` — ${esc(x.client)}` : ''}</option>`).join('')}</select></div>`}
       ${GUEST ? '' : `<div class="field"><label for="itDept">Отдел</label><select id="itDept" ${ro}><option value="">Без отдела</option>${itDepts().map(d => `<option value="${d.id}" ${d.id === v.dept ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}</select></div>`}
       <div class="field"><label for="itStatus">Статус</label><select id="itStatus">${Object.entries(IT_STATUS).map(([k, x]) => `<option value="${k}" ${k === v.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
       ${t ? `<p class="hint">Поставил(а): ${esc(t.creator_name || '—')}, ${new Date(t.created_at).toLocaleDateString('ru-RU')}</p>` : ''}
@@ -7761,7 +7765,7 @@ document.addEventListener('submit', e => {
   const who = $('#itWho').value; if (!who){ $('#itErr').textContent = 'Выберите исполнителя'; return; }
   const now = new Date().toISOString();
   const t = { ...(old || { id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Руководитель', created_at:now }),
-    title, description:$('#itDesc').value.trim(), assignee_id:who, priority:$('#itPri').value, category:$('#itCat').value, status:$('#itStatus').value, due_date:$('#itDue').value || '', dept:$('#itDept')?.value ?? (old?.dept || '') };
+    title, description:$('#itDesc').value.trim(), assignee_id:who, priority:$('#itPri').value, category:$('#itCat').value, status:$('#itStatus').value, due_date:$('#itDue').value || '', dept:$('#itDept')?.value ?? (old?.dept || ''), project_id:$('#itProj')?.value ?? (old?.project_id || '') };
   if (old && old.assignee_id !== who) delete t._members;                    // сменили исполнителя — пересобираем доступ
   itSave(t); layer.innerHTML = ''; render();
   const u = userById(who);
@@ -7799,14 +7803,17 @@ const itDepts = () => db.prefs?.itDepts || IT_DEPTS_DEF.map(([id, name]) => ({ i
 const IT_ICO = { todo:'gray', in_progress:'green', review:'blue', done:'done' };
 function renderInternal(){
   const deps = itDepts(); const t0 = today();
-  const all = itAll().filter(t => !ui.itMine || t.assignee_id === ME);
+  const all = itAll().filter(t => (!ui.itMine || t.assignee_id === ME) && (!ui.itProj || t.project_id === ui.itProj));
+  const projOpts = db.projects.filter(x => x.state !== 'archived');
   const cols = [...deps, ...(all.some(t => !t.dept || !deps.some(d => d.id === t.dept)) ? [{ id:'', name:'Без отдела' }] : [])];
   const card = t => { const late = t.due_date && t.due_date < t0 && t.status !== 'done';
     return `<div class="it-card${t.status === 'done' ? ' done' : ''}" data-itopen="${t.id}">
+      ${t.project_id && projById(t.project_id) ? `<span class="it-proj">${projAva(projById(t.project_id), 'xs')}${esc(projById(t.project_id).name)}</span>` : ''}
       <b>${esc(t.title)}</b>
       <div class="it-meta">${whoChip(t.assignee_id)}${t.due_date ? `<span class="pf-due${late ? ' late' : ''}">${FLAG}${fmt(t.due_date)}</span>` : ''}${t.priority === 'urgent' || t.priority === 'high' ? `<span class="dt-pri pri-${t.priority}">${IT_PRI[t.priority]}</span>` : ''}</div>
       <select class="pf-status it-st s-${IT_ICO[t.status] || 'gray'}" data-itstatus="${t.id}" aria-label="Статус «${esc(t.title)}»">${Object.entries(IT_STATUS).map(([k, x]) => `<option value="${k}" ${k === t.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`; };
   app.innerHTML = `<div class="it-top"><h2>Внутренние задачи</h2>
+      <select id="itProjF" class="it-pf" aria-label="Проект"><option value="">Все проекты</option>${projOpts.map(x => `<option value="${x.id}" ${x.id === ui.itProj ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
       <label class="it-f"><input type="checkbox" id="itMine" ${ui.itMine ? 'checked' : ''}> Мои задачи</label>
       <label class="it-f"><input type="checkbox" id="itDone" ${ui.itDoneShow ? 'checked' : ''}> Показать готовые</label>
       ${GUEST ? '' : `<button class="ghost" data-itdeptadd>+ Отдел</button>`}</div>
@@ -7820,10 +7827,11 @@ function renderInternal(){
 }
 document.addEventListener('change', e => {
   if (e.target.id === 'itMine'){ ui.itMine = e.target.checked; render(); }
+  if (e.target.id === 'itProjF'){ ui.itProj = e.target.value; render(); }
   if (e.target.id === 'itDone'){ ui.itDoneShow = e.target.checked; render(); }
 });
 document.addEventListener('click', e => {
-  const nd = e.target.closest?.('[data-itnewdept]'); if (nd){ openItask(null, { dept:nd.dataset.itnewdept }); return; }
+  const nd = e.target.closest?.('[data-itnewdept]'); if (nd){ openItask(null, { dept:nd.dataset.itnewdept, project_id:ui.itProj || '' }); return; }
   if (e.target.closest?.('[data-itdeptadd]')){ askText('Новый отдел', '', v => { db.prefs = db.prefs || {}; db.prefs.itDepts = [...itDepts(), { id:'d' + uid(), name:v }]; commit(); toast(`Отдел «${v}» добавлен`); }); return; }
   const dr = e.target.closest?.('[data-itdeptren]'); if (dr){ e.stopPropagation(); const d = itDepts().find(x => x.id === dr.dataset.itdeptren); if (!d) return;
     askText('Название отдела', d.name, v => { db.prefs = db.prefs || {}; db.prefs.itDepts = itDepts().map(x => x.id === d.id ? { ...x, name:v } : x); commit(); }); }
