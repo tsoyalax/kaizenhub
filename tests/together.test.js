@@ -49,7 +49,9 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     const col = cols.find(c => [...c.querySelectorAll('.pf-card')].some(x => /Рилс 1/.test(x.textContent)) && [...c.querySelectorAll('.pf-card')].some(x => /Анонс челленджа/.test(x.textContent)));
     assert.ok(col && /Блок Игоря/.test(col.textContent) && /Челлендж Эма/.test(col.textContent)); ok('в колонке — задачи обеих площадок с подписью площадки'); }
   E(`ui.infoAll = true; render();`); $('[data-infomode="timeline"]').click(); await wait(100);
-  const fa = $('.fl-p'); assert.ok(/Все площадки/.test(fa.textContent) && /Оффер/.test(fa.textContent) && /Анонс челленджа/.test(fa.textContent)); ok('«Все»: ближайшие задачи всех инфоповодов вместе');
+  assert.ok(/Все площадки/.test($('.fl-p').textContent) && !$('.flp-list')); ok('«Все»: шапка с видом, без списков сроков');
+  E(`ui.view = 'today'; ui.tdIp = ''; render();`); { const due = $('.tdy-due'); assert.ok(due && /Оффер/.test(due.textContent) && /Анонс челленджа/.test(due.textContent)); ok('«Сегодня»: «Ближайшие» — задачи всех площадок'); }
+  E(`ui.view = 'production'; render();`);
 
   assert.ok($('.tg-tl') && D.querySelectorAll('.tg-lane').length === 2); ok('«Вместе»: блок Игоря и челлендж Эма — две полосы на одной шкале');
   assert.equal(D.querySelectorAll('.tg-task').length, 5); ok('задачи обоих инфоповодов на таймлайне');

@@ -1285,6 +1285,7 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ab-board{margin-top:4px}
 .ab-ip{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-weight:600}.ab-ip i{width:7px;height:7px;border-radius:50%;background:var(--bc)}
 .ab-hint{margin:8px 2px 0}
+.tdy-due{margin-bottom:14px}
 .flp-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bc);margin-right:5px;vertical-align:1px}
 .flp-rn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
 .flp-row small{grid-column:1;color:var(--muted);font-size:12px}
@@ -4715,7 +4716,8 @@ function renderToday(){
     return `<li class="tdy-ct${dn === list.length ? ' done' : ''}"><button type="button" class="tdy-ctb" data-tdct="${uid2}" aria-expanded="${!!open}"><span class="tdy-cti">${VIDEO_ICO}</span><b>Контент: ${list.length} ${plural(list.length, 'видео', 'видео', 'видео')}</b><small>сделано ${dn} из ${list.length}${late ? ` · <span class="tdy-late">просрочено ${late}</span>` : ''}</small><span class="tdy-car" aria-hidden="true">${open ? '▴' : '▾'}</span></button>
       ${open ? `<div class="tdy-cts">${list.map(i => `<label class="tdy-chip${f.done.has(i.k) ? ' on' : ''}${!f.done.has(i.k) && i.due && i.due < day ? ' late' : ''}"><input type="checkbox" data-tdyk="${esc(i.k)}" ${f.done.has(i.k) ? 'checked' : ''}>${esc(i.title)}</label>`).join('')}</div>` : ''}</li>`; };
   const ipRow = ips.length > 1 ? `<div class="ip-row tdy-ips" role="tablist" aria-label="Площадки"><span class="ip-l">Площадки</span>${[{ id:'', name:'Все' }, ...ips].map(p => `<button class="ip-chip${(ui.tdIp || '') === p.id ? ' on' : ''}" role="tab" aria-selected="${(ui.tdIp || '') === p.id}" data-tdip="${p.id}"><b>${esc(p.name)}</b></button>`).join('')}</div>` : '';
-  app.innerHTML = `${ipRow}<section class="smm-pf tdy-pf-box" aria-label="План и факт на день">
+  const dueBox = isToday && ips.length ? dueListsHtml(ui.tdIp ? ips.filter(p => p.id === ui.tdIp) : ips) : '';
+  app.innerHTML = `${ipRow}${dueBox}<section class="smm-pf tdy-pf-box" aria-label="План и факт на день">
     <div class="smm-hd"><h2>План / Факт</h2>
       <span class="smm-m"><button class="icon-btn" data-tdday="-1" ${di > 0 ? '' : 'disabled'} aria-label="Предыдущий день">‹</button><b>${isToday ? 'Сегодня, ' : ''}${esc(title)}</b><button class="icon-btn" data-tdday="1" ${!isToday ? '' : 'disabled'} aria-label="Следующий день">›</button></span>
       ${isToday ? `<span class="tdy-acts"><button class="icon-btn pf-shareic${links.some(l => l.who === '*') ? ' on' : ''}" data-tdyshare="*" title="Поделиться планом на сегодня: ссылка без входа, по ней отмечают задачи" aria-label="Поделиться планом на сегодня">${SHARE_ICON}</button></span>` : ''}</div>
@@ -5375,8 +5377,9 @@ function allBoardsHtml(){
       <div class="pf-cards">${shown.map(card).join('') || '<p class="hint">Задач нет</p>'}${fold ? `<button type="button" class="ghost ct-more" data-ctmore="__all" aria-expanded="${open}">${open ? 'Свернуть' : `Показать все (${vids.length})`}</button>` : ''}</div></section>`; }).join('')}</div>
     <p class="hint ab-hint">Здесь все площадки вместе. Добавлять задачи и менять столбики — на доске своей площадки.</p>`;
 }
-function flowAllHtml(){
-  const t0 = today(); const boards = infoBoards().filter(p => p.state !== 'completed');
+// «Просрочено» и «Ближайшие» по площадкам (в «Сегодня»): у задачи — цветная точка и название площадки, отдел; клик — карточка ([data-tgsub])
+function dueListsHtml(boards){
+  const t0 = today();
   const all = boards.flatMap(p => [...flowState(p).values()].flatMap(v => v.open.filter(i => i.due).map(i => ({ ...i, p, s:v.s }))));
   const byDue = (a, b) => a.due < b.due ? -1 : a.due > b.due ? 1 : 0;
   const over = all.filter(i => i.due < t0).sort(byDue), next = all.filter(i => i.due >= t0).sort(byDue).slice(0, 8);
@@ -5385,22 +5388,18 @@ function flowAllHtml(){
   const row = (i, late) => `<li><button class="flp-row" data-tgsub="${i.p.id}|${i.s.id}|${i.x.id}" title="${esc(i.p.name)} · ${esc(i.s.name)} · срок ${fmt(i.due)}"><span class="flp-rn">${esc(i.x.name)}</span><small><i class="flp-dot" style="--bc:${tgColor(i.p)}"></i>${esc(i.p.name)} · ${esc(i.s.name)}</small>
       <span class="flp-rd${late ? ' late' : i.due === t0 ? ' now' : ''}">${late ? ago(i.due) : when(i.due)}</span></button></li>`;
   const box = (title, items, late, cnt) => `<div class="flp-list${late ? ' late' : ''}"><h3>${title}${cnt ? ` <span>${cnt}</span>` : ''}</h3><ol>${items.map(i => row(i, late)).join('')}</ol></div>`;
-  return `<section class="fl fl-p" aria-label="Все площадки: сроки">
-    <div class="fl-p-hd"><h2>Все площадки</h2><div class="fl-view"><span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${!(ui.infoMode === 'timeline' || ui.infoMode === 'together')}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline' || ui.infoMode === 'together'}">Таймлайн</button></span></div></div>
-    ${over.length || next.length ? `<div class="fl-lists">
+  return over.length || next.length ? `<div class="fl-lists tdy-due">
       ${over.length ? box('Просрочено', over.slice(0, 12), true, over.length) : ''}
       ${next.length ? box('Ближайшие', next, false, '') : ''}
-    </div>` : '<p class="hint">Задач со сроком пока нет.</p>'}</section>`;
+    </div>` : '';
+}
+function flowAllHtml(){
+  return `<section class="fl fl-p" aria-label="Все площадки">
+    <div class="fl-p-hd"><h2>Все площадки</h2><div class="fl-view"><span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${!(ui.infoMode === 'timeline' || ui.infoMode === 'together')}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline' || ui.infoMode === 'together'}">Таймлайн</button></span></div></div>
+  </section>`;
 }
 function flowProdHtml(p){
   const st = flowState(p); const list = [...st.values()]; const t0 = today();
-  const all = list.flatMap(v => v.open.filter(i => i.due).map(i => ({ ...i, sid:v.s.id, sname:v.s.name })));
-  const byDue = (a, b) => a.due < b.due ? -1 : a.due > b.due ? 1 : 0;
-  const over = all.filter(i => i.due < t0).sort(byDue), next = all.filter(i => i.due >= t0).sort(byDue).slice(0, 5);
-  const when = d => d === t0 ? 'сегодня' : d === addDays(t0, 1) ? 'завтра' : fmt(d);
-  const ago = d => { const n = diffDays(t0, d); return n === 1 ? 'вчера' : `${days(n)} назад`; };
-  const row = (i, late) => `<li><button class="flp-row" data-pfsub="${i.sid}|${i.x.id}" title="${esc(i.sname)} · срок ${fmt(i.due)}"><span class="flp-rn">${esc(i.x.name)}</span><small>${esc(i.sname)}</small>
-      <span class="flp-rd${late ? ' late' : i.due === t0 ? ' now' : ''}">${late ? ago(i.due) : when(i.due)}</span></button></li>`;
   const mode = ui.infoMode === 'timeline' || ui.infoMode === 'together' ? 'timeline' : 'board';
   // отдел: название, статус точкой и словом, полоса готовности и «готово / всего»
   // статус словами, чтобы было понятно «почему»: какой срок горит, кого ждёт, сколько просрочено
@@ -5415,15 +5414,10 @@ function flowProdHtml(p){
       <span class="flp-st-hd"><b>${esc(v.s.name)}</b><span class="flp-st-n">${v.n ? `${v.done}/${v.n}` : '—'}</span></span>
       <span class="flp-st-bar"><i style="width:${pct}%"></i></span>
       <span class="flp-st-s" title="${esc(txt())}"><i aria-hidden="true"></i><span>${esc(txt())}</span></span></button>`; };
-  const box = (title, items, late, cnt) => `<div class="flp-list${late ? ' late' : ''}"><h3>${title}${cnt ? ` <span>${cnt}</span>` : ''}</h3><ol>${items.map(i => row(i, late)).join('')}</ol></div>`;
   return `<section class="fl fl-p" aria-label="Воронка: отделы и сроки">
     <div class="fl-p-hd"><h2>Воронка</h2><span class="fl-p-st">${esc(ipState(p))}</span>
       <div class="fl-view"><span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${mode === 'board'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${mode !== 'board'}">Таймлайн</button></span></div></div>
-    <div class="fl-chain fl-pipe" style="--n:${list.length}">${list.map(step).join('')}</div>
-    ${over.length || next.length ? `<div class="fl-lists">
-      ${over.length ? box('Просрочено', over.slice(0, 8), true, over.length) : ''}
-      ${next.length ? box('Ближайшие', next, false, '') : ''}
-    </div>` : ''}</section>`;
+    <div class="fl-chain fl-pipe" style="--n:${list.length}">${list.map(step).join('')}</div></section>`;
 }
 function flowPanelHtml(p, part = 'prod'){
   if (part !== 'ai') return flowProdHtml(p);

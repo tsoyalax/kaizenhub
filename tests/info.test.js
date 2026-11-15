@@ -104,9 +104,10 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   const fs = E(`JSON.stringify([...flowState(infoBoard()).values()].map(v => [v.s.name, v.key]))`);
   assert.deepEqual(JSON.parse(fs), [['Контент','green'],['Статья','green'],['VSL','red'],['Платный канал','yellow'],['Отдел продаж','yellow'],['Эфиры','red']]); ok('VSL просрочен — следующие за ним ждут, этап без задач — красный');
   assert.ok(D.querySelector('.fl-chain') && !/AI-разбор|Воронка не работает/.test(D.querySelector('.fl').textContent) && !D.querySelector('.fl-why-box') && !D.querySelector('.fl-ai') && !/Срочно|Горит/.test(D.querySelector('.fl').textContent));
-  const lists = [...D.querySelectorAll('.flp-list')];
+  assert.ok(!D.querySelector('.flp-list')); ok('в «Производстве» списков «Просрочено / Ближайшие» нет — они в «Сегодня»');
+  E(`ui.view = 'today'; render()`); const lists = [...D.querySelectorAll('.tdy-due .flp-list')];
   assert.ok(/Просрочено/.test(lists[0].textContent) && /Задача VSL/.test(lists[0].textContent) && !/Задача Контент/.test(lists[0].textContent)); ok('«Просрочено» — только просроченные задачи');
-  assert.ok(/Ближайшие/.test(lists[1].textContent) && /Задача Контент/.test(lists[1].textContent) && !/Задача VSL/.test(lists[1].textContent)); ok('«Ближайшие» — ближайшие задачи по сроку'); ok('в «Производстве» — только статусы этапов и «Срочно», без вывода воронки и AI-разбора');
+  assert.ok(/Ближайшие/.test(lists[1].textContent) && /Задача Контент/.test(lists[1].textContent) && !/Задача VSL/.test(lists[1].textContent)); ok('«Ближайшие» — ближайшие задачи по сроку'); E(`ui.view = 'production'; render()`); ok('в «Производстве» — только статусы этапов и «Срочно», без вывода воронки и AI-разбора');
   assert.ok(D.querySelector('.tabs [data-view="funnel"]').hidden); ok('пункт «AI-воронка» пока скрыт из меню');
   E('SHOW_AI_FUNNEL = true');   // дальше проверяем сам раздел
   E(`ui.view = 'funnel'; render()`);
