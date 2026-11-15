@@ -4653,7 +4653,7 @@ function dayPlanTopUp(){
   const live = new Map(tdAll().map(i => [i.k, i]));
   // строки, которых больше нет на доске (например, у подэтапа появилась карточка — ключ x|… сменился на t|…, или задачу удалили),
   // убираем, если они не выполнены: иначе задача висела дважды — у прежнего ответственного и у нового
-  const keep = pl.items.filter(it => { const x = live.get(it.k); if (!x) return tdDone(it.k); if (x.done || tdDone(it.k)) return true;
+  const keep = pl.items.filter(it => { const x = live.get(it.k); if (!tdExists(it.k)) return false; if (!x) return tdDone(it.k); if (x.done || tdDone(it.k)) return true;
     if (!tdForDay(x, t0)) return false;
     if (it.due !== x.due || it.title !== x.title || (it.who || '') !== (x.who || '')){ it.due = x.due; it.title = x.title; it.who = x.who || ''; n++; }
     return true; });
@@ -4688,14 +4688,20 @@ function renderToday(){
   // день: сегодня или один из прошлых (‹ ›) — план того утра и что из него сделано
   const t0 = today(); const days = Object.keys(db.prefs?.dayPlans || {}).filter(k => k <= t0).sort();
   dayPlan(); dayPlanTopUp(); const day = ui.tdDay && days.includes(ui.tdDay) ? ui.tdDay : t0; const isToday = day === t0;
-  const pl = isToday ? dayPlan() : db.prefs.dayPlans[day]; const f = isToday ? dayFact(pl) : { done:new Set(pl.items.filter(i => tdDone(i.k)).map(i => i.k)), extra:[] };
+  const pl0 = isToday ? dayPlan() : db.prefs.dayPlans[day]; const f = isToday ? dayFact(pl0) : { done:new Set(pl0.items.filter(i => tdDone(i.k)).map(i => i.k)), extra:[] };
+  // площадки (инфобизнес): «Все» или одна — план, факт и люди только по ней
+  const ips = isInfo() ? infoBoards().filter(p => p.state !== 'completed') : []; if (ui.tdIp && !ips.some(p => p.id === ui.tdIp)) ui.tdIp = '';
+  const inIp = k => !ui.tdIp || tdProjOf(k) === ui.tdIp;
+  const pl = { ...pl0, items:pl0.items.filter(i => inIp(i.k)) };
   const total = pl.items.length, doneN = pl.items.filter(i => f.done.has(i.k)).length, left = total - doneN;
   const evening = new Date().getHours() >= 18; const pct = total ? Math.min(100, Math.round(doneN / total * 100)) : 100;
   const di = days.indexOf(day);
   const title = parse(day).toLocaleDateString('ru-RU', { weekday:'long', day:'numeric', month:'long' });
   const pace = !total ? 'задач на день нет' : !left ? 'план выполнен' : !isToday ? `не сделано ${left}` : evening ? `не успели ${left}` : `осталось ${left}`;
   const links = db.prefs.todayLinks || [];
-  const people = tdPeople().map(u => ({ ...u, plan:pl.items.filter(i => (i.who || '') === u.id), extra:f.extra.filter(i => (i.who || '') === u.id) })).filter(u => u.plan.length || u.extra.length);
+  // в таблице — все, кто задействован в открытых задачах (даже если на сегодня у них 0), карточки — только у кого есть план
+  const involved = new Set(isToday ? tdAll().filter(i => !i.done && inIp(i.k)).map(i => i.who || '') : []);
+  const people = tdPeople().map(u => ({ ...u, plan:pl.items.filter(i => (i.who || '') === u.id), extra:f.extra.filter(i => (i.who || '') === u.id) })).filter(u => u.plan.length || u.extra.length || (u.id && involved.has(u.id)));
   const row = (i, extra) => { const dn = extra || f.done.has(i.k); const late = !dn && i.due && i.due < day;
     return `<li class="tdy-i${dn ? ' done' : ''}"><input type="checkbox" data-tdyk="${esc(i.k)}" ${dn ? 'checked' : ''} aria-label="Выполнено: ${esc(i.title)}">
       <span><b>${esc(i.title)}</b><small>${esc(extra ? tdWhere(i) : i.where)}${late ? ` · <span class="tdy-late">просрочено с ${fmt(i.due)}</span>` : !dn ? ' · <span class="tdy-run">сегодня</span>' : ''}${extra ? ' · сверх плана' : ''}</small></span></li>`; };
@@ -4708,7 +4714,8 @@ function renderToday(){
   const contentRow = (list, uid2) => { if (!list.length) return ''; const dn = list.filter(i => f.done.has(i.k)).length; const late = list.filter(i => !f.done.has(i.k) && i.due && i.due < day).length; const open = (ui.tdCt || {})[uid2];
     return `<li class="tdy-ct${dn === list.length ? ' done' : ''}"><button type="button" class="tdy-ctb" data-tdct="${uid2}" aria-expanded="${!!open}"><span class="tdy-cti">${VIDEO_ICO}</span><b>Контент: ${list.length} ${plural(list.length, 'видео', 'видео', 'видео')}</b><small>сделано ${dn} из ${list.length}${late ? ` · <span class="tdy-late">просрочено ${late}</span>` : ''}</small><span class="tdy-car" aria-hidden="true">${open ? '▴' : '▾'}</span></button>
       ${open ? `<div class="tdy-cts">${list.map(i => `<label class="tdy-chip${f.done.has(i.k) ? ' on' : ''}${!f.done.has(i.k) && i.due && i.due < day ? ' late' : ''}"><input type="checkbox" data-tdyk="${esc(i.k)}" ${f.done.has(i.k) ? 'checked' : ''}>${esc(i.title)}</label>`).join('')}</div>` : ''}</li>`; };
-  app.innerHTML = `<section class="smm-pf tdy-pf-box" aria-label="План и факт на день">
+  const ipRow = ips.length > 1 ? `<div class="ip-row tdy-ips" role="tablist" aria-label="Площадки"><span class="ip-l">Площадки</span>${[{ id:'', name:'Все' }, ...ips].map(p => `<button class="ip-chip${(ui.tdIp || '') === p.id ? ' on' : ''}" role="tab" aria-selected="${(ui.tdIp || '') === p.id}" data-tdip="${p.id}"><b>${esc(p.name)}</b></button>`).join('')}</div>` : '';
+  app.innerHTML = `${ipRow}<section class="smm-pf tdy-pf-box" aria-label="План и факт на день">
     <div class="smm-hd"><h2>План / Факт</h2>
       <span class="smm-m"><button class="icon-btn" data-tdday="-1" ${di > 0 ? '' : 'disabled'} aria-label="Предыдущий день">‹</button><b>${isToday ? 'Сегодня, ' : ''}${esc(title)}</b><button class="icon-btn" data-tdday="1" ${!isToday ? '' : 'disabled'} aria-label="Следующий день">›</button></span>
       ${isToday ? `<span class="tdy-acts"><button class="icon-btn pf-shareic${links.some(l => l.who === '*') ? ' on' : ''}" data-tdyshare="*" title="Поделиться планом на сегодня: ссылка без входа, по ней отмечают задачи" aria-label="Поделиться планом на сегодня">${SHARE_ICON}</button></span>` : ''}</div>
@@ -4721,8 +4728,20 @@ function renderToday(){
     ${people.length ? `<table class="smm-wk"><thead><tr><th>Кто</th><th>План</th><th>Факт: сделано</th><th>Осталось</th></tr></thead><tbody>
       ${people.map(u => { const dn = u.plan.filter(i => f.done.has(i.k)).length; return `<tr><td>${esc(u.name)}</td><td>${u.plan.length}</td><td>${dn} <small class="hint">из ${u.plan.length}</small></td><td class="${u.plan.length - dn && (evening || !isToday) ? 'tdy-late' : ''}">${u.plan.length - dn}</td></tr>`; }).join('')}
     </tbody></table>` : ''}</section>
-    ${people.length ? `<div class="tdy-grid">${people.map(card).join('')}</div>` : `<div class="empty">${isToday ? 'На сегодня задач со сроком нет. Поставьте сроки подзадачам в «Поручениях» или в карточках — и они появятся здесь.' : 'В этот день плана не было.'}</div>`}`;
+    ${people.some(u => u.plan.length || u.extra.length) ? `<div class="tdy-grid">${people.filter(u => u.plan.length || u.extra.length).map(card).join('')}</div>` : `<div class="empty">${isToday ? 'На сегодня задач со сроком нет. Поставьте сроки подзадачам в «Поручениях» или в карточках — и они появятся здесь.' : 'В этот день плана не было.'}</div>`}`;
 }
+// есть ли задача на доске: удалённое (подэтап, карточка, внутренняя, регулярная) из «Сегодня» убирается всегда
+function tdExists(k){ const [kind, ...ids] = String(k || '').split('|');
+  if (kind === 'i'){ const t = itAll().find(x => x.id === ids[0]); return !!t && !t.deleted; }
+  if (kind === 'r') return !!projById(ids[0])?.stages.find(isMaint)?.rtasks?.some(x => x.id === ids[1]);
+  if (kind === 't'){ const t = taskById(ids[0]); if (!t) return false; const p = projById(t.project_id); if (!p || p.state === 'archived') return false;
+    const s = p.stages.find(y => y.id === t.stage_id); return !!s && (!t.substage_id || (s.subs || []).some(x => x.id === t.substage_id)); }
+  const p = projById(ids[0]); const s = p?.stages.find(y => y.id === ids[1]); return !!p && p.state !== 'archived' && !!s?.subs?.some(x => x.id === ids[2]);
+}
+// площадка задачи по ключу «Сегодня» (i|… внутренняя, r|проект|…, t|карточка, x|проект|этап|подэтап)
+function tdProjOf(k){ const [kind, ...ids] = String(k || '').split('|');
+  return kind === 'i' ? itAll().find(x => x.id === ids[0])?.project_id || '' : kind === 't' ? taskById(ids[0])?.project_id || '' : ids[0] || ''; }
+document.addEventListener('click', e => { const b = e.target.closest?.('[data-tdip]'); if (!b || ui.view !== 'today') return; ui.tdIp = b.dataset.tdip; render(); });
 document.addEventListener('click', e => { const c = e.target.closest?.('[data-tdct]'); if (!c || ui.view !== 'today') return; ui.tdCt = ui.tdCt || {}; ui.tdCt[c.dataset.tdct] = !ui.tdCt[c.dataset.tdct]; render(); });
 document.addEventListener('click', e => {
   const b = e.target.closest?.('[data-tdday]'); if (!b || ui.view !== 'today') return;

@@ -98,6 +98,15 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const sel2 = $('#pfSort'); sel2.value = 'pri'; sel2.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
   assert.equal(order()[0].replace(/^[^А-Яа-яЁё]+/, ''), 'Срочная'); ok('«по приоритету»: срочные сверху');
   assert.equal(w.localStorage.getItem('kz-card-sort'), 'pri'); ok('выбор запоминается');
+  // «Сегодня» в инфобизнесе: выбор площадки, задачи обеих площадок, люди из обеих
+  E(`{ db.users.push({ id:'uEmm', name:'Эм', role:'specialist', status:'active' }); const s = em.stages.find(x => !/контент/i.test(x.name) && !isMaint(x)); s.subs.push({ id:'tdE', name:'Сторис Эма', done:false, due_date:today() });
+     tasksFromSubs(em, { ...s, subs:[s.subs.at(-1)] }); taskFor(em.id, s.id, 'tdE').assignee_id = 'uEmm'; taskFor(em.id, s.id, 'tdE').due_date = today();
+     const g = ig.stages.find(x => !/контент/i.test(x.name) && !isMaint(x)); g.subs.push({ id:'tdI', name:'Пост Игоря', done:false, due_date:today() }); ui.view = 'today'; ui.tdIp = ''; commit(); }`); await wait(80);
+  const tdTxt = () => D.getElementById('app').textContent;
+  assert.ok(D.querySelectorAll('[data-tdip]').length === 3 && /Сторис Эма/.test(tdTxt()) && /Пост Игоря/.test(tdTxt())); ok('«Сегодня»: «Все» — задачи обеих площадок');
+  [...D.querySelectorAll('[data-tdip]')].find(b => b.dataset.tdip === E('em.id')).click(); await wait(50);
+  assert.ok(/Сторис Эма/.test(tdTxt()) && !/Пост Игоря/.test(tdTxt())); ok('«Сегодня»: выбрана площадка — только её задачи');
+  E(`ui.tdIp = ''; ui.view = 'production'; render();`);
   assert.deepEqual(o.errors.filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });

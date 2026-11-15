@@ -112,6 +112,14 @@ function openPage(backend, code){
   // подэтап удалили с доски (карточка осталась) — из «Сегодня» задача уходит
   E(`{ const p = db.projects.find(p => p.stages.some(s => (s.subs || []).some(x => x.id === 'xDup'))); const s = p.stages.find(s => s.subs.some(x => x.id === 'xDup')); s.subs = s.subs.filter(x => x.id !== 'xDup'); commit(); }`); await wait(50);
   assert.equal(dupN(), 0); ok('удалённая с доски задача из «Сегодня» уходит, даже если её карточка осталась');
+  // выполненная задача, которую потом удалили с доски, тоже уходит из «Сегодня»
+  E(`{ const p = db.projects.find(p => p.state === 'active' && currentStage(p) && !isMaint(currentStage(p))); const s = currentStage(p); s.subs.push({ id:'xDel', name:'Удалю потом', done:false, due_date:today() }); ui.view = 'today'; commit(); }`); await wait(50);
+  const delN = () => [...D.querySelectorAll('.tdy-i')].filter(x => /Удалю потом/.test(x.textContent)).length;
+  assert.equal(delN(), 1);
+  E(`{ const p = db.projects.find(p => p.stages.some(s => (s.subs || []).some(x => x.id === 'xDel'))); const s = p.stages.find(s => s.subs.some(x => x.id === 'xDel')); s.subs.find(x => x.id === 'xDel').done = true; commit(); s.subs = s.subs.filter(x => x.id !== 'xDel'); commit(); }`); await wait(50);
+  assert.equal(delN(), 0); ok('удалённой с доски задачи (даже выполненной) в «Сегодня» нет');
+  // площадки: в «Сегодня» — выбор «Все / площадка» не ломает агентство (там его нет)
+  assert.ok(!D.querySelector('[data-tdip]')); ok('в агентстве выбора площадок в «Сегодня» нет');
   // ответственный за пункт чек-листа: по умолчанию — как у подэтапа, можно выбрать свой
   E(`{ const t = db.tasks.find(t => t.substage_id === 'xStart'); t.checklist = [{ id:'ck1', text:'Написать вакансию', done:false }, { id:'ck2', text:'Созвон', done:false }]; commit(); openTask(t.id); }`); await wait(50);
   const sel = D.querySelector('[data-ckwho="ck1"]');
