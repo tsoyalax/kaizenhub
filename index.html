@@ -2210,6 +2210,8 @@ svg.clip{width:14px;height:14px;flex:none}
 .ct-stg-pick{position:relative;display:inline-flex;cursor:pointer}.ct-stg-pick select{position:absolute;inset:0;width:100%;opacity:0;cursor:pointer}.ct-stg-pick:hover .who-chip{filter:brightness(.95)}
 .ct-mini{display:inline-flex;gap:3px;flex:none}.ct-mini i{width:14px;height:5px;border-radius:3px;background:var(--line)}.ct-mini i.on{background:var(--m)}
 @media (max-width:640px){.ct-stg-r{grid-template-columns:110px 1fr 28px}.ct-stg-w,.ct-mini{display:none}}
+.ct-seltools{display:flex;gap:8px;justify-content:flex-end;margin:4px 0 -4px}
+.ct-pick{width:18px;height:18px;accent-color:var(--r);flex:none}
 .ct-stsel{height:30px;border:1px solid var(--fbd,var(--line));border-radius:8px;background:var(--pl-m-bg,color-mix(in srgb,var(--m) 10%,var(--surface)));color:var(--pl-m,var(--m));font:inherit;font-size:12.5px;font-weight:600;padding:0 6px;max-width:150px;cursor:pointer}.ct-stsel.done{background:var(--pl-g-bg,color-mix(in srgb,var(--g) 12%,var(--surface)));color:var(--pl-g,var(--g))}
 .pf-due.nodue{padding:1px 7px;border-radius:6px;background:var(--pl-y-bg,color-mix(in srgb,var(--y) 18%,transparent));color:color-mix(in srgb,var(--y) 65%,var(--ink));font-weight:600}
 .pf-due svg{width:12px;height:12px}
@@ -2765,7 +2767,7 @@ function renderContentBody(){
   const due = live ? st.weeks.slice(0, nowW).reduce((m, x) => m + x.plan, 0) : t > cycleEnd(c) ? st.plan : 0;
   const pace = !st.plan || (!live && t < c) ? '' : st.pub >= due ? 'идём по плану' : `отстаём на ${due - st.pub}`;
   const row = x => `<li class="ct-row${x.done ? ' done' : ''}">
-      <input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="${x.done ? 'Опубликовано' : 'Готово — на следующий этап'}: ${esc(x.name)}" title="${x.done ? 'Опубликовано' : 'Этап готов — перевести видео на следующий'}">
+      ${ui.ctSelMode ? `<input type="checkbox" class="ct-pick" data-ctpick="${x.id}" ${ui.ctSel?.has(x.id) ? 'checked' : ''} aria-label="Выбрать ${esc(x.name)}">` : ''}<input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="${x.done ? 'Опубликовано' : 'Готово — на следующий этап'}: ${esc(x.name)}" title="${x.done ? 'Опубликовано' : 'Этап готов — перевести видео на следующий'}">
       <span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}
       ${ctMini(x)}${vidCols().length ? `<select class="ct-stsel${x.done ? ' done' : ''}" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}" title="Этап видео — выберите, чтобы перенести">${vidCols().map(y => `<option value="${y.id}" ${y === vidCol(x) ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select>` : ''}
       ${whoChip(contentWho(p, s, x, taskFor(p.id, s.id, x.id)))}<input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
@@ -2800,6 +2802,7 @@ function renderContentBody(){
     <table class="smm-wk"><thead><tr><th>Неделя</th><th>План</th>${st.scr != null ? '<th>Сценарии</th>' : ''}<th>Опубликовано</th></tr></thead><tbody>
       ${st.weeks.map(x => `<tr class="${x.w === nowW ? 'now' : ''}"><td>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></td><td>${x.plan}</td>${st.scr != null ? `<td>${x.scr || 0} <small class="hint">из ${x.plan}</small></td>` : ''}<td>${x.pub} <small class="hint">из ${x.plan}</small></td></tr>`).join('')}
     </tbody></table></section>
+    ${GUEST ? '' : `<div class="ct-seltools">${ui.ctSelMode ? `<button class="ghost" data-ctselall>Выбрать все (${st.items.length})</button><button class="ghost danger" data-ctseldel ${ui.ctSel?.size ? '' : 'disabled'}>Удалить${ui.ctSel?.size ? ` (${ui.ctSel.size})` : ''}</button><button class="ghost" data-ctselmode>Готово</button>` : '<button class="ghost" data-ctselmode>Выбрать видео</button>'}</div>`}
     ${st.weeks.filter(x => x.items.length).map(x => `<section class="ct-wk"><h3>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></h3>
       <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}
     ${addForm}`;
@@ -2818,6 +2821,19 @@ function ctStagesHtml(p, s, st){
 // мини-шкала этапов у видео: заполнено до текущего этапа
 const ctMini = x => { const cs = vidCols(); if (cs.length < 2) return ''; const k = x.done ? cs.length : cs.indexOf(vidCol(x)) + 1;
   return `<span class="ct-mini" title="Этап ${k} из ${cs.length}: ${esc(vidCol(x)?.name || '')}">${cs.map((c, i) => `<i class="${i < k ? 'on' : ''}"></i>`).join('')}</span>`; };
+// выбор видео в «Контенте» и удаление выбранных (вместе с их карточками); удалённое запоминается (p.subDel) и не возвращается
+document.addEventListener('click', e => {
+  if (ui.view !== 'content') return;
+  if (e.target.closest?.('[data-ctselmode]')){ ui.ctSelMode = !ui.ctSelMode; ui.ctSel = new Set(); render(); return; }
+  if (e.target.closest?.('[data-ctselall]')){ const c = ctCur(); ui.ctSel = new Set(c ? ctStats(c).items.map(x => x.id) : []); render(); return; }
+  if (e.target.closest?.('[data-ctseldel]')){ const ids = [...(ui.ctSel || [])]; if (!ids.length) return;
+    askConfirm({ title:`Удалить ${ids.length} ${plural(ids.length, 'видео', 'видео', 'видео')}?`, text:'Видео и их карточки удалятся с доски площадки. Это не отменить.', ok:'Удалить' }).then(yes => { if (!yes) return;
+      const p = infoBoard(); const s = contentStage(p); if (!s) return; const del = new Set(ids);
+      s.subs = (s.subs || []).filter(x => !del.has(x.id)); db.tasks = (db.tasks || []).filter(t => !(t.project_id === p.id && del.has(t.substage_id)));
+      addLog(p, `Контент: удалено видео — ${ids.length}`); ui.ctSel = new Set(); ui.ctSelMode = false; commit(); toast(`Удалено: ${ids.length}`); });
+    return; }
+});
+document.addEventListener('change', e => { const id = e.target.dataset?.ctpick; if (!id) return; ui.ctSel = ui.ctSel || new Set(); e.target.checked ? ui.ctSel.add(id) : ui.ctSel.delete(id); render(); });
 function addContent(name, n, start, extra = false){
   const p = infoBoard(); const s = contentStage(p); if (!p || !s || !name) return;
   const c = ctCycles().filter(x => start >= x && start <= cycleEnd(x)).at(-1) || start;
