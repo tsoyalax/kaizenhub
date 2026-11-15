@@ -1253,6 +1253,29 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ip-new input{height:36px}
 .ip-card svg{width:16px;height:16px}
 .fl{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;display:grid;gap:14px}
+.fl-lite{gap:12px;padding:12px 14px}
+.fl-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.fl-steps{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:2px;overflow-x:auto;padding:0;scrollbar-width:thin}
+.fl-step{flex:none;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.fl-step:hover{background:var(--fbg,var(--surface-2))}
+.fl-step small{color:var(--muted);font-weight:500;font-size:12px}
+.fl-step i{width:8px;height:8px;border-radius:50%;background:var(--g);flex:none}
+.fl-step.k-red i{background:var(--r)}.fl-step.k-yellow i{background:var(--y)}.fl-step.k-paused i{background:var(--b)}.fl-step.k-idle i,.fl-step.k-done i{background:var(--muted)}
+.fl-sep{color:var(--muted);opacity:.6;flex:none}
+.fl-view{display:flex;align-items:center;gap:8px;margin-left:auto}
+.fl-scope{height:32px;border:1px solid var(--fbd,var(--line));border-radius:9px;background:var(--fbg,var(--surface));color:var(--ink);padding:0 8px;font:inherit;font-size:13px}
+.fl-lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;border-top:1px solid var(--line);padding-top:12px}
+.fl-list h3{margin:0 0 6px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.fl-list h3 span{font-weight:500}
+.fl-list.late h3{color:var(--r)}
+.fl-list ol{margin:0;padding:0;list-style:none;display:grid;gap:2px}
+.fl-row{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;align-items:center;text-align:left;border:0;background:transparent;color:var(--ink);padding:6px 8px;border-radius:8px;font:inherit;font-size:13.5px;cursor:pointer}
+.fl-row:hover{background:var(--fbg,var(--surface-2))}
+.fl-rn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fl-row small{grid-column:1;color:var(--muted);font-size:12px}
+.fl-rd{grid-row:1/3;grid-column:2;font-size:12.5px;color:var(--muted);white-space:nowrap}
+.fl-rd.late{color:var(--r);font-weight:600}
+@media (max-width:640px){.fl-view{margin-left:0;width:100%}}
 .fl-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .fl-hd h2{font-size:17px;margin:0;font-weight:700}
 .fl-hd.slim{justify-content:flex-end}
@@ -5232,7 +5255,32 @@ const PAUSE_ICO = sico('<rect x="6" y="5" width="4" height="14" rx="1"/><rect x=
 const flowPill = v => { const [pk, txt, ico] = FLOW_PILL[v.key]; return `<span class="pill st-pill s-${pk}">${ico === 'pause' ? PAUSE_ICO : STATUS_ICO[pk]}${txt(v)}</span>`; };
 const DEPT_ST = [['work', 'В работе'], ['pause', 'Приостановлено'], ['idle', 'Не начато'], ['done', 'Готово']];
 // part: 'prod' — в «Производстве»: статусы отделов сверху и «Срочно сделать»; 'ai' — раздел «AI-воронка»: разбор Claude, дедлайн, связи
+// «Производство» (инфобизнес) над доской: короткая цепочка отделов, «Просрочено» и «Ближайшие» задачи, вид «Доска / Таймлайн»
+// (в таймлайне — выбор «Этот инфоповод / Все вместе»)
+function flowProdHtml(p){
+  const st = flowState(p); const list = [...st.values()]; const t0 = today();
+  const all = list.flatMap(v => v.open.filter(i => i.due).map(i => ({ ...i, sid:v.s.id, sname:v.s.name })));
+  const over = all.filter(i => i.due < t0).sort((a, b) => a.due < b.due ? -1 : a.due > b.due ? 1 : 0);
+  const next = all.filter(i => i.due >= t0).sort((a, b) => a.due < b.due ? -1 : a.due > b.due ? 1 : 0).slice(0, 5);
+  const when = d => d === t0 ? 'сегодня' : d === addDays(t0, 1) ? 'завтра' : fmt(d);
+  const row = (i, late) => `<li><button class="fl-row" data-pfsub="${i.sid}|${i.x.id}"><span class="fl-rn">${esc(i.x.name)}</span><small>${esc(i.sname)}</small><span class="fl-rd${late ? ' late' : ''}">${late ? `${fmt(i.due)} · ${days(diffDays(t0, i.due))} назад` : when(i.due)}</span></button></li>`;
+  const mode = ui.infoMode === 'together' ? 'together' : ui.infoMode === 'timeline' ? 'timeline' : 'board';
+  const many = infoBoards().length > 1;
+  const box = (title, items, late, more) => `<div class="fl-list${late ? ' late' : ''}"><h3>${title} <span>${more}</span></h3><ol>${items.map(i => row(i, late)).join('')}</ol></div>`;
+  return `<section class="fl fl-lite" aria-label="Отделы и сроки">
+    <div class="fl-top">
+      <div class="fl-chain fl-steps">${list.map((v, k) => `${k ? '<span class="fl-sep" aria-hidden="true">›</span>' : ''}<button class="fl-step k-${v.key}" data-flgo="${v.s.id}" title="${esc(v.s.name)}: ${v.n ? `${v.done} из ${v.n} готово` : 'нет задач'}${v.over.length ? `, просрочено ${v.over.length}` : ''}"><i aria-hidden="true"></i>${esc(v.s.name)}<small>${v.n ? `${v.done}/${v.n}` : '—'}</small></button>`).join('')}</div>
+      <div class="fl-view"><span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${mode === 'board'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${mode !== 'board'}">Таймлайн</button></span>
+        ${mode !== 'board' && many ? `<select class="fl-scope" data-tlscope aria-label="Что показать на таймлайне"><option value="timeline" ${mode === 'timeline' ? 'selected' : ''}>Только «${esc(p.name)}»</option><option value="together" ${mode === 'together' ? 'selected' : ''}>Все инфоповоды вместе</option></select>` : ''}</div>
+    </div>
+    ${over.length || next.length ? `<div class="fl-lists">
+      ${over.length ? box('Просрочено', over.slice(0, 8), true, over.length > 8 ? `${over.length} · показаны 8` : over.length) : ''}
+      ${next.length ? box('Ближайшие', next, false, '') : ''}
+    </div>` : ''}</section>`;
+}
+document.addEventListener('change', e => { const s = e.target.closest?.('[data-tlscope]'); if (s){ ui.infoMode = s.value; render(); } });
 function flowPanelHtml(p, part = 'prod'){
+  if (part !== 'ai') return flowProdHtml(p);
   const full = part === 'ai';
   const st = flowState(p); const list = [...st.values()];
   const ai = p.ai?.res ? p.ai : null;

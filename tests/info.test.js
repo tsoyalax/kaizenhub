@@ -102,7 +102,10 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     ui.view = 'production'; ui.prodProject = p.id; render(); })()`);
   const fs = E(`JSON.stringify([...flowState(infoBoard()).values()].map(v => [v.s.name, v.key]))`);
   assert.deepEqual(JSON.parse(fs), [['Контент','green'],['Статья','green'],['VSL','red'],['Платный канал','yellow'],['Отдел продаж','yellow'],['Эфиры','red']]); ok('VSL просрочен — следующие за ним ждут, этап без задач — красный');
-  assert.ok(D.querySelector('.fl-chain') && !/Воронка|AI-разбор/.test(D.querySelector('.fl-hd').textContent) && !D.querySelector('.fl-why-box') && !D.querySelector('.fl-ai')); ok('в «Производстве» — только статусы этапов и «Срочно», без вывода воронки и AI-разбора');
+  assert.ok(D.querySelector('.fl-chain') && !D.querySelector('.fl-lite .fl-hd') && !D.querySelector('.fl-why-box') && !D.querySelector('.fl-ai') && !/Срочно|Горит/.test(D.querySelector('.fl-lite').textContent));
+  const lists = [...D.querySelectorAll('.fl-list')];
+  assert.ok(/Просрочено/.test(lists[0].textContent) && /Задача VSL/.test(lists[0].textContent) && !/Задача Контент/.test(lists[0].textContent)); ok('«Просрочено» — только просроченные задачи');
+  assert.ok(/Ближайшие/.test(lists[1].textContent) && /Задача Контент/.test(lists[1].textContent) && !/Задача VSL/.test(lists[1].textContent)); ok('«Ближайшие» — ближайшие задачи по сроку'); ok('в «Производстве» — только статусы этапов и «Срочно», без вывода воронки и AI-разбора');
   assert.ok(D.querySelector('.tabs [data-view="funnel"]').hidden); ok('пункт «AI-воронка» пока скрыт из меню');
   E('SHOW_AI_FUNNEL = true');   // дальше проверяем сам раздел
   E(`ui.view = 'funnel'; render()`);
@@ -136,7 +139,6 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.equal(E('infoBoard().goalName'), 'Открытие окна продаж'); ok('название финального дедлайна');
   assert.equal(E('infoBoard().deadline'), E('addDays(today(), 5)')); ok('дата финального дедлайна');
   E(`ui.view = 'production'; render()`);
-  assert.ok(/После дедлайна.*позже, чем «Открытие окна продаж»/.test(D.querySelector('.fl-urgent').textContent)); ok('задачи позже дедлайна — в «Срочно»');
   E(`ui.infoMode = 'timeline'; render()`);
   assert.ok(/Открытие окна продаж/.test(D.querySelector('.tl-goal')?.textContent || '')); ok('дедлайн — линией на таймлайне');
   E(`ui.infoMode = 'board'; render()`);
@@ -199,7 +201,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   E(`moveVideo('${vx}', '${c1}')`);
   assert.equal(E(`contentWho(infoBoard(), contentStage(), contentStage().subs.find(x => x.id === '${vx}'), null)`), 'uig'); ok('перешло на «Съёмку» — у Игоря');
   E(`ui.view = 'production'; ui.infoMode = 'board'; render()`);
-  const mc = D.querySelector(`[data-pfsub$="|${vx}"]`); assert.ok(/Игорь/.test(mc.textContent) && mc.querySelector('.vid-st')); ok('на главной доске у видео — этап и имя ответственного за него');
+  const mc = D.querySelector(`.pf-board [data-pfsub$="|${vx}"]`); assert.ok(/Игорь/.test(mc.textContent) && mc.querySelector('.vid-st')); ok('на главной доске у видео — этап и имя ответственного за него');
   assert.ok(E(`dayProjectItems('uig').some(i => i.x?.id === '${vx}')`) && !E(`dayProjectItems('uyu').some(i => i.x?.id === '${vx}')`)); ok('«Мои задачи»: видео у того, у кого оно сейчас на этапе');
   // «Мои задачи»: задачи из всех колонок доски инфобизнеса, а не только текущего этапа
   E(`(() => { const p = infoBoard(); const s = p.stages.find(z => z !== contentStage(p) && !isMaint(z)); s.subs = s.subs || []; s.subs.push({ id:'mine1', name:'Моя задача в другой колонке', done:false }); s.assignee_id = 'me'; })()`);

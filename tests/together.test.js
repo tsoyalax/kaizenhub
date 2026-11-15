@@ -41,12 +41,14 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
      const fill = (p, list) => list.forEach(([st, name, d]) => { const s = p.stages[st]; (s.subs = s.subs || []).push({ id:uid(), name, done:false, due_date:addDays(T, d) }); });
      fill(ig, [[0, 'Оффер', 1], [1, 'Рилс 1', 2], [2, 'Эфир', 6]]); fill(em, [[1, 'Анонс челленджа', 2], [3, 'Старт', 9]]);
      ui.view = 'production'; ui.prodProject = ig.id; ui.infoMode = 'board'; commit();`); await wait(100);
-  assert.ok($('[data-infomode="together"]')); ok('у доски инфоповода — вид «Вместе»');
-  $('[data-infomode="together"]').click(); await wait(100);
+  assert.ok(!$('[data-infomode="together"]') && !$('[data-tlscope]')); ok('отдельной кнопки «Вместе» нет');
+  $('[data-infomode="timeline"]').click(); await wait(50);
+  const sc = $('[data-tlscope]'); assert.ok(sc && [...sc.options].some(o => o.value === 'together' && /вместе/i.test(o.textContent))); ok('в таймлайне — выбор «Все инфоповоды вместе» в выпадающем списке');
+  sc.value = 'together'; sc.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(100);
   assert.ok($('.tg-tl') && D.querySelectorAll('.tg-lane').length === 2); ok('«Вместе»: блок Игоря и челлендж Эма — две полосы на одной шкале');
   assert.equal(D.querySelectorAll('.tg-task').length, 5); ok('задачи обоих инфоповодов на таймлайне');
   assert.ok(!$('.tg-cross') && !$('.tg-cnt') && !/Пересечени/.test($('.tg').textContent)); ok('без строки «Пересечения» — просто общий таймлайн');
-  assert.ok(!$('[data-infomode="board"]').getAttribute('aria-pressed').includes('true')); ok('выбран только вид «Вместе»');
+  assert.ok($('[data-infomode="timeline"]').getAttribute('aria-pressed') === 'true' && $('[data-tlscope]').value === 'together'); ok('выбран таймлайн «Все вместе»');
   // снять челлендж Эма — остаётся одна полоса, пересечений нет
   [...D.querySelectorAll('[data-tgp]')].find(b => /Эма/.test(b.textContent)).click(); await wait(50);
   assert.equal(D.querySelectorAll('.tg-lane').length, 1); ok('инфоповод можно убрать со шкалы');
