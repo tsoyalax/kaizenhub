@@ -1333,6 +1333,7 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .pf-coltools button:hover{background:var(--surface-2);color:var(--ink)}.pf-coltools svg{width:14px;height:14px}
 .pf-ren{flex:1;min-width:0}.pf-ren input{width:100%;height:30px;border:1px solid var(--brand);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-weight:600;padding:0 8px}
 .pf-coladd{flex:none;min-width:150px;align-self:flex-start;min-height:90px}
+.d-kd .kd-row{margin-top:2px}
 .kd-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
 .kd-chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 4px 0 10px;border-radius:999px;background:var(--r-bg,#FFECEC);color:var(--r);font-size:12.5px}
 .kd-chip b{font-weight:700}.kd-chip.past{opacity:.55}
@@ -4729,6 +4730,7 @@ document.addEventListener('focusout', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.pfRen){ ui.pfRen = null; render(); } });
 // ---------- Ключевые даты инфоповода: p.keyDates = [{ id, d, name }] — вместо расчётного финиша ----------
 // Вписываются в шапке доски инфоповода («+ Ключевая дата»), удаляются крестиком; на таймлайнах — красные линии.
+const kdRedraw = () => { render(); if (ui.open) try { renderDrawer(); } catch(e) {} };
 const kdList = p => (p?.keyDates || []).slice().sort((a, b) => a.d.localeCompare(b.d));
 function kdHtml(p){
   const t0 = today(); const open = ui.kdOpen === p.id;
@@ -4737,17 +4739,17 @@ function kdHtml(p){
       : `<button type="button" class="ghost kd-add" data-kdadd="${p.id}">+ Ключевая дата</button>`}</div>`;
 }
 document.addEventListener('click', e => {
-  const a = e.target.closest?.('[data-kdadd]'); if (a){ ui.kdOpen = a.dataset.kdadd; render(); app.querySelector('[data-kdform] [name=kdn]')?.focus(); return; }
-  if (e.target.closest?.('[data-kdcancel]')){ ui.kdOpen = null; render(); return; }
+  const a = e.target.closest?.('[data-kdadd]'); if (a){ const inApp = app.contains(a); ui.kdOpen = a.dataset.kdadd; kdRedraw(); (inApp ? app : layer).querySelector('[data-kdform] [name=kdn]')?.focus(); return; }
+  if (e.target.closest?.('[data-kdcancel]')){ ui.kdOpen = null; kdRedraw(); return; }
   const d = e.target.closest?.('[data-kddel]'); if (d){ const [pid, id] = d.dataset.kddel.split('|'); const p = projById(pid); const k = (p?.keyDates || []).find(x => x.id === id); if (!k) return;
-    p.keyDates = p.keyDates.filter(x => x !== k); addLog(p, `Ключевая дата «${k.name}» (${fmt(k.d)}) удалена`); commit(); }
+    p.keyDates = p.keyDates.filter(x => x !== k); addLog(p, `Ключевая дата «${k.name}» (${fmt(k.d)}) удалена`); commit(); kdRedraw(); }
 });
 document.addEventListener('submit', e => {
   const f = e.target.closest?.('[data-kdform]'); if (!f) return; e.preventDefault();
   const p = projById(f.dataset.kdform); const d = f.elements.namedItem('kdd').value, name = f.elements.namedItem('kdn').value.trim();
   if (!p || !d || !name){ toast('Укажите дату и что это'); return; }
   (p.keyDates = p.keyDates || []).push({ id:uid(), d, name:name.slice(0, 80) }); ui.kdOpen = null;
-  addLog(p, `Ключевая дата: ${fmt(d)} — ${name}`); commit(); toast(`Ключевая дата добавлена: ${fmt(d)}`);
+  addLog(p, `Ключевая дата: ${fmt(d)} — ${name}`); commit(); kdRedraw(); toast(`Ключевая дата добавлена: ${fmt(d)}`);
 });
 // ---------- Производство на телефоне: лента проектов + этапы сверху вниз ----------
 function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage, curSub }){
@@ -5609,6 +5611,7 @@ function renderDrawer(){
         ${isInfoBoardP(p) ? '' : `<div class="field"><label>Расчётный финиш</label><div class="val">${fmt(end)} ${p.deadline ? (late ? `<span class="pill s-red">позже на ${days(diffDays(end, p.deadline))}</span>` : `<span class="pill s-green">в срок${diffDays(p.deadline, end) ? `, запас ${days(diffDays(p.deadline, end))}` : ''}</span>`) : ''}</div></div>`}
       </div>
       ${late && !isInfoBoardP(p) ? `<div class="warn d-late">План не укладывается в дедлайн. <button class="link" id="fitDl">Уместить в дедлайн</button> — оставшиеся этапы сожмутся пропорционально.</div>` : ''}
+      ${isInfoBoardP(p) && !GUEST && !p._ext ? `<div class="field d-kd"><label>Ключевые даты</label>${kdHtml(p)}</div>` : ''}
       </section>
     </div>
 

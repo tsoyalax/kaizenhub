@@ -64,6 +64,9 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E(`ui.infoMode = 'timeline'; render();`); await wait(30); assert.ok($('.tl-key') && /Старт челленджа/.test($('.tl-key').textContent)); ok('на таймлайне ключевая дата — красная линия');
   E(`ui.infoMode = 'together'; render();`); await wait(30); assert.equal(D.querySelectorAll('.tl-key').length, 2); ok('во «Вместе» — ключевые даты обоих инфоповодов');
   E(`ui.infoMode = 'board'; render();`); await wait(30); $('[data-kddel]').click(); await wait(30); assert.equal(E('em.keyDates.length'), 0); ok('ключевую дату можно удалить');
+  E(`openProject(ig.id)`); await wait(100);
+  assert.ok(D.querySelector('#layer .d-kd [data-kdadd], .d-kd [data-kdadd]') && /Эфир Игоря/.test(D.querySelector('.d-kd').textContent)); ok('ключевые даты видны и добавляются в карточке инфоповода');
+  E(`closeLayer ? closeLayer() : (layer.innerHTML = ''); ui.open = null; ui.prodProject = em.id; render();`); await wait(30);
   // столбики доски: переименовать, удалить, добавить — только в этом инфоповоде
   $('[data-pfsren]').click(); await wait(30); f = $('[data-pfrenf]'); f.querySelector('input').value = 'Продукт и оффер'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
   E(`syncAllTemplates(INFO_TPL_ID); render();`); await wait(30);
