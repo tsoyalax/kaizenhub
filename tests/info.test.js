@@ -37,15 +37,11 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   for (let k = 0; k < E('vidCols().length') && !E(`contentStage().subs[0].done`); k++){ const cb = D.querySelector(`[data-ctdone="${xid}"]`); cb.checked = true; cb.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30); }
   assert.ok(E(`projById('infoboard').stages.find(s => s.id === contentStage().id).subs[0].done`)); ok('галочками видео проходит этапы до «опубликовано» — это отметка карточки на доске');
   assert.equal(E('ctStats(ctCur()).pub'), 1); ok('факт считается по отметкам');
-  // недельный KPI: общий на все недели и свой у отдельной недели
+  // KPI: одно число на цикл, само делится на 4 недели
   E(`ui.ctMode = 'plan'; ui.ctEdit = ctCur(); render()`);
-  D.getElementById('ctKpi').value = '5'; D.getElementById('ctEd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
-  assert.deepEqual(E('ctStats(ctCur()).weeks.map(x => x.plan)'), [5, 5, 5, 5]); ok('KPI 5 в неделю — план 5 на каждую неделю');
-  assert.equal(E('ctStats(ctCur()).plan'), 20); ok('план цикла — 20');
-  E(`ui.ctEdit = ctCur(); render()`);
-  const w2 = D.querySelector('[data-ctwk="1"]'); w2.value = '8'; D.getElementById('ctEd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
-  assert.deepEqual(E('ctStats(ctCur()).weeks.map(x => x.plan)'), [5, 8, 5, 5]); ok('у отдельной недели — свой KPI');
-  assert.ok(/по неделям/.test(D.querySelector('.smm-kpi').textContent)); ok('видно, что план по неделям');
+  D.getElementById('ctTotal').value = '45'; D.getElementById('ctEd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
+  assert.deepEqual(E('ctStats(ctCur()).weeks.map(x => x.plan)'), [12, 11, 11, 11]); ok('KPI 45 — сам разбит на 4 недели 12/11/11/11');
+  assert.equal(E('ctStats(ctCur()).plan'), 45); ok('план цикла — 45');
   E(`ui.view = 'production'; render()`);
   assert.equal(D.querySelectorAll('.pf-card.done').length, 1); ok('на доске карточка тоже отмечена');
   // доска видео в «Контенте»: колонки SMM, «Опубликовано» = отметка на основной доске
