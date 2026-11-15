@@ -298,6 +298,10 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   E(`{ const p = infoBoard(); const s = contentStage(p); const x = s.subs.find(y => y.id === 'vSt'); tasksFromSubs(p, { ...s, subs:[x] }); taskFor(p.id, s.id, 'vSt').assignee_id = 'me';
      if (!db.users.some(u => u.id === 'uStg')) db.users.push({ id:'uStg', name:'Монтажёр', status:'active' }); p.vidWho = { ...(p.vidWho || {}), [vidCol(x).id]:'uStg' }; ui.view = 'production'; commit(); }`);
   assert.ok(/Монтажёр/.test(D.querySelector('.pf-board [data-pfsub$="|vSt"]').textContent)); ok('на главной у видео подсвечен ответственный его текущего этапа');
+  // «Контент» → «План / Факт»: «Сценариев написано» — видео дальше этапа «Сценарий»
+  E(`ui.view = 'content'; ui.ctMode = 'plan'; render()`);
+  { const has = E(`vidCols().some(y => /сценар/i.test(y.name))`); const kpi = D.querySelector('.smm-kpi');
+    assert.ok(!has || /Сценариев написано/.test(kpi.textContent)); ok('в «План / Факт» «Контента» — «Сценариев написано»'); }
   E(`ui.view = 'production'; db.prefs.kind = window.__k3; render()`);
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);

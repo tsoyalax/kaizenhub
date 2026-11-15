@@ -718,6 +718,7 @@ body.side-pinned .side-btn{color:var(--ink)}
 .smm-kpi div{padding:10px 12px;border-radius:12px;background:var(--bg)}
 .smm-kpi b{display:block;font-size:22px;line-height:1.2}
 .tdy-pf-box .smm-kpi{grid-template-columns:repeat(3,minmax(0,1fr))}
+.smm-kpi:has(> div:nth-child(5)){grid-template-columns:repeat(5,minmax(0,1fr))}
 .smm-kpi small{color:var(--muted);font-size:12px}
 .smm-bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-bottom:12px}
 .smm-bar i{display:block;height:100%;background:var(--g,#22c55e);border-radius:99px}
@@ -2652,7 +2653,10 @@ function ctStats(c){
     weeks[weekOfDate(c, x.due_date || c) - 1].items.push(x);
     const d = ctDoneAt(x); if (d && !x.extra){ pub++; weeks[weekOfDate(c, d < c ? c : d) - 1].pub++; }
   });
-  return { plan, pub, items, weeks, kpi, ownWeeks:!!own, extra:{ n:extra.length, pub:extra.filter(x => x.done).length } };
+  // сценарии: видео ушло дальше этапа «Сценарий» (или опубликовано) — сценарий написан; считаем по неделе публикации
+  const cs = vidCols(); const si = cs.findIndex(y => /сценар/i.test(y.name)); let scr = null;
+  if (si >= 0){ scr = 0; main.forEach(x => { if (x.done || cs.indexOf(vidCol(x)) > si){ scr++; weeks[weekOfDate(c, x.due_date || c) - 1].scr = (weeks[weekOfDate(c, x.due_date || c) - 1].scr || 0) + 1; } }); }
+  return { plan, pub, items, weeks, kpi, scr, ownWeeks:!!own, extra:{ n:extra.length, pub:extra.filter(x => x.done).length } };
 }
 // доска видео: колонки — этапы шаблона «SMM: видео» (правятся в «Настройках → Шаблоны»), у видео x.vst — id этапа шаблона.
 // Последняя колонка — «Опубликовано»: попасть в неё = отметить видео на основной доске (toggleSub), и наоборот.
@@ -2777,13 +2781,14 @@ function renderContentBody(){
       <span class="smm-ed-act"><button type="button" class="ghost" data-cteditcancel>Отмена</button><button class="primary">Сохранить</button></span></form>` : ''}
     <div class="smm-kpi">
       <div><b>${st.plan}</b><small>План${st.kpi && !st.ownWeeks ? ` · KPI ${st.kpi} в неделю` : st.ownWeeks ? ' · по неделям' : ''}</small></div>
+      ${st.scr != null ? `<div><b>${st.scr} <small>из ${st.plan}</small></b><small>Сценариев написано</small></div>` : ''}
       <div><b>${st.pub} <small>из ${st.plan}</small></b><small>Опубликовано${pace ? ' · ' + pace : ''}</small></div>
       <div><b>${Math.max(0, st.plan - st.pub)}</b><small>Осталось</small></div>
       ${st.extra.n ? `<div><b>${st.extra.pub} <small>из ${st.extra.n}</small></b><small>Доп. контент</small></div>` : ''}
     </div>
     <div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>
-    <table class="smm-wk"><thead><tr><th>Неделя</th><th>План</th><th>Опубликовано</th></tr></thead><tbody>
-      ${st.weeks.map(x => `<tr class="${x.w === nowW ? 'now' : ''}"><td>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></td><td>${x.plan}</td><td>${x.pub} <small class="hint">из ${x.plan}</small></td></tr>`).join('')}
+    <table class="smm-wk"><thead><tr><th>Неделя</th><th>План</th>${st.scr != null ? '<th>Сценарии</th>' : ''}<th>Опубликовано</th></tr></thead><tbody>
+      ${st.weeks.map(x => `<tr class="${x.w === nowW ? 'now' : ''}"><td>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></td><td>${x.plan}</td>${st.scr != null ? `<td>${x.scr || 0} <small class="hint">из ${x.plan}</small></td>` : ''}<td>${x.pub} <small class="hint">из ${x.plan}</small></td></tr>`).join('')}
     </tbody></table></section>
     ${st.weeks.filter(x => x.items.length).map(x => `<section class="ct-wk"><h3>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></h3>
       <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}
