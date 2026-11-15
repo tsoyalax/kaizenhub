@@ -130,7 +130,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.equal(w.cardTplFor({ template_id: tpl2 }, 'Тестовый подэтап'), null); ok('карточка другого шаблона не подставляется в проекты чужого процесса');
   // 2) правка из карточки проекта с галочкой «Сохранить как шаблон» доходит до других проектов
   w.openTask(ntk().id); await wait(100); $('[data-tedit]').click(); await wait(100);
-  assert.ok($('#tdTpl').checked && /во всех проектах процесса/.test($('.tpl-check').textContent) && /других процессов не изменятся/.test($('.tpl-check').textContent)); ok('карточка: галочка «Сохранить как шаблон» объясняет, что обновит все проекты');
+  assert.ok(!$('#tdTpl').checked); $('#tdTpl').checked = true; fire($('#tdTpl'), 'change'); assert.ok($('#tdTpl').checked && /во всех проектах процесса/.test($('.tpl-check').textContent) && /других процессов не изменятся/.test($('.tpl-check').textContent)); ok('карточка: галочка «Сохранить как шаблон» объясняет, что обновит все проекты');
   const desc = $('#tdDesc') || D.querySelector('[data-td="description"]'); desc.value = 'Новое описание из проекта'; fire(desc, 'input'); fire(desc, 'change');
   assert.ok(!D.querySelector('[data-td="video_url"]') && !D.querySelector('[data-td="regulation_link"]')); ok('карточка проекта: отдельных полей ссылок больше нет');
   { const k = [...D.querySelectorAll('.bk-list[data-bkctx="td"] .bk')].findIndex(li => li.querySelector('.bk-type').textContent === 'Видео');
