@@ -323,6 +323,10 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     D.querySelector('[data-ctseldel]').click(); await wait(30); D.getElementById('cfmOk').click(); await wait(80);
     assert.ok(!E(`contentStage(infoBoard()).subs.some(x => x.id === 'vSt')`)); ok('видео можно выбрать и удалить'); }
   E(`ui.view = 'production'; db.prefs.kind = window.__k3; render()`);
+  E(`window.__k4 = db.prefs.kind; db.prefs.kind = 'info'; ui.view = 'content'; ui.ctMode = 'plan'; ui.ctAddOpen = false; render()`);
+  if (D.querySelector('[data-ctplus]')){ D.querySelector('[data-ctplus]').click(); const top = D.getElementById('app').firstElementChild.nextElementSibling;
+    assert.ok(top && top.id === 'ctAdd'); ok('«+» сверху открывает форму новых видео'); }
+  E(`ui.ctAddOpen = false; ui.view = 'production'; db.prefs.kind = window.__k4; render()`);
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });

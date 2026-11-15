@@ -2213,6 +2213,8 @@ svg.clip{width:14px;height:14px;flex:none}
 .ct-seltools{display:flex;gap:8px;justify-content:flex-end;margin:4px 0 -4px}
 .ct-pick{width:18px;height:18px;accent-color:var(--r);flex:none}
 .ct-endb{font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:7px;background:var(--pl-g-bg,color-mix(in srgb,var(--g) 12%,transparent));color:var(--pl-g,var(--g))}
+.ct-plus{margin-left:8px;width:32px;height:32px;border-radius:50%;background:var(--ink);color:var(--surface);font-size:20px;line-height:1;border:0}.ct-plus.on{transform:rotate(45deg)}
+.ct-top .ct-mode{margin-left:auto}
 .ct-stsel{height:30px;border:1px solid var(--fbd,var(--line));border-radius:8px;background:var(--pl-m-bg,color-mix(in srgb,var(--m) 10%,var(--surface)));color:var(--pl-m,var(--m));font:inherit;font-size:12.5px;font-weight:600;padding:0 6px;max-width:150px;cursor:pointer}.ct-stsel.done{background:var(--pl-g-bg,color-mix(in srgb,var(--g) 12%,var(--surface)));color:var(--pl-g,var(--g))}
 .pf-due.nodue{padding:1px 7px;border-radius:6px;background:var(--pl-y-bg,color-mix(in srgb,var(--y) 18%,transparent));color:color-mix(in srgb,var(--y) 65%,var(--ink));font-weight:600}
 .pf-due svg{width:12px;height:12px}
@@ -2738,6 +2740,7 @@ document.addEventListener('dragstart', e => { const c = e.target.closest?.('[dat
 document.addEventListener('dragover', e => { const col = e.target.closest?.('[data-ctcol]'); if (col && e.dataTransfer?.types?.includes('text/kz-video')){ e.preventDefault(); col.classList.add('drop-on'); } });
 document.addEventListener('dragleave', e => { const col = e.target.closest?.('[data-ctcol]'); if (col && !col.contains(e.relatedTarget)) col.classList.remove('drop-on'); });
 document.addEventListener('drop', e => { const col = e.target.closest?.('[data-ctcol]'); const id = e.dataTransfer?.getData('text/kz-video'); if (!col || !id) return; e.preventDefault(); col.classList.remove('drop-on'); moveVideo(id, col.dataset.ctcol); });
+document.addEventListener('click', e => { if (!e.target.closest?.('[data-ctplus]')) return; ui.ctAddOpen = !ui.ctAddOpen; render(); if (ui.ctAddOpen) $('#ctName')?.focus(); });
 document.addEventListener('click', e => { const m = e.target.closest?.('[data-ctmode]'); if (m){ ui.ctMode = m.dataset.ctmode; render(); } });
 function renderContent(){
   renderContentBody();
@@ -2783,7 +2786,8 @@ function renderContentBody(){
       ${addForm}`;
     return;
   }
-  app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>${modeSeg}</div><section class="smm-pf" aria-label="Контент: план и факт">
+  const plus = GUEST ? '' : `<button class="icon-btn ct-plus${ui.ctAddOpen ? ' on' : ''}" data-ctplus title="Добавить видео" aria-label="Добавить видео" aria-expanded="${!!ui.ctAddOpen}">+</button>`;
+  app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>${plus}${modeSeg}</div>${ui.ctAddOpen ? addForm : ''}<section class="smm-pf" aria-label="Контент: план и факт">
     <div class="smm-hd"><h2>План / Факт</h2>
       <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>
       ${p.ctEnd?.[c] ? `<span class="ct-endb">закончить к ${fmt(p.ctEnd[c])}</span>` : ''}
@@ -2810,7 +2814,7 @@ function renderContentBody(){
     ${GUEST ? '' : `<div class="ct-seltools">${ui.ctSelMode ? `<button class="ghost" data-ctselall>Выбрать все (${st.items.length})</button><button class="ghost danger" data-ctseldel ${ui.ctSel?.size ? '' : 'disabled'}>Удалить${ui.ctSel?.size ? ` (${ui.ctSel.size})` : ''}</button><button class="ghost" data-ctselmode>Готово</button>` : '<button class="ghost" data-ctselmode>Выбрать видео</button>'}</div>`}
     ${st.weeks.filter(x => x.items.length).map(x => `<section class="ct-wk"><h3>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></h3>
       <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}
-    ${addForm}`;
+    ${ui.ctAddOpen ? '' : addForm}`;
 }
 // «Этапы» в «План / Факт»: шкала на каждый этап видео — сколько видео сейчас на нём (длина полосы от всех видео цикла),
 // ответственный этапа; самый загруженный (не последний) этап подсвечен — там затор
@@ -2861,7 +2865,7 @@ function addContent(name, n, start, extra = false, until = ''){
   if (until && until >= start){ const fresh = s.subs.slice(-n); const span = diffDays(until, start);   // конец задан — новые видео поровну от старта до конца
     fresh.forEach((x, i) => { x.due_date = n === 1 ? until : addDays(start, Math.round(i * span / (n - 1))); }); }
   else if (!extra && p.ctEnd?.[c]) ctSpread(c);                  // задан «закончить к» у цикла — новые видео встают в общий график
-  ui.ctCycle = c; commit();
+  ui.ctCycle = c; ui.ctAddOpen = false; commit();
 }
 document.addEventListener('submit', e => {
   if (e.target.id === 'ctAdd'){ e.preventDefault();
