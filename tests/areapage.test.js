@@ -53,6 +53,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.deepEqual(names, [area]); ok('в меню только эта область — других не видно');
   assert.ok(!w2.document.querySelector('[data-areamnew]') && !w2.document.querySelector('.area-menu a[href="/"]')); ok('нет «Новой области» и ссылки на остальные области');
   w2.eval(`ui.areaMenu = false; render();`); assert.ok(![...w2.document.querySelectorAll('.side-spaces button[title], .side-spaces [aria-label]')].some(b => /Основное/.test(b.getAttribute('title') || b.textContent))); ok('пространств других областей не видно');
+  const sv = [...w2.document.querySelectorAll('.side-nav [data-sideview]')].map(b => b.dataset.sideview);
+  assert.ok(sv.length && !sv.some(v => ['priority', 'assign', 'reports'].includes(v))); ok('в меню области Игоря нет «Приоритетов», «Поручений», «AI-отчётов»');
   assert.ok(/Игорь Шаламов/.test(w2.document.title)); ok('вкладка браузера подписана названием области');
   assert.deepEqual([...o.errors, ...o2.errors].filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);

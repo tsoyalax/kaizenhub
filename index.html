@@ -6418,9 +6418,13 @@ let sideOpen = false;
 // Выдвигания поверх страницы и по наведению на край больше нет. На телефоне — нижнее меню.
 const sidePinned = () => { if (innerWidth <= 640) return false; try { return localStorage.getItem(SIDE_PIN) !== '0'; } catch(e) { return true; } };
 const setPin = on => { try { localStorage.setItem(SIDE_PIN, on ? '1' : '0'); } catch(e) {} };
+// в области «Игорь Шаламов» (и на /igor) в левом меню нет «Приоритетов», «Поручений» и «AI-отчётов» (по просьбе)
+const SIDE_HIDE_IGOR = ['priority', 'assign', 'reports'];
+const isIgorArea = () => { try { return !ORG && AREA_SITES.igor.test(areaById(focusOn() ? focusId() : curArea())?.name || ''); } catch(e) { return false; } };
 function sideViews(){
   if (GUEST) return guestViews();
-  return [...document.querySelectorAll('.tabs [data-view]')].filter(b => !b.hidden).map(b => b.dataset.view);
+  const hide = isIgorArea() ? SIDE_HIDE_IGOR : [];
+  return [...document.querySelectorAll('.tabs [data-view]')].filter(b => !b.hidden && !hide.includes(b.dataset.view)).map(b => b.dataset.view);
 }
 // кружки в панели: пространства текущего раздела (у руководителя чужой команды — раздел его владельца) и команды руководителей
 // область в панели: название со стрелкой ▾ — выпадающий список областей (и команд, где вы руководитель) + «Новая область»
