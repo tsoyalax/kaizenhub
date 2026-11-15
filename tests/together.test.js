@@ -59,17 +59,17 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   [...D.querySelectorAll('.tg-task')].find(b => /Старт/.test(b.textContent)).click(); await wait(100);
   assert.ok(E('ui.taskId') && E(`taskById(ui.taskId).project_id`) === E('em.id')); ok('клик по задаче Эма открывает её карточку');
   E(`layer.innerHTML = ''; ui.taskId = null; ui.infoAll = false; ui.infoMode = 'board'; ui.prodProject = ig.id; render();`); await wait(50);
-  // ключевые даты вместо расчётного финиша
-  assert.ok(!/финиш/.test($('.pf-head small').textContent) && $('[data-kdadd]')); ok('у инфоповода нет расчётного финиша, есть «+ Ключевая дата»');
-  $('[data-kdadd]').click(); await wait(30); let f = $('[data-kdform]'); f.elements.namedItem('kdd').value = E('addDays(T, 3)'); f.elements.namedItem('kdn').value = 'Эфир Игоря'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(50);
-  assert.ok(/Эфир Игоря/.test($('.kd-row').textContent) && E('ig.keyDates.length') === 1); ok('ключевая дата вписывается в инфоповод');
-  E(`ui.prodProject = em.id; render();`); await wait(30); assert.ok(!/Эфир Игоря/.test($('.kd-row').textContent)); ok('у каждого инфоповода свои ключевые даты');
-  $('[data-kdadd]').click(); await wait(30); f = $('[data-kdform]'); f.elements.namedItem('kdd').value = E('addDays(T, 4)'); f.elements.namedItem('kdn').value = 'Старт челленджа'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(50);
-  E(`ui.infoMode = 'timeline'; render();`); await wait(30); assert.ok($('.tl-key') && /Старт челленджа/.test($('.tl-key').textContent)); ok('на таймлайне ключевая дата — красная линия');
-  E(`ui.infoAll = true; render();`); await wait(30); assert.equal(D.querySelectorAll('.tl-key').length, 2); ok('во «Все» — ключевые даты обоих инфоповодов');
-  E(`ui.infoAll = false; ui.infoMode = 'board'; render();`); await wait(30); $('[data-kddel]').click(); await wait(30); assert.equal(E('em.keyDates.length'), 0); ok('ключевую дату можно удалить');
-  E(`openProject(ig.id)`); await wait(100);
-  assert.ok(D.querySelector('#layer .d-kd [data-kdadd], .d-kd [data-kdadd]') && /Эфир Игоря/.test(D.querySelector('.d-kd').textContent)); ok('ключевые даты видны и добавляются в карточке инфоповода');
+  // ключевые даты: вводятся в карточке площадки, на доске открыто не показываются; на таймлайне — линии
+  assert.ok(!/финиш/.test($('.pf-head small').textContent) && !$('.pf-main [data-kdadd]') && !$('.pf-main .kd-row')); ok('на доске нет ни финиша, ни ключевых дат');
+  const addKd = async (pid, d, name) => { E(`openProject('${pid}')`); await wait(100); D.querySelector('.d-kd [data-kdadd]').click(); await wait(30);
+    const f = D.querySelector('.d-kd [data-kdform]'); f.elements.namedItem('kdd').value = d; f.elements.namedItem('kdn').value = name; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(50); };
+  await addKd(E('ig.id'), E('addDays(T, 3)'), 'Эфир Игоря');
+  assert.ok(/Эфир Игоря/.test(D.querySelector('.d-kd').textContent) && E('ig.keyDates.length') === 1); ok('ключевая дата вписывается в карточке площадки');
+  await addKd(E('em.id'), E('addDays(T, 4)'), 'Старт челленджа');
+  assert.ok(!/Эфир Игоря/.test(D.querySelector('.d-kd').textContent)); ok('у каждой площадки свои ключевые даты');
+  E(`layer.innerHTML = ''; ui.open = null; ui.prodProject = em.id; ui.infoMode = 'timeline'; render();`); await wait(30); assert.ok($('.tl-key') && /Старт челленджа/.test($('.tl-key').textContent)); ok('на таймлайне ключевая дата — красная линия');
+  E(`ui.infoAll = true; render();`); await wait(30); assert.equal(D.querySelectorAll('.tl-key').length, 2); ok('во «Все» — ключевые даты обеих площадок');
+  E(`ui.infoAll = false; ui.infoMode = 'board'; openProject(em.id)`); await wait(100); D.querySelector('.d-kd [data-kddel]').click(); await wait(30); assert.equal(E('em.keyDates.length'), 0); ok('ключевую дату можно удалить');
   E(`closeLayer ? closeLayer() : (layer.innerHTML = ''); ui.open = null; ui.prodProject = em.id; render();`); await wait(30);
   // столбики доски: переименовать, удалить, добавить — только в этом инфоповоде
   assert.ok(!$('[data-pfsren]') && !$('[data-pfsdel]') && !$('[data-pfscol]') && $('[data-pfedit]')); ok('без «Редактировать доску» значков правки и «+ Столбик» не видно');
