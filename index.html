@@ -6299,10 +6299,19 @@ function syncProjectWithTemplate(p, tpl){
   return changed || cards ? 1 : 0;
 }
 // все свои проекты по всем шаблонам; вызывается при загрузке и при сохранении шаблона
+// Площадки берут из шаблона «Инфобизнес» только колонки. Старая версия сайта раскладывала подэтапы шаблона по всем площадкам
+// и возвращала удалённые. Поэтому: подэтапы площадок отвязываем от шаблона (x.tsub — тогда старая версия считает их своими и не трогает),
+// а подэтапы в самом шаблоне очищаем — возвращать нечего. Колонки (этапы) и карточки шаблона остаются.
+function detachInfoTplSubs(){
+  const t = tplById(INFO_TPL_ID); let n = 0;
+  db.projects.filter(isInfoBoardP).forEach(p => p.stages.forEach(s => (s.subs || []).forEach(x => { if (x.tsub){ delete x.tsub; n++; } })));
+  if (t) t.stages.forEach(st => { if ((st.subs || []).length){ n += st.subs.length; st.subs = []; } });
+  return n;
+}
 function syncAllTemplates(tplId){
   if (GUEST) return 0;
   ensureTplIds();
-  let n = 0;
+  let n = detachInfoTplSubs();
   db.projects.forEach(p => { if (!tplId || p.template_id === tplId) n += syncProjectWithTemplate(p, tplById(p.template_id)); });
   return n;
 }
