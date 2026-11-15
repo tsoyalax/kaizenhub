@@ -31,7 +31,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   });
   return { dom, w: dom.window, errors };
 }
-// Инфобизнес: таймлайн «Вместе» — несколько инфоповодов на одной шкале, пересечения по дням
+// Инфобизнес: таймлайн «Вместе» — несколько инфоповодов на одной шкале
 (async () => {
   const be = makeBackend(); const o = openApp(be, 'aaaaaaaa-0000-0000-0000-0000000000c1'); await wait(4500);
   const w = o.w, D = w.document, $ = s => D.querySelector(s), E = x => w.eval(x);
@@ -45,13 +45,11 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   $('[data-infomode="together"]').click(); await wait(100);
   assert.ok($('.tg-tl') && D.querySelectorAll('.tg-lane').length === 2); ok('«Вместе»: блок Игоря и челлендж Эма — две полосы на одной шкале');
   assert.equal(D.querySelectorAll('.tg-task').length, 5); ok('задачи обоих инфоповодов на таймлайне');
-  const crossDay = E(`addDays(T, 2)`);
-  assert.equal(D.querySelectorAll('.tg-cross').length, 1); assert.ok(new RegExp(E(`fmt('${crossDay}')`)).test($('.tg-sum').textContent)); ok('день, где задачи пересекаются, подсвечен и назван');
-  assert.ok($('.tg-cnt.x')); ok('в строке «Пересечения» — сколько задач у каждого');
+  assert.ok(!$('.tg-cross') && !$('.tg-cnt') && !/Пересечени/.test($('.tg').textContent)); ok('без строки «Пересечения» — просто общий таймлайн');
   assert.ok(!$('[data-infomode="board"]').getAttribute('aria-pressed').includes('true')); ok('выбран только вид «Вместе»');
   // снять челлендж Эма — остаётся одна полоса, пересечений нет
   [...D.querySelectorAll('[data-tgp]')].find(b => /Эма/.test(b.textContent)).click(); await wait(50);
-  assert.equal(D.querySelectorAll('.tg-lane').length, 1); assert.equal(D.querySelectorAll('.tg-cross').length, 0); ok('инфоповод можно убрать со шкалы');
+  assert.equal(D.querySelectorAll('.tg-lane').length, 1); ok('инфоповод можно убрать со шкалы');
   // клик по задаче другого инфоповода — её карточка
   [...D.querySelectorAll('[data-tgp]')].find(b => /Эма/.test(b.textContent)).click(); await wait(50);
   [...D.querySelectorAll('.tg-task')].find(b => /Старт/.test(b.textContent)).click(); await wait(100);

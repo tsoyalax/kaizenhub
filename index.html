@@ -1324,14 +1324,8 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .tg-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 12px;font:inherit;font-size:13px;cursor:pointer}
 .tg-chip i,.tg-n i{width:10px;height:10px;border-radius:50%;background:var(--bc);flex:none;display:inline-block}
 .tg-chip[aria-pressed="false"]{opacity:.5}.tg-chip[aria-pressed="true"]{border-color:var(--bc)}
-.tg-sum{margin-left:auto;font-size:13px;color:var(--muted)}.tg-sum b{color:var(--r)}
 .tg-n{display:flex;gap:6px;align-items:center}
-.tg-ovl{background:color-mix(in srgb,var(--r) 5%,transparent)}
 .tg-lane{border-left:3px solid var(--bc)}
-.tg-cross{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--r) 9%,transparent);pointer-events:none}
-.tg-cnt{position:absolute;top:6px;height:22px;display:flex;align-items:center;justify-content:center;gap:1px}
-.tg-cnt i{font-style:normal;font-size:10.5px;font-weight:700;color:#fff;background:var(--bc);border-radius:6px;min-width:13px;height:16px;line-height:16px;text-align:center;padding:0 2px}
-.tg-cnt.x{outline:2px solid var(--r);outline-offset:-1px;border-radius:7px}
 .tg .tg-task i{background:var(--bc)!important;border-color:var(--surface)!important;box-shadow:0 0 0 1px var(--bc)}.tg .tg-task.k-red i{box-shadow:0 0 0 2px var(--r)}.tg .tg-task.k-yellow i{box-shadow:0 0 0 2px var(--y)}.tg .tg-task.k-done{opacity:.45}.tg-task small{color:var(--muted);font-size:11px}
 .tl{display:grid;grid-template-columns:170px minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .tl-lbls{border-right:1px solid var(--line)}
@@ -5006,7 +5000,6 @@ function timelineHtml(p){
 }
 // ---------- Инфобизнес: таймлайн «Вместе» — несколько инфоповодов (блок Игоря, челлендж Эма…) на одной шкале ----------
 // У каждого инфоповода своя полоса и свой цвет; задачи — точками в день срока (как в обычном таймлайне).
-// Сверху — строка пересечений: в какие дни задачи сразу у нескольких инфоповодов (столбец дня подсвечен).
 const TG_COLORS = ['#3B82F6', '#F97316', '#10B981', '#A855F7', '#EC4899', '#EAB308', '#06B6D4', '#EF4444'];
 const tgColor = p => { const i = infoBoards().findIndex(x => x.id === p?.id); return TG_COLORS[(i < 0 ? 0 : i) % TG_COLORS.length]; };
 function togetherHtml(){
@@ -5021,12 +5014,7 @@ function togetherHtml(){
   let from = [addDays(t0, -7), ...dated, ...starts].sort()[0], to = [addDays(t0, 21), ...dated].sort().at(-1);
   from = addDays(from, -1); to = addDays(to, 2);
   const nd = diffDays(to, from) + 1, W = nd * TL_DW; const xOf = d => diffDays(d, from) * TL_DW + TL_DW / 2;
-  // пересечения: день → какие инфоповоды и сколько задач (невыполненных)
-  const byDay = new Map();
-  per.forEach(b => b.items.filter(i => i.due && !i.done).forEach(i => { const m = byDay.get(i.due) || new Map(); m.set(b.p.id, (m.get(b.p.id) || 0) + 1); byDay.set(i.due, m); }));
-  const cross = [...byDay].filter(([, m]) => m.size > 1).map(([d, m]) => ({ d, m }));
-  const OV = 34;   // высота строки пересечений
-  let y = OV; const lanes = per.map(b => {
+  let y = 0; const lanes = per.map(b => {
     const items = b.items.filter(i => i.due).sort((a, z) => a.due.localeCompare(z.due)); const rowsEnd = [];
     const placed = items.map(i => { const px = xOf(i.due), sx = i.start ? xOf(i.start) : px; let r = rowsEnd.findIndex(e => e < sx - 8); if (r < 0){ r = rowsEnd.length; rowsEnd.push(0); }
       rowsEnd[r] = px + 14 + Math.min(200, (i.x.name.length + i.s.name.length) * 6.5); return { ...i, px, sx, r }; });
@@ -5037,18 +5025,14 @@ function togetherHtml(){
     return `<span class="tl-d${wk ? ' wk' : ''}${d === t0 ? ' now' : ''}" style="left:${diffDays(d, from) * TL_DW}px">${dt.getDate() === 1 || d === from ? `<em>${dt.toLocaleDateString('ru-RU', { month:'short' })}</em>` : ''}${dt.getDate()}</span>`; }).join('');
   const shade = days.map(d => { const g = parse(d).getDay(); return g === 0 || g === 6 ? `<i class="tl-wk" style="left:${diffDays(d, from) * TL_DW}px;width:${TL_DW}px"></i>` : ''; }).join('');
   const k = i => i.done ? 'done' : i.due < t0 ? 'red' : i.due <= addDays(t0, 1) ? 'yellow' : 'green';
-  const nameOfB = id => all.find(p => p.id === id)?.name || '';
   return `<div class="tg">
-    <div class="tg-pick"><span class="hint">Инфоповоды на шкале:</span>${all.map(p => `<button class="tg-chip" data-tgp="${p.id}" aria-pressed="${sel.includes(p.id)}" style="--bc:${tgColor(p)}"><i></i>${esc(p.name)}</button>`).join('')}
-      <span class="tg-sum">${cross.length ? `Пересечений: <b>${cross.length}</b> ${plural(cross.length, 'день', 'дня', 'дней')} — ${cross.slice(0, 4).map(c => fmt(c.d)).join(', ')}${cross.length > 4 ? '…' : ''}` : 'Пересечений по дням нет'}</span></div>
+    <div class="tg-pick"><span class="hint">Инфоповоды на шкале:</span>${all.map(p => `<button class="tg-chip" data-tgp="${p.id}" aria-pressed="${sel.includes(p.id)}" style="--bc:${tgColor(p)}"><i></i>${esc(p.name)}</button>`).join('')}</div>
     <div class="tl tg-tl" aria-label="Таймлайн инфоповодов вместе">
-      <div class="tl-lbls" style="padding-top:34px"><div class="tl-lbl tg-ovl" style="height:${OV}px"><b>Пересечения</b></div>${lanes.map(l => `<div class="tl-lbl" style="height:${l.h}px;--bc:${tgColor(l.p)}"><b class="tg-n"><i></i>${esc(l.p.name)}</b>
+      <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl" style="height:${l.h}px;--bc:${tgColor(l.p)}"><b class="tg-n"><i></i>${esc(l.p.name)}</b>
         <small>${l.items.filter(i => !i.done).length} в работе${l.nodate ? ` · без срока: ${l.nodate}` : ''}</small></div>`).join('')}</div>
       <div class="tl-scroll"><div class="tl-in" style="width:${W}px">
         <div class="tl-head">${head}</div>
         <div class="tl-body" style="height:${H}px">${shade}
-          ${cross.map(c => `<i class="tg-cross" style="left:${diffDays(c.d, from) * TL_DW}px;width:${TL_DW}px" title="${fmt(c.d)}: ${[...c.m].map(([id, n]) => `${nameOfB(id)} — ${n}`).join(', ')}"></i>`).join('')}
-          ${[...byDay].map(([d, m]) => `<span class="tg-cnt${m.size > 1 ? ' x' : ''}" style="left:${diffDays(d, from) * TL_DW}px;width:${TL_DW}px" title="${fmt(d)}: ${[...m].map(([id, n]) => `${nameOfB(id)} — ${n}`).join(', ')}">${[...m].map(([id, n]) => `<i style="--bc:${tgColor(all.find(p => p.id === id))}">${n}</i>`).join('')}</span>`).join('')}
           ${lanes.map(l => `<div class="tl-lane tg-lane" style="top:${l.top}px;height:${l.h}px;--bc:${tgColor(l.p)}"></div>`).join('')}
           <i class="tl-today" style="left:${xOf(t0)}px"></i>
           ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task tg-task k-${k(i)}" data-tgsub="${l.p.id}|${i.s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px;--bc:${tgColor(l.p)}" title="${esc(l.p.name)} · ${esc(i.s.name)} · ${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}"><i></i><span>${esc(i.x.name)}<small> · ${esc(i.s.name)}</small></span></button>`)).join('')}
