@@ -199,6 +199,32 @@ select pg_temp.expect('область: владелец возвращает s1'
 select pg_temp.expect('область: владелец убирает руководителя области', pg_temp.try(:O, $q$select doc_delete('team/00000000-0000-0000-0000-00000000000a/areas/aV/00000000-0000-0000-0000-000000000010')$q$), true);
 select pg_temp.expect('область: после этого ничего не видит', pg_temp.rows_as(:V, $q$select * from docs where path like 'data/users/00000000-0000-0000-0000-00000000000a/%'$q$) = 0, true);
 select pg_temp.expect('область: и писать не может', pg_temp.try(:V, $q$select doc_set('data/users/00000000-0000-0000-0000-00000000000a/spaces/list/s1/items/p_pw', '{"json":"{}"}')$q$), false);
+-- ---------- «Сегодня» по ссылке без входа ----------
+select pg_temp.expect('сегодня: владелец публикует список', pg_temp.try(:O, $q$select doc_set('today/todaycode0000000000000001', '{"ownerId":"00000000-0000-0000-0000-00000000000a","who":"","date":"2026-11-15","items":[{"k":"t|task1","title":"Сценарий"},{"k":"x|p1|s1|x1","title":"Монтаж"}]}')$q$), true);
+select pg_temp.expect('сегодня: нельзя опубликовать от чужого имени', pg_temp.try(:S, $q$select doc_set('today/todaycode0000000000000002', '{"ownerId":"00000000-0000-0000-0000-00000000000a","items":[]}')$q$), false);
+select pg_temp.expect('сегодня: посторонний не перезапишет чужой список', pg_temp.try(:S, $q$select doc_set('today/todaycode0000000000000001', '{"ownerId":"00000000-0000-0000-0000-00000000000d","items":[]}')$q$), false);
+select pg_temp.expect('сегодня: без входа список читается по коду', pg_temp.rows_as('', $q$select 1 where today_get('todaycode0000000000000001') -> 'items' -> 0 ->> 'title' = 'Сценарий'$q$) = 1, true);
+select pg_temp.expect('сегодня: владелец аккаунта в ответе не виден', pg_temp.rows_as('', $q$select 1 where today_get('todaycode0000000000000001') ? 'ownerId'$q$) = 0, true);
+select pg_temp.expect('сегодня: по чужому коду ничего', pg_temp.rows_as('', $q$select 1 where today_get('todaycode0000000000009999') is not null$q$) = 0, true);
+select pg_temp.expect('сегодня: короткий код не принимается', pg_temp.rows_as('', $q$select 1 where today_get('abc') is not null$q$) = 0, true);
+select pg_temp.expect('сегодня: без входа напрямую таблицу не прочитать', pg_temp.rows_as('', $q$select * from docs where path like 'today/%'$q$) = 0, true);
+select pg_temp.expect('сегодня: посторонний напрямую не читает', pg_temp.rows_as(:S, $q$select * from docs where path like 'today/%'$q$) = 0, true);
+select pg_temp.expect('сегодня: без входа отмечает задачу из списка', pg_temp.try('', $q$select today_tick('todaycode0000000000000001', 't|task1', true)$q$), true);
+select pg_temp.expect('сегодня: отметка сохранилась', (select data ->> 'done' = 'true' from docs where path = 'today/todaycode0000000000000001/ticks/t~task1'), true);
+select pg_temp.expect('сегодня: повторная отметка перезаписывает', pg_temp.try('', $q$select today_tick('todaycode0000000000000001', 't|task1', false)$q$), true);
+select pg_temp.expect('сегодня: одна отметка на задачу', (select count(*) = 1 and bool_and(data ->> 'done' = 'false') from docs where parent = 'today/todaycode0000000000000001/ticks'), true);
+select pg_temp.expect('сегодня: задачу не из списка не отметить', pg_temp.try('', $q$select today_tick('todaycode0000000000000001', 't|other', true)$q$), false);
+select pg_temp.expect('сегодня: по чужому коду не отметить', pg_temp.try('', $q$select today_tick('todaycode0000000000009999', 't|task1', true)$q$), false);
+select pg_temp.expect('сегодня: странный ключ не принимается', pg_temp.try('', $q$select today_tick('todaycode0000000000000001', '../x', true)$q$), false);
+select pg_temp.expect('сегодня: отметки напрямую не пишутся', pg_temp.try(:S, $q$select doc_set('today/todaycode0000000000000001/ticks/x', '{"done":true}')$q$), false);
+select pg_temp.expect('сегодня: владелец видит отметки', pg_temp.rows_as(:O, $q$select * from docs where parent = 'today/todaycode0000000000000001/ticks'$q$) = 1, true);
+select pg_temp.expect('сегодня: посторонний не видит отметки', pg_temp.rows_as(:S, $q$select * from docs where parent = 'today/todaycode0000000000000001/ticks'$q$) = 0, true);
+select pg_temp.expect('сегодня: посторонний не удаляет отметку', pg_temp.try(:S, $q$select doc_delete('today/todaycode0000000000000001/ticks/t~task1')$q$), false);
+select pg_temp.expect('сегодня: владелец удаляет отметку', pg_temp.try(:O, $q$select doc_delete('today/todaycode0000000000000001/ticks/t~task1')$q$), true);
+select pg_temp.expect('сегодня: посторонний не закрывает ссылку', pg_temp.try(:S, $q$select doc_delete('today/todaycode0000000000000001')$q$), false);
+select pg_temp.expect('сегодня: владелец закрывает ссылку', pg_temp.try(:O, $q$select doc_delete('today/todaycode0000000000000001')$q$), true);
+select pg_temp.expect('сегодня: после закрытия список не открыть', pg_temp.rows_as('', $q$select 1 where today_get('todaycode0000000000000001') is not null$q$) = 0, true);
+select pg_temp.expect('сегодня: и не отметить', pg_temp.try('', $q$select today_tick('todaycode0000000000000001', 't|task1', true)$q$), false);
 select pg_temp.expect('без входа ничего не читается', pg_temp.rows_as('', $q$select * from docs$q$) = 0, true);
 
 select (case when ok then 'PASS ' else 'FAIL ' end) || name from results;

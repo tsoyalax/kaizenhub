@@ -57,6 +57,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   const o2 = openApp(be, A, 'https://kz.test/', {}, store); await wait(4000);
   const w2 = o2.w, D2 = w2.document, $2 = s => D2.querySelector(s);
   assert.ok(w2.getComputedStyle($2('#spaceName')).display === 'none'); ok('в шапке нет названия пространства — оно в панели');
+  D2.querySelector('.tabs [data-view="matrix"]').click(); await new Promise(r => setTimeout(r, 100));
   assert.ok(/Проектов пока нет/.test(D2.getElementById('app').textContent)); ok('в новом пространстве нет проектов основного');
   $2('#newBtn').click(); await wait(100); $2('#cName').value = 'Личный проект'; $2('#cClient').value = 'Я'; fire($2('#cForm'), 'submit'); await wait(2500);
   const keys = [...be.rows.keys()];

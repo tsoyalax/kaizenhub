@@ -65,7 +65,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   setF(0, 'value', 'figma.com'); fire($('#tkForm'), 'submit'); await wait(50);
   assert.ok(/https/.test($('#tdErr').textContent)); ok('блоки: ссылка без https:// не сохраняется');
   setF(0, 'value', 'https://figma.com/file/abc');
-  assert.ok($('#tdTpl').checked); fire($('#tkForm'), 'submit'); await wait(300);
+  assert.ok(!$('#tdTpl').checked); $('#tdTpl').checked = true; fire($('#tdTpl'), 'change'); fire($('#tkForm'), 'submit'); await wait(300);
   const t1 = LS().tasks.find(t => t.id === T1.t.id);
   assert.deepEqual(t1.blocks.map(b => b.type), ['link', 'text', 'video', 'file']); ok('сохранение: 4 блока в нужном порядке, пустой блок отброшен');
   const heads = [...D.querySelectorAll('.tk-modal .bk-v h3')].map(h => h.textContent);

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Сегодня — KaizenHub</title>
+<style>
+/* «Сегодня» по ссылке без входа: список задач на день и галочки. Данные — функции базы today_get / today_tick
+   (только по точному коду ссылки). Отметки приложение владельца переносит на общую доску. */
+:root{--bg:#F4F5F7;--surface:#FFFFFF;--surface-2:#F4F5F7;--ink:#111114;--muted:#6B6B74;--line:#E9ECEF;--brand:#7C6CF6;--g:#16A34A;--r:#E5383B;--y:#E07800;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0B0B0D;--surface:#151518;--surface-2:#1C1C20;--ink:#EDEDEF;--muted:#9A9AA3;--line:#26262B;--g:#4ADE80;--r:#F87171;--y:#FBBF24;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+main{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.brand{font-size:12.5px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.brand i{width:8px;height:8px;border-radius:50%;background:var(--brand)}
+h1{margin:0;font-size:24px}
+.sub{color:var(--muted);margin:2px 0 0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.sum{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.sum b{font-size:24px}.sum small{display:block;color:var(--muted);font-size:12.5px}
+.bar{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;background:var(--g);transition:width .2s}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+li label{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:start;padding:10px 8px;border-radius:12px;cursor:pointer}
+li label:hover{background:var(--surface-2)}
+li input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--brand)}
+li b{font-weight:500}li small{display:block;color:var(--muted);font-size:12.5px}
+li.done b{text-decoration:line-through;color:var(--muted)}
+.late{color:var(--r);font-weight:600}.extra{color:var(--g);font-weight:600}
+.empty,.err{text-align:center;color:var(--muted);padding:40px 12px}
+.err{color:var(--r)}
+.note{font-size:12.5px;color:var(--muted);text-align:center}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:8px 14px;border-radius:10px;font-size:13px}
+</style>
+</head>
+<body>
+<main id="root"><p class="empty">Загружаю…</p></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="/config.js"></script>
+<script>
+(function(){
+'use strict';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
+const MON = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const fmt = s => { if (!s) return ''; const [y, m, d] = s.split('-').map(Number); return `${d} ${MON[m - 1]}`; };
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const code = (new URLSearchParams(location.search).get('c') || '').toLowerCase();
+const root = $('#root');
+function toast(t){ const el = document.createElement('div'); el.className = 'toast'; el.textContent = t; document.body.append(el); setTimeout(() => el.remove(), 2200); }
+const CFG = window.KZ_CONFIG || {};
+if (!/^[a-z0-9]{20,40}$/.test(code)){ root.innerHTML = '<p class="err">Ссылка неполная. Попросите прислать её ещё раз.</p>'; return; }
+if (!window.supabase || !CFG.supabaseUrl){ root.innerHTML = '<p class="err">Не удалось подключиться. Обновите страницу.</p>'; return; }
+// без входа: сессию не храним, токены не нужны
+const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, { auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false } });
+let data = null, busy = new Set();
+async function load(){
+  const r = await sb.rpc('today_get', { p_code:code });
+  if (r.error){ if (!data) root.innerHTML = '<p class="err">Не удалось загрузить список. Проверьте интернет и обновите страницу.</p>'; return; }
+  if (!r.data){ root.innerHTML = '<p class="err">Ссылка закрыта или неверна.</p>'; data = null; return; }
+  // пока идёт своя отметка — не перебиваем её старым ответом
+  const keep = data ? new Map(data.items.filter(i => busy.has(i.k)).map(i => [i.k, i.done])) : new Map();
+  data = r.data; data.items.forEach(i => { if (keep.has(i.k)) i.done = keep.get(i.k); });
+  render();
+}
+function render(){
+  const items = data.items || []; const plan = items.filter(i => !i.extra); const done = plan.filter(i => i.done).length; const t0 = today();
+  const all = data.who === '*';
+  root.innerHTML = `<div class="brand"><i></i>KaizenHub${data.space ? ` · ${esc(data.space)}` : ''}</div>
+    <div><h1>Сегодня${all ? '' : `, ${esc(data.name)}`}</h1><p class="sub">${fmt(data.date)}${data.date !== t0 ? ' · список ещё не обновился на сегодня' : ''}</p></div>
+    <div class="panel"><div class="sum"><div><b>${plan.length}</b><small>в плане</small></div><div><b>${done}</b><small>сделано</small></div><div><b>${plan.length ? Math.round(done / plan.length * 100) : 100}%</b><small>выполнено</small></div></div>
+      <div class="bar"><i style="width:${plan.length ? Math.round(done / plan.length * 100) : 100}%"></i></div></div>
+    <div class="panel">${items.length ? `<ul>${items.map(i => `<li class="${i.done ? 'done' : ''}"><label><input type="checkbox" data-k="${esc(i.k)}" ${i.done ? 'checked' : ''}${i.extra ? ' disabled' : ''}>
+      <span><b>${esc(i.title)}</b><small>${esc(i.where || '')}${all && i.who ? ` · ${esc(i.who)}` : ''}${!i.done && i.due && i.due < t0 ? ` · <span class="late">просрочено с ${fmt(i.due)}</span>` : ''}${i.extra ? ' · <span class="extra">сделано сверх плана</span>' : ''}</small></span></label></li>`).join('')}</ul>`
+      : '<p class="empty">На сегодня задач нет 🎉</p>'}</div>
+    <p class="note">Отметки сразу видны в общей доске команды. Страница обновляется сама.</p>`;
+}
+document.addEventListener('change', async e => {
+  const k = e.target.dataset?.k; if (!k) return; const on = e.target.checked;
+  const it = data.items.find(i => i.k === k); if (!it) return;
+  it.done = on; busy.add(k); render();
+  const r = await sb.rpc('today_tick', { p_code:code, p_key:k, p_done:on });
+  busy.delete(k);
+  if (r.error){ it.done = !on; render(); toast('Не сохранилось — проверьте интернет'); return; }
+  toast(on ? 'Отмечено' : 'Отметка снята');
+});
+load(); setInterval(() => { if (!document.hidden && !busy.size) load(); }, 20000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !busy.size) load(); });
+})();
+</script>
+</body>
+</html>
