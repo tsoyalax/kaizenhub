@@ -128,6 +128,14 @@ function openPage(backend, code){
   sel.value = other; sel.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(50);
   assert.ok(E(`db.tasks.find(t => t.substage_id === 'xStart').checklist[0].who`) === other && E(`!db.tasks.find(t => t.substage_id === 'xStart').checklist[1].who`)); ok('пункту можно назначить своего ответственного, остальные — как у подэтапа');
   E(`document.querySelector('[data-tclose]')?.click()`);
+  // пункт со своим ответственным — в «Сегодня» у этого человека (срок — как у карточки), отметка там отмечает пункт в карточке
+  E(`{ const t = db.tasks.find(t => t.substage_id === 'xStart'); t.due_date = today(); t.start_date = ''; ui.view = 'today'; commit(); }`); await wait(50);
+  { const who = E(`db.tasks.find(t => t.substage_id === 'xStart').checklist[0].who`); const nm = E(`nameOf('${who}')`);
+    const card = [...D.querySelectorAll('.tdy-card')].find(c => c.querySelector('.tdy-h b')?.textContent.startsWith(nm));
+    const li = card && [...card.querySelectorAll('.tdy-i')].find(x => /Написать вакансию/.test(x.textContent));
+    assert.ok(li && /пункт задачи/.test(li.textContent)); ok('пункт чек-листа со своим ответственным — в «Сегодня» у этого человека');
+    li.querySelector('input').click(); await wait(50);
+    assert.ok(E(`db.tasks.find(t => t.substage_id === 'xStart').checklist[0].done`)); ok('галочка в «Сегодня» отмечает пункт в карточке'); }
   assert.deepEqual([...o.errors, ...pg.errors].filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });

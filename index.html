@@ -4616,7 +4616,7 @@ document.addEventListener('input', e => { if (e.target.id !== 'archQ') return; u
 // переносит на общую доску (dayToggle) и удаляет (todayWatch).
 const d10 = v => v ? String(v).slice(0, 10) : '';
 const tdKey = i => i.kind === 'i' ? `i|${i.id}` : i.r ? `r|${i.p.id}|${i.r.id}` : i.t ? `t|${i.t.id}` : `x|${i.p.id}|${i.s.id}|${i.x?.id || ''}`;
-const tdWhere = i => i.kind === 'i' ? 'Внутренняя задача' : `${i.p.name} · ${i.s.name}${i.r ? ' · ведение' : ''}`;
+const tdWhere = i => i.kind === 'c' ? `${i.p.name} · ${i.s.name} · пункт задачи «${i.parent}»` : i.kind === 'i' ? 'Внутренняя задача' : `${i.p.name} · ${i.s.name}${i.r ? ' · ведение' : ''}`;
 // начало задачи: у карточки — t.start_date (срок «от и до»), у подэтапа без карточки — x.start
 const tdStart = i => (i.t?.start_date && (!i.t?.due_date || i.t.start_date <= i.t.due_date) ? i.t.start_date : '') || i.x?.start || i.it?.start || '';
 // задача на сегодня: срок сегодня или прошёл, либо период «от и до» уже начался (начало сегодня или раньше).
@@ -4624,12 +4624,17 @@ const tdStart = i => (i.t?.start_date && (!i.t?.due_date || i.t.start_date <= i.
 const tdForDay = (i, d) => !i.done && ((i.due && i.due <= d) || !!(tdStart(i) && tdStart(i) <= d));
 // все задачи пространства (свои проекты и внутренние) с ключом
 function tdAll(){
-  return [...dayProjectItems('').filter(i => !i.p._ext), ...dayInternalItems('')].map(i => ({ ...i, k:tdKey(i) }));
+  const base = [...dayProjectItems('').filter(i => !i.p._ext), ...dayInternalItems('')].map(i => ({ ...i, k:tdKey(i) }));
+  // пункты чек-листа со своим ответственным (не тем, кто у карточки) — отдельной строкой у этого человека, срок — как у карточки
+  const ck = base.filter(i => i.t?.checklist?.length && i.kind !== 'i').flatMap(i => i.t.checklist.filter(c => c.who && c.who !== (i.who || ''))
+    .map(c => ({ kind:'c', k:`c|${i.t.id}|${c.id}`, p:i.p, s:i.s, t:i.t, x:i.x, who:c.who, title:c.text, due:i.due, done:!!c.done, parent:i.title })));
+  return [...base, ...ck];
 }
 // выполнена ли задача по ключу — даже если её этап уже закрыт и в текущих задачах её нет
 function tdDone(k){
   const [kind, ...ids] = k.split('|');
   if (kind === 'i') return itAll().find(x => x.id === ids[0])?.status === 'done';
+  if (kind === 'c') return !!taskById(ids[0])?.checklist?.find(x => x.id === ids[1])?.done;
   if (kind === 'r'){ const r = projById(ids[0])?.stages.find(isMaint)?.rtasks?.find(x => x.id === ids[1]); return !!r && r.last_done === today(); }
   if (kind === 't'){ const t = taskById(ids[0]); if (!t) return false; const p = projById(t.project_id); const s = p?.stages.find(y => y.id === t.stage_id); const x = s?.subs?.find(y => y.id === t.substage_id);
     if (s?.status === 'done') return true; return x ? subDone(p, s, x) : taskProgress(t).done; }
@@ -4736,13 +4741,14 @@ function renderToday(){
 function tdExists(k){ const [kind, ...ids] = String(k || '').split('|');
   if (kind === 'i'){ const t = itAll().find(x => x.id === ids[0]); return !!t && !t.deleted; }
   if (kind === 'r') return !!projById(ids[0])?.stages.find(isMaint)?.rtasks?.some(x => x.id === ids[1]);
+  if (kind === 'c'){ const t = taskById(ids[0]); return !!t?.checklist?.some(x => x.id === ids[1]) && tdExists('t|' + t.id); }
   if (kind === 't'){ const t = taskById(ids[0]); if (!t) return false; const p = projById(t.project_id); if (!p || p.state === 'archived') return false;
     const s = p.stages.find(y => y.id === t.stage_id); return !!s && (!t.substage_id || (s.subs || []).some(x => x.id === t.substage_id)); }
   const p = projById(ids[0]); const s = p?.stages.find(y => y.id === ids[1]); return !!p && p.state !== 'archived' && !!s?.subs?.some(x => x.id === ids[2]);
 }
 // площадка задачи по ключу «Сегодня» (i|… внутренняя, r|проект|…, t|карточка, x|проект|этап|подэтап)
 function tdProjOf(k){ const [kind, ...ids] = String(k || '').split('|');
-  return kind === 'i' ? itAll().find(x => x.id === ids[0])?.project_id || '' : kind === 't' ? taskById(ids[0])?.project_id || '' : ids[0] || ''; }
+  return kind === 'i' ? itAll().find(x => x.id === ids[0])?.project_id || '' : kind === 't' || kind === 'c' ? taskById(ids[0])?.project_id || '' : ids[0] || ''; }
 document.addEventListener('click', e => { const b = e.target.closest?.('[data-tdip]'); if (!b || ui.view !== 'today') return; ui.tdIp = b.dataset.tdip; render(); });
 document.addEventListener('click', e => { const c = e.target.closest?.('[data-tdct]'); if (!c || ui.view !== 'today') return; ui.tdCt = ui.tdCt || {}; ui.tdCt[c.dataset.tdct] = !ui.tdCt[c.dataset.tdct]; render(); });
 document.addEventListener('click', e => {
@@ -8244,6 +8250,9 @@ document.addEventListener('change', e => {
 // ключ задачи: i|<внутренняя>, r|<проект>|<регулярная ведения>, t|<карточка>, x|<проект>|<этап>|<подэтап>
 function dayToggle(k, on){
   const [kind, ...ids] = k.split('|');
+  if (kind === 'c'){ const t = taskById(ids[0]); const c = t?.checklist?.find(x => x.id === ids[1]); if (!c) return;
+    const before = taskProgress(t).done; c.done = on; c.completed_at = on ? new Date().toISOString() : null; c.completed_by = on ? meName() : null;
+    syncTaskToSub(t); save(); render(); if (on) toast(`«${c.text}» — выполнено`); if (!before && taskProgress(t).done) queueAutoClose(t.project_id); return; }
   if (kind === 'r'){ const p = projById(ids[0]); const r = p?.stages.find(isMaint)?.rtasks?.find(x => x.id === ids[1]); if (r && on) completeRtask(p, r); else render(); return; }
   if (kind === 'i'){ const t = itAll().find(x => x.id === ids[0]); if (!t) return; itSave({ ...t, status:on ? 'done' : 'todo' }); render(); if (on) toast(`«${t.title}» — готово`); return; }
   if (kind === 't'){
