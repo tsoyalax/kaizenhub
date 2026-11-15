@@ -258,6 +258,12 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   E(`ui.prodProject = '${op}'; render()`);
   assert.ok(!/Контент-план на декабрь/.test(D.getElementById('app').textContent)); ok('у другого проекта — свои внутренние задачи');
   E(`ui.prodTab = 'board'`);
+  // колонка «Контент»: выделена, видео свёрнуты до 3 — «Показать все (N)»
+  E(`{ const p = infoBoard(); const s = contentStage(p); for (let i = 0; i < 5; i++) s.subs.push({ id:'fold' + i, name:'Видео ' + i, done:false, cycle:today() }); ui.view = 'production'; ui.prodProject = p.id; ui.infoAll = false; ui.infoMode = 'board'; ui.ctOpen = {}; render(); }`);
+  { const nv = () => D.querySelector('.pf-col.ct-col').querySelectorAll('.pf-card .ct-ico').length; const total = E(`contentStage(infoBoard()).subs.filter(x => x.cycle).length`);
+    assert.ok(D.querySelector('.pf-col.ct-col') && nv() === 3 && /Показать все/.test(D.querySelector('[data-ctmore]').textContent)); ok('колонка «Контент» выделена, видно 3 видео и «Показать все»');
+    D.querySelector('[data-ctmore]').click(); assert.equal(nv(), total); ok('«Показать все» раскрывает все видео');
+    D.querySelector('[data-ctmore]').click(); assert.equal(nv(), 3); ok('«Свернуть» снова прячет'); }
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });

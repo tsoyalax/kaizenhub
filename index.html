@@ -1480,6 +1480,9 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .pf-col header small{color:var(--muted);font-size:12.5px;display:flex;gap:6px;align-items:center}
 .pf-now{font-size:11px;font-weight:600;background:var(--ink);color:var(--surface);border-radius:6px;padding:1px 7px}
 .pf-cards{display:grid;gap:8px}
+.pf-col.ct-col{background:color-mix(in srgb,var(--m) 8%,var(--surface));border-color:color-mix(in srgb,var(--m) 35%,var(--line));box-shadow:inset 0 3px 0 var(--m)}
+.pf-col.ct-col header b::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--m);margin-right:6px;vertical-align:1px}
+.ct-more{width:100%;justify-content:center;font-size:13px;color:var(--m);border-style:dashed}
 .pf-card{display:grid;gap:4px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 11px;cursor:pointer;position:relative}
 .pf-card:hover{border-color:var(--line-strong)}
 .pf-card b{font-weight:500;font-size:14px;line-height:1.35}
@@ -4859,6 +4862,19 @@ document.addEventListener('submit', e => {
 // Сохраняется в браузере (kz-card-sort). Выполненные — всегда внизу. Без срока — после карточек со сроком.
 const CARD_SORT = { manual:'как на доске', due:'по ближайшим датам', pri:'по приоритету' };
 const cardSortMode = () => { if (ui.cardSort) return ui.cardSort; try { const v = localStorage.getItem('kz-card-sort'); if (CARD_SORT[v]) return (ui.cardSort = v); } catch(e) {} return (ui.cardSort = 'manual'); };
+// колонка «Контент» доски площадки: выделена (.ct-col), видео свёрнуты — видно CT_FOLD, остальные по «Показать все (N)»
+// (свои задачи колонки — не видео — видны всегда). Раскрытие помнится на время вкладки: ui.ctOpen[id площадки]
+const CT_FOLD = 3;
+function ctFold(p, s, subs){
+  const isCt = isInfoBoardP(p) && !isMaint(s) && contentStage(p)?.id === s.id;
+  if (!isCt) return { isCt, shown:subs, btn:'' };
+  const vids = subs.filter(x => x.cycle); const open = !!ui.ctOpen?.[p.id];
+  if (vids.length <= CT_FOLD) return { isCt, shown:subs, btn:'' };
+  const keep = new Set(vids.slice(0, CT_FOLD));
+  const shown = open ? subs : subs.filter(x => !x.cycle || keep.has(x));
+  return { isCt, shown, btn:`<button type="button" class="ghost ct-more" data-ctmore="${p.id}" aria-expanded="${open}">${open ? 'Свернуть' : `Показать все (${vids.length})`}</button>` };
+}
+document.addEventListener('click', e => { const b = e.target.closest?.('[data-ctmore]'); if (!b) return; e.stopPropagation(); ui.ctOpen = ui.ctOpen || {}; ui.ctOpen[b.dataset.ctmore] = !ui.ctOpen[b.dataset.ctmore]; render(); });
 function sortCards(p, s, subs){
   const mode = cardSortMode(); if (mode === 'manual' || !subs.length) return subs;
   const info = subs.map((x, i) => { const t = taskFor(p.id, s.id, x.id); return { x, i, done:subDone(p, s, x), due:t?.due_date || x.due_date || '', pri:PRI_W[t?.priority] ?? 2 }; });
@@ -4879,7 +4895,8 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
   const cols = p.stages.map(s => {
     const h = health(s); const isCur = s.id === cur.stageId; const passed = s.status === 'done';
     const subs = sortCards(p, s, boardSubs(p, s)); const doneN = subs.filter(x => subDone(p, s, x)).length;
-    const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
+    const ctv = ctFold(p, s, subs);
+    const cards = isMaint(s) ? rtaskBlock(p, s) : ctv.shown.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
       if (mine && !t) return tickCard(p, s, x, here);
@@ -4889,11 +4906,11 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}</button>`;
     }).join('');
-    return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" data-pmcol="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
+    return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}${ctv.isCt ? ' ct-col' : ''}" data-pmcol="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header><div>${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`}${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}
         ${canEdit && !mine && !GUEST && !isMaint(s) && ui.pfRen !== s.id && ui.pfEdit ? `<span class="pf-coltools"><button type="button" data-pfsren="${s.id}" title="Переименовать столбик" aria-label="Переименовать столбик «${esc(s.name)}»">${ICON_EDIT}</button>${p.stages.filter(x => !isMaint(x)).length > 1 ? `<button type="button" data-pfsdel="${s.id}" title="Удалить столбик" aria-label="Удалить столбик «${esc(s.name)}»">${ICON_X}</button>` : ''}</span>` : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
-      <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
+      <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}${ctv.btn}</div>
       ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}${stageSubmitBox(p, s, mine)}
     </section>`;
   }).join('');
@@ -9315,7 +9332,8 @@ function renderProjectFocus(mine = false){
     const subs = sortCards(p, s, boardSubs(p, s));
     const doneN = subs.filter(x => subDone(p, s, x)).length;
     const passed = s.status === 'done';
-    const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
+    const ctv = ctFold(p, s, subs);
+    const cards = isMaint(s) ? rtaskBlock(p, s) : ctv.shown.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
       if (mine && !t) return tickCard(p, s, x, here);
@@ -9328,11 +9346,11 @@ function renderProjectFocus(mine = false){
       </button>`;
     }).join('');
     const colMove = canEdit && !mine && !GUEST && ui.pfEdit && !isMaint(s);
-    return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}${ui.pfEdit ? ' editing' : ''}" ${dnd ? `data-pfcol="${s.id}"` : ''} ${colMove ? `data-pfcolid="${s.id}"` : ''} aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
+    return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}${ui.pfEdit ? ' editing' : ''}${ctv.isCt ? ' ct-col' : ''}" ${dnd ? `data-pfcol="${s.id}"` : ''} ${colMove ? `data-pfcolid="${s.id}"` : ''} aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header ${colMove ? `draggable="true" data-pfcolmove="${s.id}" title="Перетащите, чтобы переставить столбик"` : ''}><div>${colMove ? '<span class="pf-colgrip" aria-hidden="true">⠿</span>' : ''}${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`}${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}
         ${canEdit && !mine && !GUEST && !isMaint(s) && ui.pfRen !== s.id && ui.pfEdit ? `<span class="pf-coltools"><button type="button" data-pfsren="${s.id}" title="Переименовать столбик" aria-label="Переименовать столбик «${esc(s.name)}»">${ICON_EDIT}</button>${p.stages.filter(x => !isMaint(x)).length > 1 ? `<button type="button" data-pfsdel="${s.id}" title="Удалить столбик" aria-label="Удалить столбик «${esc(s.name)}»">${ICON_X}</button>` : ''}</span>` : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
-      <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
+      <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}${ctv.btn}</div>
       ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}${stageSubmitBox(p, s, mine)}
     </section>`;
   }).join('');
