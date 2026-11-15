@@ -116,6 +116,9 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(D.querySelectorAll('[data-tdip]').length === 3 && /Сторис Эма/.test(tdTxt()) && /Пост Игоря/.test(tdTxt())); ok('«Сегодня»: «Все» — задачи обеих площадок');
   [...D.querySelectorAll('[data-tdip]')].find(b => b.dataset.tdip === E('em.id')).click(); await wait(50);
   assert.ok(/Сторис Эма/.test(tdTxt()) && !/Пост Игоря/.test(tdTxt())); ok('«Сегодня»: выбрана площадка — только её задачи');
+  // задачи «Контента» в «Сегодня» — обычными строками с галочкой, без сворачивания
+  E(`{ const s = em.stages.find(x => /контент/i.test(x.name)); s.subs.push({ id:'tdC', name:'Видео дня', done:false, due_date:today() }); ui.tdIp = ''; commit(); }`); await wait(50);
+  { const li = [...D.querySelectorAll('.tdy-i')].find(x => /Видео дня/.test(x.textContent)); assert.ok(li && li.querySelector('input[data-tdyk]') && !D.querySelector('.tdy-ct')); ok('«Сегодня»: задача «Контента» — обычная строка с галочкой'); }
   E(`ui.tdIp = ''; ui.view = 'production'; render();`);
   assert.deepEqual(o.errors.filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);

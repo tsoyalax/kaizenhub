@@ -4734,7 +4734,7 @@ function renderToday(){
     return `<section class="panel tdy-card"><header class="tdy-h"><b>${esc(u.name)}</b><span class="tdy-pf">${dn} <small>из ${u.plan.length}</small>${u.extra.length ? ` · +${u.extra.length} сверх` : ''}</span>
       </header>
       <div class="smm-bar"><i style="width:${p2}%"></i></div>
-      <ul class="tdy-list">${u.plan.filter(i => !tdIsContent(i)).map(i => row(i, false)).join('')}${contentRow(u.plan.filter(tdIsContent), u.id)}${u.extra.filter(i => !tdIsContent(i)).map(i => row(i, true)).join('')}</ul></section>`; };
+      <ul class="tdy-list">${u.plan.map(i => row(i, false)).join('')}${u.extra.map(i => row(i, true)).join('')}</ul></section>`; };
   // «Контент» (видео) — одной строкой: сколько на сегодня и сколько сделано; список раскрывается плашками
   const contentRow = (list, uid2) => { if (!list.length) return ''; const dn = list.filter(i => f.done.has(i.k)).length; const late = list.filter(i => !f.done.has(i.k) && i.due && i.due < day).length; const open = (ui.tdCt || {})[uid2];
     return `<li class="tdy-ct${dn === list.length ? ' done' : ''}"><button type="button" class="tdy-ctb" data-tdct="${uid2}" aria-expanded="${!!open}"><span class="tdy-cti">${VIDEO_ICO}</span><b>Контент: ${list.length} ${plural(list.length, 'видео', 'видео', 'видео')}</b><small>сделано ${dn} из ${list.length}${late ? ` · <span class="tdy-late">просрочено ${late}</span>` : ''}</small><span class="tdy-car" aria-hidden="true">${open ? '▴' : '▾'}</span></button>
