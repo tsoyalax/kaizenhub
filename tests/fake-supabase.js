@@ -54,6 +54,10 @@ function makeBackend() {
         if (name === 'doc_set') { self.put(a.p_path, a.p_data); self.emit(rows.get(a.p_path)); return { data: null, error: null }; }
         if (name === 'doc_update') { const r = rows.get(a.p_path); if (!r) return { data: null, error: { code: 'P0002', message: 'nf' } }; self.put(a.p_path, { ...r.data, ...a.p_patch }); return { data: null, error: null }; }
         if (name === 'doc_delete') { rows.delete(a.p_path); for (const k of [...rows.keys()]) if (a.p_path.split('/').length === 2 && k.startsWith(a.p_path + '/')) rows.delete(k); return { data: null, error: null }; }
+        if (name === 'today_get') { const r = /^[a-z0-9]{20,40}$/.test(a.p_code) ? rows.get('today/' + a.p_code) : null; if (!r) return { data: null, error: null }; const { ownerId, ...d } = r.data; return { data: JSON.parse(JSON.stringify(d)), error: null }; }
+        if (name === 'today_tick') { const r = rows.get('today/' + a.p_code); if (!r) return { data: null, error: { code: 'P0002', message: 'link not found' } };
+          if (!(r.data.items || []).some(i => i.k === a.p_key)) return { data: null, error: { code: '42501', message: 'not in list' } };
+          const path = 'today/' + a.p_code + '/ticks/' + a.p_key.replace(/\|/g, '~'); self.put(path, { k: a.p_key, done: !!a.p_done, at: new Date().toISOString() }); self.emit(rows.get(path)); return { data: null, error: null }; }
         if (name === 'invite_get') { const r = rows.get('inv/' + a.p_code); return { data: r ? r.data : null, error: null }; }
         if (name === 'get_profiles_full') return { data: a.ids.filter(id => profiles.has(id)).map(id => ({ ...profiles.get(id) })), error: null };
         if (name === 'get_profiles') return { data: a.ids.map(id => ({ id, name: 'N-' + id.slice(0, 4), email: id.slice(0, 4) + '@x.y' })), error: null };

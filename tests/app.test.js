@@ -56,6 +56,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.equal(be.rows.size, before); ok('второе устройство не плодит лишних записей');
   assert.equal(a2.w.document.getElementById('cloudBtn').dataset.state, 'saved'); ok('второе устройство: «сохранено»');
   assert.equal(a2.errors.length, 0, a2.errors.join('\n')); ok('второе устройство: ошибок нет');
+  assert.ok(a2.w.document.querySelector('.tdy-pf-box')); ok('второе устройство: главная — «Сегодня»');
+  a2.w.document.querySelector('.tabs [data-view="matrix"]').click(); await wait(100);
   const appHtml = a2.w.document.getElementById('app').innerHTML;
   assert.ok(!appHtml.includes('class="empty">Загрузка') && appHtml.includes('class="mx"')); ok('второе устройство: проекты отрисованы из данных базы');
   a2.w.close();

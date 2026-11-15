@@ -480,6 +480,20 @@ body.selecting #app{padding-bottom:90px}
 .send-btn small{color:var(--muted);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sh-link .send-row{margin:6px 0 0}
 .st-lead{display:inline-block;font-size:12px;font-weight:600;color:var(--b);background:var(--b-bg);border-radius:6px;padding:1px 7px;margin-bottom:3px}
+.tdy-pf-box{margin-bottom:14px}.tdy-pf-box .tdy-acts{margin-left:auto}.tdy-pf small{color:var(--muted);font-size:12px}
+.tdy-sum{display:flex;gap:10px 22px;flex-wrap:wrap;align-items:center;margin-bottom:14px}.tdy-k{display:grid}.tdy-k b{font-size:24px}.tdy-k small{color:var(--muted);font-size:12.5px}
+.tdy-k b.ok,.tdy-pf b.ok,.tdy-hist .ok{color:var(--g)}.tdy-pf b.bad,.tdy-hist .bad{color:var(--r)}
+.tdy-acts{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tdy-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.tdy-card{display:flex;flex-direction:column;gap:8px;padding:14px 16px}
+.tdy-h{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.tdy-h>b{font-size:15px}.tdy-pf{color:var(--muted);font-size:13px}.tdy-share{margin-left:auto}.tdy-share.on{color:var(--g)}
+.tdy-bar{height:6px;border-radius:4px;background:var(--line);overflow:hidden}.tdy-bar i{display:block;height:100%;background:var(--g)}
+.tdy-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.tdy-i{display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:start}.tdy-i input{margin:3px 0 0;width:16px;height:16px;accent-color:var(--brand)}
+.tdy-i span{display:grid;min-width:0}.tdy-i b{font-weight:500;font-size:13.5px}.tdy-i small{color:var(--muted);font-size:12px}.tdy-i.done b{text-decoration:line-through;color:var(--muted)}
+.tdy-late{color:var(--r);font-weight:600}
+.tdy-hist{margin-top:14px;max-width:420px}.tdy-hist table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}.tdy-hist td,.tdy-hist th{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left}.tdy-hist th{color:var(--muted);font-weight:500}
+@media (max-width:640px){.tdy-grid{grid-template-columns:1fr}.tl-row{grid-template-columns:150px 1fr}.tdy-acts{margin-left:0}}
 .lead-check{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
 .lead-check input{margin-top:3px}.lead-check span{display:grid;gap:2px}.lead-check small{color:var(--muted);font-size:12.5px}
 .td-title{font-size:18px;font-weight:600;margin:0}
@@ -2276,6 +2290,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
   <div class="brand"><button class="space-name" id="spaceName" hidden title="Пространство — сменить в настройках"></button></div>
   <nav class="tabs" aria-label="Разделы">
+    <button data-view="today" id="todayTab">Сегодня</button>
     <button data-view="matrix">Матрица</button>
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
@@ -3071,7 +3086,7 @@ function markStarted(p){
   if (p.start_date !== first){ addLog(p, `Работа по проекту началась ${fmt(first)} — это дата старта`); p.start_date = first; }
   return true;
 }
-function save(){ try { stampStages(); stampTasks(); } catch(e) {} try { (db.projects || []).forEach(markStarted); } catch(e) {} db.savedAt = Date.now(); try { replanAll(); } catch(e) {} try { syncAutoShares(); } catch(e) {} try { ensureSharedTasks(); } catch(e) {} localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
+function save(){ try { todaySchedule(); } catch(e) {} try { stampStages(); stampTasks(); } catch(e) {} try { (db.projects || []).forEach(markStarted); } catch(e) {} db.savedAt = Date.now(); try { replanAll(); } catch(e) {} try { syncAutoShares(); } catch(e) {} try { ensureSharedTasks(); } catch(e) {} localSave(); if (typeof scheduleCloud === 'function') scheduleCloud(); if (typeof scheduleShared === 'function') scheduleShared(); }
 
 const userById = id => db.users.find(u => u.id === id);
 const tplById = id => db.templates.find(t => t.id === id);
@@ -3745,7 +3760,7 @@ function removeMember(u){
 // =====================================================================
 //  ФИЛЬТРЫ И СОРТИРОВКА
 // =====================================================================
-const ui = { view:'matrix', prodMode:'project', prodTpl:'t1', prodOpen:{}, q:'', pms:[], clients:[], risk:'', sort:'risk', group:'auto', kbTpl:'t1', dept:'',
+const ui = { view:'today', prodMode:'project', prodTpl:'t1', prodOpen:{}, q:'', pms:[], clients:[], risk:'', sort:'risk', group:'auto', kbTpl:'t1', dept:'',
   open:null, focusStage:null, tplSel:null, draft:null };
 const $ = s => document.querySelector(s);
 const app = $('#app'), layer = $('#layer');
@@ -3854,7 +3869,7 @@ function render(){
   renderFilters();
   const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер');
   if (!isCRM()) ui.crmStage = null;
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, priority:renderPriority, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, priority:renderPriority, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, today:renderToday, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
   if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST && !(ui.view === 'matrix' && density() === 'funnel')) app.insertAdjacentHTML('afterbegin', crmSumHtml());
   if (ui.open) renderDrawer();
@@ -4494,6 +4509,152 @@ document.addEventListener('click', e => {
   const p = projById(b.dataset.unarch); restoreProject(p); commit(); toast(`Проект «${p.name}» снова в работе`);
 });
 document.addEventListener('input', e => { if (e.target.id !== 'archQ') return; ui.archQ = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#archQ'); q?.focus(); q?.setSelectionRange(pos, pos); });
+// ---------- «Сегодня»: план / факт на день по людям + ссылка без входа + таймлайн ----------
+// План дня складывается при первом открытии за день («утром»): всё невыполненное со сроком сегодня и раньше,
+// по ответственным. Факт — что из плана выполнено, плюс сделанное сверх плана. Хранится в db.prefs.dayPlans[дата] =
+// { at, items:[{ k, who, title, where, due }], base:[ключи, уже выполненные утром] } (последние 21 день).
+// Ссылка без входа: db.prefs.todayLinks = [{ code, who, at }]; список публикуется в today/<код> (todayPublish),
+// человек отмечает задачи на /today/?c=<код> (функция базы today_tick), отметки today/<код>/ticks/* приложение
+// переносит на общую доску (dayToggle) и удаляет (todayWatch).
+const d10 = v => v ? String(v).slice(0, 10) : '';
+const tdKey = i => i.kind === 'i' ? `i|${i.id}` : i.r ? `r|${i.p.id}|${i.r.id}` : i.t ? `t|${i.t.id}` : `x|${i.p.id}|${i.s.id}|${i.x?.id || ''}`;
+const tdWhere = i => i.kind === 'i' ? 'Внутренняя задача' : `${i.p.name} · ${i.s.name}${i.r ? ' · ведение' : ''}`;
+// все задачи пространства (свои проекты и внутренние) с ключом
+function tdAll(){
+  return [...dayProjectItems('').filter(i => !i.p._ext), ...dayInternalItems('')].map(i => ({ ...i, k:tdKey(i) }));
+}
+// выполнена ли задача по ключу — даже если её этап уже закрыт и в текущих задачах её нет
+function tdDone(k){
+  const [kind, ...ids] = k.split('|');
+  if (kind === 'i') return itAll().find(x => x.id === ids[0])?.status === 'done';
+  if (kind === 'r'){ const r = projById(ids[0])?.stages.find(isMaint)?.rtasks?.find(x => x.id === ids[1]); return !!r && r.last_done === today(); }
+  if (kind === 't'){ const t = taskById(ids[0]); if (!t) return false; const p = projById(t.project_id); const s = p?.stages.find(y => y.id === t.stage_id); const x = s?.subs?.find(y => y.id === t.substage_id);
+    if (s?.status === 'done') return true; return x ? subDone(p, s, x) : taskProgress(t).done; }
+  const p = projById(ids[0]); const s = p?.stages.find(y => y.id === ids[1]); const x = s?.subs?.find(y => y.id === ids[2]);
+  return !!x && (s.status === 'done' || subDone(p, s, x));
+}
+function dayPlan(d = today(), make = true){
+  db.prefs = db.prefs || {}; const all = db.prefs.dayPlans = db.prefs.dayPlans || {};
+  if (!all[d] && make && d === today()){
+    const items = tdAll(); const t0 = today();
+    all[d] = { at:new Date().toISOString(), base:items.filter(i => i.done).map(i => i.k),
+      items:items.filter(i => !i.done && i.due && i.due <= t0).map(i => ({ k:i.k, who:i.who || '', title:i.title, where:tdWhere(i), due:i.due })) };
+    Object.keys(all).sort().slice(0, -21).forEach(x => delete all[x]);
+    save();
+  }
+  return all[d] || null;
+}
+// добавить в план всё новое со сроком сегодня (например, поставили задачу днём)
+function dayPlanRefresh(){
+  const pl = dayPlan(); const have = new Set(pl.items.map(i => i.k)); const t0 = today(); let n = 0;
+  tdAll().filter(i => !i.done && i.due && i.due <= t0 && !have.has(i.k)).forEach(i => { pl.items.push({ k:i.k, who:i.who || '', title:i.title, where:tdWhere(i), due:i.due }); n++; });
+  commit(); toast(n ? `В план добавлено: ${n}` : 'Новых задач на сегодня нет');
+}
+// факт: выполненное из плана + сделанное сегодня сверх плана
+function dayFact(pl){
+  const done = new Set(pl.items.filter(i => tdDone(i.k)).map(i => i.k));
+  const inPlan = new Set(pl.items.map(i => i.k)), base = new Set(pl.base || []);
+  const extra = tdAll().filter(i => i.done && !inPlan.has(i.k) && !base.has(i.k));
+  return { done, extra };
+}
+const tdPeople = () => [...db.users.map(u => ({ id:u.id, name:u.id === ME ? `${u.name || 'Вы'} (вы)` : (u.name || 'Без имени') })), { id:'', name:'Без ответственного' }];
+function renderToday(){
+  // день: сегодня или один из прошлых (‹ ›) — план того утра и что из него сделано
+  const t0 = today(); const days = Object.keys(db.prefs?.dayPlans || {}).filter(k => k <= t0).sort();
+  dayPlan(); const day = ui.tdDay && days.includes(ui.tdDay) ? ui.tdDay : t0; const isToday = day === t0;
+  const pl = isToday ? dayPlan() : db.prefs.dayPlans[day]; const f = isToday ? dayFact(pl) : { done:new Set(pl.items.filter(i => tdDone(i.k)).map(i => i.k)), extra:[] };
+  const total = pl.items.length, doneN = pl.items.filter(i => f.done.has(i.k)).length, left = total - doneN;
+  const evening = new Date().getHours() >= 18; const pct = total ? Math.min(100, Math.round(doneN / total * 100)) : 100;
+  const di = days.indexOf(day);
+  const title = parse(day).toLocaleDateString('ru-RU', { weekday:'long', day:'numeric', month:'long' });
+  const pace = !total ? 'задач на день нет' : !left ? 'план выполнен' : !isToday ? `не сделано ${left}` : evening ? `не успели ${left}` : `осталось ${left}`;
+  const links = db.prefs.todayLinks || [];
+  const people = tdPeople().map(u => ({ ...u, plan:pl.items.filter(i => (i.who || '') === u.id), extra:f.extra.filter(i => (i.who || '') === u.id) })).filter(u => u.plan.length || u.extra.length);
+  const row = (i, extra) => { const dn = extra || f.done.has(i.k); const late = !dn && i.due && i.due < day;
+    return `<li class="tdy-i${dn ? ' done' : ''}"><input type="checkbox" data-tdyk="${esc(i.k)}" ${dn ? 'checked' : ''} aria-label="Выполнено: ${esc(i.title)}">
+      <span><b>${esc(i.title)}</b><small>${esc(extra ? tdWhere(i) : i.where)}${late ? ` · <span class="tdy-late">просрочено с ${fmt(i.due)}</span>` : ''}${extra ? ' · сверх плана' : ''}</small></span></li>`; };
+  const card = u => { const dn = u.plan.filter(i => f.done.has(i.k)).length; const p2 = u.plan.length ? Math.round(dn / u.plan.length * 100) : 100; const ln = links.find(l => l.who === u.id);
+    return `<section class="panel tdy-card"><header class="tdy-h"><b>${esc(u.name)}</b><span class="tdy-pf">${dn} <small>из ${u.plan.length}</small>${u.extra.length ? ` · +${u.extra.length} сверх` : ''}</span>
+      ${u.id !== '' && isToday ? `<button class="ghost tdy-share${ln ? ' on' : ''}" data-tdyshare="${u.id}" title="Ссылка без входа: человек отмечает задачи, отметки попадают на общую доску">${ln ? 'Ссылка открыта' : 'Поделиться'}</button>` : ''}</header>
+      <div class="smm-bar"><i style="width:${p2}%"></i></div>
+      <ul class="tdy-list">${u.plan.map(i => row(i, false)).join('')}${u.extra.map(i => row(i, true)).join('')}</ul></section>`; };
+  app.innerHTML = `<section class="smm-pf tdy-pf-box" aria-label="План и факт на день">
+    <div class="smm-hd"><h2>План / Факт</h2>
+      <span class="smm-m"><button class="icon-btn" data-tdday="-1" ${di > 0 ? '' : 'disabled'} aria-label="Предыдущий день">‹</button><b>${isToday ? 'Сегодня, ' : ''}${esc(title)}</b><button class="icon-btn" data-tdday="1" ${!isToday ? '' : 'disabled'} aria-label="Следующий день">›</button></span>
+      ${isToday ? `<span class="tdy-acts"><button class="ghost" data-tdyrefresh>Добавить новые на сегодня</button><button class="ghost" data-tdyshare="*">${links.some(l => l.who === '*') ? 'Ссылка на весь план' : 'Поделиться всем планом'}</button></span>` : ''}</div>
+    <div class="smm-kpi">
+      <div><b>${total}</b><small>План${isToday ? ` · сложился в ${new Date(pl.at).toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' })}` : ''}</small></div>
+      <div><b>${doneN} <small>из ${total}</small></b><small>Факт: сделано${pace ? ' · ' + pace : ''}</small></div>
+      <div><b>${f.extra.length}</b><small>Сверх плана</small></div>
+      <div><b>${left}</b><small>${isToday ? 'Осталось сделать' : 'Не сделано'}</small></div>
+    </div>
+    <div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>
+    ${people.length ? `<table class="smm-wk"><thead><tr><th>Кто</th><th>План</th><th>Факт: сделано</th><th>Сверх плана</th><th>Осталось</th></tr></thead><tbody>
+      ${people.map(u => { const dn = u.plan.filter(i => f.done.has(i.k)).length; return `<tr><td>${esc(u.name)}</td><td>${u.plan.length}</td><td>${dn} <small class="hint">из ${u.plan.length}</small></td><td>${u.extra.length}</td><td class="${u.plan.length - dn && (evening || !isToday) ? 'tdy-late' : ''}">${u.plan.length - dn}</td></tr>`; }).join('')}
+    </tbody></table>` : ''}</section>
+    ${people.length ? `<div class="tdy-grid">${people.map(card).join('')}</div>` : `<div class="empty">${isToday ? 'На сегодня задач со сроком нет. Поставьте сроки подзадачам в «Поручениях» или в карточках — и они появятся здесь.' : 'В этот день плана не было.'}</div>`}`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-tdday]'); if (!b || ui.view !== 'today') return;
+  const days = Object.keys(db.prefs?.dayPlans || {}).filter(k => k <= today()).sort(); const cur = ui.tdDay && days.includes(ui.tdDay) ? ui.tdDay : today();
+  const i = days.indexOf(cur) + +b.dataset.tdday; ui.tdDay = days[Math.max(0, Math.min(days.length - 1, i))]; render();
+});
+// ссылка без входа
+async function todayShare(who){
+  if (!cloud.store || !cloud.uid){ toast('Ссылки работают, когда вы вошли в аккаунт'); return; }
+  db.prefs.todayLinks = db.prefs.todayLinks || [];
+  let ln = db.prefs.todayLinks.find(l => l.who === who);
+  if (!ln){ ln = { code:newCode() + newCode(), who, at:new Date().toISOString() }; db.prefs.todayLinks.push(ln); commit(); await todayPublish(true); todayWatch(); }
+  const url = `${location.origin}/today/?c=${ln.code}`; const nm = who === '*' ? 'весь план' : nameOf(who);
+  layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal" role="dialog" aria-modal="true" aria-labelledby="tdyT">
+    <h2 id="tdyT">«Сегодня»: ${esc(nm)}</h2>
+    <p class="lead">Ссылка открывается без входа и без аккаунта: человек видит ${who === '*' ? 'план на сегодня всей команды' : 'свои задачи на сегодня'} и ставит галочки. Отметки сразу попадают на общую доску — в «Производство» и задачи проектов.</p>
+    <div class="row"><input readonly id="tdyUrl" value="${esc(url)}" aria-label="Ссылка" style="flex:1;min-width:0;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px"><button class="primary" id="tdyCopy">Копировать</button></div>
+    ${sendLinkHtml(url, who !== '*' ? userById(who)?.email || '' : '', who !== '*' ? nameOf(who) : '')}
+    <p class="hint">Ссылка постоянная: каждый день в ней план этого дня. Кто получит ссылку — сможет отмечать эти задачи, поэтому пересылайте только своим. Закрыть — кнопкой ниже.</p>
+    <div class="actions"><button class="ghost danger" id="tdyOff">Закрыть ссылку</button><button class="ghost" data-close>Готово</button></div></div>`;
+  $('#tdyCopy').onclick = async () => toast(await copyText(url) ? 'Ссылка скопирована' : 'Не удалось скопировать');
+  $('#tdyOff').onclick = async () => {
+    try { const t = await cloud.store.collection(`today/${ln.code}/ticks`).get(); for (const d of t.docs) await cloud.store.doc(`today/${ln.code}/ticks/${d.id}`).delete();
+      await cloud.store.doc(`today/${ln.code}`).delete(); } catch(e) {}
+    db.prefs.todayLinks = db.prefs.todayLinks.filter(l => l !== ln); shared.subs.get('__today:' + ln.code)?.forEach(f => f()); shared.subs.delete('__today:' + ln.code);
+    layer.innerHTML = ''; commit(); toast('Ссылка закрыта');
+  };
+}
+// опубликовать списки по открытым ссылкам (после каждого сохранения, не чаще раза в 1.5 с)
+let tdPubTimer = null, tdPubHash = {};
+function todaySchedule(){ if (!(db.prefs?.todayLinks || []).length || !cloud.store || !cloud.uid || GUEST) return; clearTimeout(tdPubTimer); tdPubTimer = setTimeout(() => todayPublish(), 1500); }
+async function todayPublish(force){
+  if (!cloud.store || !cloud.uid) return; const pl = dayPlan(); const f = dayFact(pl);
+  for (const ln of db.prefs.todayLinks || []){
+    const mine = ln.who === '*' ? pl.items : pl.items.filter(i => (i.who || '') === ln.who);
+    const extra = (ln.who === '*' ? f.extra : f.extra.filter(i => (i.who || '') === ln.who)).map(i => ({ k:i.k, title:i.title, where:tdWhere(i), due:i.due || '', done:true, who:nameOf(i.who), extra:true }));
+    const body = { ownerId:cloud.uid, who:ln.who, name:ln.who === '*' ? 'Вся команда' : nameOf(ln.who), space:spaceName(), date:today(),
+      items:[...mine.map(i => ({ k:i.k, title:i.title, where:i.where, due:i.due || '', done:f.done.has(i.k), who:nameOf(i.who) })), ...extra] };
+    const h = JSON.stringify(body); if (!force && tdPubHash[ln.code] === h) continue;
+    try { await cloud.store.doc(`today/${ln.code}`).set({ ...body, at:new Date().toISOString() }); tdPubHash[ln.code] = h; } catch(e) {}
+  }
+}
+// отметки по ссылке → общая доска
+function todayWatch(){
+  if (!cloud.store || !cloud.uid || GUEST) return;
+  (db.prefs?.todayLinks || []).forEach(ln => {
+    if (shared.subs.has('__today:' + ln.code)) return;
+    shared.subs.set('__today:' + ln.code, [cloud.store.collection(`today/${ln.code}/ticks`).onSnapshot(snap => {
+      let n = 0;
+      snap.docs.forEach(d => { const t = d.data() || {}; if (!t.k) return;
+        if (tdDone(t.k) !== !!t.done){ dayToggle(t.k, !!t.done); n++; }
+        cloud.store.doc(`today/${ln.code}/ticks/${d.id}`).delete().catch(() => {}); });
+      if (n){ toast(`По ссылке «Сегодня» отмечено задач: ${n}`); todaySchedule(); }
+    }, () => {})]);
+  });
+}
+document.addEventListener('change', e => { const k = e.target.dataset?.tdyk; if (!k) return; dayToggle(k, e.target.checked); todaySchedule(); });
+document.addEventListener('click', e => {
+  if (ui.view !== 'today') return;
+  if (e.target.closest?.('[data-tdyrefresh]')){ dayPlanRefresh(); return; }
+  const sh = e.target.closest?.('[data-tdyshare]'); if (sh){ todayShare(sh.dataset.tdyshare); }
+});
 // ---------- Производство на телефоне: лента проектов + этапы сверху вниз ----------
 function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage, curSub }){
   const key = mine ? 'myProject' : 'prodProject';
@@ -7675,7 +7836,11 @@ function renderTodo(who){
 // галочка «выполнено»: внутренняя — статус «Готово»; карточка — все пункты чек-листа; подэтап — отметка подэтапа
 document.addEventListener('change', e => {
   const k = e.target.dataset?.tddone; if (!k) return;
-  const on = e.target.checked; const [kind, ...ids] = k.split('|');
+  dayToggle(k, e.target.checked);
+});
+// ключ задачи: i|<внутренняя>, r|<проект>|<регулярная ведения>, t|<карточка>, x|<проект>|<этап>|<подэтап>
+function dayToggle(k, on){
+  const [kind, ...ids] = k.split('|');
   if (kind === 'r'){ const p = projById(ids[0]); const r = p?.stages.find(isMaint)?.rtasks?.find(x => x.id === ids[1]); if (r && on) completeRtask(p, r); else render(); return; }
   if (kind === 'i'){ const t = itAll().find(x => x.id === ids[0]); if (!t) return; itSave({ ...t, status:on ? 'done' : 'todo' }); render(); if (on) toast(`«${t.title}» — готово`); return; }
   if (kind === 't'){
@@ -7686,7 +7851,7 @@ document.addEventListener('change', e => {
     const x = s?.subs?.find(y => y.id === t.substage_id); if (x) toggleSub(p, s, x, on); return;
   }
   const p = projById(ids[0]); const s = p?.stages.find(y => y.id === ids[1]); const x = s?.subs?.find(y => y.id === ids[2]); if (x) toggleSub(p, s, x, on);
-});
+}
 document.addEventListener('click', e => {
   const o = e.target.closest?.('[data-tdopen]'); if (!o) return;
   const [kind, ...ids] = o.dataset.tdopen.split('|');
@@ -9223,7 +9388,7 @@ async function initCloud(){
       if (areas?.docs?.length){ const first = (await areaOrgs(areas.docs.map(d => d.data() || {})))[0]; if (first){ switchOrg(first.id); return; } }
     }
     cloud.col = store.collection(ORG ? spacePath(ORG, ORGSP) : spacePath(id, SPACE));
-    watchSpaces();
+    watchSpaces(); setTimeout(() => { try { todayWatch(); todaySchedule(); } catch(e) {} }, 0);
     cloud.col.onSnapshot(onCloudSnapshot, err => setCloudStatus('error', err?.code === 'revoked' ? 'Доступ к хранилищу отозван' : 'Нет связи с хранилищем аккаунта. Данные сохраняются в браузере.'));
   } catch(e) { setCloudStatus('local'); if (!GUEST){ setMode('owner'); bootOwner(); } }
 }
@@ -9933,6 +10098,7 @@ const MNAV = {
   matrix:['Матрица', MI('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>')],
   kanban:['Канбан', MI('<rect x="3" y="3" width="5" height="15" rx="1.5"/><rect x="10" y="3" width="5" height="10" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/>')],
   production:['Произв.', MI('<path d="M3 12h4l3-8 4 16 3-8h4"/>')],
+  today:['Сегодня', MI('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')],
   priority:['Приоритеты', MI('<path d="M12 3v12"/><path d="M12 20v.5"/><path d="M5 9l7-6 7 6"/>')],
   funnel:['AI-воронка', MI('<path d="M3 4h18l-7 8.5V19l-4 2v-7.5Z"/><path d="M18 2.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6Z"/>')],
   content:['Контент', MI('<rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3"/>')],
