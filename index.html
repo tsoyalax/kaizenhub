@@ -2756,12 +2756,13 @@ function renderContentBody(){
         <label class="ct-f grow"><span>Название</span><input id="ctName" placeholder="Например, Рилс" required></label>
         <label class="ct-f"><span>Сколько</span><input type="number" id="ctN" min="1" max="200" value="1"></label>
         <label class="ct-f"><span>Старт</span><input type="date" id="ctStart" value="${c && today() > cycleEnd(c) ? today() : (c || today())}"></label>
+        <label class="ct-f"><span>Конец</span><input type="date" id="ctUntil" value=""></label>
       </div>
       <div class="ct-add-row">
         <label class="ct-sw"><input type="checkbox" id="ctExtra" ${ui.ctExtra ? 'checked' : ''}><i aria-hidden="true"></i><span>Доп. контент <small>вне плана, считается отдельно</small></span></label>
         <button class="primary">Добавить</button>
       </div>
-      <small class="hint">Несколько видео распределятся поровну на 4 недели от даты старта.</small></form>`;
+      <small class="hint">Видео распределятся поровну между стартом и концом (без конца — на 4 недели от старта).</small></form>`;
   if (!c){ app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2></div><p class="hint">Видео пока нет. Добавьте первые — например, 12 роликов на месяц.</p>${addForm}`; return; }
   const st = ctStats(c); const pct = st.plan ? Math.min(100, Math.round(st.pub / st.plan * 100)) : 0;
   const t = today(); const live = t >= c && t <= cycleEnd(c); const nowW = live ? weekOfDate(c, t) : 0;
@@ -2790,8 +2791,9 @@ function renderContentBody(){
     ${ui.ctEdit === c ? `<form class="smm-ed ct-kpi-ed" id="ctEd">
       <label class="ct-f"><span>Сколько видео нужно за цикл (${cycleRange(c)})</span><input type="number" id="ctTotal" min="0" max="999" value="${st.plan || ''}" placeholder="например, 20"></label>
       <small class="hint">Разобьётся на 4 недели поровну: ${splitPlan(st.plan || 0).join(' / ')}</small>
-      <label class="ct-f"><span>Весь контент закончить к</span><input type="date" id="ctEndD" min="${c}" max="${cycleEnd(c)}" value="${infoBoard()?.ctEnd?.[c] || ''}"></label>
-      <small class="hint">Даты публикации невыполненных видео расставятся сами — равномерно от сегодня (или старта) до этой даты.</small>
+      <div class="ct-add-row"><label class="ct-f"><span>Дата старта</span><input type="date" id="ctStartD" value="${c}"></label>
+      <label class="ct-f"><span>Дата конца</span><input type="date" id="ctEndD" value="${infoBoard()?.ctEnd?.[c] || ''}"></label></div>
+      <small class="hint">Даты публикации невыполненных видео расставятся сами — поровну от старта (или сегодня) до даты конца.</small>
       <span class="smm-ed-act"><button type="button" class="ghost" data-cteditcancel>Отмена</button><button class="primary">Сохранить</button></span></form>` : ''}
     <div class="smm-kpi">
       <div><b>${st.plan}</b><small>План${st.kpi && !st.ownWeeks ? ` · KPI ${st.kpi} в неделю` : st.ownWeeks ? ' · по неделям' : ''}</small></div>
@@ -2846,7 +2848,7 @@ function ctSpread(c){
   list.forEach((x, i) => { x.due_date = list.length === 1 ? end : addDays(from, Math.round(i * span / (list.length - 1))); });
   return list.length;
 }
-function addContent(name, n, start, extra = false){
+function addContent(name, n, start, extra = false, until = ''){
   const p = infoBoard(); const s = contentStage(p); if (!p || !s || !name) return;
   const c = ctCycles().filter(x => start >= x && start <= cycleEnd(x)).at(-1) || start;
   const w0 = weekOfDate(c, start); let k = 0;                     // поровну на недели от недели старта до конца цикла
@@ -2856,18 +2858,25 @@ function addContent(name, n, start, extra = false){
     (s.subs = s.subs || []).push({ id:uid(), name:n > 1 ? `${name} ${k}` : name, done:false, cycle:c, due_date:due, ...(extra ? { extra:true } : {}) });
   } });
   addLog(p, `Контент: добавлено ${n} ${plural(n, 'видео', 'видео', 'видео')}${extra ? ' (доп. контент)' : ''} в «${s.name}»`);
-  if (!extra && p.ctEnd?.[c]) ctSpread(c);                       // задан «закончить к» — новые видео встают в общий график
+  if (until && until >= start){ const fresh = s.subs.slice(-n); const span = diffDays(until, start);   // конец задан — новые видео поровну от старта до конца
+    fresh.forEach((x, i) => { x.due_date = n === 1 ? until : addDays(start, Math.round(i * span / (n - 1))); }); }
+  else if (!extra && p.ctEnd?.[c]) ctSpread(c);                  // задан «закончить к» у цикла — новые видео встают в общий график
   ui.ctCycle = c; commit();
 }
 document.addEventListener('submit', e => {
   if (e.target.id === 'ctAdd'){ e.preventDefault();
-    const n = Math.max(1, Math.min(200, +$('#ctN').value || 1)); addContent($('#ctName').value.trim(), n, $('#ctStart').value || today(), $('#ctExtra')?.checked); ui.ctExtra = false; return; }
+    const n = Math.max(1, Math.min(200, +$('#ctN').value || 1)); addContent($('#ctName').value.trim(), n, $('#ctStart').value || today(), $('#ctExtra')?.checked, $('#ctUntil')?.value || ''); ui.ctExtra = false; return; }
   if (e.target.id === 'ctEd'){ e.preventDefault(); const c = ctCur();
     const b = infoBoard(); if (!b){ ui.ctEdit = null; render(); return; }
     // KPI — одно число на цикл, сам делится на 4 недели поровну (45 → 12/11/11/11)
     const n = Math.max(0, Math.min(999, +$('#ctTotal').value || 0)); const ws = splitPlan(n);
     b.ctWeeks = { ...(b.ctWeeks || {}), [c]:ws }; b.weekKpi = null;
-    const end = $('#ctEndD')?.value; if (end){ b.ctEnd = { ...(b.ctEnd || {}), [c]:end > cycleEnd(c) ? cycleEnd(c) : end }; ctSpread(c); }
+    // дата старта сдвинута — цикл переезжает на новую дату (видео, KPI и конец — вместе с ним)
+    let cc = c; const ns = $('#ctStartD')?.value;
+    if (ns && ns !== c){ const st2 = contentStage(b); (st2?.subs || []).forEach(x => { if (x.cycle === c) x.cycle = ns; });
+      const mv = o => { if (!o || !(c in o)) return o; const r = { ...o, [ns]:o[c] }; delete r[c]; return r; };
+      b.ctWeeks = mv(b.ctWeeks); b.ctEnd = mv(b.ctEnd); cc = ns; ui.ctCycle = ns; }
+    const end = $('#ctEndD')?.value; if (end && end >= cc){ b.ctEnd = { ...(b.ctEnd || {}), [cc]:end }; ctSpread(cc); }
     addLog(b, `Контент: KPI цикла ${cycleRange(c)} — ${n} (по неделям ${ws.join(' / ')})`);
     ui.ctEdit = null; commit(); }
 });

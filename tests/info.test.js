@@ -45,6 +45,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   E(`ui.ctEdit = ctCur(); render()`); { const end = E('addDays(cycleEnd(ctCur()), -7)'); D.getElementById('ctEndD').value = end; D.getElementById('ctEd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
     const ds = E(`JSON.stringify(contentStage().subs.filter(x => x.cycle === ctCur() && !x.done && !x.extra).map(x => x.due_date))`);
     assert.ok(JSON.parse(ds).every(d => d <= end) && /закончить к/.test(D.getElementById('app').textContent)); ok('«Закончить к»: даты видео расставлены до этой даты'); }
+  E(`addContent('Пачка', 3, today(), false, addDays(today(), 6))`);
+  assert.deepEqual(JSON.parse(E(`JSON.stringify(contentStage().subs.filter(x => /^Пачка/.test(x.name)).map(x => x.due_date))`)), [E('today()'), E('addDays(today(), 3)'), E('addDays(today(), 6)')]); ok('новые видео: старт и конец — даты поровну между ними');
   E(`ui.view = 'production'; render()`);
   assert.equal(D.querySelectorAll('.pf-card.done').length, 1); ok('на доске карточка тоже отмечена');
   // доска видео в «Контенте»: колонки SMM, «Опубликовано» = отметка на основной доске
