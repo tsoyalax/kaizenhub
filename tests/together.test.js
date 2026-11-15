@@ -54,6 +54,24 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   [...D.querySelectorAll('[data-tgp]')].find(b => /Эма/.test(b.textContent)).click(); await wait(50);
   [...D.querySelectorAll('.tg-task')].find(b => /Старт/.test(b.textContent)).click(); await wait(100);
   assert.ok(E('ui.taskId') && E(`taskById(ui.taskId).project_id`) === E('em.id')); ok('клик по задаче Эма открывает её карточку');
+  E(`layer.innerHTML = ''; ui.taskId = null; ui.infoMode = 'board'; ui.prodProject = ig.id; render();`); await wait(50);
+  // ключевые даты вместо расчётного финиша
+  assert.ok(!/финиш/.test($('.pf-head small').textContent) && $('[data-kdadd]')); ok('у инфоповода нет расчётного финиша, есть «+ Ключевая дата»');
+  $('[data-kdadd]').click(); await wait(30); let f = $('[data-kdform]'); f.elements.namedItem('kdd').value = E('addDays(T, 3)'); f.elements.namedItem('kdn').value = 'Эфир Игоря'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(50);
+  assert.ok(/Эфир Игоря/.test($('.kd-row').textContent) && E('ig.keyDates.length') === 1); ok('ключевая дата вписывается в инфоповод');
+  E(`ui.prodProject = em.id; render();`); await wait(30); assert.ok(!/Эфир Игоря/.test($('.kd-row').textContent)); ok('у каждого инфоповода свои ключевые даты');
+  $('[data-kdadd]').click(); await wait(30); f = $('[data-kdform]'); f.elements.namedItem('kdd').value = E('addDays(T, 4)'); f.elements.namedItem('kdn').value = 'Старт челленджа'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(50);
+  E(`ui.infoMode = 'timeline'; render();`); await wait(30); assert.ok($('.tl-key') && /Старт челленджа/.test($('.tl-key').textContent)); ok('на таймлайне ключевая дата — красная линия');
+  E(`ui.infoMode = 'together'; render();`); await wait(30); assert.equal(D.querySelectorAll('.tl-key').length, 2); ok('во «Вместе» — ключевые даты обоих инфоповодов');
+  E(`ui.infoMode = 'board'; render();`); await wait(30); $('[data-kddel]').click(); await wait(30); assert.equal(E('em.keyDates.length'), 0); ok('ключевую дату можно удалить');
+  // столбики доски: переименовать, удалить, добавить — только в этом инфоповоде
+  $('[data-pfsren]').click(); await wait(30); f = $('[data-pfrenf]'); f.querySelector('input').value = 'Продукт и оффер'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
+  E(`syncAllTemplates(INFO_TPL_ID); render();`); await wait(30);
+  assert.ok(E(`em.stages[0].name`) === 'Продукт и оффер' && E(`ig.stages[0].name`) === 'Продукт'); ok('столбик переименовывается и не возвращается шаблоном; у другого инфоповода прежний');
+  $('[data-pfscol]').click(); await wait(30); f = $('[data-pfrenf]'); f.querySelector('input').value = 'Монтаж'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
+  assert.ok(E(`em.stages.some(s => s.name === 'Монтаж')`) && !E(`ig.stages.some(s => s.name === 'Монтаж')`)); ok('новый столбик добавляется');
+  D.querySelector(`[data-pfsdel="${E(`em.stages.find(s => s.name === 'Монтаж').id`)}"]`).click(); await wait(30); $('#cfmOk').click(); await wait(80);
+  E(`syncAllTemplates(INFO_TPL_ID);`); assert.ok(!E(`em.stages.some(s => s.name === 'Монтаж')`)); ok('лишний столбик удаляется');
   assert.deepEqual(o.errors.filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });

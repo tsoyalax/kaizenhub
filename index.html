@@ -1327,6 +1327,20 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .tg-n{display:flex;gap:6px;align-items:center}
 .tg-lane{border-left:3px solid var(--bc)}
 .tg .tg-task i{background:var(--bc)!important;border-color:var(--surface)!important;box-shadow:0 0 0 1px var(--bc)}.tg .tg-task.k-red i{box-shadow:0 0 0 2px var(--r)}.tg .tg-task.k-yellow i{box-shadow:0 0 0 2px var(--y)}.tg .tg-task.k-done{opacity:.45}.tg-task small{color:var(--muted);font-size:11px}
+.pf-col header>div{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pf-coltools{margin-left:auto;display:inline-flex;gap:2px;opacity:.55}.pf-col:hover .pf-coltools,.pf-coltools:focus-within{opacity:1}
+.pf-coltools button{width:26px;height:26px;display:grid;place-items:center;border:0;background:none;color:var(--muted);border-radius:7px;cursor:pointer;padding:0}
+.pf-coltools button:hover{background:var(--surface-2);color:var(--ink)}.pf-coltools svg{width:14px;height:14px}
+.pf-ren{flex:1;min-width:0}.pf-ren input{width:100%;height:30px;border:1px solid var(--brand);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-weight:600;padding:0 8px}
+.pf-coladd{flex:none;min-width:150px;align-self:flex-start;min-height:90px}
+.kd-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.kd-chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 4px 0 10px;border-radius:999px;background:var(--r-bg,#FFECEC);color:var(--r);font-size:12.5px}
+.kd-chip b{font-weight:700}.kd-chip.past{opacity:.55}
+.kd-chip button{width:22px;height:22px;border:0;background:none;color:inherit;border-radius:50%;cursor:pointer;font-size:15px;line-height:1}.kd-chip button:hover{background:color-mix(in srgb,var(--r) 15%,transparent)}
+.kd-add{height:28px;padding:0 10px;font-size:12.5px}
+.kd-form{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.kd-form input{height:30px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;padding:0 8px}.kd-form input[name=kdn]{min-width:200px}
+.kd-form button{height:30px;padding:0 12px;font-size:13px}
+.tl-key span{z-index:3}
 .tl{display:grid;grid-template-columns:170px minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .tl-lbls{border-right:1px solid var(--line)}
 .tl-lbl{box-sizing:border-box;display:grid;align-content:center;gap:4px;padding:0 12px;border-top:1px solid var(--line);font-size:13px;overflow:hidden}
@@ -4683,6 +4697,58 @@ document.addEventListener('click', e => {
   if (e.target.closest?.('[data-tdyrefresh]')){ dayPlanRefresh(); return; }
   const sh = e.target.closest?.('[data-tdyshare]'); if (sh){ todayShare(sh.dataset.tdyshare); }
 });
+// ---------- Столбики доски «Производства»: переименовать, удалить, добавить (только в этой доске/проекте) ----------
+// Переименованный столбик отвязывается от шаблона (иначе синхронизация вернула бы старое название): p.tplSkip + custom.
+const pfProj = () => projById(ui[ui.view === 'mine' ? 'myProject' : 'prodProject']);
+function renameStage(p, s, name){
+  const v = String(name || '').trim().slice(0, 60); if (!v || v === s.name) return false;
+  if (p.stages.some(x => x !== s && norm(x.name) === norm(v))){ toast('Столбик с таким названием уже есть'); return false; }
+  if (s.tsid){ p.tplSkip = [...new Set([...(p.tplSkip || []), s.tsid])]; delete s.tsid; }
+  s.custom = true; addLog(p, `Столбик «${s.name}» переименован в «${v}»`); s.name = v; commit(); return true;
+}
+document.addEventListener('click', e => {
+  if (ui.view !== 'production') return;
+  const r = e.target.closest?.('[data-pfsren]'); if (r){ e.stopPropagation(); ui.pfRen = r.dataset.pfsren; render(); const i = app.querySelector('[data-pfrenf] input'); i?.focus(); i?.select(); return; }
+  const d = e.target.closest?.('[data-pfsdel]');
+  if (d){ e.stopPropagation(); const p = pfProj(); const s = p?.stages.find(x => x.id === d.dataset.pfsdel); if (!s) return;
+    const n = (s.subs || []).length;
+    askConfirm({ title:`Удалить столбик «${s.name}»?`, text:n ? `В нём ${n} ${plural(n, 'задача', 'задачи', 'задач')} — они удалятся вместе со столбиком. Только в этой доске, шаблон не меняется.` : 'Столбик пустой. Удалится только в этой доске, шаблон не меняется.', ok:'Удалить' })
+      .then(yes => { if (!yes) return; db.tasks = (db.tasks || []).filter(t => !(t.project_id === p.id && t.stage_id === s.id)); removeStage(p, s); toast(`Столбик «${s.name}» удалён`); });
+    return; }
+  if (e.target.closest?.('[data-pfscol]')){ const p = pfProj(); if (!p) return; const s = addStage(p); ui.pfRen = s.id; render(); const i = app.querySelector('[data-pfrenf] input'); i?.focus(); i?.select(); }
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest?.('[data-pfrenf]'); if (!f) return; e.preventDefault();
+  const p = pfProj(); const s = p?.stages.find(x => x.id === f.dataset.pfrenf); ui.pfRen = null;
+  if (s && !renameStage(p, s, f.querySelector('input').value)) render();
+});
+document.addEventListener('focusout', e => {
+  const f = e.target.closest?.('[data-pfrenf]'); if (!f || ui.pfRen !== f.dataset.pfrenf) return;
+  setTimeout(() => { if (ui.pfRen === f.dataset.pfrenf){ const p = pfProj(); const s = p?.stages.find(x => x.id === f.dataset.pfrenf); ui.pfRen = null; if (!s || !renameStage(p, s, f.querySelector('input').value)) render(); } }, 120);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.pfRen){ ui.pfRen = null; render(); } });
+// ---------- Ключевые даты инфоповода: p.keyDates = [{ id, d, name }] — вместо расчётного финиша ----------
+// Вписываются в шапке доски инфоповода («+ Ключевая дата»), удаляются крестиком; на таймлайнах — красные линии.
+const kdList = p => (p?.keyDates || []).slice().sort((a, b) => a.d.localeCompare(b.d));
+function kdHtml(p){
+  const t0 = today(); const open = ui.kdOpen === p.id;
+  return `<div class="kd-row" aria-label="Ключевые даты">${kdList(p).map(k => `<span class="kd-chip${k.d < t0 ? ' past' : ''}"><b>${fmt(k.d)}</b> ${esc(k.name)}<button type="button" data-kddel="${p.id}|${k.id}" aria-label="Удалить ключевую дату «${esc(k.name)}»" title="Удалить">×</button></span>`).join('')}
+    ${open ? `<form class="kd-form" data-kdform="${p.id}"><input type="date" name="kdd" value="${t0}" aria-label="Дата" required><input name="kdn" placeholder="Например, старт челленджа" maxlength="80" aria-label="Что за дата" required><button class="primary">Добавить</button><button type="button" class="ghost" data-kdcancel>Отмена</button></form>`
+      : `<button type="button" class="ghost kd-add" data-kdadd="${p.id}">+ Ключевая дата</button>`}</div>`;
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest?.('[data-kdadd]'); if (a){ ui.kdOpen = a.dataset.kdadd; render(); app.querySelector('[data-kdform] [name=kdn]')?.focus(); return; }
+  if (e.target.closest?.('[data-kdcancel]')){ ui.kdOpen = null; render(); return; }
+  const d = e.target.closest?.('[data-kddel]'); if (d){ const [pid, id] = d.dataset.kddel.split('|'); const p = projById(pid); const k = (p?.keyDates || []).find(x => x.id === id); if (!k) return;
+    p.keyDates = p.keyDates.filter(x => x !== k); addLog(p, `Ключевая дата «${k.name}» (${fmt(k.d)}) удалена`); commit(); }
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest?.('[data-kdform]'); if (!f) return; e.preventDefault();
+  const p = projById(f.dataset.kdform); const d = f.elements.namedItem('kdd').value, name = f.elements.namedItem('kdn').value.trim();
+  if (!p || !d || !name){ toast('Укажите дату и что это'); return; }
+  (p.keyDates = p.keyDates || []).push({ id:uid(), d, name:name.slice(0, 80) }); ui.kdOpen = null;
+  addLog(p, `Ключевая дата: ${fmt(d)} — ${name}`); commit(); toast(`Ключевая дата добавлена: ${fmt(d)}`);
+});
 // ---------- Производство на телефоне: лента проектов + этапы сверху вниз ----------
 function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage, curSub }){
   const key = mine ? 'myProject' : 'prodProject';
@@ -4706,7 +4772,8 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}</button>`;
     }).join('');
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" data-pmcol="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
-      <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
+      <header><div>${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`}${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}
+        ${canEdit && !mine && !GUEST && !isMaint(s) && ui.pfRen !== s.id ? `<span class="pf-coltools"><button type="button" data-pfsren="${s.id}" title="Переименовать столбик" aria-label="Переименовать столбик «${esc(s.name)}»">${ICON_EDIT}</button>${p.stages.filter(x => !isMaint(x)).length > 1 ? `<button type="button" data-pfsdel="${s.id}" title="Удалить столбик" aria-label="Удалить столбик «${esc(s.name)}»">${ICON_X}</button>` : ''}</span>` : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
       ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}${stageSubmitBox(p, s, mine)}
@@ -4720,7 +4787,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
         <span class="pm-cnt">${idx + 1}/${list.length}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
       <div class="pm-nav">
         <button class="icon-btn" ${prev ? `data-pfsel="${prev.id}"` : 'disabled'} aria-label="Предыдущий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
-        <small class="pm-meta">${mine ? `Ваша роль: ${ROLE_RU[role].toLowerCase()}` : `${p.client ? `${esc(p.client)} · ` : ''}PM ${esc(short(p.pm_id))} · финиш ${fmt(plannedEnd(p))}`}</small>
+        <small class="pm-meta">${mine ? `Ваша роль: ${ROLE_RU[role].toLowerCase()}` : `${p.client ? `${esc(p.client)} · ` : ''}PM ${esc(short(p.pm_id))}${isInfoBoardP(p) ? '' : ` · финиш ${fmt(plannedEnd(p))}`}`}</small>${!mine && isInfoBoardP(p) && !GUEST ? kdHtml(p) : ''}
         ${!mine ? `<button class="icon-btn" data-open="${p.id}" aria-label="Карточка проекта" title="Карточка проекта"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/></svg></button>
         <button class="icon-btn pf-sharebtn" data-share="${p.id}" aria-label="Поделиться проектом" title="Поделиться">${SHARE_ICON}${shareCount(p) ? `<span class="pm-sc">${shareCount(p)}</span>` : ''}</button>` : ''}
         <button class="icon-btn" ${next ? `data-pfsel="${next.id}"` : 'disabled'} aria-label="Следующий проект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
@@ -4976,7 +5043,8 @@ function timelineHtml(p){
   const st = flowState(p); const list = [...st.values()]; const t0 = today();
   const dated = list.flatMap(v => v.items.filter(i => i.due).map(i => i.due));
   const starts = list.flatMap(v => v.items.filter(i => i.start).map(i => i.start));
-  let from = [addDays(t0, -7), ...dated, ...starts].sort()[0], to = [addDays(t0, 21), ...dated, ...(p.deadline ? [p.deadline] : [])].sort().at(-1);
+  const kds = kdList(p).map(k => k.d);
+  let from = [addDays(t0, -7), ...dated, ...starts, ...kds].sort()[0], to = [addDays(t0, 21), ...dated, ...kds, ...(p.deadline && p.goalName ? [p.deadline] : [])].sort().at(-1);
   from = addDays(from, -1); to = addDays(to, 2);
   const nd = diffDays(to, from) + 1; const W = nd * TL_DW;
   const xOf = d => diffDays(d, from) * TL_DW + TL_DW / 2;
@@ -5005,7 +5073,8 @@ function timelineHtml(p){
       <div class="tl-body" style="height:${H}px">${shade}
         ${lanes.map(l => `<div class="tl-lane" style="top:${l.top}px;height:${l.h}px"></div>`).join('')}
         <i class="tl-today" style="left:${xOf(t0)}px"></i>
-        ${p.deadline ? `<i class="tl-goal" style="left:${xOf(p.deadline)}px"><span>${FLAG}${esc(goalName(p))} · ${fmt(p.deadline)}</span></i>` : ''}
+        ${p.deadline && p.goalName ? `<i class="tl-goal" style="left:${xOf(p.deadline)}px"><span>${FLAG}${esc(goalName(p))} · ${fmt(p.deadline)}</span></i>` : ''}
+        ${kdList(p).filter(k => k.d >= from && k.d <= to).map((k, j) => `<i class="tl-goal tl-key" style="left:${xOf(k.d)}px"><span style="top:${4 + (j % 3) * 20}px">${FLAG}${esc(k.name)} · ${fmt(k.d)}</span></i>`).join('')}
 
         ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task k-${k(i)}" data-pfsub="${l.v.s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px" title="${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}"><i></i><span>${esc(i.x.name)}</span></button>`)).join('')}
       </div></div></div></div>`;
@@ -5023,7 +5092,8 @@ function togetherHtml(){
   const boards = sel.map(id => all.find(p => p.id === id)).filter(Boolean);
   const per = boards.map(p => ({ p, items:[...flowState(p).values()].flatMap(v => v.items.map(i => ({ ...i, s:v.s }))) }));
   const dated = per.flatMap(b => b.items.filter(i => i.due).map(i => i.due)), starts = per.flatMap(b => b.items.filter(i => i.start).map(i => i.start));
-  let from = [addDays(t0, -7), ...dated, ...starts].sort()[0], to = [addDays(t0, 21), ...dated].sort().at(-1);
+  const kds = boards.flatMap(p => kdList(p).map(k => ({ ...k, p })));
+  let from = [addDays(t0, -7), ...dated, ...starts, ...kds.map(k => k.d)].sort()[0], to = [addDays(t0, 21), ...dated, ...kds.map(k => k.d)].sort().at(-1);
   from = addDays(from, -1); to = addDays(to, 2);
   const nd = diffDays(to, from) + 1, W = nd * TL_DW; const xOf = d => diffDays(d, from) * TL_DW + TL_DW / 2;
   let y = 0; const lanes = per.map(b => {
@@ -5047,6 +5117,7 @@ function togetherHtml(){
         <div class="tl-body" style="height:${H}px">${shade}
           ${lanes.map(l => `<div class="tl-lane tg-lane" style="top:${l.top}px;height:${l.h}px;--bc:${tgColor(l.p)}"></div>`).join('')}
           <i class="tl-today" style="left:${xOf(t0)}px"></i>
+          ${kds.slice().sort((a, z) => a.d.localeCompare(z.d)).map((k, j) => `<i class="tl-goal tl-key" style="left:${xOf(k.d)}px"><span style="top:${4 + (j % 3) * 20}px">${FLAG}${esc(k.name)} · ${esc(k.p.name)} · ${fmt(k.d)}</span></i>`).join('')}
           ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task tg-task k-${k(i)}" data-tgsub="${l.p.id}|${i.s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px;--bc:${tgColor(l.p)}" title="${esc(l.p.name)} · ${esc(i.s.name)} · ${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}"><i></i><span>${esc(i.x.name)}<small> · ${esc(i.s.name)}</small></span></button>`)).join('')}
         </div></div></div></div></div>`;
 }
@@ -5535,9 +5606,9 @@ function renderDrawer(){
       <section class="d-box"><h3>Сроки</h3><div class="d-g">
         <div class="field"><label for="pStart">${projStarted(p) ? 'Старт' : 'Плановый старт'}</label><input type="date" id="pStart" value="${p.start_date}"></div>
         <div class="field"><label for="pDl">Финальный дедлайн</label><input type="date" id="pDl" value="${p.deadline || ''}"></div>
-        <div class="field"><label>Расчётный финиш</label><div class="val">${fmt(end)} ${p.deadline ? (late ? `<span class="pill s-red">позже на ${days(diffDays(end, p.deadline))}</span>` : `<span class="pill s-green">в срок${diffDays(p.deadline, end) ? `, запас ${days(diffDays(p.deadline, end))}` : ''}</span>`) : ''}</div></div>
+        ${isInfoBoardP(p) ? '' : `<div class="field"><label>Расчётный финиш</label><div class="val">${fmt(end)} ${p.deadline ? (late ? `<span class="pill s-red">позже на ${days(diffDays(end, p.deadline))}</span>` : `<span class="pill s-green">в срок${diffDays(p.deadline, end) ? `, запас ${days(diffDays(p.deadline, end))}` : ''}</span>`) : ''}</div></div>`}
       </div>
-      ${late ? `<div class="warn d-late">План не укладывается в дедлайн. <button class="link" id="fitDl">Уместить в дедлайн</button> — оставшиеся этапы сожмутся пропорционально.</div>` : ''}
+      ${late && !isInfoBoardP(p) ? `<div class="warn d-late">План не укладывается в дедлайн. <button class="link" id="fitDl">Уместить в дедлайн</button> — оставшиеся этапы сожмутся пропорционально.</div>` : ''}
       </section>
     </div>
 
@@ -9046,7 +9117,8 @@ function renderProjectFocus(mine = false){
       </button>`;
     }).join('');
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" ${dnd ? `data-pfcol="${s.id}"` : ''} aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
-      <header><div><b>${s.position + 1}. ${esc(s.name)}</b>${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}</div>
+      <header><div>${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`}${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}
+        ${canEdit && !mine && !GUEST && !isMaint(s) && ui.pfRen !== s.id ? `<span class="pf-coltools"><button type="button" data-pfsren="${s.id}" title="Переименовать столбик" aria-label="Переименовать столбик «${esc(s.name)}»">${ICON_EDIT}</button>${p.stages.filter(x => !isMaint(x)).length > 1 ? `<button type="button" data-pfsdel="${s.id}" title="Удалить столбик" aria-label="Удалить столбик «${esc(s.name)}»">${ICON_X}</button>` : ''}</span>` : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
       ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}${stageSubmitBox(p, s, mine)}
@@ -9060,11 +9132,11 @@ function renderProjectFocus(mine = false){
       <div class="pf-main">
         <div class="pf-head">
           <div><h2>${mine ? esc(p.name) : `<button class="link-plain" data-open="${p.id}">${esc(p.name)}</button>`}</h2>
-            <small>${mine ? `${esc(p.client)}, ваша роль: ${ROLE_RU[role].toLowerCase()}, владелец: <span class="owner-name">…</span>` : `${p.client ? `${esc(p.client)}, ` : ''}PM ${esc(short(p.pm_id))}${execTxt(p)}, финиш ${fmt(plannedEnd(p))}`}</small>
+            <small>${mine ? `${esc(p.client)}, ваша роль: ${ROLE_RU[role].toLowerCase()}, владелец: <span class="owner-name">…</span>` : `${p.client ? `${esc(p.client)}, ` : ''}PM ${esc(short(p.pm_id))}${execTxt(p)}${isInfoBoardP(p) ? '' : `, финиш ${fmt(plannedEnd(p))}`}`}</small>${!mine && isInfoBoardP(p) && !GUEST ? kdHtml(p) : ''}
           </div>
           ${!mine ? `<button class="icon-btn pf-shareic${shareCount(p) ? ' on' : ''}" data-share="${p.id}" title="Поделиться проектом${shareCount(p) ? ` · доступ у ${shareCount(p)}` : ''}" aria-label="Поделиться проектом">${SHARE_ICON}${shareCount(p) ? `<span>${shareCount(p)}</span>` : ''}</button>` : ''}
         </div>
-        <div class="pf-board">${cols}</div>
+        <div class="pf-board">${cols}${canEdit && !mine && !GUEST ? '<button type="button" class="col-add pf-coladd" data-pfscol><span aria-hidden="true">+</span>Столбик</button>' : ''}</div>
       </div>
     </div>`;
   // доска не прыгает в начало при перерисовке; при смене проекта — показываем текущий этап
