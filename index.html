@@ -1348,7 +1348,9 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .tl-arr{fill:none;stroke:color-mix(in srgb,var(--muted) 70%,transparent);stroke-width:1.6;stroke-dasharray:4 3}
 .tl-arr.red{stroke:var(--r);stroke-dasharray:none;opacity:.8}
 .tl-hd{fill:color-mix(in srgb,var(--muted) 70%,transparent)}.tl-hd.red{fill:var(--r)}
-.tl-bar{position:absolute;height:22px;border-radius:11px;background:currentColor;opacity:.18;pointer-events:none}
+.tl-bar{position:absolute;height:22px;border-radius:11px;background:color-mix(in srgb,currentColor 26%,transparent);pointer-events:none}
+.tl-bar::before{content:"";position:absolute;left:3px;top:4px;width:14px;height:14px;border-radius:50%;border:2px solid currentColor;box-sizing:border-box;background:var(--surface)}
+.tdy-run{color:var(--brand);font-weight:600}
 .tl-bar.k-red{color:var(--r)}.tl-bar.k-yellow{color:var(--y)}.tl-bar.k-green{color:var(--b)}.tl-bar.k-done{color:var(--g)}
 .tl-task{position:absolute;display:flex;align-items:center;gap:6px;height:22px;padding:0;border:0;background:none;color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
 .tl-task i{width:14px;height:14px;border-radius:50%;flex:none;border:2px solid var(--surface);box-shadow:0 0 0 1.5px currentColor;background:currentColor}
@@ -4535,6 +4537,10 @@ document.addEventListener('input', e => { if (e.target.id !== 'archQ') return; u
 const d10 = v => v ? String(v).slice(0, 10) : '';
 const tdKey = i => i.kind === 'i' ? `i|${i.id}` : i.r ? `r|${i.p.id}|${i.r.id}` : i.t ? `t|${i.t.id}` : `x|${i.p.id}|${i.s.id}|${i.x?.id || ''}`;
 const tdWhere = i => i.kind === 'i' ? 'Внутренняя задача' : `${i.p.name} · ${i.s.name}${i.r ? ' · ведение' : ''}`;
+// начало задачи: у карточки — t.start_date (срок «от и до»), у подэтапа без карточки — x.start
+const tdStart = i => (i.t?.start_date && (!i.t?.due_date || i.t.start_date <= i.t.due_date) ? i.t.start_date : '') || i.x?.start || i.it?.start || '';
+// задача на сегодня: срок сегодня или прошёл, либо уже началась (начало сегодня или раньше)
+const tdForDay = (i, d) => !i.done && ((i.due && i.due <= d) || (tdStart(i) && tdStart(i) <= d));
 // все задачи пространства (свои проекты и внутренние) с ключом
 function tdAll(){
   return [...dayProjectItems('').filter(i => !i.p._ext), ...dayInternalItems('')].map(i => ({ ...i, k:tdKey(i) }));
@@ -4554,16 +4560,22 @@ function dayPlan(d = today(), make = true){
   if (!all[d] && make && d === today()){
     const items = tdAll(); const t0 = today();
     all[d] = { at:new Date().toISOString(), base:items.filter(i => i.done).map(i => i.k),
-      items:items.filter(i => !i.done && i.due && i.due <= t0).map(i => ({ k:i.k, who:i.who || '', title:i.title, where:tdWhere(i), due:i.due })) };
+      items:items.filter(i => tdForDay(i, t0)).map(i => ({ k:i.k, who:i.who || '', title:i.title, where:tdWhere(i), due:i.due, start:tdStart(i) })) };
     Object.keys(all).sort().slice(0, -21).forEach(x => delete all[x]);
     save();
   }
   return all[d] || null;
 }
 // добавить в план всё новое со сроком сегодня (например, поставили задачу днём)
+function dayPlanTopUp(){
+  const pl = dayPlan(); const have = new Set(pl.items.map(i => i.k)); const t0 = today(); let n = 0;
+  tdAll().filter(i => tdForDay(i, t0) && !have.has(i.k)).forEach(i => { pl.items.push({ k:i.k, who:i.who || '', title:i.title, where:tdWhere(i), due:i.due, start:tdStart(i) }); n++; });
+  pl.items.forEach(i => { if (!i.start){ const x = tdAll().find(y => y.k === i.k); if (x && tdStart(x)) i.start = tdStart(x); } });
+  if (n) save(); return n;
+}
 function dayPlanRefresh(){
   const pl = dayPlan(); const have = new Set(pl.items.map(i => i.k)); const t0 = today(); let n = 0;
-  tdAll().filter(i => !i.done && i.due && i.due <= t0 && !have.has(i.k)).forEach(i => { pl.items.push({ k:i.k, who:i.who || '', title:i.title, where:tdWhere(i), due:i.due }); n++; });
+  tdAll().filter(i => tdForDay(i, t0) && !have.has(i.k)).forEach(i => { pl.items.push({ k:i.k, who:i.who || '', title:i.title, where:tdWhere(i), due:i.due, start:tdStart(i) }); n++; });
   commit(); toast(n ? `В план добавлено: ${n}` : 'Новых задач на сегодня нет');
 }
 // факт: выполненное из плана + сделанное сегодня сверх плана
@@ -4577,7 +4589,7 @@ const tdPeople = () => [...db.users.map(u => ({ id:u.id, name:u.id === ME ? `${u
 function renderToday(){
   // день: сегодня или один из прошлых (‹ ›) — план того утра и что из него сделано
   const t0 = today(); const days = Object.keys(db.prefs?.dayPlans || {}).filter(k => k <= t0).sort();
-  dayPlan(); const day = ui.tdDay && days.includes(ui.tdDay) ? ui.tdDay : t0; const isToday = day === t0;
+  dayPlan(); dayPlanTopUp(); const day = ui.tdDay && days.includes(ui.tdDay) ? ui.tdDay : t0; const isToday = day === t0;
   const pl = isToday ? dayPlan() : db.prefs.dayPlans[day]; const f = isToday ? dayFact(pl) : { done:new Set(pl.items.filter(i => tdDone(i.k)).map(i => i.k)), extra:[] };
   const total = pl.items.length, doneN = pl.items.filter(i => f.done.has(i.k)).length, left = total - doneN;
   const evening = new Date().getHours() >= 18; const pct = total ? Math.min(100, Math.round(doneN / total * 100)) : 100;
@@ -4588,7 +4600,7 @@ function renderToday(){
   const people = tdPeople().map(u => ({ ...u, plan:pl.items.filter(i => (i.who || '') === u.id), extra:f.extra.filter(i => (i.who || '') === u.id) })).filter(u => u.plan.length || u.extra.length);
   const row = (i, extra) => { const dn = extra || f.done.has(i.k); const late = !dn && i.due && i.due < day;
     return `<li class="tdy-i${dn ? ' done' : ''}"><input type="checkbox" data-tdyk="${esc(i.k)}" ${dn ? 'checked' : ''} aria-label="Выполнено: ${esc(i.title)}">
-      <span><b>${esc(i.title)}</b><small>${esc(extra ? tdWhere(i) : i.where)}${late ? ` · <span class="tdy-late">просрочено с ${fmt(i.due)}</span>` : ''}${extra ? ' · сверх плана' : ''}</small></span></li>`; };
+      <span><b>${esc(i.title)}</b><small>${esc(extra ? tdWhere(i) : i.where)}${late ? ` · <span class="tdy-late">просрочено с ${fmt(i.due)}</span>` : !dn && i.start && i.due && i.due > day ? ` · <span class="tdy-run">в работе: ${rangeTxt(i.start, i.due)}</span>` : !dn && i.due === day ? ' · <span class="tdy-run">срок сегодня</span>' : ''}${extra ? ' · сверх плана' : ''}</small></span></li>`; };
   const card = u => { const dn = u.plan.filter(i => f.done.has(i.k)).length; const p2 = u.plan.length ? Math.round(dn / u.plan.length * 100) : 100; const ln = links.find(l => l.who === u.id);
     return `<section class="panel tdy-card"><header class="tdy-h"><b>${esc(u.name)}</b><span class="tdy-pf">${dn} <small>из ${u.plan.length}</small>${u.extra.length ? ` · +${u.extra.length} сверх` : ''}</span>
       ${u.id !== '' && isToday ? `<button class="ghost tdy-share${ln ? ' on' : ''}" data-tdyshare="${u.id}" title="Ссылка без входа: человек отмечает задачи, отметки попадают на общую доску">${ln ? 'Ссылка открыта' : 'Поделиться'}</button>` : ''}</header>

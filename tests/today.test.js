@@ -86,6 +86,11 @@ function openPage(backend, code){
   assert.ok(![...be.rows.keys()].some(k => k.startsWith('today/' + code + '/ticks/'))); ok('отметка обработана и убрана');
   await wait(2500);
   assert.ok(be.rows.get('today/' + code).data.items.find(i => i.k === target.k).done); ok('список по ссылке обновился — задача выполнена');
+  // задача «с сегодня по 18-е» (начало сегодня, срок позже) — тоже в «Сегодня»
+  E(`{ const p = db.projects.find(p => p.state === 'active' && currentStage(p) && !isMaint(currentStage(p))); const s = currentStage(p); s.subs.push({ id:'xStart', name:'Найти сценариста', done:false });
+     tasksFromSubs(p, { ...s, subs:[s.subs.at(-1)] }); const t = taskFor(p.id, s.id, 'xStart'); t.start_date = today(); t.due_date = addDays(today(), 3); t.assignee_id = 'uIg'; ui.view = 'today'; commit(); }`); await wait(50);
+  const li = [...D.querySelectorAll('.tdy-i')].find(x => /Найти сценариста/.test(x.textContent));
+  assert.ok(li && /в работе:/.test(li.textContent)); ok('задача, которая начинается сегодня (срок позже), — в «Сегодня» с пометкой «в работе: от – до»');
   // план / факт — в стиле блока SMM: цифры, полоса, таблица по людям
   assert.ok($('.smm-pf .smm-kpi') && $('.smm-pf .smm-bar') && /Игорь/.test($('.smm-pf .smm-wk').textContent)); ok('план / факт оформлен как в контенте: цифры, полоса, таблица по людям');
   // закрыть ссылку
