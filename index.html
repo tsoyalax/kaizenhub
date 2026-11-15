@@ -717,6 +717,7 @@ body.side-pinned .side-btn{color:var(--ink)}
 .smm-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
 .smm-kpi div{padding:10px 12px;border-radius:12px;background:var(--bg)}
 .smm-kpi b{display:block;font-size:22px;line-height:1.2}
+.tdy-pf-box .smm-kpi{grid-template-columns:repeat(3,minmax(0,1fr))}
 .smm-kpi small{color:var(--muted);font-size:12px}
 .smm-bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-bottom:12px}
 .smm-bar i{display:block;height:100%;background:var(--g,#22c55e);border-radius:99px}
@@ -4612,7 +4613,7 @@ function dayPlanRefresh(){
 function dayFact(pl){
   const done = new Set(pl.items.filter(i => tdDone(i.k)).map(i => i.k));
   const inPlan = new Set(pl.items.map(i => i.k)), base = new Set(pl.base || []);
-  const extra = tdAll().filter(i => i.done && !inPlan.has(i.k) && !base.has(i.k));
+  const extra = [];   // «сверх плана» не показываем (по просьбе): в «Сегодня» — только задачи на сегодня и просроченные
   return { done, extra };
 }
 const tdPeople = () => [...db.users.map(u => ({ id:u.id, name:u.id === ME ? `${u.name || 'Вы'} (вы)` : (u.name || 'Без имени') })), { id:'', name:'Без ответственного' }];
@@ -4656,12 +4657,11 @@ function renderToday(){
     <div class="smm-kpi">
       <div><b>${total}</b><small>План${isToday ? ` · сложился в ${new Date(pl.at).toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' })}` : ''}</small></div>
       <div><b>${doneN} <small>из ${total}</small></b><small>Факт: сделано${pace ? ' · ' + pace : ''}</small></div>
-      <div><b>${f.extra.length}</b><small>Сверх плана</small></div>
       <div><b>${left}</b><small>${isToday ? 'Осталось сделать' : 'Не сделано'}</small></div>
     </div>
     <div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>
-    ${people.length ? `<table class="smm-wk"><thead><tr><th>Кто</th><th>План</th><th>Факт: сделано</th><th>Сверх плана</th><th>Осталось</th></tr></thead><tbody>
-      ${people.map(u => { const dn = u.plan.filter(i => f.done.has(i.k)).length; return `<tr><td>${esc(u.name)}</td><td>${u.plan.length}</td><td>${dn} <small class="hint">из ${u.plan.length}</small></td><td>${u.extra.length}</td><td class="${u.plan.length - dn && (evening || !isToday) ? 'tdy-late' : ''}">${u.plan.length - dn}</td></tr>`; }).join('')}
+    ${people.length ? `<table class="smm-wk"><thead><tr><th>Кто</th><th>План</th><th>Факт: сделано</th><th>Осталось</th></tr></thead><tbody>
+      ${people.map(u => { const dn = u.plan.filter(i => f.done.has(i.k)).length; return `<tr><td>${esc(u.name)}</td><td>${u.plan.length}</td><td>${dn} <small class="hint">из ${u.plan.length}</small></td><td class="${u.plan.length - dn && (evening || !isToday) ? 'tdy-late' : ''}">${u.plan.length - dn}</td></tr>`; }).join('')}
     </tbody></table>` : ''}</section>
     ${people.length ? `<div class="tdy-grid">${people.map(card).join('')}</div>` : `<div class="empty">${isToday ? 'На сегодня задач со сроком нет. Поставьте сроки подзадачам в «Поручениях» или в карточках — и они появятся здесь.' : 'В этот день плана не было.'}</div>`}`;
 }

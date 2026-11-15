@@ -62,10 +62,8 @@ function openPage(backend, code){
   const cb = D.querySelector(`[data-tdyk="${first.k}"]`); cb.checked = true; fire(cb, 'change'); await wait(50);
   assert.ok(E(`tdDone('${first.k}')`)); ok('галочка в «Сегодня» отмечает задачу на общей доске');
   assert.ok(/1 из/.test([...D.querySelectorAll('.tdy-h')].find(h => /Игорь/.test(h.textContent)).textContent)); ok('факт за день растёт');
-  // задача сделана сверх плана
-  const extraKey = E(`(tdAll().find(i => !i.done && (!i.due || i.due > today()) && i.kind === 'p' && !i.r) || {}).k`);
-  if (extraKey){ E(`dayToggle('${extraKey}', true); render();`); await wait(30); assert.ok(E(`dayFact(dayPlan()).extra.some(i => i.k === '${extraKey}')`)); ok('сделанное сверх плана считается отдельно'); }
-  else ok('сделанное сверх плана считается отдельно (нет задач без срока — пропуск)');
+  // «сверх плана» не показывается: только задачи на сегодня и просроченные
+  assert.ok(!/Сверх плана/i.test($('.tdy-pf-box').textContent) && !E(`dayFact(dayPlan()).extra.length`)); ok('блока «сверх плана» нет');
   // ссылка для Игоря
   const shareBtn = [...D.querySelectorAll('[data-tdyshare]')].find(b => b.dataset.tdyshare === 'uIg'); shareBtn.click(); await wait(400);
   const url = $('#tdyUrl').value; const code = url.split('c=')[1];
