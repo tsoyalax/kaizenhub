@@ -1253,16 +1253,8 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ip-new input{height:36px}
 .ip-card svg{width:16px;height:16px}
 .fl{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;display:grid;gap:14px}
-.fl-lite{gap:12px;padding:12px 14px}
-.fl-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.fl-steps{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:2px;overflow-x:auto;padding:0;scrollbar-width:thin}
-.fl-step{flex:none;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
-.fl-step:hover{background:var(--fbg,var(--surface-2))}
-.fl-step small{color:var(--muted);font-weight:500;font-size:12px}
-.fl-step i{width:8px;height:8px;border-radius:50%;background:var(--g);flex:none}
-.fl-step.k-red i{background:var(--r)}.fl-step.k-yellow i{background:var(--y)}.fl-step.k-paused i{background:var(--b)}.fl-step.k-idle i,.fl-step.k-done i{background:var(--muted)}
-.fl-sep{color:var(--muted);opacity:.6;flex:none}
 .fl-view{display:flex;align-items:center;gap:8px;margin-left:auto}
+.fl-view .fl-mode{margin-left:0}
 .fl-scope{height:32px;border:1px solid var(--fbd,var(--line));border-radius:9px;background:var(--fbg,var(--surface));color:var(--ink);padding:0 8px;font:inherit;font-size:13px}
 .fl-lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;border-top:1px solid var(--line);padding-top:12px}
 .fl-list h3{margin:0 0 6px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
@@ -5257,6 +5249,14 @@ const DEPT_ST = [['work', 'В работе'], ['pause', 'Приостановл�
 // part: 'prod' — в «Производстве»: статусы отделов сверху и «Срочно сделать»; 'ai' — раздел «AI-воронка»: разбор Claude, дедлайн, связи
 // «Производство» (инфобизнес) над доской: короткая цепочка отделов, «Просрочено» и «Ближайшие» задачи, вид «Доска / Таймлайн»
 // (в таймлайне — выбор «Этот инфоповод / Все вместе»)
+// карточка отдела в цепочке воронки (статус — из AI-разбора, если он есть, иначе по срокам)
+function flowNode(p, v){
+  const a = p.ai?.res ? (p.ai.res.stages || []).find(x => norm(x.name) === norm(v.s.name)) : null; const ak = a && AI_ST[a.status];
+  return `<div class="fl-node k-${ak ? ak[0] : v.key}">
+      <button class="fl-name" data-flgo="${v.s.id}" title="Показать на доске"><b>${esc(v.s.name)}</b></button>${ak ? `<span class="pill st-pill s-${ak[1]}">${STATUS_ICO[ak[1]]}${ak[2]}</span>` : flowPill(v)}
+      <small>${v.n ? `${v.done} из ${v.n} готово` : 'нет задач'}${v.over.length ? ` · просрочено ${v.over.length}` : ''}</small>
+      ${a?.reason ? `<small class="fl-ai-why">${esc(a.reason)}</small>` : ''}</div>`;
+}
 function flowProdHtml(p){
   const st = flowState(p); const list = [...st.values()]; const t0 = today();
   const all = list.flatMap(v => v.open.filter(i => i.due).map(i => ({ ...i, sid:v.s.id, sname:v.s.name })));
@@ -5267,12 +5267,10 @@ function flowProdHtml(p){
   const mode = ui.infoMode === 'together' ? 'together' : ui.infoMode === 'timeline' ? 'timeline' : 'board';
   const many = infoBoards().length > 1;
   const box = (title, items, late, more) => `<div class="fl-list${late ? ' late' : ''}"><h3>${title} <span>${more}</span></h3><ol>${items.map(i => row(i, late)).join('')}</ol></div>`;
-  return `<section class="fl fl-lite" aria-label="Отделы и сроки">
-    <div class="fl-top">
-      <div class="fl-chain fl-steps">${list.map((v, k) => `${k ? '<span class="fl-sep" aria-hidden="true">›</span>' : ''}<button class="fl-step k-${v.key}" data-flgo="${v.s.id}" title="${esc(v.s.name)}: ${v.n ? `${v.done} из ${v.n} готово` : 'нет задач'}${v.over.length ? `, просрочено ${v.over.length}` : ''}"><i aria-hidden="true"></i>${esc(v.s.name)}<small>${v.n ? `${v.done}/${v.n}` : '—'}</small></button>`).join('')}</div>
-      <div class="fl-view"><span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${mode === 'board'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${mode !== 'board'}">Таймлайн</button></span>
-        ${mode !== 'board' && many ? `<select class="fl-scope" data-tlscope aria-label="Что показать на таймлайне"><option value="timeline" ${mode === 'timeline' ? 'selected' : ''}>Только «${esc(p.name)}»</option><option value="together" ${mode === 'together' ? 'selected' : ''}>Все инфоповоды вместе</option></select>` : ''}</div>
-    </div>
+  return `<section class="fl" aria-label="Воронка: отделы и сроки">
+    <div class="fl-hd slim"><div class="fl-view"><span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${mode === 'board'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${mode !== 'board'}">Таймлайн</button></span>
+        ${mode !== 'board' && many ? `<select class="fl-scope" data-tlscope aria-label="Что показать на таймлайне"><option value="timeline" ${mode === 'timeline' ? 'selected' : ''}>Только «${esc(p.name)}»</option><option value="together" ${mode === 'together' ? 'selected' : ''}>Все инфоповоды вместе</option></select>` : ''}</div></div>
+    <div class="fl-chain">${list.map((v, k) => flowNode(p, v) + (k < list.length - 1 ? '<span class="fl-arr" aria-hidden="true">→</span>' : '')).join('')}</div>
     ${over.length || next.length ? `<div class="fl-lists">
       ${over.length ? box('Просрочено', over.slice(0, 8), true, over.length > 8 ? `${over.length} · показаны 8` : over.length) : ''}
       ${next.length ? box('Ближайшие', next, false, '') : ''}
@@ -5300,12 +5298,7 @@ function flowPanelHtml(p, part = 'prod'){
   const cause = v => v.own === 'paused' ? (v.s.dept.note ? esc(v.s.dept.note) : 'приостановлено') : !v.n ? 'нет задач — этап не запущен'
     : `просрочено: ${v.over.slice(0, 3).map(i => `«${esc(i.x.name)}»`).join(', ')}${v.over.length > 3 ? ` и ещё ${v.over.length - 3}` : ''}`;
   const chain = v => [...v.down].sort((a, b) => list.findIndex(x => x.s.id === a) - list.findIndex(x => x.s.id === b)).map(nm).join(' → ');
-  const aiSt = ai ? new Map((ai.res.stages || []).map(x => [norm(x.name), x])) : null;
-  const node = v => { const a = aiSt?.get(norm(v.s.name)); const ak = a && AI_ST[a.status];
-    return `<div class="fl-node k-${ak ? ak[0] : v.key}">
-      <button class="fl-name" data-flgo="${v.s.id}" title="Показать на доске"><b>${esc(v.s.name)}</b></button>${ak ? `<span class="pill st-pill s-${ak[1]}">${STATUS_ICO[ak[1]]}${ak[2]}</span>` : flowPill(v)}
-      <small>${v.n ? `${v.done} из ${v.n} готово` : 'нет задач'}${v.over.length ? ` · просрочено ${v.over.length}` : ''}</small>
-      ${a?.reason ? `<small class="fl-ai-why">${esc(a.reason)}</small>` : ''}</div>`; };
+  const node = v => flowNode(p, v);
   return `<section class="fl" aria-label="Воронка: связи этапов">
     <div class="fl-hd${full ? '' : ' slim'}">${full ? `<h2>AI-воронка</h2>${ai && AI_VERDICT[ai.res.verdict] ? `<span class="pill st-pill s-${AI_VERDICT[ai.res.verdict][0]}">${STATUS_ICO[AI_VERDICT[ai.res.verdict][0]]}${AI_VERDICT[ai.res.verdict][1]}</span>` : `<span class="pill st-pill s-${verdict[0]}">${STATUS_ICO[verdict[0]]}${verdict[1]}</span>`}` : ''}
       ${full ? `<button class="ghost fl-mode" data-flwedit aria-pressed="${!!ui.flowEdit}">${ICON_EDIT}Связи</button>`
