@@ -44,12 +44,17 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(!$('[data-infomode="together"]') && !$('[data-tlscope]')); ok('отдельной кнопки «Вместе» и выпадающего списка нет');
   assert.ok($('[data-ipall]')); ok('в строке инфоповодов — «Все»');
   $('[data-ipall]').click(); await wait(100);
-  const fa = $('.fl-p'); assert.ok(/Все инфоповоды/.test(fa.textContent) && /Оффер/.test(fa.textContent) && /Анонс челленджа/.test(fa.textContent)); ok('«Все»: ближайшие задачи всех инфоповодов вместе');
+  assert.equal(D.querySelectorAll('.ip-board').length, 2); ok('«Все» → «Доска»: доски обоих инфоповодов одна под другой');
+  { const b = [...D.querySelectorAll('.ip-board')].find(x => x.dataset.pfboard === E('em.id')); const add = b.querySelector('[data-pfadd]'); add.querySelector('input').value = 'Задача из «Всех»';
+    add.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(50);
+    assert.ok(E(`em.stages.some(s => (s.subs || []).some(x => x.name === 'Задача из «Всех»'))`) && !E(`ig.stages.some(s => (s.subs || []).some(x => x.name === 'Задача из «Всех»'))`)); ok('правка в доске внутри «Все» попадает в свой инфоповод'); }
+  E(`ui.infoAll = true; render();`); $('[data-infomode="timeline"]').click(); await wait(100);
+  const fa = $('.fl-p'); assert.ok(/Все площадки/.test(fa.textContent) && /Оффер/.test(fa.textContent) && /Анонс челленджа/.test(fa.textContent)); ok('«Все»: ближайшие задачи всех инфоповодов вместе');
 
   assert.ok($('.tg-tl') && D.querySelectorAll('.tg-lane').length === 2); ok('«Вместе»: блок Игоря и челлендж Эма — две полосы на одной шкале');
   assert.equal(D.querySelectorAll('.tg-task').length, 5); ok('задачи обоих инфоповодов на таймлайне');
   assert.ok(!$('.tg-cross') && !$('.tg-cnt') && !/Пересечени/.test($('.tg').textContent)); ok('без строки «Пересечения» — просто общий таймлайн');
-  assert.ok($('[data-ipall]').classList.contains('on') && !$('[data-tgp]') && !$('.pf-board')); ok('«Все» выбрано: общий таймлайн без доски и без лишнего выбора');
+  assert.ok($('[data-ipall]').classList.contains('on') && !$('[data-tgp]') && !$('.ip-board')); ok('«Все» → «Таймлайн»: общий таймлайн без лишнего выбора');
   // клик по задаче другого инфоповода — её карточка
   [...D.querySelectorAll('.tg-task')].find(b => /Старт/.test(b.textContent)).click(); await wait(100);
   assert.ok(E('ui.taskId') && E(`taskById(ui.taskId).project_id`) === E('em.id')); ok('клик по задаче Эма открывает её карточку');

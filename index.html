@@ -1256,6 +1256,7 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .fl-p{padding:16px 18px;gap:16px}
 .fl-p-hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .fl-p-hd h2{margin:0;font-size:15px;font-weight:700}
+.fl-p-st{color:var(--muted);font-size:13px}
 .fl-view{display:flex;align-items:center;gap:8px;margin-left:auto}
 .fl-view .fl-mode{margin-left:0}
 .fl-scope{height:32px;border:1px solid var(--fbd,var(--line));border-radius:9px;background:var(--fbg,var(--surface));color:var(--ink);padding:0 8px;font:inherit;font-size:13px}
@@ -1281,6 +1282,7 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .flp-list ol{margin:0;padding:0;list-style:none;display:grid;gap:2px}
 .flp-row{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;align-items:center;text-align:left;border:0;background:transparent;color:var(--ink);padding:7px 8px;border-radius:9px;font:inherit;font-size:13.5px;cursor:pointer}
 .flp-row:hover{background:var(--surface)}
+.ip-board{margin-top:18px;padding-top:14px;border-top:3px solid var(--bc)}
 .flp-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bc);margin-right:5px;vertical-align:1px}
 .flp-rn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
 .flp-row small{grid-column:1;color:var(--muted);font-size:12px}
@@ -2571,15 +2573,16 @@ const infoBoard = () => { const all = infoBoards(); const cur = all.find(p => p.
   if (cur) return cur; const t0 = today(); return all.filter(p => (p.start_date || '') <= t0 && p.state !== 'completed').at(-1) || all.find(p => p.id === INFO_BOARD_ID) || all[0]; };
 // «Все» в строке инфоповодов: просроченные и ближайшие задачи всех инфоповодов и общий таймлайн (ui.infoAll)
 const infoAllOn = () => !!ui.infoAll && ui.view === 'production' && infoBoards().length > 1;
+// состояние инфоповода словами — в шапке воронки (на вкладках инфоповодов плашек нет)
+const ipState = p => { const t0 = today(); return p.state === 'completed' ? 'завершён' : (p.start_date || '') > t0 ? `старт ${fmt(p.start_date)}` : p.start_date ? `идёт с ${fmt(p.start_date)}` : 'идёт'; };
 function infoTabsHtml(){
   const all = infoBoards(); const cur = infoBoard(); const t0 = today();
-  const stt = p => p.state === 'completed' ? ['done', 'Завершён'] : (p.start_date || '') > t0 ? ['gray', `с ${fmt(p.start_date)}`] : ['green', 'Идёт'];
-  return `<div class="ip-row" role="tablist" aria-label="Инфоповоды"><span class="ip-l">Инфоповоды</span>
+  return `<div class="ip-row" role="tablist" aria-label="Площадки"><span class="ip-l">Площадки</span>
     ${all.length > 1 && ui.view === 'production' ? `<button class="ip-chip ip-all${infoAllOn() ? ' on' : ''}" role="tab" aria-selected="${infoAllOn()}" data-ipall><b>Все</b></button>` : ''}
-    ${all.map(p => { const [k, l] = stt(p); const on = p === cur && !infoAllOn(); return `<button class="ip-chip${on ? ' on' : ''}" role="tab" aria-selected="${on}" data-ipsel="${p.id}"><b>${esc(p.name)}</b><span class="pill st-pill s-${k}">${STATUS_ICO[k]}${l}</span></button>`; }).join('')}
-    ${ui.ipNew ? `<form class="ip-new" id="ipNew"><input id="ipName" placeholder="Например, Челлендж Эма" aria-label="Название инфоповода" required><input type="date" id="ipStart" value="${addDays(plannedEnd(cur) || t0, 1) > t0 ? addDays(plannedEnd(cur) || t0, 1) : t0}" aria-label="Старт"><button class="primary">Добавить</button><button type="button" class="ghost" data-ipcancel>Отмена</button></form>`
-      : `<button class="ghost ip-add" data-ipnew>+ Инфоповод</button>`}
-    ${cur && !infoAllOn() ? `<button class="icon-btn ip-card" data-open="${cur.id}" title="Карточка инфоповода: название, даты, архив" aria-label="Карточка инфоповода">${ICON_EDIT}</button>` : ''}</div>`;
+    ${all.map(p => { const on = p === cur && !infoAllOn(); return `<button class="ip-chip${on ? ' on' : ''}" role="tab" aria-selected="${on}" data-ipsel="${p.id}"><b>${esc(p.name)}</b></button>`; }).join('')}
+    ${ui.ipNew ? `<form class="ip-new" id="ipNew"><input id="ipName" placeholder="Например, Челлендж Эма" aria-label="Название площадки" required><input type="date" id="ipStart" value="${addDays(plannedEnd(cur) || t0, 1) > t0 ? addDays(plannedEnd(cur) || t0, 1) : t0}" aria-label="Старт"><button class="primary">Добавить</button><button type="button" class="ghost" data-ipcancel>Отмена</button></form>`
+      : `<button class="ghost ip-add" data-ipnew>+ Площадка</button>`}
+    ${cur && !infoAllOn() ? `<button class="icon-btn ip-card" data-open="${cur.id}" title="Карточка площадки: название, даты, архив" aria-label="Карточка площадки">${ICON_EDIT}</button>` : ''}</div>`;
 }
 function createInfoBoard(name, start){
   ensureInfoTemplate(db); const src = infoBoard();
@@ -2596,8 +2599,8 @@ function createInfoBoard(name, start){
     const byName = n => p.stages.find(x => x.name === n)?.id; const nameOf = id => src.stages.find(x => x.id === id)?.name;
     p.flow = Object.fromEntries(Object.entries(src.flow).map(([k, v]) => [byName(nameOf(k)), v.map(id => byName(nameOf(id))).filter(Boolean)]).filter(([k]) => k));
   }
-  addLog(p, `Инфоповод «${name}» создан`); db.projects.push(p); copyCards(p); ui.prodProject = p.id; ui.ctCycle = null; ui.ipNew = false; commit();
-  toast(`Инфоповод «${name}» добавлен`); return p;
+  addLog(p, `Площадка «${name}» создана`); db.projects.push(p); copyCards(p); ui.prodProject = p.id; ui.ctCycle = null; ui.ipNew = false; commit();
+  toast(`Площадка «${name}» добавлена`); return p;
 }
 document.addEventListener('click', e => {
   const s = e.target.closest?.('[data-ipsel]'); if (s){ ui.prodProject = s.dataset.ipsel; ui.infoAll = false; ui.ctCycle = null; render(); return; }
@@ -2756,7 +2759,7 @@ function renderContentBody(){
     ${ui.ctEdit === c ? `<form class="smm-ed ct-kpi-ed" id="ctEd">
       <label class="ct-f"><span>KPI в неделю — для всех недель</span><input type="number" id="ctKpi" min="0" max="999" value="${st.kpi || ''}" placeholder="например, 5"></label>
       <div class="ct-kpi-w">${st.weeks.map(x => `<label class="ct-f"><span>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></span><input type="number" min="0" max="999" data-ctwk="${x.w - 1}" value="${x.plan}"></label>`).join('')}</div>
-      <small class="hint">Общий KPI задаёт одинаковый план на каждую неделю этого инфоповода. Если у недели другое число — поменяйте его: тогда этот цикл считается по числам недель.</small>
+      <small class="hint">Общий KPI задаёт одинаковый план на каждую неделю этой площадки. Если у недели другое число — поменяйте его: тогда этот цикл считается по числам недель.</small>
       <span class="smm-ed-act"><button type="button" class="ghost" data-cteditcancel>Отмена</button><button class="primary">Сохранить</button></span></form>` : ''}
     <div class="smm-kpi">
       <div><b>${st.plan}</b><small>План${st.kpi && !st.ownWeeks ? ` · KPI ${st.kpi} в неделю` : st.ownWeeks ? ' · по неделям' : ''}</small></div>
@@ -5118,7 +5121,8 @@ function renderProduction(){
   }
   const p = infoBoard();
   if (!isInfo() || GUEST || !p || projById(ui.prodProject) !== p) return;
-  if (infoAllOn()){ app.innerHTML = infoTabsHtml() + flowAllHtml() + togetherHtml(true); return; }
+  if (infoAllOn()){ const tl = ui.infoMode === 'timeline' || ui.infoMode === 'together'; const boards = tl ? '' : allBoardsHtml();
+    app.innerHTML = infoTabsHtml() + flowAllHtml() + (tl ? togetherHtml(true) : boards); return; }
   app.insertAdjacentHTML('afterbegin', infoTabsHtml() + flowPanelHtml(p, 'prod'));
   if (ui.infoMode === 'timeline' || ui.infoMode === 'together'){ const b = app.querySelector('.pf-board'); if (b) b.outerHTML = timelineHtml(p); }
 }
@@ -5221,8 +5225,8 @@ function togetherHtml(everything){
   const shade = days.map(d => { const g = parse(d).getDay(); return g === 0 || g === 6 ? `<i class="tl-wk" style="left:${diffDays(d, from) * TL_DW}px;width:${TL_DW}px"></i>` : ''; }).join('');
   const k = i => i.done ? 'done' : i.due < t0 ? 'red' : i.due <= addDays(t0, 1) ? 'yellow' : 'green';
   return `<div class="tg">
-    ${everything ? '' : `<div class="tg-pick"><span class="hint">Инфоповоды на шкале:</span>${all.map(p => `<button class="tg-chip" data-tgp="${p.id}" aria-pressed="${sel.includes(p.id)}" style="--bc:${tgColor(p)}"><i></i>${esc(p.name)}</button>`).join('')}</div>`}
-    <div class="tl tg-tl" aria-label="Таймлайн инфоповодов вместе">
+    ${everything ? '' : `<div class="tg-pick"><span class="hint">Площадки на шкале:</span>${all.map(p => `<button class="tg-chip" data-tgp="${p.id}" aria-pressed="${sel.includes(p.id)}" style="--bc:${tgColor(p)}"><i></i>${esc(p.name)}</button>`).join('')}</div>`}
+    <div class="tl tg-tl" aria-label="Таймлайн площадок вместе">
       <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl" style="height:${l.h}px;--bc:${tgColor(l.p)}"><b class="tg-n"><i></i>${esc(l.p.name)}</b>
         <small>${l.items.filter(i => !i.done).length} в работе${l.nodate ? ` · без срока: ${l.nodate}` : ''}</small></div>`).join('')}</div>
       <div class="tl-scroll"><div class="tl-in" style="width:${W}px">
@@ -5308,6 +5312,20 @@ function flowNode(p, v){
       ${a?.reason ? `<small class="fl-ai-why">${esc(a.reason)}</small>` : ''}</div>`;
 }
 // «Все»: просроченные и ближайшие задачи всех инфоповодов (у задачи — инфоповод и отдел), ниже общий таймлайн
+// «Все» → «Доска»: доски всех незавершённых инфоповодов одна под другой (каждая — как обычно, со своей шапкой);
+// клик, ввод и перетаскивание внутри доски сначала делают её инфоповод текущим (ui.prodProject), поэтому работают все обычные обработчики
+function allBoardsHtml(){
+  const keep = ui.prodProject; const out = [];
+  infoBoards().filter(p => p.state !== 'completed').forEach(p => {
+    ui.prodProject = p.id; renderProjectFocus(); const m = app.querySelector('.pf-main');
+    out.push(`<div class="ip-board" data-pfboard="${p.id}" style="--bc:${tgColor(p)}">${m ? m.innerHTML : ''}</div>`); });
+  ui.prodProject = keep; return out.join('');
+}
+['click', 'change', 'submit', 'input', 'focusin', 'dragstart'].forEach(ev => document.addEventListener(ev, e => {
+  const b = e.target.closest?.('[data-pfboard]'); if (b && ui.prodProject !== b.dataset.pfboard) ui.prodProject = b.dataset.pfboard; }, true));
+// карточки и столбики не переносятся между досками разных инфоповодов
+['dragover', 'drop'].forEach(ev => document.addEventListener(ev, e => {
+  const b = e.target.closest?.('[data-pfboard]'); if (b && b.dataset.pfboard !== ui.prodProject) e.stopPropagation(); }, true));
 function flowAllHtml(){
   const t0 = today(); const boards = infoBoards().filter(p => p.state !== 'completed');
   const all = boards.flatMap(p => [...flowState(p).values()].flatMap(v => v.open.filter(i => i.due).map(i => ({ ...i, p, s:v.s }))));
@@ -5318,8 +5336,8 @@ function flowAllHtml(){
   const row = (i, late) => `<li><button class="flp-row" data-tgsub="${i.p.id}|${i.s.id}|${i.x.id}" title="${esc(i.p.name)} · ${esc(i.s.name)} · срок ${fmt(i.due)}"><span class="flp-rn">${esc(i.x.name)}</span><small><i class="flp-dot" style="--bc:${tgColor(i.p)}"></i>${esc(i.p.name)} · ${esc(i.s.name)}</small>
       <span class="flp-rd${late ? ' late' : i.due === t0 ? ' now' : ''}">${late ? ago(i.due) : when(i.due)}</span></button></li>`;
   const box = (title, items, late, cnt) => `<div class="flp-list${late ? ' late' : ''}"><h3>${title}${cnt ? ` <span>${cnt}</span>` : ''}</h3><ol>${items.map(i => row(i, late)).join('')}</ol></div>`;
-  return `<section class="fl fl-p" aria-label="Все инфоповоды: сроки">
-    <div class="fl-p-hd"><h2>Все инфоповоды</h2></div>
+  return `<section class="fl fl-p" aria-label="Все площадки: сроки">
+    <div class="fl-p-hd"><h2>Все площадки</h2><div class="fl-view"><span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${!(ui.infoMode === 'timeline' || ui.infoMode === 'together')}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline' || ui.infoMode === 'together'}">Таймлайн</button></span></div></div>
     ${over.length || next.length ? `<div class="fl-lists">
       ${over.length ? box('Просрочено', over.slice(0, 12), true, over.length) : ''}
       ${next.length ? box('Ближайшие', next, false, '') : ''}
@@ -5350,7 +5368,7 @@ function flowProdHtml(p){
       <span class="flp-st-s" title="${esc(txt())}"><i aria-hidden="true"></i><span>${esc(txt())}</span></span></button>`; };
   const box = (title, items, late, cnt) => `<div class="flp-list${late ? ' late' : ''}"><h3>${title}${cnt ? ` <span>${cnt}</span>` : ''}</h3><ol>${items.map(i => row(i, late)).join('')}</ol></div>`;
   return `<section class="fl fl-p" aria-label="Воронка: отделы и сроки">
-    <div class="fl-p-hd"><h2>Воронка</h2>
+    <div class="fl-p-hd"><h2>Воронка</h2><span class="fl-p-st">${esc(ipState(p))}</span>
       <div class="fl-view"><span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${mode === 'board'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${mode !== 'board'}">Таймлайн</button></span></div></div>
     <div class="fl-chain fl-pipe" style="--n:${list.length}">${list.map(step).join('')}</div>
     ${over.length || next.length ? `<div class="flp-lists">
@@ -5383,7 +5401,7 @@ function flowPanelHtml(p, part = 'prod'){
   return `<section class="fl" aria-label="Воронка: связи этапов">
     <div class="fl-hd${full ? '' : ' slim'}">${full ? `<h2>AI-воронка</h2>${ai && AI_VERDICT[ai.res.verdict] ? `<span class="pill st-pill s-${AI_VERDICT[ai.res.verdict][0]}">${STATUS_ICO[AI_VERDICT[ai.res.verdict][0]]}${AI_VERDICT[ai.res.verdict][1]}</span>` : `<span class="pill st-pill s-${verdict[0]}">${STATUS_ICO[verdict[0]]}${verdict[1]}</span>`}` : ''}
       ${full ? `<button class="ghost fl-mode" data-flwedit aria-pressed="${!!ui.flowEdit}">${ICON_EDIT}Связи</button>`
-        : `<span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${ui.infoMode !== 'timeline' && ui.infoMode !== 'together'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline'}">Таймлайн</button><button type="button" data-infomode="together" aria-pressed="${ui.infoMode === 'together'}" title="Несколько инфоповодов на одной шкале — видно, где задачи пересекаются">Вместе</button></span>`}</div>
+        : `<span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${ui.infoMode !== 'timeline' && ui.infoMode !== 'together'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline'}">Таймлайн</button><button type="button" data-infomode="together" aria-pressed="${ui.infoMode === 'together'}" title="Несколько площадок на одной шкале — видно, где задачи пересекаются">Вместе</button></span>`}</div>
     ${full ? goalHtml(p) : ''}
     <div class="fl-chain">${list.map((v, i) => node(v) + (i < list.length - 1 ? '<span class="fl-arr" aria-hidden="true">→</span>' : '')).join('')}</div>
     ${full && ui.flowEdit ? `<div class="fl-edit"><p class="hint">Отметьте, от чего зависит каждый этап: если этап-источник встал, зависимые подсветятся «ждёт».</p>
@@ -8864,7 +8882,7 @@ document.addEventListener('click', e => {
   const dl = tg.closest('[data-ckbdel]'); if (dl){ ui.taskDraft.items.splice(+dl.dataset.ckbdel, 1); renderTaskModal('#ckbNew'); return; }
   if (tg.closest('[data-ckbadd]')){ const v = $('#ckbNew').value.trim(); if (v){ ui.taskDraft.items.push({ id:null, text:v, done:false }); renderTaskModal('#ckbNew'); } return; }
   if (tg.closest('[data-tdel]')){
-    askConfirm({ title:`Удалить подэтап «${t.title}»?`, text:'Подэтап с чек-листом и ссылками удалится только здесь. В других проектах, инфоповодах и в шаблоне он останется.', ok:'Удалить' })
+    askConfirm({ title:`Удалить подэтап «${t.title}»?`, text:'Подэтап с чек-листом и ссылками удалится только здесь. В других проектах, площадках и в шаблоне он останется.', ok:'Удалить' })
       .then(yes => { if (!yes) return; const p = projById(t.project_id);
         if (p?._ext) ext.tasks = ext.tasks.filter(x => x.id !== t.id); else db.tasks = db.tasks.filter(x => x.id !== t.id);
         // подэтап убираем только из этого проекта (инфоповода); подэтап шаблона запоминаем, чтобы синхронизация его не вернула
