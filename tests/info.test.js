@@ -284,6 +284,9 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   E(`ui.infoAll = false; render()`); assert.ok(D.querySelector(`.pf-head [data-roadmap="${E('infoBoard().id')}"]`)); ok('и у каждой площадки — своя дорожная карта');
   { const h = E(`roadmapHtml(infoBoards())`); assert.ok(/все площадки/.test(h) && (h.match(/<section>/g) || []).length === E('infoBoards().length') && /print\(\)/.test(h)); ok('дорожная карта всех площадок — раздел на каждую площадку, как у одной; открывается печать (PDF)'); }
   E(`ui.infoAll = false; db.prefs.kind = window.__k2; render()`);
+  // задача без срока подсвечена на доске
+  E(`{ const p = infoBoard(); const s = p.stages.find(x => !isMaint(x)); s.subs.push({ id:'noDue', name:'Без даты', done:false }); ui.view = 'production'; ui.prodProject = p.id; ui.infoAll = false; commit(); }`);
+  { const c = D.querySelector('.pf-board [data-pfsub$="|noDue"]'); assert.ok(c && c.querySelector('.pf-due.nodue')); ok('задача без срока подсвечена «без срока»'); }
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });

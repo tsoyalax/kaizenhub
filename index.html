@@ -2200,6 +2200,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .tk-due .late{color:var(--r);font-weight:600}
 .pf-due{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
 .pf-due.late{color:var(--r);font-weight:600}
+.pf-due.nodue{padding:1px 7px;border-radius:6px;background:var(--pl-y-bg,color-mix(in srgb,var(--y) 18%,transparent));color:color-mix(in srgb,var(--y) 65%,var(--ink));font-weight:600}
 .pf-due svg{width:12px;height:12px}
 .tk-due svg,.rem-pop svg{width:14px;height:14px;vertical-align:-2px;flex:none}
 .dp-btn{height:34px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
@@ -4949,7 +4950,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
       if (mine && !t) return tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<b>${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
-        <small>${whoChip(whoId(p, s, t))}</small>
+        <small>${whoChip(whoId(p, s, t))}${isInfoBoardP(p) && !done && !(t?.due_date || x.due_date) ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span>${pr.total ? `<small>${pr.n} из ${pr.total} выполнено</small>` : isInfoBoardP(p) ? '' : '<small>Чек-лист пуст</small>'}`
              : isInfoBoardP(p) ? '' : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}</button>`;
     }).join('');
@@ -5392,7 +5393,7 @@ function allBoardsHtml(){
     return `<button class="pf-card${done ? ' done' : ''}" data-tgsub="${p.id}|${s.id}|${x.id}" aria-label="${esc(p.name)}: ${esc(x.name)}">
       <span class="ab-ip"><i style="--bc:${tgColor(p)}"></i>${esc(p.name)}</span>
       <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}</b>
-      <small>${whoChip(x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t))}${due ? ` · <span class="pf-due${due < t0 && !done ? ' late' : ''}">${t?.start_date ? rangeTxt(t.start_date, due) : 'срок ' + fmt(due)}</span>` : ''}</small>
+      <small>${whoChip(x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t))}${due ? ` · <span class="pf-due${due < t0 && !done ? ' late' : ''}">${t?.start_date ? rangeTxt(t.start_date, due) : 'срок ' + fmt(due)}</span>` : !done ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}</small>
       ${pr && pr.total ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.n} из ${pr.total} выполнено</small>` : done ? '<small>Выполнено</small>' : ''}</button>`; };
   return `<div class="pf-board ab-board">${[...cols.values()].map(c => { const dn = c.items.filter(i => subDone(i.p, i.s, i.x)).length;
     // «Контент» — выделен и свёрнут, как на доске площадки: видео до CT_FOLD, остальные — «Показать все»
@@ -9440,7 +9441,7 @@ function renderProjectFocus(mine = false){
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" ${dnd ? `draggable="true" data-pfdrag="${s.id}|${x.id}"` : ''} aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
         <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
-        <small>${x.cycle && isInfoBoardP(p) && vidCol(x) ? `<span class="vid-st">${esc(vidCol(x).name)}</span>` : ''}${whoChip(x.cycle && isInfoBoardP(p) ? contentWho(p, s, x, t) : whoId(p, s, t))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : `срок ${fmt(t.due_date)}`}</span>` : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
+        <small>${x.cycle && isInfoBoardP(p) && vidCol(x) ? `<span class="vid-st">${esc(vidCol(x).name)}</span>` : ''}${whoChip(x.cycle && isInfoBoardP(p) ? contentWho(p, s, x, t) : whoId(p, s, t))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : `срок ${fmt(t.due_date)}`}</span>` : x.due_date ? ` · <span class="pf-due${x.due_date < today() && !done ? ' late' : ''}">срок ${fmt(x.due_date)}</span>` : isInfoBoardP(p) && !done ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span>${pr.total ? `<small>${pr.n} из ${pr.total} выполнено</small>` : isInfoBoardP(p) ? '' : '<small>Чек-лист пуст</small>'}`
              : isInfoBoardP(p) ? '' : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
       </button>`;
