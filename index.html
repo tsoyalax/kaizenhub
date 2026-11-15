@@ -4561,9 +4561,9 @@ const tdKey = i => i.kind === 'i' ? `i|${i.id}` : i.r ? `r|${i.p.id}|${i.r.id}` 
 const tdWhere = i => i.kind === 'i' ? 'Внутренняя задача' : `${i.p.name} · ${i.s.name}${i.r ? ' · ведение' : ''}`;
 // начало задачи: у карточки — t.start_date (срок «от и до»), у подэтапа без карточки — x.start
 const tdStart = i => (i.t?.start_date && (!i.t?.due_date || i.t.start_date <= i.t.due_date) ? i.t.start_date : '') || i.x?.start || i.it?.start || '';
-// задача на сегодня: срок сегодня или уже прошёл; без срока — если уже началась. Задача со сроком позже сегодня в план не идёт,
-// даже если начата (срок 17-го → появится 17-го)
-const tdForDay = (i, d) => !i.done && (i.due ? i.due <= d : !!(tdStart(i) && tdStart(i) <= d));
+// задача на сегодня: срок сегодня или прошёл, либо период «от и до» уже начался (начало сегодня или раньше).
+// Задача, у которой и начало, и срок в будущем, в план не идёт; план сверяется с «Производством» (dayPlanTopUp)
+const tdForDay = (i, d) => !i.done && ((i.due && i.due <= d) || !!(tdStart(i) && tdStart(i) <= d));
 // все задачи пространства (свои проекты и внутренние) с ключом
 function tdAll(){
   return [...dayProjectItems('').filter(i => !i.p._ext), ...dayInternalItems('')].map(i => ({ ...i, k:tdKey(i) }));
