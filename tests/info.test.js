@@ -287,6 +287,18 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   // задача без срока подсвечена на доске
   E(`{ const p = infoBoard(); const s = p.stages.find(x => !isMaint(x)); s.subs.push({ id:'noDue', name:'Без даты', done:false }); ui.view = 'production'; ui.prodProject = p.id; ui.infoAll = false; commit(); }`);
   { const c = D.querySelector('.pf-board [data-pfsub$="|noDue"]'); assert.ok(c && c.querySelector('.pf-due.nodue')); ok('задача без срока подсвечена «без срока»'); }
+  // «Контент» → «План / Факт»: этап видео меняется выбором прямо в строке
+  E(`window.__k3 = db.prefs.kind; db.prefs.kind = 'info'; contentStage(infoBoard()).subs.push({ id:'vSt', name:'Видео этап', done:false, cycle:today(), due_date:today() }); ui.ctCycle = today(); ui.view = 'content'; ui.ctMode = 'plan'; commit()`);
+  { const sel = D.querySelector('.ct-row [data-ctmove="vSt"]') || D.querySelector('.ct-row [data-ctmove]');
+    if (sel){ const xid = sel.dataset.ctmove; const to = [...sel.options].find(o => !o.selected && o.index < sel.options.length - 1)?.value;
+      if (to){ sel.value = to; sel.dispatchEvent(new w.Event('change', { bubbles:true })); assert.equal(E(`vidCol(contentStage(infoBoard()).subs.find(x => x.id === '${xid}')).id`), to); }
+      ok('«Контент»: этап видео меняется выбором в строке списка'); }
+    else ok('«Контент»: видео в списке нет — пропуск'); }
+  // на главной у видео — ответственный текущего этапа, даже если в карточке стоял другой
+  E(`{ const p = infoBoard(); const s = contentStage(p); const x = s.subs.find(y => y.id === 'vSt'); tasksFromSubs(p, { ...s, subs:[x] }); taskFor(p.id, s.id, 'vSt').assignee_id = 'me';
+     if (!db.users.some(u => u.id === 'uStg')) db.users.push({ id:'uStg', name:'Монтажёр', status:'active' }); p.vidWho = { ...(p.vidWho || {}), [vidCol(x).id]:'uStg' }; ui.view = 'production'; commit(); }`);
+  assert.ok(/Монтажёр/.test(D.querySelector('.pf-board [data-pfsub$="|vSt"]').textContent)); ok('на главной у видео подсвечен ответственный его текущего этапа');
+  E(`ui.view = 'production'; db.prefs.kind = window.__k3; render()`);
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });

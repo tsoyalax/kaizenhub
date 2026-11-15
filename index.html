@@ -2200,6 +2200,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .tk-due .late{color:var(--r);font-weight:600}
 .pf-due{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
 .pf-due.late{color:var(--r);font-weight:600}
+.ct-stsel{height:30px;border:1px solid var(--fbd,var(--line));border-radius:8px;background:var(--pl-m-bg,color-mix(in srgb,var(--m) 10%,var(--surface)));color:var(--pl-m,var(--m));font:inherit;font-size:12.5px;font-weight:600;padding:0 6px;max-width:150px;cursor:pointer}.ct-stsel.done{background:var(--pl-g-bg,color-mix(in srgb,var(--g) 12%,var(--surface)));color:var(--pl-g,var(--g))}
 .pf-due.nodue{padding:1px 7px;border-radius:6px;background:var(--pl-y-bg,color-mix(in srgb,var(--y) 18%,transparent));color:color-mix(in srgb,var(--y) 65%,var(--ink));font-weight:600}
 .pf-due svg{width:12px;height:12px}
 .tk-due svg,.rem-pop svg{width:14px;height:14px;vertical-align:-2px;flex:none}
@@ -2687,7 +2688,8 @@ document.addEventListener('click', e => {
 // ответственный у каждого этапа видео (колонки доски «Контента»): p.vidWho = { id этапа шаблона SMM: id человека }.
 // Ответственный видео — у кого оно сейчас на этапе; свой ответственный в карточке видео важнее.
 const vidWhoOf = (p, x) => (p?.vidWho || {})[vidCol(x)?.id] || null;
-const contentWho = (p, s, x, t) => t?.assignee_id || vidWhoOf(p, x) || s?.assignee_id || p?.worker_id || null;
+// ответственный за видео — тот, кто отвечает за его текущий этап (выбор в шапке колонки «Контента»); если не выбран — свой в карточке, колонка, исполнитель
+const contentWho = (p, s, x, t) => (!x?.done && vidWhoOf(p, x)) || t?.assignee_id || s?.assignee_id || p?.worker_id || null;
 document.addEventListener('change', e => {
   const cid = e.target.dataset?.vidwho; if (!cid) return;
   const p = infoBoard(); const c = vidCols().find(y => y.id === cid); if (!p || !c) return;
@@ -2752,6 +2754,7 @@ function renderContentBody(){
   const row = x => `<li class="ct-row${x.done ? ' done' : ''}">
       <input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="Опубликовано: ${esc(x.name)}">
       <span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}
+      ${vidCols().length ? `<select class="ct-stsel${x.done ? ' done' : ''}" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}" title="Этап видео — выберите, чтобы перенести">${vidCols().map(y => `<option value="${y.id}" ${y === vidCol(x) ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select>` : ''}
       ${whoChip(contentWho(p, s, x, taskFor(p.id, s.id, x.id)))}<input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
   // по умолчанию — «План / Факт», доска — вторым видом
   const modeSeg = `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode !== 'board'}">План / Факт</button><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode === 'board'}">Доска</button></span>`;
