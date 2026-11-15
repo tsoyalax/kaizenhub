@@ -1274,7 +1274,7 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .flp-st.k-yellow .flp-st-s{color:color-mix(in srgb,var(--y) 70%,var(--ink))}
 .flp-st-s i{width:7px;height:7px;border-radius:50%;background:var(--c);flex:none}
 .flp-st-s span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.flp-lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.fl-lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
 .flp-list{border-radius:14px;background:var(--bg);padding:10px 8px 6px}
 .flp-list h3{margin:0 0 4px;padding:0 8px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:6px}
 .flp-list h3 span{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--surface);color:var(--ink);font-size:11px;line-height:18px;text-align:center;letter-spacing:0}
@@ -5378,7 +5378,7 @@ function flowProdHtml(p){
     <div class="fl-p-hd"><h2>Воронка</h2><span class="fl-p-st">${esc(ipState(p))}</span>
       <div class="fl-view"><span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${mode === 'board'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${mode !== 'board'}">Таймлайн</button></span></div></div>
     <div class="fl-chain fl-pipe" style="--n:${list.length}">${list.map(step).join('')}</div>
-    ${over.length || next.length ? `<div class="flp-lists">
+    ${over.length || next.length ? `<div class="fl-lists">
       ${over.length ? box('Просрочено', over.slice(0, 8), true, over.length) : ''}
       ${next.length ? box('Ближайшие', next, false, '') : ''}
     </div>` : ''}</section>`;
