@@ -2201,6 +2201,12 @@ svg.clip{width:14px;height:14px;flex:none}
 .tk-due .late{color:var(--r);font-weight:600}
 .pf-due{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
 .pf-due.late{color:var(--r);font-weight:600}
+.ct-next{margin:12px 0}.ct-next h3{margin:0 0 8px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.ct-next-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.ct-next-i{border-radius:12px;background:var(--bg);padding:10px 12px;display:grid;gap:8px}
+.ct-next-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ct-next-h b{font-size:14px}.ct-next-h > span{color:var(--muted);font-size:12px}.ct-next-h .who-chip{margin-left:auto}
+.ct-next-l{display:flex;flex-wrap:wrap;gap:6px}
+.ct-next-v{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:3px 8px;font:inherit;font-size:12.5px;cursor:pointer}.ct-next-v small{color:var(--muted)}
 .ct-stsel{height:30px;border:1px solid var(--fbd,var(--line));border-radius:8px;background:var(--pl-m-bg,color-mix(in srgb,var(--m) 10%,var(--surface)));color:var(--pl-m,var(--m));font:inherit;font-size:12.5px;font-weight:600;padding:0 6px;max-width:150px;cursor:pointer}.ct-stsel.done{background:var(--pl-g-bg,color-mix(in srgb,var(--g) 12%,var(--surface)));color:var(--pl-g,var(--g))}
 .pf-due.nodue{padding:1px 7px;border-radius:6px;background:var(--pl-y-bg,color-mix(in srgb,var(--y) 18%,transparent));color:color-mix(in srgb,var(--y) 65%,var(--ink));font-weight:600}
 .pf-due svg{width:12px;height:12px}
@@ -2653,9 +2659,9 @@ function ctStats(c){
     weeks[weekOfDate(c, x.due_date || c) - 1].items.push(x);
     const d = ctDoneAt(x); if (d && !x.extra){ pub++; weeks[weekOfDate(c, d < c ? c : d) - 1].pub++; }
   });
-  // сценарии: видео на этапе «Сценарий» или дальше (или опубликовано) — сценарий написан; считаем по неделе публикации
+  // сценарии: видео ушло с этапа «Сценарий» дальше (на съёмку и т. д.) или опубликовано — сценарий написан; считаем по неделе публикации
   const cs = vidCols(); const si = cs.findIndex(y => /сценар/i.test(y.name)); let scr = null;
-  if (si >= 0){ scr = 0; main.forEach(x => { if (x.done || cs.indexOf(vidCol(x)) >= si){ scr++; weeks[weekOfDate(c, x.due_date || c) - 1].scr = (weeks[weekOfDate(c, x.due_date || c) - 1].scr || 0) + 1; } }); }
+  if (si >= 0){ scr = 0; main.forEach(x => { if (x.done || cs.indexOf(vidCol(x)) > si){ scr++; weeks[weekOfDate(c, x.due_date || c) - 1].scr = (weeks[weekOfDate(c, x.due_date || c) - 1].scr || 0) + 1; } }); }
   return { plan, pub, items, weeks, kpi, scr, ownWeeks:!!own, extra:{ n:extra.length, pub:extra.filter(x => x.done).length } };
 }
 // доска видео: колонки — этапы шаблона «SMM: видео» (правятся в «Настройках → Шаблоны»), у видео x.vst — id этапа шаблона.
@@ -2787,12 +2793,24 @@ function renderContentBody(){
       ${st.extra.n ? `<div><b>${st.extra.pub} <small>из ${st.extra.n}</small></b><small>Доп. контент</small></div>` : ''}
     </div>
     <div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>
+    ${ctNextHtml(p, s, st)}
     <table class="smm-wk"><thead><tr><th>Неделя</th><th>План</th>${st.scr != null ? '<th>Сценарии</th>' : ''}<th>Опубликовано</th></tr></thead><tbody>
       ${st.weeks.map(x => `<tr class="${x.w === nowW ? 'now' : ''}"><td>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></td><td>${x.plan}</td>${st.scr != null ? `<td>${x.scr || 0} <small class="hint">из ${x.plan}</small></td>` : ''}<td>${x.pub} <small class="hint">из ${x.plan}</small></td></tr>`).join('')}
     </tbody></table></section>
     ${st.weeks.filter(x => x.items.length).map(x => `<section class="ct-wk"><h3>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></h3>
       <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}
     ${addForm}`;
+}
+// «Что дальше» в «Контенте»: по этапам видео (кроме «Опубликовано») — сколько видео ждут этот шаг, кто за него отвечает
+// и какие видео; клик по видео — его карточка. Сценарий написали → видео перевели на «Съёмку» → оно здесь у того, кто снимает
+function ctNextHtml(p, s, st){
+  const cs = vidCols(); if (cs.length < 2) return '';
+  const open = st.items.filter(x => !x.done);
+  const steps = cs.slice(0, -1).map(c => ({ c, list:open.filter(x => vidCol(x) === c).sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '')) })).filter(g => g.list.length);
+  if (!steps.length) return '';
+  return `<div class="ct-next"><h3>Что дальше</h3><div class="ct-next-g">${steps.map(g => { const who = (p.vidWho || {})[g.c.id] || contentWho(p, s, g.list[0], taskFor(p.id, s.id, g.list[0].id));
+    return `<div class="ct-next-i"><div class="ct-next-h"><b>${esc(g.c.name)}</b><span>${g.list.length} ${plural(g.list.length, 'видео', 'видео', 'видео')}</span>${whoChip(who)}</div>
+      <div class="ct-next-l">${g.list.slice(0, 6).map(x => `<button class="ct-next-v" data-pfsub="${s.id}|${x.id}">${esc(x.name)}${x.due_date ? ` <small>${fmt(x.due_date)}</small>` : ''}</button>`).join('')}${g.list.length > 6 ? `<small class="hint">и ещё ${g.list.length - 6}</small>` : ''}</div></div>`; }).join('')}</div></div>`;
 }
 function addContent(name, n, start, extra = false){
   const p = infoBoard(); const s = contentStage(p); if (!p || !s || !name) return;

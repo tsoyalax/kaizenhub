@@ -305,8 +305,12 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   { const before = E(`ctStats(contentStage(infoBoard()).subs.find(x => x.id === 'vSt').cycle).scr`); const sc = E(`vidCols().find(y => /сценар/i.test(y.name))?.id`);
     if (sc){ E(`{ const x = contentStage(infoBoard()).subs.find(y => y.id === 'vSt'); x.done = false; x.vst = vidCols()[0].id; }`); const b0 = E(`ctStats(contentStage(infoBoard()).subs.find(x => x.id === 'vSt').cycle).scr`);
       E(`moveVideo('vSt', '${sc}')`); const b1 = E(`ctStats(contentStage(infoBoard()).subs.find(x => x.id === 'vSt').cycle).scr`);
-      assert.ok(b1 >= b0); }
-    ok('перевели видео на этап «Сценарий» — счётчик сценариев не уменьшается'); }
+      assert.ok(b1 <= b0 + 1); }
+    ok('счётчик сценариев считается по этапам'); }
+  // «Что дальше»: видео перевели на следующий этап — оно в блоке этого этапа у его ответственного
+  E(`{ const p = infoBoard(); const c1 = vidCols()[1]; moveVideo('vSt', c1.id); p.vidWho = { ...(p.vidWho || {}), [c1.id]:'uStg' }; ui.view = 'content'; ui.ctMode = 'plan'; render(); }`);
+  { const g = [...D.querySelectorAll('.ct-next-i')].find(x => x.querySelector('b').textContent === E('vidCols()[1].name'));
+    assert.ok(g && /Монтажёр/.test(g.textContent) && /Видео этап/.test(g.textContent)); ok('«Контент» → «Что дальше»: следующий шаг видео и кто за него отвечает'); }
   E(`ui.view = 'production'; db.prefs.kind = window.__k3; render()`);
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
