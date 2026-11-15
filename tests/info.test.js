@@ -42,6 +42,9 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   D.getElementById('ctTotal').value = '45'; D.getElementById('ctEd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
   assert.deepEqual(E('ctStats(ctCur()).weeks.map(x => x.plan)'), [12, 11, 11, 11]); ok('KPI 45 — сам разбит на 4 недели 12/11/11/11');
   assert.equal(E('ctStats(ctCur()).plan'), 45); ok('план цикла — 45');
+  E(`ui.ctEdit = ctCur(); render()`); { const end = E('addDays(cycleEnd(ctCur()), -7)'); D.getElementById('ctEndD').value = end; D.getElementById('ctEd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
+    const ds = E(`JSON.stringify(contentStage().subs.filter(x => x.cycle === ctCur() && !x.done && !x.extra).map(x => x.due_date))`);
+    assert.ok(JSON.parse(ds).every(d => d <= end) && /закончить к/.test(D.getElementById('app').textContent)); ok('«Закончить к»: даты видео расставлены до этой даты'); }
   E(`ui.view = 'production'; render()`);
   assert.equal(D.querySelectorAll('.pf-card.done').length, 1); ok('на доске карточка тоже отмечена');
   // доска видео в «Контенте»: колонки SMM, «Опубликовано» = отметка на основной доске

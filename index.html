@@ -2212,6 +2212,7 @@ svg.clip{width:14px;height:14px;flex:none}
 @media (max-width:640px){.ct-stg-r{grid-template-columns:110px 1fr 28px}.ct-stg-w,.ct-mini{display:none}}
 .ct-seltools{display:flex;gap:8px;justify-content:flex-end;margin:4px 0 -4px}
 .ct-pick{width:18px;height:18px;accent-color:var(--r);flex:none}
+.ct-endb{font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:7px;background:var(--pl-g-bg,color-mix(in srgb,var(--g) 12%,transparent));color:var(--pl-g,var(--g))}
 .ct-stsel{height:30px;border:1px solid var(--fbd,var(--line));border-radius:8px;background:var(--pl-m-bg,color-mix(in srgb,var(--m) 10%,var(--surface)));color:var(--pl-m,var(--m));font:inherit;font-size:12.5px;font-weight:600;padding:0 6px;max-width:150px;cursor:pointer}.ct-stsel.done{background:var(--pl-g-bg,color-mix(in srgb,var(--g) 12%,var(--surface)));color:var(--pl-g,var(--g))}
 .pf-due.nodue{padding:1px 7px;border-radius:6px;background:var(--pl-y-bg,color-mix(in srgb,var(--y) 18%,transparent));color:color-mix(in srgb,var(--y) 65%,var(--ink));font-weight:600}
 .pf-due svg{width:12px;height:12px}
@@ -2784,10 +2785,13 @@ function renderContentBody(){
   app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>${modeSeg}</div><section class="smm-pf" aria-label="Контент: план и факт">
     <div class="smm-hd"><h2>План / Факт</h2>
       <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>
+      ${p.ctEnd?.[c] ? `<span class="ct-endb">закончить к ${fmt(p.ctEnd[c])}</span>` : ''}
       ${ui.ctEdit === c ? '' : `<button class="ghost smm-edit" data-ctedit>${ICON_EDIT}KPI</button>`}</div>
     ${ui.ctEdit === c ? `<form class="smm-ed ct-kpi-ed" id="ctEd">
       <label class="ct-f"><span>Сколько видео нужно за цикл (${cycleRange(c)})</span><input type="number" id="ctTotal" min="0" max="999" value="${st.plan || ''}" placeholder="например, 20"></label>
       <small class="hint">Разобьётся на 4 недели поровну: ${splitPlan(st.plan || 0).join(' / ')}</small>
+      <label class="ct-f"><span>Весь контент закончить к</span><input type="date" id="ctEndD" min="${c}" max="${cycleEnd(c)}" value="${infoBoard()?.ctEnd?.[c] || ''}"></label>
+      <small class="hint">Даты публикации невыполненных видео расставятся сами — равномерно от сегодня (или старта) до этой даты.</small>
       <span class="smm-ed-act"><button type="button" class="ghost" data-cteditcancel>Отмена</button><button class="primary">Сохранить</button></span></form>` : ''}
     <div class="smm-kpi">
       <div><b>${st.plan}</b><small>План${st.kpi && !st.ownWeeks ? ` · KPI ${st.kpi} в неделю` : st.ownWeeks ? ' · по неделям' : ''}</small></div>
@@ -2833,6 +2837,15 @@ document.addEventListener('click', e => {
     return; }
 });
 document.addEventListener('change', e => { const id = e.target.dataset?.ctpick; if (!id) return; ui.ctSel = ui.ctSel || new Set(); e.target.checked ? ui.ctSel.add(id) : ui.ctSel.delete(id); render(); });
+// расставить даты публикации невыполненных видео цикла равномерно: от сегодня (или старта цикла) до «закончить к» (p.ctEnd[цикл])
+function ctSpread(c){
+  const p = infoBoard(); const s = contentStage(p); const end = p?.ctEnd?.[c]; if (!s || !end) return 0;
+  const from = today() > c ? today() : c; if (from > end) return 0;
+  const list = (s.subs || []).filter(x => x.cycle === c && !x.done && !x.extra).sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true }));
+  const span = diffDays(end, from);
+  list.forEach((x, i) => { x.due_date = list.length === 1 ? end : addDays(from, Math.round(i * span / (list.length - 1))); });
+  return list.length;
+}
 function addContent(name, n, start, extra = false){
   const p = infoBoard(); const s = contentStage(p); if (!p || !s || !name) return;
   const c = ctCycles().filter(x => start >= x && start <= cycleEnd(x)).at(-1) || start;
@@ -2843,6 +2856,7 @@ function addContent(name, n, start, extra = false){
     (s.subs = s.subs || []).push({ id:uid(), name:n > 1 ? `${name} ${k}` : name, done:false, cycle:c, due_date:due, ...(extra ? { extra:true } : {}) });
   } });
   addLog(p, `Контент: добавлено ${n} ${plural(n, 'видео', 'видео', 'видео')}${extra ? ' (доп. контент)' : ''} в «${s.name}»`);
+  if (!extra && p.ctEnd?.[c]) ctSpread(c);                       // задан «закончить к» — новые видео встают в общий график
   ui.ctCycle = c; commit();
 }
 document.addEventListener('submit', e => {
@@ -2853,6 +2867,7 @@ document.addEventListener('submit', e => {
     // KPI — одно число на цикл, сам делится на 4 недели поровну (45 → 12/11/11/11)
     const n = Math.max(0, Math.min(999, +$('#ctTotal').value || 0)); const ws = splitPlan(n);
     b.ctWeeks = { ...(b.ctWeeks || {}), [c]:ws }; b.weekKpi = null;
+    const end = $('#ctEndD')?.value; if (end){ b.ctEnd = { ...(b.ctEnd || {}), [c]:end > cycleEnd(c) ? cycleEnd(c) : end }; ctSpread(c); }
     addLog(b, `Контент: KPI цикла ${cycleRange(c)} — ${n} (по неделям ${ws.join(' / ')})`);
     ui.ctEdit = null; commit(); }
 });
