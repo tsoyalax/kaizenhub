@@ -2030,6 +2030,7 @@ table.cx{border-collapse:collapse}
 .pf-col.editing header[draggable]{cursor:grab}.pf-col.editing{outline:1px dashed color-mix(in srgb,var(--ink) 18%,transparent);outline-offset:-1px}
 .pf-colgrip{margin:0 4px 0 -2px;color:var(--muted);font-size:14px;line-height:20px;user-select:none}
 .pf-col.dragging{opacity:.45}.pf-col.col-before{box-shadow:-3px 0 0 var(--brand)}.pf-board.col-end > .pf-col[data-pfcolid]:last-of-type{box-shadow:3px 0 0 var(--brand)}
+.pf-pdf{margin-left:auto}.pf-pdf + .pf-shareic{margin-left:6px}
 .pf-shareic{position:relative;flex:none;width:36px;height:36px;border:1px solid var(--fbd,var(--line));background:var(--surface);border-radius:10px;color:var(--muted)}
 .pf-shareic:hover{color:var(--ink)}
 .pf-shareic svg{width:16px;height:16px}
@@ -9458,6 +9459,7 @@ function renderProjectFocus(mine = false){
           <div><h2>${mine ? esc(p.name) : `<button class="link-plain" data-open="${p.id}">${esc(p.name)}</button>`}</h2>
             <small>${mine ? `${esc(p.client)}, ваша роль: ${ROLE_RU[role].toLowerCase()}, владелец: <span class="owner-name">…</span>` : `${p.client ? `${esc(p.client)}, ` : ''}PM ${esc(short(p.pm_id))}${execTxt(p)}${isInfoBoardP(p) ? '' : `, финиш ${fmt(plannedEnd(p))}`}`}</small>
           </div>
+          ${!mine ? `<button class="icon-btn pf-shareic pf-pdf" data-roadmap="${p.id}" title="Дорожная карта «${esc(p.name)}» в PDF: задачи с датами и ключевыми точками" aria-label="Дорожная карта в PDF">${PDF_ICON}</button>` : ''}
           ${!mine ? `<button class="icon-btn pf-shareic${shareCount(p) ? ' on' : ''}" data-share="${p.id}" title="Поделиться проектом${shareCount(p) ? ` · доступ у ${shareCount(p)}` : ''}" aria-label="Поделиться проектом">${SHARE_ICON}${shareCount(p) ? `<span>${shareCount(p)}</span>` : ''}</button>` : ''}
         </div>
         ${!mine ? `<div class="pf-sort">${canEdit && !GUEST ? `<button type="button" class="ghost pf-editbtn${ui.pfEdit ? ' on' : ''}" data-pfedit aria-pressed="${!!ui.pfEdit}">${ui.pfEdit ? 'Готово' : `${ICON_EDIT}Редактировать доску`}</button>` : ''}<label class="hint" for="pfSort">Карточки:</label><select id="pfSort" aria-label="Порядок карточек в столбиках">${Object.entries(CARD_SORT).map(([k, l]) => `<option value="${k}" ${cardSortMode() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>` : ''}
