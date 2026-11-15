@@ -3140,7 +3140,21 @@ function localSave(){
 const stageSigs = new Map();
 // статус этапа (su) и каждая галочка подэтапа (x.u) — отдельно: исполнитель отметил пункт ≠ исполнитель поменял статус
 const stageSig = s => JSON.stringify([s.status, s.started_at || null, s.completed_at || null, s.assignee_id || null]);
+// Удалённые подэтапы помним в проекте (p.subDel — id, «надгробия»): проект пишется целиком, и старая копия у исполнителя
+// или на другом устройстве возвращала удалённые задачи. Подэтап, пропавший из проекта, попадает в p.subDel; вернувшийся из
+// чужой копии — сразу убирается. Перенос между колонками не считается удалением (сравниваем по всему проекту).
+const subIdsOf = p => (p.stages || []).flatMap(s => (s.subs || []).map(x => x.id));
+const unionDel = (...ls) => { const u = [...new Set(ls.flatMap(l => l || []))]; return u.length ? u.slice(-800) : undefined; };
+function trackSubDel(){
+  (db.projects || []).forEach(p => {
+    if (p.subDel?.length){ const del = new Set(p.subDel); p.stages.forEach(s => { if ((s.subs || []).some(x => del.has(x.id))) s.subs = s.subs.filter(x => !del.has(x.id)); }); }
+    const now = new Set(subIdsOf(p)), k = 'subs|' + p.id, was = stageSigs.get(k);
+    if (was){ const gone = was.filter(id => !now.has(id)); if (gone.length) p.subDel = unionDel(p.subDel, gone); }
+    stageSigs.set(k, [...now]);
+  });
+}
 function stampStages(){
+  trackSubDel();
   const now = new Date().toISOString();
   [...(db.projects || []), ...((typeof ext !== 'undefined' && ext.projects) || [])].forEach(p => (p.stages || []).forEach(s => {
     const g = stageSig(s), o = stageSigs.get(s.id); if (o !== undefined && o !== g) s.su = now; stageSigs.set(s.id, g);
@@ -9508,6 +9522,8 @@ function keepFreshStages(prevP, prevT){
   (db.projects || []).forEach(p => {
     let ch = false;
     const a = prevP.get(p.id), b = sr?.remote?.get(p.id);
+    const del = unionDel(p.subDel, a?.subDel, b?.subDel); if (del && del.length !== (p.subDel || []).length){ p.subDel = del; ch = true; }
+    if (p.subDel?.length){ const ds = new Set(p.subDel); p.stages.forEach(s => { if ((s.subs || []).some(x => ds.has(x.id))){ s.subs = s.subs.filter(x => !ds.has(x.id)); ch = true; } }); }
     if (a && a !== p && mergeStageFields(p, a)) ch = true;
     if (b && mergeStageFields(p, b)) ch = true;
     if (ch){ syncState(p); fixed = true; }
@@ -9957,6 +9973,7 @@ function onSharedProject(pid, snap){
     queueAutoClose(pid, true); return;
   }
   const next = { ...remote, share:local.share, log:mergeLogs(local.log, remote.log) };
+  const del = unionDel(local.subDel, remote.subDel); if (del){ next.subDel = del; const ds = new Set(del); (next.stages || []).forEach(s => { s.subs = (s.subs || []).filter(x => !ds.has(x.id)); }); }
   const keepMine = mergeStageFields(next, local);               // у меня новее — оставляем и досылаем
   if (keepMine) syncState(next);
   db.projects[i] = next; rememberStages([next]);

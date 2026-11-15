@@ -270,6 +270,14 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   { const ct = D.querySelector('.ab-board .pf-col.ct-col'); assert.ok(ct && ct.querySelectorAll('.ct-ico').length === 3 && ct.querySelector('[data-ctmore="__all"]')); ok('во «Все» колонка «Контент» тоже выделена и свёрнута');
     ct.querySelector('[data-ctmore]').click(); assert.ok(D.querySelector('.ab-board .pf-col.ct-col').querySelectorAll('.ct-ico').length > 3); ok('во «Все» — «Показать все» раскрывает'); }
   E(`ui.infoAll = false; db.prefs.kind = window.__k; render();`);
+  // удалённая задача не возвращается из старой копии (исполнитель / другое устройство пишет проект целиком)
+  E(`{ const p = infoBoard(); const s = p.stages.find(x => !isMaint(x)); s.subs.push({ id:'zDel', name:'Удалю', done:false }); commit();
+     window.__old = JSON.parse(JSON.stringify(p)); s.subs = s.subs.filter(x => x.id !== 'zDel'); commit(); }`);
+  assert.ok(E(`infoBoard().subDel.includes('zDel')`)); ok('удаление задачи запоминается');
+  E(`{ const p = infoBoard(); p.stages.find(x => x.subs.some?.(y => false) || !isMaint(x)).subs.push({ id:'zDel', name:'Удалю', done:false }); commit(); }`);
+  assert.ok(!E(`subIdsOf(infoBoard()).includes('zDel')`)); ok('вернувшаяся из копии задача сразу убирается');
+  E(`onSharedProject(infoBoard().id, { exists:true, metadata:{}, data:() => ({ json:JSON.stringify(window.__old) }) })`);
+  assert.ok(!E(`subIdsOf(infoBoard()).includes('zDel')`)); ok('старая копия из общего документа удалённую задачу не возвращает');
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });
