@@ -1146,9 +1146,14 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .ck.sortable li{grid-template-columns:20px minmax(0,1fr);column-gap:6px}
 .ck.sortable li .grip{grid-row:1}
 .ck.sortable li small{grid-column:2}
+.ck li:has(.ck-who),.ck li:has(.who-chip){grid-template-columns:minmax(0,1fr) auto}
+.ck.sortable li:has(.ck-who),.ck.sortable li:has(.who-chip){grid-template-columns:20px minmax(0,1fr) auto}
+.ck li .ck-who,.ck li > .who-chip{grid-row:1}
 .ckb li input.ckb-chk{flex:none;width:18px;height:18px;min-width:18px;margin:0 4px;padding:0;border:0;accent-color:var(--g);cursor:pointer}
 .ckb li input.is-done{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line-strong)}
 .ck-box{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:14px}
+.ck-who{margin-left:auto;flex:none;max-width:180px;height:28px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);padding:0 6px}
+.ck-who.own{color:var(--ink);font-weight:600;border-color:var(--brand)}
 .ck-box input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--g);flex:none;cursor:pointer}
 .ck li.on .ck-txt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line-strong)}
 .ck-tools{grid-row:1;grid-column:2;display:flex;gap:2px;opacity:.35}
@@ -3089,7 +3094,7 @@ function stampStages(){
 }
 // Карточки подэтапов тоже пишутся целиком: пункт чек-листа получает i.u при отметке/снятии, карточка — t.u при прочих правках
 const taskSig = t => JSON.stringify([t.title, t.description || '', t.assignee_id || null, t.result_link || '', t.video_url || '', t.regulation_link || '',
-  (t.checklist || []).map(i => [i.id, i.text]), (t.mats || []).map(m => [m.id, !!m.ok]), t.start_date || null, t.due_date || null, t.remind?.at || null, t.priority || null]);
+  (t.checklist || []).map(i => [i.id, i.text, i.who || '']), (t.mats || []).map(m => [m.id, !!m.ok]), t.start_date || null, t.due_date || null, t.remind?.at || null, t.priority || null]);
 function stampTasks(){
   const now = new Date().toISOString();
   [...(db.tasks || []), ...((typeof ext !== 'undefined' && ext.tasks) || [])].forEach(t => {
@@ -8549,6 +8554,12 @@ document.addEventListener('click', e => {
   const pl = e.target.closest?.('[data-vplay]'); if (pl){ e.preventDefault(); e.stopPropagation(); ui.vplay = pl.dataset.vplay; renderTaskModal(); return; }
   if (e.target.closest?.('[data-vstop]')){ e.preventDefault(); e.stopPropagation(); ui.vplay = null; renderTaskModal(); }
 }, true);
+// ответственный за пункт чек-листа: свой (i.who) или, если не выбран, — ответственный подэтапа (подставляется сам)
+const ckWho = (p, s, t, i) => i.who || whoId(p, s, t) || '';
+function ckWhoHtml(p, s, t, i, editable){
+  if (editable && !p?._ext) return `<select class="ck-who${i.who ? ' own' : ''}" data-ckwho="${i.id}" aria-label="Ответственный за пункт «${esc(i.text)}»" title="Ответственный за пункт">${peopleOpts(i.who || '', `Как у подэтапа: ${short(whoId(p, s, t))}`)}</select>`;
+  return i.who ? whoChip(i.who) : '';
+}
 function draftOf(t){
   const lt = { regulation_link:t.regulation_link || '', video_url:t.video_url || '', blocks:clone(t.blocks || []) }; linksToBlocks(lt, 'regulation_link', 'video_url', 'blocks');
   return { title:t.title, substage_id:t.substage_id || '', assignee_id:t.assignee_id || '', description:t.description || '',
@@ -8585,6 +8596,7 @@ function renderTaskModal(focusSel){
         ${t.checklist.length ? `<ul class="ck${t.checklist.length > 1 ? ' sortable' : ''}">${t.checklist.map((i, k) => `<li class="${i.done ? 'on' : ''}" data-ckv="${k}">
           ${t.checklist.length > 1 ? `<span class="grip" data-ckvdrag="${k}" tabindex="0" role="button" aria-label="Перетащите, чтобы переставить пункт «${esc(i.text)}». Клавиши ↑ ↓ тоже работают" title="Перетащите"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>` : ''}
           <label class="ck-box"><input type="checkbox" data-ck="${i.id}" id="ck-${i.id}" ${i.done ? 'checked' : ''}><span class="ck-txt">${esc(i.text)}</span></label>
+          ${ckWhoHtml(p, s, t, i, editable)}
           ${i.done && i.completed_at ? `<small>${esc(i.completed_by || '')}, ${new Date(i.completed_at).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small>` : ''}</li>`).join('')}</ul>`
           : `<p class="hint">Пунктов пока нет.</p>${editable && sub && cardTplFor(p, sub.name)?.c?.length ? `<button class="ghost" data-tfill>Заполнить из шаблона «${esc(sub.name)}»</button>` : ''}`}</section>
       ${sub?.files ? matsSection(p, t) : res ? `<section class="tk-sec"><h3>Результат</h3><p><a class="ghost tk-reg" href="${esc(res)}" target="_blank" rel="noopener noreferrer">Открыть сданную работу ↗</a></p></section>` : ''}
@@ -8825,6 +8837,10 @@ document.addEventListener('change', e => {
   if (!el.closest?.('#taskLayer')) return;
   const t = taskById(ui.taskId); if (!t) return;
   if (el.dataset.td && ui.taskDraft){ ui.taskDraft[el.dataset.td] = el.value; if (el.dataset.td === 'video_url') renderTaskModal(); return; }
+  if (el.dataset.ckwho !== undefined){
+    const i = t.checklist.find(x => x.id === el.dataset.ckwho); if (!i || el.value === NEW_PERSON) return;
+    i.who = el.value || null; tSave(t, true, `[data-ckwho="${i.id}"]`); return;
+  }
   if (el.dataset.ck){
     const i = t.checklist.find(x => x.id === el.dataset.ck); if (!i) return;
     i.done = el.checked; i.completed_at = el.checked ? new Date().toISOString() : null; i.completed_by = el.checked ? meName() : null;

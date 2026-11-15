@@ -99,6 +99,14 @@ function openPage(backend, code){
   E(`ui.tdMode = 'plan'; render();`); [...D.querySelectorAll('[data-tdyshare]')].find(b => b.dataset.tdyshare === 'uIg').click(); await wait(300);
   $('#tdyOff').click(); await wait(400);
   assert.ok(!be.rows.has('today/' + code) && !E(`(db.prefs.todayLinks || []).length`)); ok('ссылку можно закрыть');
+  // ответственный за пункт чек-листа: по умолчанию — как у подэтапа, можно выбрать свой
+  E(`{ const t = db.tasks.find(t => t.substage_id === 'xStart'); t.checklist = [{ id:'ck1', text:'Написать вакансию', done:false }, { id:'ck2', text:'Созвон', done:false }]; commit(); openTask(t.id); }`); await wait(50);
+  const sel = D.querySelector('[data-ckwho="ck1"]');
+  assert.ok(sel && /Как у подэтапа/.test(sel.options[0].textContent) && sel.value === ''); ok('у пункта чек-листа — выбор ответственного, по умолчанию как у подэтапа');
+  const other = [...sel.options].find(o => o.value && o.value !== 'uIg' && !o.value.startsWith('__')).value;
+  sel.value = other; sel.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(50);
+  assert.ok(E(`db.tasks.find(t => t.substage_id === 'xStart').checklist[0].who`) === other && E(`!db.tasks.find(t => t.substage_id === 'xStart').checklist[1].who`)); ok('пункту можно назначить своего ответственного, остальные — как у подэтапа');
+  E(`document.querySelector('[data-tclose]')?.click()`);
   assert.deepEqual([...o.errors, ...pg.errors].filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });
