@@ -2748,7 +2748,7 @@ function renderContent(){
 }
 function renderContentBody(){
   if (!vidTpl() && !GUEST){ ensureSmmTemplate(db); save(); }
-  if (!ui.vidSynced && !GUEST && smmSpace()) syncVidTplFromSmm(false);
+  // этапы видео больше не подтягиваются из шаблона SMM-пространства (затирали свои колонки и статусы видео) — у площадки свой шаблон «SMM: видео»
   const p = infoBoard(); const s = contentStage(p);
   if (!p || !s){ app.innerHTML = `<div class="empty">На доске нет этапа «Контент».<br>Добавьте его в «Настройки → Шаблоны → Инфобизнес: запуск» — видео будут карточками этого этапа.</div>`; return; }
   ui.prodProject = p.id;
