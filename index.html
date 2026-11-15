@@ -1342,6 +1342,7 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .kd-form{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.kd-form input{height:30px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;padding:0 8px}.kd-form input[name=kdn]{min-width:200px}
 .kd-form button{height:30px;padding:0 12px;font-size:13px}
 .tl-key span{z-index:3}
+.pf-sort{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin:0 0 8px}.pf-sort select{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;padding:0 8px}
 .tl{display:grid;grid-template-columns:170px minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .tl-lbls{border-right:1px solid var(--line)}
 .tl-lbl{box-sizing:border-box;display:grid;align-content:center;gap:4px;padding:0 12px;border-top:1px solid var(--line);font-size:13px;overflow:hidden}
@@ -4751,6 +4752,18 @@ document.addEventListener('submit', e => {
   (p.keyDates = p.keyDates || []).push({ id:uid(), d, name:name.slice(0, 80) }); ui.kdOpen = null;
   addLog(p, `Ключевая дата: ${fmt(d)} — ${name}`); commit(); kdRedraw(); toast(`Ключевая дата добавлена: ${fmt(d)}`);
 });
+// ---------- Порядок карточек в столбиках доски: как на доске / по ближайшим датам / по приоритету ----------
+// Сохраняется в браузере (kz-card-sort). Выполненные — всегда внизу. Без срока — после карточек со сроком.
+const CARD_SORT = { manual:'как на доске', due:'по ближайшим датам', pri:'по приоритету' };
+const cardSortMode = () => { if (ui.cardSort) return ui.cardSort; try { const v = localStorage.getItem('kz-card-sort'); if (CARD_SORT[v]) return (ui.cardSort = v); } catch(e) {} return (ui.cardSort = 'manual'); };
+function sortCards(p, s, subs){
+  const mode = cardSortMode(); if (mode === 'manual' || !subs.length) return subs;
+  const info = subs.map((x, i) => { const t = taskFor(p.id, s.id, x.id); return { x, i, done:subDone(p, s, x), due:t?.due_date || x.due_date || '', pri:PRI_W[t?.priority] ?? 2 }; });
+  const byDue = (a, b) => (a.due ? 0 : 1) - (b.due ? 0 : 1) || String(a.due).localeCompare(String(b.due));
+  info.sort((a, b) => (a.done - b.done) || (mode === 'pri' ? (a.pri - b.pri) || byDue(a, b) : byDue(a, b) || (a.pri - b.pri)) || a.i - b.i);
+  return info.map(v => v.x);
+}
+document.addEventListener('change', e => { if (e.target.id !== 'pfSort') return; ui.cardSort = e.target.value; try { localStorage.setItem('kz-card-sort', ui.cardSort); } catch(x) {} render(); });
 // ---------- Производство на телефоне: лента проектов + этапы сверху вниз ----------
 function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage, curSub }){
   const key = mine ? 'myProject' : 'prodProject';
@@ -4762,7 +4775,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
   const prevBoard = app.querySelector('.pm-board')?.scrollLeft || 0;
   const cols = p.stages.map(s => {
     const h = health(s); const isCur = s.id === cur.stageId; const passed = s.status === 'done';
-    const subs = boardSubs(p, s); const doneN = subs.filter(x => subDone(p, s, x)).length;
+    const subs = sortCards(p, s, boardSubs(p, s)); const doneN = subs.filter(x => subDone(p, s, x)).length;
     const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
       const here = isCur && x.id === cur.subId;
@@ -9104,7 +9117,7 @@ function renderProjectFocus(mine = false){
   const dnd = canEditProject(p) && !mine && isInfo() && !GUEST;     // доски инфобизнеса: карточки перетаскиваются между колонками
   const cols = p.stages.map(s => {
     const h = health(s); const isCur = s.id === cur.stageId;
-    const subs = boardSubs(p, s);
+    const subs = sortCards(p, s, boardSubs(p, s));
     const doneN = subs.filter(x => subDone(p, s, x)).length;
     const passed = s.status === 'done';
     const cards = isMaint(s) ? rtaskBlock(p, s) : subs.map(x => {
@@ -9139,6 +9152,7 @@ function renderProjectFocus(mine = false){
           </div>
           ${!mine ? `<button class="icon-btn pf-shareic${shareCount(p) ? ' on' : ''}" data-share="${p.id}" title="Поделиться проектом${shareCount(p) ? ` · доступ у ${shareCount(p)}` : ''}" aria-label="Поделиться проектом">${SHARE_ICON}${shareCount(p) ? `<span>${shareCount(p)}</span>` : ''}</button>` : ''}
         </div>
+        ${!mine ? `<div class="pf-sort"><label class="hint" for="pfSort">Карточки:</label><select id="pfSort" aria-label="Порядок карточек в столбиках">${Object.entries(CARD_SORT).map(([k, l]) => `<option value="${k}" ${cardSortMode() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>` : ''}
         <div class="pf-board">${cols}${canEdit && !mine && !GUEST ? '<button type="button" class="col-add pf-coladd" data-pfscol><span aria-hidden="true">+</span>Столбик</button>' : ''}</div>
       </div>
     </div>`;

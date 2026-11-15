@@ -75,6 +75,17 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(E(`em.stages.some(s => s.name === 'Монтаж')`) && !E(`ig.stages.some(s => s.name === 'Монтаж')`)); ok('новый столбик добавляется');
   D.querySelector(`[data-pfsdel="${E(`em.stages.find(s => s.name === 'Монтаж').id`)}"]`).click(); await wait(30); $('#cfmOk').click(); await wait(80);
   E(`syncAllTemplates(INFO_TPL_ID);`); assert.ok(!E(`em.stages.some(s => s.name === 'Монтаж')`)); ok('лишний столбик удаляется');
+  // порядок карточек в столбике: как на доске / по ближайшим датам / по приоритету
+  E(`layer.innerHTML = ''; ui.open = null; ui.infoMode = 'board'; ui.prodProject = em.id; { const s = em.stages[1]; s.subs = [
+     { id:'cA', name:'Поздняя', done:false, due_date:addDays(T, 9) }, { id:'cB', name:'Без срока', done:false }, { id:'cC', name:'Ближайшая', done:false, due_date:addDays(T, 1) }, { id:'cD', name:'Срочная', done:false, due_date:addDays(T, 5) } ];
+     tasksFromSubs(em, { ...s, subs:[s.subs[3]] }); taskFor(em.id, s.id, 'cD').priority = 'urgent'; } render();`); await wait(50);
+  const order = () => [...D.querySelectorAll('.pf-col')[1].querySelectorAll('.pf-card b')].map(b => b.textContent.trim());
+  assert.deepEqual(order(), ['Поздняя', 'Без срока', 'Ближайшая', 'Срочная']); ok('по умолчанию — как на доске');
+  const sel = $('#pfSort'); sel.value = 'due'; sel.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
+  assert.deepEqual(order().map(x => x.replace(/^[^А-Яа-яЁё]+/, '')), ['Ближайшая', 'Срочная', 'Поздняя', 'Без срока']); ok('«по ближайшим датам»: ближайшие сверху, без срока внизу');
+  const sel2 = $('#pfSort'); sel2.value = 'pri'; sel2.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
+  assert.equal(order()[0].replace(/^[^А-Яа-яЁё]+/, ''), 'Срочная'); ok('«по приоритету»: срочные сверху');
+  assert.equal(w.localStorage.getItem('kz-card-sort'), 'pri'); ok('выбор запоминается');
   assert.deepEqual(o.errors.filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });
