@@ -4900,20 +4900,20 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
     const ctv = ctFold(p, s, subs);
     const cards = isMaint(s) ? rtaskBlock(p, s) : ctv.shown.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
-      const here = isCur && x.id === cur.subId;
+      const here = isCur && x.id === cur.subId && !isInfoBoardP(p);
       if (mine && !t) return tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<b>${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
         <small>${whoChip(whoId(p, s, t))}</small>
-        ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
-             : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}</button>`;
+        ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span>${pr.total ? `<small>${pr.n} из ${pr.total} выполнено</small>` : isInfoBoardP(p) ? '' : '<small>Чек-лист пуст</small>'}`
+             : isInfoBoardP(p) ? '' : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}</button>`;
     }).join('');
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}${ctv.isCt ? ' ct-col' : ''}" data-pmcol="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
-      <header><div>${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`}${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}
+      <header><div>${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`}${isCur && !isInfoBoardP(p) ? '<span class="pf-now">Текущий этап</span>' : ''}
         ${canEdit && !mine && !GUEST && !isMaint(s) && ui.pfRen !== s.id && ui.pfEdit ? `<span class="pf-coltools"><button type="button" data-pfsren="${s.id}" title="Переименовать столбик" aria-label="Переименовать столбик «${esc(s.name)}»">${ICON_EDIT}</button>${p.stages.filter(x => !isMaint(x)).length > 1 ? `<button type="button" data-pfsdel="${s.id}" title="Удалить столбик" aria-label="Удалить столбик «${esc(s.name)}»">${ICON_X}</button>` : ''}</span>` : ''}</div>
-        <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
+        ${isInfoBoardP(p) ? '' : `<small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>`}${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}${ctv.btn}</div>
-      ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}${stageSubmitBox(p, s, mine)}
+      ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="${isInfoBoardP(p) ? 'Добавить задачу' : 'Добавить подэтап'}" aria-label="Новая задача: ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}${stageSubmitBox(p, s, mine)}
     </section>`;
   }).join('');
   const steps = p.stages.map(s => `<button class="pm-step${s.status === 'done' ? ' done' : ''}${s.id === cur.stageId ? ' cur' : ''} h-${health(s).key}" data-pmgo="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">${s.status === 'done' ? '✓' : s.position + 1}</button>`).join('');
@@ -8118,7 +8118,8 @@ function dayProjectItems(who){
     stages.forEach(c => {
     const tasks = (p._ext ? ext.tasks : (db.tasks || [])).filter(t => t.project_id === p.id && t.stage_id === c.id);
     const rows = (c.subs || []).map(x => ({ x, t:tasks.find(t => t.substage_id === x.id) || null }))
-      .concat(tasks.filter(t => !t.substage_id || !(c.subs || []).some(x => x.id === t.substage_id)).map(t => ({ x:null, t })));
+      // карточки без подэтапа: у которых подэтап удалили с доски — не показываем (иначе удалённая задача висела в «Сегодня» и «Мои задачи»)
+      .concat(tasks.filter(t => !t.substage_id).map(t => ({ x:null, t })));
     rows.forEach(({ x, t }) => {
       const w = x?.cycle && isInfoBoardP(p) ? contentWho(p, c, x, t) : whoId(p, c, t);   // видео — у кого оно сейчас на этапе
       if (p._ext){ if (!mine.includes(w)) return; }
@@ -9345,23 +9346,23 @@ function renderProjectFocus(mine = false){
     const ctv = ctFold(p, s, subs);
     const cards = isMaint(s) ? rtaskBlock(p, s) : ctv.shown.map(x => {
       const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x);
-      const here = isCur && x.id === cur.subId;
+      const here = isCur && x.id === cur.subId && !isInfoBoardP(p);
       if (mine && !t) return tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" ${dnd ? `draggable="true" data-pfdrag="${s.id}|${x.id}"` : ''} aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
         <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
         <small>${x.cycle && isInfoBoardP(p) && vidCol(x) ? `<span class="vid-st">${esc(vidCol(x).name)}</span>` : ''}${whoChip(x.cycle && isInfoBoardP(p) ? contentWho(p, s, x, t) : whoId(p, s, t))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : `срок ${fmt(t.due_date)}`}</span>` : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
-        ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Чек-лист пуст'}</small>`
-             : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
+        ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span>${pr.total ? `<small>${pr.n} из ${pr.total} выполнено</small>` : isInfoBoardP(p) ? '' : '<small>Чек-лист пуст</small>'}`
+             : isInfoBoardP(p) ? '' : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
       </button>`;
     }).join('');
     const colMove = canEdit && !mine && !GUEST && ui.pfEdit && !isMaint(s);
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}${ui.pfEdit ? ' editing' : ''}${ctv.isCt ? ' ct-col' : ''}" ${dnd ? `data-pfcol="${s.id}"` : ''} ${colMove ? `data-pfcolid="${s.id}"` : ''} aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
-      <header ${colMove ? `draggable="true" data-pfcolmove="${s.id}" title="Перетащите, чтобы переставить столбик"` : ''}><div>${colMove ? '<span class="pf-colgrip" aria-hidden="true">⠿</span>' : ''}${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`}${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}
+      <header ${colMove ? `draggable="true" data-pfcolmove="${s.id}" title="Перетащите, чтобы переставить столбик"` : ''}><div>${colMove ? '<span class="pf-colgrip" aria-hidden="true">⠿</span>' : ''}${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`}${isCur && !isInfoBoardP(p) ? '<span class="pf-now">Текущий этап</span>' : ''}
         ${canEdit && !mine && !GUEST && !isMaint(s) && ui.pfRen !== s.id && ui.pfEdit ? `<span class="pf-coltools"><button type="button" data-pfsren="${s.id}" title="Переименовать столбик" aria-label="Переименовать столбик «${esc(s.name)}»">${ICON_EDIT}</button>${p.stages.filter(x => !isMaint(x)).length > 1 ? `<button type="button" data-pfsdel="${s.id}" title="Удалить столбик" aria-label="Удалить столбик «${esc(s.name)}»">${ICON_X}</button>` : ''}</span>` : ''}</div>
-        <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
+        ${isInfoBoardP(p) ? '' : `<small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>`}${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}${ctv.btn}</div>
-      ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}${stageSubmitBox(p, s, mine)}
+      ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="${isInfoBoardP(p) ? 'Добавить задачу' : 'Добавить подэтап'}" aria-label="Новая задача: ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}${stageSubmitBox(p, s, mine)}
     </section>`;
   }).join('');
 
