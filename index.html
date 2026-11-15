@@ -489,6 +489,12 @@ body.selecting #app{padding-bottom:90px}
 .tdy-h{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.tdy-h>b{font-size:15px}.tdy-pf{color:var(--muted);font-size:13px}.tdy-share{margin-left:auto}.tdy-share.on{color:var(--g)}
 .tdy-bar{height:6px;border-radius:4px;background:var(--line);overflow:hidden}.tdy-bar i{display:block;height:100%;background:var(--g)}
 .tdy-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.tdy-ct{display:grid;gap:6px}.tdy-ctb{display:grid;grid-template-columns:22px 1fr auto;gap:2px 8px;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:7px 10px;font:inherit;color:var(--ink);cursor:pointer}
+.tdy-ctb b{font-weight:600;font-size:13.5px}.tdy-ctb small{grid-column:2;color:var(--muted);font-size:12px}.tdy-car{grid-row:1/3;grid-column:3;color:var(--muted)}
+.tdy-cti svg{width:16px;height:16px;color:var(--brand)}.tdy-ct.done .tdy-ctb b{color:var(--g)}
+.tdy-cts{display:flex;gap:6px;flex-wrap:wrap;padding-left:4px}
+.tdy-chip{display:inline-flex;gap:6px;align-items:center;height:28px;padding:0 10px;border:1px solid var(--line);border-radius:999px;font-size:12.5px;cursor:pointer;background:var(--surface)}
+.tdy-chip input{width:14px;height:14px;margin:0;accent-color:var(--brand)}.tdy-chip.on{color:var(--muted);text-decoration:line-through}.tdy-chip.late{border-color:var(--r);color:var(--r)}
 .tdy-i{display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:start}.tdy-i input{margin:3px 0 0;width:16px;height:16px;accent-color:var(--brand)}
 .tdy-i span{display:grid;min-width:0}.tdy-i b{font-weight:500;font-size:13.5px}.tdy-i small{color:var(--muted);font-size:12px}.tdy-i.done b{text-decoration:line-through;color:var(--muted)}
 .tdy-late{color:var(--r);font-weight:600}
@@ -4602,6 +4608,15 @@ function dayFact(pl){
   return { done, extra };
 }
 const tdPeople = () => [...db.users.map(u => ({ id:u.id, name:u.id === ME ? `${u.name || 'Вы'} (вы)` : (u.name || 'Без имени') })), { id:'', name:'Без ответственного' }];
+// задача из «Контента» (видео инфобизнеса или этап «Контент») — в «Сегодня» сворачивается в одну строку
+function tdIsContent(i){
+  const [kind, ...ids] = String(i.k || '').split('|');
+  let p, s, x;
+  if (kind === 't'){ const t = taskById(ids[0]); if (!t) return /· Контент/i.test(i.where || ''); p = projById(t.project_id); s = p?.stages.find(y => y.id === t.stage_id); x = s?.subs?.find(y => y.id === t.substage_id); }
+  else if (kind === 'x'){ p = projById(ids[0]); s = p?.stages.find(y => y.id === ids[1]); x = s?.subs?.find(y => y.id === ids[2]); }
+  else return false;
+  return !!(x?.cycle || (s && /контент/i.test(s.name)));
+}
 function renderToday(){
   // день: сегодня или один из прошлых (‹ ›) — план того утра и что из него сделано
   const t0 = today(); const days = Object.keys(db.prefs?.dayPlans || {}).filter(k => k <= t0).sort();
@@ -4621,7 +4636,11 @@ function renderToday(){
     return `<section class="panel tdy-card"><header class="tdy-h"><b>${esc(u.name)}</b><span class="tdy-pf">${dn} <small>из ${u.plan.length}</small>${u.extra.length ? ` · +${u.extra.length} сверх` : ''}</span>
       ${u.id !== '' && isToday ? `<button class="ghost tdy-share${ln ? ' on' : ''}" data-tdyshare="${u.id}" title="Ссылка без входа: человек отмечает задачи, отметки попадают на общую доску">${ln ? 'Ссылка открыта' : 'Поделиться'}</button>` : ''}</header>
       <div class="smm-bar"><i style="width:${p2}%"></i></div>
-      <ul class="tdy-list">${u.plan.map(i => row(i, false)).join('')}${u.extra.map(i => row(i, true)).join('')}</ul></section>`; };
+      <ul class="tdy-list">${u.plan.filter(i => !tdIsContent(i)).map(i => row(i, false)).join('')}${contentRow(u.plan.filter(tdIsContent), u.id)}${u.extra.filter(i => !tdIsContent(i)).map(i => row(i, true)).join('')}</ul></section>`; };
+  // «Контент» (видео) — одной строкой: сколько на сегодня и сколько сделано; список раскрывается плашками
+  const contentRow = (list, uid2) => { if (!list.length) return ''; const dn = list.filter(i => f.done.has(i.k)).length; const late = list.filter(i => !f.done.has(i.k) && i.due && i.due < day).length; const open = (ui.tdCt || {})[uid2];
+    return `<li class="tdy-ct${dn === list.length ? ' done' : ''}"><button type="button" class="tdy-ctb" data-tdct="${uid2}" aria-expanded="${!!open}"><span class="tdy-cti">${VIDEO_ICO}</span><b>Контент: ${list.length} ${plural(list.length, 'видео', 'видео', 'видео')}</b><small>сделано ${dn} из ${list.length}${late ? ` · <span class="tdy-late">просрочено ${late}</span>` : ''}</small><span class="tdy-car" aria-hidden="true">${open ? '▴' : '▾'}</span></button>
+      ${open ? `<div class="tdy-cts">${list.map(i => `<label class="tdy-chip${f.done.has(i.k) ? ' on' : ''}${!f.done.has(i.k) && i.due && i.due < day ? ' late' : ''}"><input type="checkbox" data-tdyk="${esc(i.k)}" ${f.done.has(i.k) ? 'checked' : ''}>${esc(i.title)}</label>`).join('')}</div>` : ''}</li>`; };
   app.innerHTML = `<section class="smm-pf tdy-pf-box" aria-label="План и факт на день">
     <div class="smm-hd"><h2>План / Факт</h2>
       <span class="smm-m"><button class="icon-btn" data-tdday="-1" ${di > 0 ? '' : 'disabled'} aria-label="Предыдущий день">‹</button><b>${isToday ? 'Сегодня, ' : ''}${esc(title)}</b><button class="icon-btn" data-tdday="1" ${!isToday ? '' : 'disabled'} aria-label="Следующий день">›</button></span>
@@ -4638,6 +4657,7 @@ function renderToday(){
     </tbody></table>` : ''}</section>
     ${people.length ? `<div class="tdy-grid">${people.map(card).join('')}</div>` : `<div class="empty">${isToday ? 'На сегодня задач со сроком нет. Поставьте сроки подзадачам в «Поручениях» или в карточках — и они появятся здесь.' : 'В этот день плана не было.'}</div>`}`;
 }
+document.addEventListener('click', e => { const c = e.target.closest?.('[data-tdct]'); if (!c || ui.view !== 'today') return; ui.tdCt = ui.tdCt || {}; ui.tdCt[c.dataset.tdct] = !ui.tdCt[c.dataset.tdct]; render(); });
 document.addEventListener('click', e => {
   const b = e.target.closest?.('[data-tdday]'); if (!b || ui.view !== 'today') return;
   const days = Object.keys(db.prefs?.dayPlans || {}).filter(k => k <= today()).sort(); const cur = ui.tdDay && days.includes(ui.tdDay) ? ui.tdDay : today();
