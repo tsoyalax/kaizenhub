@@ -2201,6 +2201,14 @@ svg.clip{width:14px;height:14px;flex:none}
 .tk-due .late{color:var(--r);font-weight:600}
 .pf-due{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
 .pf-due.late{color:var(--r);font-weight:600}
+.ct-stg{margin:14px 0;display:grid;gap:6px}.ct-stg h3{margin:0 0 2px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.ct-stg-r{display:grid;grid-template-columns:minmax(120px,190px) 1fr 32px minmax(0,150px);gap:10px;align-items:center;font-size:13px}
+.ct-stg-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ct-stg-r b{text-align:right;font-variant-numeric:tabular-nums}
+.ct-stg-bar{height:10px;border-radius:6px;background:var(--bg);overflow:hidden}.ct-stg-bar i{display:block;height:100%;border-radius:6px;background:var(--m)}
+.ct-stg-r.pub .ct-stg-bar i{background:var(--g)}.ct-stg-r.jam .ct-stg-bar i{background:var(--y)}.ct-stg-r.jam .ct-stg-n{font-weight:700}
+.ct-stg-w{min-width:0;overflow:hidden}
+.ct-mini{display:inline-flex;gap:3px;flex:none}.ct-mini i{width:14px;height:5px;border-radius:3px;background:var(--line)}.ct-mini i.on{background:var(--m)}
+@media (max-width:640px){.ct-stg-r{grid-template-columns:110px 1fr 28px}.ct-stg-w,.ct-mini{display:none}}
 .ct-stsel{height:30px;border:1px solid var(--fbd,var(--line));border-radius:8px;background:var(--pl-m-bg,color-mix(in srgb,var(--m) 10%,var(--surface)));color:var(--pl-m,var(--m));font:inherit;font-size:12.5px;font-weight:600;padding:0 6px;max-width:150px;cursor:pointer}.ct-stsel.done{background:var(--pl-g-bg,color-mix(in srgb,var(--g) 12%,var(--surface)));color:var(--pl-g,var(--g))}
 .pf-due.nodue{padding:1px 7px;border-radius:6px;background:var(--pl-y-bg,color-mix(in srgb,var(--y) 18%,transparent));color:color-mix(in srgb,var(--y) 65%,var(--ink));font-weight:600}
 .pf-due svg{width:12px;height:12px}
@@ -2758,7 +2766,7 @@ function renderContentBody(){
   const row = x => `<li class="ct-row${x.done ? ' done' : ''}">
       <input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="${x.done ? 'Опубликовано' : 'Готово — на следующий этап'}: ${esc(x.name)}" title="${x.done ? 'Опубликовано' : 'Этап готов — перевести видео на следующий'}">
       <span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}
-      ${vidCols().length ? `<select class="ct-stsel${x.done ? ' done' : ''}" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}" title="Этап видео — выберите, чтобы перенести">${vidCols().map(y => `<option value="${y.id}" ${y === vidCol(x) ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select>` : ''}
+      ${ctMini(x)}${vidCols().length ? `<select class="ct-stsel${x.done ? ' done' : ''}" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}" title="Этап видео — выберите, чтобы перенести">${vidCols().map(y => `<option value="${y.id}" ${y === vidCol(x) ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select>` : ''}
       ${whoChip(contentWho(p, s, x, taskFor(p.id, s.id, x.id)))}<input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
   // по умолчанию — «План / Факт», доска — вторым видом
   const modeSeg = `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode !== 'board'}">План / Факт</button><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode === 'board'}">Доска</button></span>`;
@@ -2787,6 +2795,7 @@ function renderContentBody(){
       ${st.extra.n ? `<div><b>${st.extra.pub} <small>из ${st.extra.n}</small></b><small>Доп. контент</small></div>` : ''}
     </div>
     <div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>
+    ${ctStagesHtml(p, s, st)}
     <table class="smm-wk"><thead><tr><th>Неделя</th><th>План</th>${st.scr != null ? '<th>Сценарии</th>' : ''}<th>Опубликовано</th></tr></thead><tbody>
       ${st.weeks.map(x => `<tr class="${x.w === nowW ? 'now' : ''}"><td>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></td><td>${x.plan}</td>${st.scr != null ? `<td>${x.scr || 0} <small class="hint">из ${x.plan}</small></td>` : ''}<td>${x.pub} <small class="hint">из ${x.plan}</small></td></tr>`).join('')}
     </tbody></table></section>
@@ -2794,6 +2803,20 @@ function renderContentBody(){
       <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}
     ${addForm}`;
 }
+// «Этапы» в «План / Факт»: шкала на каждый этап видео — сколько видео сейчас на нём (длина полосы от всех видео цикла),
+// ответственный этапа; самый загруженный (не последний) этап подсвечен — там затор
+function ctStagesHtml(p, s, st){
+  const cs = vidCols(); const items = st.items.filter(x => !x.extra); if (cs.length < 2 || !items.length) return '';
+  const rows = cs.map((c, i) => ({ c, i, n:items.filter(x => vidCol(x) === c).length }));
+  const max = Math.max(...rows.slice(0, -1).map(r => r.n));
+  return `<div class="ct-stg"><h3>Этапы</h3>${rows.map(r => { const last = r.i === cs.length - 1; const jam = !last && r.n && r.n === max && max > 1;
+    return `<div class="ct-stg-r${last ? ' pub' : ''}${jam ? ' jam' : ''}"><span class="ct-stg-n">${r.i + 1}. ${esc(r.c.name)}</span>
+      <span class="ct-stg-bar"><i style="width:${Math.round(r.n / items.length * 100)}%"></i></span><b>${r.n}</b>
+      <span class="ct-stg-w">${last ? '' : whoChip((p.vidWho || {})[r.c.id] || null)}</span></div>`; }).join('')}</div>`;
+}
+// мини-шкала этапов у видео: заполнено до текущего этапа
+const ctMini = x => { const cs = vidCols(); if (cs.length < 2) return ''; const k = x.done ? cs.length : cs.indexOf(vidCol(x)) + 1;
+  return `<span class="ct-mini" title="Этап ${k} из ${cs.length}: ${esc(vidCol(x)?.name || '')}">${cs.map((c, i) => `<i class="${i < k ? 'on' : ''}"></i>`).join('')}</span>`; };
 function addContent(name, n, start, extra = false){
   const p = infoBoard(); const s = contentStage(p); if (!p || !s || !name) return;
   const c = ctCycles().filter(x => start >= x && start <= cycleEnd(x)).at(-1) || start;
