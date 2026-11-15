@@ -1253,21 +1253,39 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ip-new input{height:36px}
 .ip-card svg{width:16px;height:16px}
 .fl{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;display:grid;gap:14px}
+.fl-p{padding:16px 18px;gap:16px}
+.fl-p-hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.fl-p-hd h2{margin:0;font-size:15px;font-weight:700}
 .fl-view{display:flex;align-items:center;gap:8px;margin-left:auto}
 .fl-view .fl-mode{margin-left:0}
 .fl-scope{height:32px;border:1px solid var(--fbd,var(--line));border-radius:9px;background:var(--fbg,var(--surface));color:var(--ink);padding:0 8px;font:inherit;font-size:13px}
-.fl-lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;border-top:1px solid var(--line);padding-top:12px}
-.fl-list h3{margin:0 0 6px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.fl-list h3 span{font-weight:500}
-.fl-list.late h3{color:var(--r)}
-.fl-list ol{margin:0;padding:0;list-style:none;display:grid;gap:2px}
-.fl-row{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;align-items:center;text-align:left;border:0;background:transparent;color:var(--ink);padding:6px 8px;border-radius:8px;font:inherit;font-size:13.5px;cursor:pointer}
-.fl-row:hover{background:var(--fbg,var(--surface-2))}
-.fl-rn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fl-row small{grid-column:1;color:var(--muted);font-size:12px}
-.fl-rd{grid-row:1/3;grid-column:2;font-size:12.5px;color:var(--muted);white-space:nowrap}
-.fl-rd.late{color:var(--r);font-weight:600}
-@media (max-width:640px){.fl-view{margin-left:0;width:100%}}
+.fl-chain.fl-pipe{display:grid;grid-template-columns:repeat(var(--n),minmax(150px,1fr));gap:10px;overflow-x:auto;padding:0 0 2px}
+.flp-st{--c:var(--g);position:relative;display:grid;gap:8px;text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.flp-st:hover{border-color:color-mix(in srgb,var(--c) 45%,var(--line));box-shadow:0 4px 14px rgba(10,10,14,.06)}
+.flp-st:not(:last-child)::after{content:'';position:absolute;right:-8px;top:50%;width:6px;height:6px;border-top:1.5px solid var(--muted);border-right:1.5px solid var(--muted);transform:translateY(-50%) rotate(45deg);opacity:.55}
+.flp-st.k-red{--c:var(--r)}.flp-st.k-yellow{--c:var(--y)}.flp-st.k-paused{--c:var(--b)}.flp-st.k-idle{--c:var(--muted)}.flp-st.k-done{--c:var(--g)}
+.flp-st-hd{display:flex;align-items:baseline;gap:8px}
+.flp-st-hd b{flex:1;min-width:0;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.flp-st-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.flp-st-bar{height:4px;border-radius:4px;background:var(--line);overflow:hidden}
+.flp-st-bar i{display:block;height:100%;border-radius:4px;background:var(--c)}
+.flp-st-s{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--c)}
+.flp-st.k-yellow .flp-st-s{color:color-mix(in srgb,var(--y) 70%,var(--ink))}
+.flp-st-s i{width:7px;height:7px;border-radius:50%;background:var(--c);flex:none}
+.flp-lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.flp-list{border-radius:14px;background:var(--bg);padding:10px 8px 6px}
+.flp-list h3{margin:0 0 4px;padding:0 8px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:6px}
+.flp-list h3 span{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--surface);color:var(--ink);font-size:11px;line-height:18px;text-align:center;letter-spacing:0}
+.flp-list.late h3{color:var(--r)}.flp-list.late h3 span{background:var(--r);color:#fff}
+.flp-list ol{margin:0;padding:0;list-style:none;display:grid;gap:2px}
+.flp-row{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;align-items:center;text-align:left;border:0;background:transparent;color:var(--ink);padding:7px 8px;border-radius:9px;font:inherit;font-size:13.5px;cursor:pointer}
+.flp-row:hover{background:var(--surface)}
+.flp-rn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.flp-row small{grid-column:1;color:var(--muted);font-size:12px}
+.flp-rd{grid-row:1/3;grid-column:2;font-size:12px;color:var(--muted);white-space:nowrap;padding:3px 8px;border-radius:7px;background:var(--surface)}
+.flp-rd.late{color:var(--pl-r,var(--r));background:var(--pl-r-bg,color-mix(in srgb,var(--r) 12%,transparent));font-weight:600}
+.flp-rd.now{color:var(--pl-y,var(--y));background:var(--pl-y-bg,color-mix(in srgb,var(--y) 14%,transparent));font-weight:600}
+@media (max-width:640px){.fl-view{margin-left:0;width:100%}.fl-chain.fl-pipe{grid-template-columns:repeat(var(--n),minmax(140px,1fr))}}
 .fl-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .fl-hd h2{font-size:17px;margin:0;font-weight:700}
 .fl-hd.slim{justify-content:flex-end}
@@ -5260,19 +5278,28 @@ function flowNode(p, v){
 function flowProdHtml(p){
   const st = flowState(p); const list = [...st.values()]; const t0 = today();
   const all = list.flatMap(v => v.open.filter(i => i.due).map(i => ({ ...i, sid:v.s.id, sname:v.s.name })));
-  const over = all.filter(i => i.due < t0).sort((a, b) => a.due < b.due ? -1 : a.due > b.due ? 1 : 0);
-  const next = all.filter(i => i.due >= t0).sort((a, b) => a.due < b.due ? -1 : a.due > b.due ? 1 : 0).slice(0, 5);
+  const byDue = (a, b) => a.due < b.due ? -1 : a.due > b.due ? 1 : 0;
+  const over = all.filter(i => i.due < t0).sort(byDue), next = all.filter(i => i.due >= t0).sort(byDue).slice(0, 5);
   const when = d => d === t0 ? 'сегодня' : d === addDays(t0, 1) ? 'завтра' : fmt(d);
-  const row = (i, late) => `<li><button class="fl-row" data-pfsub="${i.sid}|${i.x.id}"><span class="fl-rn">${esc(i.x.name)}</span><small>${esc(i.sname)}</small><span class="fl-rd${late ? ' late' : ''}">${late ? `${fmt(i.due)} · ${days(diffDays(t0, i.due))} назад` : when(i.due)}</span></button></li>`;
+  const ago = d => { const n = diffDays(t0, d); return n === 1 ? 'вчера' : `${days(n)} назад`; };
+  const row = (i, late) => `<li><button class="flp-row" data-pfsub="${i.sid}|${i.x.id}" title="${esc(i.sname)} · срок ${fmt(i.due)}"><span class="flp-rn">${esc(i.x.name)}</span><small>${esc(i.sname)}</small>
+      <span class="flp-rd${late ? ' late' : i.due === t0 ? ' now' : ''}">${late ? ago(i.due) : when(i.due)}</span></button></li>`;
   const mode = ui.infoMode === 'together' ? 'together' : ui.infoMode === 'timeline' ? 'timeline' : 'board';
   const many = infoBoards().length > 1;
-  const box = (title, items, late, more) => `<div class="fl-list${late ? ' late' : ''}"><h3>${title} <span>${more}</span></h3><ol>${items.map(i => row(i, late)).join('')}</ol></div>`;
-  return `<section class="fl" aria-label="Воронка: отделы и сроки">
-    <div class="fl-hd slim"><div class="fl-view"><span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${mode === 'board'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${mode !== 'board'}">Таймлайн</button></span>
-        ${mode !== 'board' && many ? `<select class="fl-scope" data-tlscope aria-label="Что показать на таймлайне"><option value="timeline" ${mode === 'timeline' ? 'selected' : ''}>Только «${esc(p.name)}»</option><option value="together" ${mode === 'together' ? 'selected' : ''}>Все инфоповоды вместе</option></select>` : ''}</div></div>
-    <div class="fl-chain">${list.map((v, k) => flowNode(p, v) + (k < list.length - 1 ? '<span class="fl-arr" aria-hidden="true">→</span>' : '')).join('')}</div>
-    ${over.length || next.length ? `<div class="fl-lists">
-      ${over.length ? box('Просрочено', over.slice(0, 8), true, over.length > 8 ? `${over.length} · показаны 8` : over.length) : ''}
+  // отдел: название, статус точкой и словом, полоса готовности и «готово / всего»
+  const step = v => { const [, txt] = FLOW_PILL[v.key]; const pct = v.n ? Math.round(v.done / v.n * 100) : 0;
+    return `<button class="flp-st k-${v.key}" data-flgo="${v.s.id}" title="Показать «${esc(v.s.name)}» на доске">
+      <span class="flp-st-hd"><b>${esc(v.s.name)}</b><span class="flp-st-n">${v.n ? `${v.done}/${v.n}` : '—'}</span></span>
+      <span class="flp-st-bar"><i style="width:${pct}%"></i></span>
+      <span class="flp-st-s"><i aria-hidden="true"></i>${txt(v)}</span></button>`; };
+  const box = (title, items, late, cnt) => `<div class="flp-list${late ? ' late' : ''}"><h3>${title}${cnt ? ` <span>${cnt}</span>` : ''}</h3><ol>${items.map(i => row(i, late)).join('')}</ol></div>`;
+  return `<section class="fl fl-p" aria-label="Воронка: отделы и сроки">
+    <div class="fl-p-hd"><h2>Воронка</h2>
+      <div class="fl-view">${mode !== 'board' && many ? `<select class="fl-scope" data-tlscope aria-label="Что показать на таймлайне"><option value="timeline" ${mode === 'timeline' ? 'selected' : ''}>Только «${esc(p.name)}»</option><option value="together" ${mode === 'together' ? 'selected' : ''}>Все инфоповоды вместе</option></select>` : ''}
+        <span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${mode === 'board'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${mode !== 'board'}">Таймлайн</button></span></div></div>
+    <div class="fl-chain fl-pipe" style="--n:${list.length}">${list.map(step).join('')}</div>
+    ${over.length || next.length ? `<div class="flp-lists">
+      ${over.length ? box('Просрочено', over.slice(0, 8), true, over.length) : ''}
       ${next.length ? box('Ближайшие', next, false, '') : ''}
     </div>` : ''}</section>`;
 }
