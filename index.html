@@ -4561,8 +4561,9 @@ const tdKey = i => i.kind === 'i' ? `i|${i.id}` : i.r ? `r|${i.p.id}|${i.r.id}` 
 const tdWhere = i => i.kind === 'i' ? 'Внутренняя задача' : `${i.p.name} · ${i.s.name}${i.r ? ' · ведение' : ''}`;
 // начало задачи: у карточки — t.start_date (срок «от и до»), у подэтапа без карточки — x.start
 const tdStart = i => (i.t?.start_date && (!i.t?.due_date || i.t.start_date <= i.t.due_date) ? i.t.start_date : '') || i.x?.start || i.it?.start || '';
-// задача на сегодня: срок сегодня или прошёл, либо уже началась (начало сегодня или раньше)
-const tdForDay = (i, d) => !i.done && ((i.due && i.due <= d) || (tdStart(i) && tdStart(i) <= d));
+// задача на сегодня: срок сегодня или уже прошёл; без срока — если уже началась. Задача со сроком позже сегодня в план не идёт,
+// даже если начата (срок 17-го → появится 17-го)
+const tdForDay = (i, d) => !i.done && (i.due ? i.due <= d : !!(tdStart(i) && tdStart(i) <= d));
 // все задачи пространства (свои проекты и внутренние) с ключом
 function tdAll(){
   return [...dayProjectItems('').filter(i => !i.p._ext), ...dayInternalItems('')].map(i => ({ ...i, k:tdKey(i) }));
@@ -4590,15 +4591,22 @@ function dayPlan(d = today(), make = true){
 }
 // добавить в план всё новое со сроком сегодня (например, поставили задачу днём)
 function dayPlanTopUp(){
-  const pl = dayPlan(); const have = new Set(pl.items.map(i => i.k)); const t0 = today(); let n = 0;
+  const pl = dayPlan(); const t0 = today(); let n = 0;
+  // план сверяется с «Производством»: перенесли срок на будущее — задача уходит из плана, поменяли название/ответственного — обновляется
+  const live = new Map(tdAll().map(i => [i.k, i]));
+  const keep = pl.items.filter(it => { const x = live.get(it.k); if (!x || x.done || tdDone(it.k)) return true;
+    if (!tdForDay(x, t0)) return false;
+    if (it.due !== x.due || it.title !== x.title || (it.who || '') !== (x.who || '')){ it.due = x.due; it.title = x.title; it.who = x.who || ''; n++; }
+    return true; });
+  if (keep.length !== pl.items.length){ n += pl.items.length - keep.length; pl.items = keep; }
+  const have = new Set(pl.items.map(i => i.k));
   tdAll().filter(i => tdForDay(i, t0) && !have.has(i.k)).forEach(i => { pl.items.push({ k:i.k, who:i.who || '', title:i.title, where:tdWhere(i), due:i.due, start:tdStart(i) }); n++; });
   pl.items.forEach(i => { if (!i.start){ const x = tdAll().find(y => y.k === i.k); if (x && tdStart(x)) i.start = tdStart(x); } });
   if (n) save(); return n;
 }
 function dayPlanRefresh(){
-  const pl = dayPlan(); const have = new Set(pl.items.map(i => i.k)); const t0 = today(); let n = 0;
-  tdAll().filter(i => tdForDay(i, t0) && !have.has(i.k)).forEach(i => { pl.items.push({ k:i.k, who:i.who || '', title:i.title, where:tdWhere(i), due:i.due, start:tdStart(i) }); n++; });
-  commit(); toast(n ? `В план добавлено: ${n}` : 'Новых задач на сегодня нет');
+  const n = dayPlanTopUp();
+  commit(); toast(n ? `План обновлён по «Производству»` : 'Новых задач на сегодня нет');
 }
 // факт: выполненное из плана + сделанное сегодня сверх плана
 function dayFact(pl){
