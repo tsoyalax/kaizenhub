@@ -71,6 +71,14 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(!/Эфир Игоря/.test(D.querySelector('.d-kd').textContent)); ok('у каждой площадки свои ключевые даты');
   E(`layer.innerHTML = ''; ui.open = null; ui.prodProject = em.id; ui.infoMode = 'timeline'; render();`); await wait(30); assert.ok($('.tl-key') && /Старт челленджа/.test($('.tl-key').textContent)); ok('на таймлайне ключевая дата — красная линия');
   E(`ui.infoAll = true; render();`); await wait(30); assert.equal(D.querySelectorAll('.tl-key').length, 2); ok('во «Все» — ключевые даты обеих площадок');
+  // финал (окно продаж) — в карточке площадки, зелёная линия; ключевые даты — жёлтые
+  E(`ui.infoAll = false; ui.infoMode = 'board'; openProject(em.id)`); await wait(100);
+  { const gn = D.querySelector('.d-kd [data-goalname]'); gn.value = 'Окно продаж'; gn.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
+    const gd = D.querySelector('.d-kd [data-goaldate]'); gd.value = E('addDays(T, 6)'); gd.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
+    assert.ok(E('em.goalName') === 'Окно продаж' && E('em.deadline') === E('addDays(T, 6)')); ok('финал вбивается в карточке площадки'); }
+  E(`layer.innerHTML = ''; ui.open = null; ui.prodProject = em.id; ui.infoMode = 'timeline'; render();`); await wait(30);
+  { const fin = [...D.querySelectorAll('.tl-goal:not(.tl-key)')].find(x => /Окно продаж/.test(x.textContent)); const kd = D.querySelector('.tl-key');
+    assert.ok(fin && kd && /\.tl-goal\.tl-key\{background:var\(--y\)\}/.test(D.documentElement.innerHTML) && /\.tl-goal\{[^}]*background:var\(--g\)/.test(D.documentElement.innerHTML)); ok('на таймлайне финал — своей (зелёной) линией, ключевые даты — другой (жёлтой)'); }
   E(`ui.infoAll = false; ui.infoMode = 'board'; openProject(em.id)`); await wait(100); D.querySelector('.d-kd [data-kddel]').click(); await wait(30); assert.equal(E('em.keyDates.length'), 0); ok('ключевую дату можно удалить');
   E(`closeLayer ? closeLayer() : (layer.innerHTML = ''); ui.open = null; ui.prodProject = em.id; render();`); await wait(30);
   // столбики доски: переименовать, удалить, добавить — только в этом инфоповоде
