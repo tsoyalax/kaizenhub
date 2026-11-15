@@ -34,8 +34,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.deepEqual(E('ctStats(ctCur()).weeks.map(x => x.plan)'), [3, 3, 3, 3]); ok('план поровну на 4 недели');
   E(`ui.ctMode = 'plan'; render()`);
   const xid = E('contentStage().subs[0].id');
-  const cb = D.querySelector(`[data-ctdone="${xid}"]`); cb.checked = true; cb.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(50);
-  assert.ok(E(`projById('infoboard').stages.find(s => s.id === contentStage().id).subs[0].done`)); ok('отметка «опубликовано» — это отметка карточки на доске');
+  for (let k = 0; k < E('vidCols().length') && !E(`contentStage().subs[0].done`); k++){ const cb = D.querySelector(`[data-ctdone="${xid}"]`); cb.checked = true; cb.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30); }
+  assert.ok(E(`projById('infoboard').stages.find(s => s.id === contentStage().id).subs[0].done`)); ok('галочками видео проходит этапы до «опубликовано» — это отметка карточки на доске');
   assert.equal(E('ctStats(ctCur()).pub'), 1); ok('факт считается по отметкам');
   // недельный KPI: общий на все недели и свой у отдельной недели
   E(`ui.ctMode = 'plan'; ui.ctEdit = ctCur(); render()`);
@@ -307,10 +307,11 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
       E(`moveVideo('vSt', '${sc}')`); const b1 = E(`ctStats(contentStage(infoBoard()).subs.find(x => x.id === 'vSt').cycle).scr`);
       assert.ok(b1 <= b0 + 1); }
     ok('счётчик сценариев считается по этапам'); }
-  // «Что дальше»: видео перевели на следующий этап — оно в блоке этого этапа у его ответственного
-  E(`{ const p = infoBoard(); const c1 = vidCols()[1]; moveVideo('vSt', c1.id); p.vidWho = { ...(p.vidWho || {}), [c1.id]:'uStg' }; ui.view = 'content'; ui.ctMode = 'plan'; render(); }`);
-  { const g = [...D.querySelectorAll('.ct-next-i')].find(x => x.querySelector('b').textContent === E('vidCols()[1].name'));
-    assert.ok(g && /Монтажёр/.test(g.textContent) && /Видео этап/.test(g.textContent)); ok('«Контент» → «Что дальше»: следующий шаг видео и кто за него отвечает'); }
+  // галочка у видео в «Контенте» — следующий этап
+  E(`{ const x = contentStage(infoBoard()).subs.find(y => y.id === 'vSt'); x.done = false; x.vst = vidCols()[0].id; ui.view = 'content'; ui.ctMode = 'plan'; commit(); }`);
+  { const cb = D.querySelector('[data-ctdone="vSt"]'); cb.checked = true; cb.dispatchEvent(new w.Event('change', { bubbles:true }));
+    assert.equal(E(`vidCol(contentStage(infoBoard()).subs.find(y => y.id === 'vSt')).id`), E('vidCols()[1].id')); ok('галочка у видео — следующий этап');
+    assert.ok(!D.querySelector('.ct-next')); ok('блока «Что дальше» нет'); }
   E(`ui.view = 'production'; db.prefs.kind = window.__k3; render()`);
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
