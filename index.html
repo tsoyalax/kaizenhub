@@ -2653,9 +2653,9 @@ function ctStats(c){
     weeks[weekOfDate(c, x.due_date || c) - 1].items.push(x);
     const d = ctDoneAt(x); if (d && !x.extra){ pub++; weeks[weekOfDate(c, d < c ? c : d) - 1].pub++; }
   });
-  // сценарии: видео ушло дальше этапа «Сценарий» (или опубликовано) — сценарий написан; считаем по неделе публикации
+  // сценарии: видео на этапе «Сценарий» или дальше (или опубликовано) — сценарий написан; считаем по неделе публикации
   const cs = vidCols(); const si = cs.findIndex(y => /сценар/i.test(y.name)); let scr = null;
-  if (si >= 0){ scr = 0; main.forEach(x => { if (x.done || cs.indexOf(vidCol(x)) > si){ scr++; weeks[weekOfDate(c, x.due_date || c) - 1].scr = (weeks[weekOfDate(c, x.due_date || c) - 1].scr || 0) + 1; } }); }
+  if (si >= 0){ scr = 0; main.forEach(x => { if (x.done || cs.indexOf(vidCol(x)) >= si){ scr++; weeks[weekOfDate(c, x.due_date || c) - 1].scr = (weeks[weekOfDate(c, x.due_date || c) - 1].scr || 0) + 1; } }); }
   return { plan, pub, items, weeks, kpi, scr, ownWeeks:!!own, extra:{ n:extra.length, pub:extra.filter(x => x.done).length } };
 }
 // доска видео: колонки — этапы шаблона «SMM: видео» (правятся в «Настройках → Шаблоны»), у видео x.vst — id этапа шаблона.

@@ -302,6 +302,11 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   E(`ui.view = 'content'; ui.ctMode = 'plan'; render()`);
   { const has = E(`vidCols().some(y => /сценар/i.test(y.name))`); const kpi = D.querySelector('.smm-kpi');
     assert.ok(!has || /Сценариев написано/.test(kpi.textContent)); ok('в «План / Факт» «Контента» — «Сценариев написано»'); }
+  { const before = E(`ctStats(contentStage(infoBoard()).subs.find(x => x.id === 'vSt').cycle).scr`); const sc = E(`vidCols().find(y => /сценар/i.test(y.name))?.id`);
+    if (sc){ E(`{ const x = contentStage(infoBoard()).subs.find(y => y.id === 'vSt'); x.done = false; x.vst = vidCols()[0].id; }`); const b0 = E(`ctStats(contentStage(infoBoard()).subs.find(x => x.id === 'vSt').cycle).scr`);
+      E(`moveVideo('vSt', '${sc}')`); const b1 = E(`ctStats(contentStage(infoBoard()).subs.find(x => x.id === 'vSt').cycle).scr`);
+      assert.ok(b1 >= b0); }
+    ok('перевели видео на этап «Сценарий» — счётчик сценариев не уменьшается'); }
   E(`ui.view = 'production'; db.prefs.kind = window.__k3; render()`);
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
