@@ -1148,11 +1148,13 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .ck.sortable li small{grid-column:2}
 .ck li:has(.ck-who),.ck li:has(.who-chip){grid-template-columns:minmax(0,1fr) auto}
 .ck.sortable li:has(.ck-who),.ck.sortable li:has(.who-chip){grid-template-columns:20px minmax(0,1fr) auto}
-.ck li .ck-who,.ck li > .who-chip{grid-row:1}
+.ck li .ck-who,.ck li > .who-chip{grid-row:1;grid-column:-2 / -1;justify-self:end}
+.ck li .ck-box{grid-row:1;min-width:0}
+.ck.sortable li .ck-box{grid-column:2}
 .ckb li input.ckb-chk{flex:none;width:18px;height:18px;min-width:18px;margin:0 4px;padding:0;border:0;accent-color:var(--g);cursor:pointer}
 .ckb li input.is-done{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line-strong)}
 .ck-box{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:14px}
-.ck-who{margin-left:auto;flex:none;max-width:180px;height:28px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);padding:0 6px}
+.ck-who{flex:none;width:150px;max-width:40vw;height:28px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);padding:0 6px}
 .ck-who.own{color:var(--ink);font-weight:600;border-color:var(--brand)}
 .ck-box input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--g);flex:none;cursor:pointer}
 .ck li.on .ck-txt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line-strong)}
@@ -8766,7 +8768,7 @@ document.addEventListener('click', e => {
 // ответственный за пункт чек-листа: свой (i.who) или, если не выбран, — ответственный подэтапа (подставляется сам)
 const ckWho = (p, s, t, i) => i.who || whoId(p, s, t) || '';
 function ckWhoHtml(p, s, t, i, editable){
-  if (editable && !p?._ext) return `<select class="ck-who${i.who ? ' own' : ''}" data-ckwho="${i.id}" aria-label="Ответственный за пункт «${esc(i.text)}»" title="Ответственный за пункт">${peopleOpts(i.who || '', `Как у подэтапа: ${short(whoId(p, s, t))}`)}</select>`;
+  if (editable && !p?._ext) return `<select class="ck-who${i.who ? ' own' : ''}" data-ckwho="${i.id}" aria-label="Ответственный за пункт «${esc(i.text)}»" title="${i.who ? 'Свой ответственный за пункт' : 'Как у задачи — можно выбрать другого'}">${peopleOpts(i.who || '', short(whoId(p, s, t)))}</select>`;
   return i.who ? whoChip(i.who) : '';
 }
 function draftOf(t){
