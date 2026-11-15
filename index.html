@@ -1272,6 +1272,7 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .flp-st-s{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--c)}
 .flp-st.k-yellow .flp-st-s{color:color-mix(in srgb,var(--y) 70%,var(--ink))}
 .flp-st-s i{width:7px;height:7px;border-radius:50%;background:var(--c);flex:none}
+.flp-st-s span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .flp-lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
 .flp-list{border-radius:14px;background:var(--bg);padding:10px 8px 6px}
 .flp-list h3{margin:0 0 4px;padding:0 8px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:6px}
@@ -5287,11 +5288,18 @@ function flowProdHtml(p){
   const mode = ui.infoMode === 'together' ? 'together' : ui.infoMode === 'timeline' ? 'timeline' : 'board';
   const many = infoBoards().length > 1;
   // отдел: название, статус точкой и словом, полоса готовности и «готово / всего»
-  const step = v => { const [, txt] = FLOW_PILL[v.key]; const pct = v.n ? Math.round(v.done / v.n * 100) : 0;
+  // статус словами, чтобы было понятно «почему»: какой срок горит, кого ждёт, сколько просрочено
+  const nm = id => st.get(id)?.s.name || '';
+  const why = v => {
+    if (v.key === 'red') return !v.n ? 'Нет задач' : `Просрочено: ${v.over.length}`;
+    if (v.key === 'yellow' && v.own === 'yellow'){ const i = v.soon[0]; return `${i.due === t0 ? 'Срок сегодня' : 'Срок завтра'}: ${i.x.name}${v.soon.length > 1 ? ` и ещё ${v.soon.length - 1}` : ''}`; }
+    if (v.key === 'yellow') return `Ждёт: ${v.blockedBy.map(nm).join(', ')}`;
+    return FLOW_PILL[v.key][1](v); };
+  const step = v => { const txt = () => why(v); const pct = v.n ? Math.round(v.done / v.n * 100) : 0;
     return `<button class="flp-st k-${v.key}" data-flgo="${v.s.id}" title="Показать «${esc(v.s.name)}» на доске">
       <span class="flp-st-hd"><b>${esc(v.s.name)}</b><span class="flp-st-n">${v.n ? `${v.done}/${v.n}` : '—'}</span></span>
       <span class="flp-st-bar"><i style="width:${pct}%"></i></span>
-      <span class="flp-st-s"><i aria-hidden="true"></i>${txt(v)}</span></button>`; };
+      <span class="flp-st-s" title="${esc(txt())}"><i aria-hidden="true"></i><span>${esc(txt())}</span></span></button>`; };
   const box = (title, items, late, cnt) => `<div class="flp-list${late ? ' late' : ''}"><h3>${title}${cnt ? ` <span>${cnt}</span>` : ''}</h3><ol>${items.map(i => row(i, late)).join('')}</ol></div>`;
   return `<section class="fl fl-p" aria-label="Воронка: отделы и сроки">
     <div class="fl-p-hd"><h2>Воронка</h2>
