@@ -41,22 +41,19 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
      const fill = (p, list) => list.forEach(([st, name, d]) => { const s = p.stages[st]; (s.subs = s.subs || []).push({ id:uid(), name, done:false, due_date:addDays(T, d) }); });
      fill(ig, [[0, 'Оффер', 1], [1, 'Рилс 1', 2], [2, 'Эфир', 6]]); fill(em, [[1, 'Анонс челленджа', 2], [3, 'Старт', 9]]);
      ui.view = 'production'; ui.prodProject = ig.id; ui.infoMode = 'board'; commit();`); await wait(100);
-  assert.ok(!$('[data-infomode="together"]') && !$('[data-tlscope]')); ok('отдельной кнопки «Вместе» нет');
-  $('[data-infomode="timeline"]').click(); await wait(50);
-  const sc = $('[data-tlscope]'); assert.ok(sc && [...sc.options].some(o => o.value === 'together' && /вместе/i.test(o.textContent))); ok('в таймлайне — выбор «Все инфоповоды вместе» в выпадающем списке');
-  sc.value = 'together'; sc.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(100);
+  assert.ok(!$('[data-infomode="together"]') && !$('[data-tlscope]')); ok('отдельной кнопки «Вместе» и выпадающего списка нет');
+  assert.ok($('[data-ipall]')); ok('в строке инфоповодов — «Все»');
+  $('[data-ipall]').click(); await wait(100);
+  const fa = $('.fl-p'); assert.ok(/Все инфоповоды/.test(fa.textContent) && /Оффер/.test(fa.textContent) && /Анонс челленджа/.test(fa.textContent)); ok('«Все»: ближайшие задачи всех инфоповодов вместе');
+
   assert.ok($('.tg-tl') && D.querySelectorAll('.tg-lane').length === 2); ok('«Вместе»: блок Игоря и челлендж Эма — две полосы на одной шкале');
   assert.equal(D.querySelectorAll('.tg-task').length, 5); ok('задачи обоих инфоповодов на таймлайне');
   assert.ok(!$('.tg-cross') && !$('.tg-cnt') && !/Пересечени/.test($('.tg').textContent)); ok('без строки «Пересечения» — просто общий таймлайн');
-  assert.ok($('[data-infomode="timeline"]').getAttribute('aria-pressed') === 'true' && $('[data-tlscope]').value === 'together'); ok('выбран таймлайн «Все вместе»');
-  // снять челлендж Эма — остаётся одна полоса, пересечений нет
-  [...D.querySelectorAll('[data-tgp]')].find(b => /Эма/.test(b.textContent)).click(); await wait(50);
-  assert.equal(D.querySelectorAll('.tg-lane').length, 1); ok('инфоповод можно убрать со шкалы');
+  assert.ok($('[data-ipall]').classList.contains('on') && !$('[data-tgp]') && !$('.pf-board')); ok('«Все» выбрано: общий таймлайн без доски и без лишнего выбора');
   // клик по задаче другого инфоповода — её карточка
-  [...D.querySelectorAll('[data-tgp]')].find(b => /Эма/.test(b.textContent)).click(); await wait(50);
   [...D.querySelectorAll('.tg-task')].find(b => /Старт/.test(b.textContent)).click(); await wait(100);
   assert.ok(E('ui.taskId') && E(`taskById(ui.taskId).project_id`) === E('em.id')); ok('клик по задаче Эма открывает её карточку');
-  E(`layer.innerHTML = ''; ui.taskId = null; ui.infoMode = 'board'; ui.prodProject = ig.id; render();`); await wait(50);
+  E(`layer.innerHTML = ''; ui.taskId = null; ui.infoAll = false; ui.infoMode = 'board'; ui.prodProject = ig.id; render();`); await wait(50);
   // ключевые даты вместо расчётного финиша
   assert.ok(!/финиш/.test($('.pf-head small').textContent) && $('[data-kdadd]')); ok('у инфоповода нет расчётного финиша, есть «+ Ключевая дата»');
   $('[data-kdadd]').click(); await wait(30); let f = $('[data-kdform]'); f.elements.namedItem('kdd').value = E('addDays(T, 3)'); f.elements.namedItem('kdn').value = 'Эфир Игоря'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(50);
@@ -64,8 +61,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E(`ui.prodProject = em.id; render();`); await wait(30); assert.ok(!/Эфир Игоря/.test($('.kd-row').textContent)); ok('у каждого инфоповода свои ключевые даты');
   $('[data-kdadd]').click(); await wait(30); f = $('[data-kdform]'); f.elements.namedItem('kdd').value = E('addDays(T, 4)'); f.elements.namedItem('kdn').value = 'Старт челленджа'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(50);
   E(`ui.infoMode = 'timeline'; render();`); await wait(30); assert.ok($('.tl-key') && /Старт челленджа/.test($('.tl-key').textContent)); ok('на таймлайне ключевая дата — красная линия');
-  E(`ui.infoMode = 'together'; render();`); await wait(30); assert.equal(D.querySelectorAll('.tl-key').length, 2); ok('во «Вместе» — ключевые даты обоих инфоповодов');
-  E(`ui.infoMode = 'board'; render();`); await wait(30); $('[data-kddel]').click(); await wait(30); assert.equal(E('em.keyDates.length'), 0); ok('ключевую дату можно удалить');
+  E(`ui.infoAll = true; render();`); await wait(30); assert.equal(D.querySelectorAll('.tl-key').length, 2); ok('во «Все» — ключевые даты обоих инфоповодов');
+  E(`ui.infoAll = false; ui.infoMode = 'board'; render();`); await wait(30); $('[data-kddel]').click(); await wait(30); assert.equal(E('em.keyDates.length'), 0); ok('ключевую дату можно удалить');
   E(`openProject(ig.id)`); await wait(100);
   assert.ok(D.querySelector('#layer .d-kd [data-kdadd], .d-kd [data-kdadd]') && /Эфир Игоря/.test(D.querySelector('.d-kd').textContent)); ok('ключевые даты видны и добавляются в карточке инфоповода');
   E(`closeLayer ? closeLayer() : (layer.innerHTML = ''); ui.open = null; ui.prodProject = em.id; render();`); await wait(30);

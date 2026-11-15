@@ -181,7 +181,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.equal(E('infoBoard().name'), 'Челлендж Эма'); ok('открыт новый инфоповод');
   assert.deepEqual(E(`infoBoard().stages.map(s => s.name)`), E(`infoBoards().find(p => p.name === 'Контент Игоря').stages.filter(s => !isMaint(s)).map(s => s.name)`)); ok('колонки — как у текущего инфоповода');
   assert.equal(E('infoBoard().stages.flatMap(s => s.subs).length'), 0); ok('задачи у нового инфоповода свои — пока пусто');
-  assert.ok(D.querySelectorAll('.ip-chip').length === 2); ok('в «Производстве» — строка инфоповодов');
+  assert.ok(D.querySelectorAll('.ip-chip:not(.ip-all)').length === 2); ok('в «Производстве» — строка инфоповодов');
   // доп. контент: вне плана, считается отдельно
   E(`addContent('Рилс', 4, today()); addContent('Сторис', 2, today(), true)`);
   const cst = E('JSON.stringify(ctStats(ctCur()))'); const cj = JSON.parse(cst);
