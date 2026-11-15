@@ -2202,11 +2202,12 @@ svg.clip{width:14px;height:14px;flex:none}
 .pf-due{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
 .pf-due.late{color:var(--r);font-weight:600}
 .ct-stg{margin:14px 0;display:grid;gap:6px}.ct-stg h3{margin:0 0 2px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.ct-stg-r{display:grid;grid-template-columns:minmax(120px,190px) 1fr 32px minmax(0,150px);gap:10px;align-items:center;font-size:13px}
+.ct-stg-r{display:grid;grid-template-columns:minmax(120px,190px) 1fr 32px minmax(0,170px);gap:10px;align-items:center;font-size:13px}
 .ct-stg-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ct-stg-r b{text-align:right;font-variant-numeric:tabular-nums}
 .ct-stg-bar{height:10px;border-radius:6px;background:var(--bg);overflow:hidden}.ct-stg-bar i{display:block;height:100%;border-radius:6px;background:var(--m)}
 .ct-stg-r.pub .ct-stg-bar i{background:var(--g)}.ct-stg-r.jam .ct-stg-bar i{background:var(--y)}.ct-stg-r.jam .ct-stg-n{font-weight:700}
-.ct-stg-w{min-width:0;overflow:hidden}
+.ct-stg-w{min-width:0}
+.ct-stg-sel{width:100%;height:28px;border:1px dashed var(--line-strong,var(--line));border-radius:8px;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;padding:0 6px;cursor:pointer}.ct-stg-sel.set{border-style:solid;background:var(--surface);color:var(--ink);font-weight:600}
 .ct-mini{display:inline-flex;gap:3px;flex:none}.ct-mini i{width:14px;height:5px;border-radius:3px;background:var(--line)}.ct-mini i.on{background:var(--m)}
 @media (max-width:640px){.ct-stg-r{grid-template-columns:110px 1fr 28px}.ct-stg-w,.ct-mini{display:none}}
 .ct-stsel{height:30px;border:1px solid var(--fbd,var(--line));border-radius:8px;background:var(--pl-m-bg,color-mix(in srgb,var(--m) 10%,var(--surface)));color:var(--pl-m,var(--m));font:inherit;font-size:12.5px;font-weight:600;padding:0 6px;max-width:150px;cursor:pointer}.ct-stsel.done{background:var(--pl-g-bg,color-mix(in srgb,var(--g) 12%,var(--surface)));color:var(--pl-g,var(--g))}
@@ -2812,7 +2813,7 @@ function ctStagesHtml(p, s, st){
   return `<div class="ct-stg"><h3>Этапы</h3>${rows.map(r => { const last = r.i === cs.length - 1; const jam = !last && r.n && r.n === max && max > 1;
     return `<div class="ct-stg-r${last ? ' pub' : ''}${jam ? ' jam' : ''}"><span class="ct-stg-n">${r.i + 1}. ${esc(r.c.name)}</span>
       <span class="ct-stg-bar"><i style="width:${Math.round(r.n / items.length * 100)}%"></i></span><b>${r.n}</b>
-      <span class="ct-stg-w">${last ? '' : whoChip((p.vidWho || {})[r.c.id] || null)}</span></div>`; }).join('')}</div>`;
+      <span class="ct-stg-w">${last ? '' : GUEST ? whoChip((p.vidWho || {})[r.c.id] || null) : `<select class="ct-stg-sel${(p.vidWho || {})[r.c.id] ? ' set' : ''}" data-vidwho="${r.c.id}" aria-label="Ответственный за этап «${esc(r.c.name)}»">${peopleOpts((p.vidWho || {})[r.c.id] || '', 'Назначить…')}</select>`}</span></div>`; }).join('')}</div>`;
 }
 // мини-шкала этапов у видео: заполнено до текущего этапа
 const ctMini = x => { const cs = vidCols(); if (cs.length < 2) return ''; const k = x.done ? cs.length : cs.indexOf(vidCol(x)) + 1;

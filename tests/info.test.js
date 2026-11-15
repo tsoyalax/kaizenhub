@@ -313,6 +313,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     assert.equal(E(`vidCol(contentStage(infoBoard()).subs.find(y => y.id === 'vSt')).id`), E('vidCols()[1].id')); ok('галочка у видео — следующий этап');
     assert.ok(!D.querySelector('.ct-next')); ok('блока «Что дальше» нет'); }
   assert.ok(D.querySelectorAll('.ct-stg-r').length === E('vidCols().length') && D.querySelector('.ct-row .ct-mini')); ok('«План / Факт»: шкалы этапов и мини-шкала у каждого видео');
+  { const sel = D.querySelector('.ct-stg [data-vidwho]'); sel.value = 'uStg'; sel.dispatchEvent(new w.Event('change', { bubbles:true }));
+    assert.equal(E(`infoBoard().vidWho[vidCols()[0].id]`), 'uStg'); ok('в «Этапах» ответственного этапа можно назначить сразу'); }
   E(`ui.view = 'production'; db.prefs.kind = window.__k3; render()`);
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
