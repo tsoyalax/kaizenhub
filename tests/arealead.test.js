@@ -85,6 +85,10 @@ const dump = w => { const o = {}; for (let i = 0; i < w.localStorage.length; i++
   $(v2, '#iForm').dispatchEvent(new v2.w.Event('submit', { bubbles:true, cancelable:true })); await wait(1500);
   const vinv = [...be.rows.values()].find(r => r.path.startsWith('inv/') && r.data.name === 'Юля Область');
   assert.ok(vinv && vinv.data.role === 'arealead' && vinv.data.area === area && vinv.data.ownerId === A); ok('её ссылка — руководитель той же области от имени владельца');
+  // повторный вход по ссылке тем, у кого доступ к области уже есть: без ошибки — просто открываем область
+  let vre = 0; v2.w.kzReloadHook = () => { vre++; };
+  const vcode = vinv.path.split('/')[1]; const r2 = await v2.w.eval(`acceptInvite('${vcode}')`); await wait(300);
+  assert.ok(!/не удалось записать/.test(v2.w.eval('ui.joinErr || ""')) && (r2 === 'reload' || vre >= 1)); ok('повторный вход по ссылке руководителя — без ошибки, открывает область');
   v2.w.document.querySelector('[data-close]')?.click(); await wait(50);
   // владелец в основном пространстве: обычная галочка «Доступ руководителя»
   const o2 = openApp(be, A, 'https://kz.test/', { meta: { name: 'Александр Владелец' } }, { ...store0, 'kz-pick-seen': '1' }); await wait(4500);
