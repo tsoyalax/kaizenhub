@@ -278,6 +278,10 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.ok(!E(`subIdsOf(infoBoard()).includes('zDel')`)); ok('вернувшаяся из копии задача сразу убирается');
   E(`onSharedProject(infoBoard().id, { exists:true, metadata:{}, data:() => ({ json:JSON.stringify(window.__old) }) })`);
   assert.ok(!E(`subIdsOf(infoBoard()).includes('zDel')`)); ok('старая копия из общего документа удалённую задачу не возвращает');
+  // дорожная карта в PDF: кнопка у площадки, в документе — задачи с датами, пункты чек-листа
+  E(`ui.view = 'production'; ui.prodProject = infoBoard().id; render()`);
+  assert.ok(D.querySelector(`[data-roadmap="${E('infoBoard().id')}"]`)); ok('у площадки есть кнопка «Дорожная карта в PDF»');
+  { const h = E(`roadmapHtml(infoBoard())`); assert.ok(/Дорожная карта/.test(h) && /<table/.test(h) && /print\(\)/.test(h)); ok('дорожная карта — таблица задач с датами, открывается печать (PDF)'); }
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });

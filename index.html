@@ -2030,6 +2030,7 @@ table.cx{border-collapse:collapse}
 .pf-col.editing header[draggable]{cursor:grab}.pf-col.editing{outline:1px dashed color-mix(in srgb,var(--ink) 18%,transparent);outline-offset:-1px}
 .pf-colgrip{margin:0 4px 0 -2px;color:var(--muted);font-size:14px;line-height:20px;user-select:none}
 .pf-col.dragging{opacity:.45}.pf-col.col-before{box-shadow:-3px 0 0 var(--brand)}.pf-board.col-end > .pf-col[data-pfcolid]:last-of-type{box-shadow:3px 0 0 var(--brand)}
+.pf-pdf{margin-left:auto}.pf-pdf + .pf-shareic{margin-left:6px}
 .pf-shareic{position:relative;flex:none;width:36px;height:36px;border:1px solid var(--fbd,var(--line));background:var(--surface);border-radius:10px;color:var(--muted)}
 .pf-shareic:hover{color:var(--ink)}
 .pf-shareic svg{width:16px;height:16px}
@@ -5488,6 +5489,37 @@ function flowPanelHtml(p, part = 'prod'){
 }
 // ---------- Финальный дедлайн инфоповода (например, «Открытие окна продаж»): p.deadline + p.goalName ----------
 const goalName = p => p.goalName || 'Финальный дедлайн';
+// ---------- Дорожная карта в PDF: все задачи проекта/площадки по датам + финал, ключевые даты и пункты чек-листа ----------
+// Без библиотек: открываем чистую страницу для печати — в окне печати «Сохранить как PDF» (на телефоне — «Поделиться»)
+const PDF_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>';
+function roadmapHtml(p){
+  const t0 = today(); const rows = [];
+  p.stages.filter(s => !isMaint(s)).forEach(s => (s.subs || []).forEach(x => { const t = taskFor(p.id, s.id, x.id);
+    const due = t?.due_date || x.due_date || ''; const start = t?.start_date && t.start_date < due ? t.start_date : '';
+    rows.push({ d:start || due || '9999', due, start, name:x.name, dept:s.name, who:nameOf(x.cycle && isInfoBoardP(p) ? contentWho(p, s, x, t) : whoId(p, s, t)), done:subDone(p, s, x),
+      ck:(t?.checklist || []).map(c => ({ text:c.text, done:!!c.done, who:c.who ? nameOf(c.who) : '' })) }); }));
+  const marks = [...kdList(p).map(k => ({ d:k.d, mark:'key', name:k.name })), ...(p.deadline && (p.goalName || p.goalSet) ? [{ d:p.deadline, mark:'final', name:goalName(p) }] : [])];
+  const all = [...rows, ...marks].sort((a, b) => a.d.localeCompare(b.d) || (a.mark ? -1 : 1));
+  const dt = r => r.due ? (r.start ? `${fmt(r.start)} – ${fmt(r.due)}` : fmt(r.due)) : 'без срока';
+  const body = all.map(r => r.mark ? `<tr class="m ${r.mark}"><td>${fmt(r.d)}</td><td colspan="4">${r.mark === 'final' ? '🏁 ' : '◆ '}${esc(r.name)}</td></tr>`
+    : `<tr class="${r.done ? 'done' : r.due && r.due < t0 ? 'late' : ''}"><td>${dt(r)}</td><td><b>${esc(r.name)}</b>${r.ck.length ? `<ul>${r.ck.map(c => `<li class="${c.done ? 'ok' : ''}">${c.done ? '✓' : '○'} ${esc(c.text)}${c.who ? ` <i>— ${esc(c.who)}</i>` : ''}</li>`).join('')}</ul>` : ''}</td><td>${esc(r.dept)}</td><td>${esc(r.who)}</td><td>${r.done ? 'Готово' : r.due && r.due < t0 ? 'Просрочено' : 'В работе'}</td></tr>`).join('');
+  const n = rows.length, dn = rows.filter(r => r.done).length;
+  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Дорожная карта — ${esc(p.name)}</title><style>
+    body{font:13px/1.45 -apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:#111;margin:28px}h1{font-size:22px;margin:0 0 4px}.sub{color:#666;margin:0 0 18px}
+    table{width:100%;border-collapse:collapse}th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#777;border-bottom:2px solid #ddd;padding:6px 8px}
+    td{border-bottom:1px solid #eee;padding:7px 8px;vertical-align:top}td:first-child{white-space:nowrap;color:#444;width:120px}td:nth-child(5){white-space:nowrap}
+    ul{margin:4px 0 0;padding:0;list-style:none;color:#555;font-size:12px}li.ok{color:#15803D}i{color:#888}
+    tr.done td{color:#888}tr.done b{text-decoration:line-through}tr.late td:nth-child(5){color:#B91C1C;font-weight:600}
+    tr.m td{font-weight:700;background:#FEF9C3}tr.final td{background:#DCFCE7;color:#15803D}
+    @media print{body{margin:12mm}tr{break-inside:avoid}}</style></head><body>
+    <h1>Дорожная карта: ${esc(p.name)}</h1><p class="sub">На ${fmt(t0)} · задач ${n}, сделано ${dn}${p.deadline && (p.goalName || p.goalSet) ? ` · ${esc(goalName(p))}: ${fmt(p.deadline)}` : ''}</p>
+    <table><thead><tr><th>Даты</th><th>Задача и ключевые пункты</th><th>Отдел</th><th>Ответственный</th><th>Статус</th></tr></thead><tbody>${body || '<tr><td colspan="5">Задач пока нет</td></tr>'}</tbody></table>
+    <script>setTimeout(() => print(), 300)<\/script></body></html>`;
+}
+document.addEventListener('click', e => { const b = e.target.closest?.('[data-roadmap]'); if (!b) return; e.stopPropagation();
+  const p = projById(b.dataset.roadmap); if (!p) return; const w = window.open('', '_blank');
+  if (!w){ toast('Разрешите всплывающие окна, чтобы сохранить PDF'); return; }
+  w.document.open(); w.document.write(roadmapHtml(p)); w.document.close(); });
 function goalHtml(p){
   const d = p.deadline; const left = d ? diffDays(d, today()) : null;
   const txt = left == null ? 'дата не задана' : left > 0 ? `через ${days(left)}` : left === 0 ? 'сегодня' : `прошёл ${days(-left)} назад`;
@@ -9425,6 +9457,7 @@ function renderProjectFocus(mine = false){
           <div><h2>${mine ? esc(p.name) : `<button class="link-plain" data-open="${p.id}">${esc(p.name)}</button>`}</h2>
             <small>${mine ? `${esc(p.client)}, ваша роль: ${ROLE_RU[role].toLowerCase()}, владелец: <span class="owner-name">…</span>` : `${p.client ? `${esc(p.client)}, ` : ''}PM ${esc(short(p.pm_id))}${execTxt(p)}${isInfoBoardP(p) ? '' : `, финиш ${fmt(plannedEnd(p))}`}`}</small>
           </div>
+          ${!mine ? `<button class="icon-btn pf-shareic pf-pdf" data-roadmap="${p.id}" title="Дорожная карта в PDF: все задачи с датами и ключевыми точками" aria-label="Дорожная карта в PDF">${PDF_ICON}</button>` : ''}
           ${!mine ? `<button class="icon-btn pf-shareic${shareCount(p) ? ' on' : ''}" data-share="${p.id}" title="Поделиться проектом${shareCount(p) ? ` · доступ у ${shareCount(p)}` : ''}" aria-label="Поделиться проектом">${SHARE_ICON}${shareCount(p) ? `<span>${shareCount(p)}</span>` : ''}</button>` : ''}
         </div>
         ${!mine ? `<div class="pf-sort">${canEdit && !GUEST ? `<button type="button" class="ghost pf-editbtn${ui.pfEdit ? ' on' : ''}" data-pfedit aria-pressed="${!!ui.pfEdit}">${ui.pfEdit ? 'Готово' : `${ICON_EDIT}Редактировать доску`}</button>` : ''}<label class="hint" for="pfSort">Карточки:</label><select id="pfSort" aria-label="Порядок карточек в столбиках">${Object.entries(CARD_SORT).map(([k, l]) => `<option value="${k}" ${cardSortMode() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>` : ''}
