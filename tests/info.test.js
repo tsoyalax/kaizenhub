@@ -192,7 +192,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.deepEqual(cj.extra, { n:2, pub:0 }); ok('доп. контент считается отдельно');
   E(`ui.view = 'content'; ui.ctMode = 'board'; render()`);
   assert.equal(D.querySelectorAll('.ct-card .ct-x').length, 2); ok('на доске видео доп. контент с пометкой «доп.»');
-  assert.ok(D.querySelectorAll('.ct-card .ct-ico').length >= 6 && D.querySelector('.ct-add .ct-sw')); ok('у видео — значок видео, форма добавления — карточкой с переключателем «Доп. контент»');
+  assert.ok(!D.querySelector('.ct-add')); E(`ui.ctAddOpen = true; render()`);
+  assert.ok(D.querySelectorAll('.ct-card .ct-ico').length >= 6 && D.querySelector('.ct-add .ct-sw')); E(`ui.ctAddOpen = false; render()`); ok('у видео — значок видео, форма добавления — карточкой с переключателем «Доп. контент»');
   assert.ok(!D.querySelector('[data-vidsync]')); ok('кнопки «Обновить из SMM» нет');
   // ответственный у каждого этапа видео: сценарий — один человек, съёмка — другой; на главной доске имя — по текущему этапу
   E(`db.users.push({ id:'uyu', name:'Юля Ан', role:'specialist', status:'active' }, { id:'uig', name:'Игорь Пак', role:'specialist', status:'active' }); ui.view = 'content'; ui.ctMode = 'board'; render()`);

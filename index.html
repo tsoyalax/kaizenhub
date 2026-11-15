@@ -2702,7 +2702,7 @@ document.addEventListener('change', e => {
   addLog(p, `Контент: «${x.name}» — ${name}: ${e.target.checked ? 'готово' : 'снова в работе'}`); commit();
 });
 document.addEventListener('click', e => {
-  if (e.target.closest?.('[data-ctaddx]')){ ui.ctExtra = true; const x = $('#ctExtra'); if (x) x.checked = true; $('#ctAdd')?.scrollIntoView({ behavior:'smooth', block:'center' }); $('#ctName')?.focus(); } });
+  if (e.target.closest?.('[data-ctaddx]')){ ui.ctExtra = true; ui.ctAddOpen = true; render(); $('#ctName')?.focus(); } });
 // ответственный у каждого этапа видео (колонки доски «Контента»): p.vidWho = { id этапа шаблона SMM: id человека }.
 // Ответственный видео — у кого оно сейчас на этапе; свой ответственный в карточке видео важнее.
 const vidWhoOf = (p, x) => (p?.vidWho || {})[vidCol(x)?.id] || null;
@@ -2778,15 +2778,14 @@ function renderContentBody(){
       ${whoChip(contentWho(p, s, x, taskFor(p.id, s.id, x.id)))}<input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
   // по умолчанию — «План / Факт», доска — вторым видом
   const modeSeg = `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode !== 'board'}">План / Факт</button><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode === 'board'}">Доска</button></span>`;
+  const plus = GUEST ? '' : `<button class="icon-btn ct-plus${ui.ctAddOpen ? ' on' : ''}" data-ctplus title="Добавить видео" aria-label="Добавить видео" aria-expanded="${!!ui.ctAddOpen}">+</button>`;
   if (ui.ctMode === 'board'){
-    app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>
+    app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>${plus}
       <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>${modeSeg}
-      <button class="ghost" data-ctaddx>+ Доп. контент</button></div>
-      ${contentBoardHtml(s, ctItems().filter(x => x.cycle === c))}
-      ${addForm}`;
+      <button class="ghost" data-ctaddx>+ Доп. контент</button></div>${ui.ctAddOpen ? addForm : ''}
+      ${contentBoardHtml(s, ctItems().filter(x => x.cycle === c))}`;
     return;
   }
-  const plus = GUEST ? '' : `<button class="icon-btn ct-plus${ui.ctAddOpen ? ' on' : ''}" data-ctplus title="Добавить видео" aria-label="Добавить видео" aria-expanded="${!!ui.ctAddOpen}">+</button>`;
   app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>${plus}${modeSeg}</div>${ui.ctAddOpen ? addForm : ''}<section class="smm-pf" aria-label="Контент: план и факт">
     <div class="smm-hd"><h2>План / Факт</h2>
       <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>
@@ -2814,7 +2813,7 @@ function renderContentBody(){
     ${GUEST ? '' : `<div class="ct-seltools">${ui.ctSelMode ? `<button class="ghost" data-ctselall>Выбрать все (${st.items.length})</button><button class="ghost danger" data-ctseldel ${ui.ctSel?.size ? '' : 'disabled'}>Удалить${ui.ctSel?.size ? ` (${ui.ctSel.size})` : ''}</button><button class="ghost" data-ctselmode>Готово</button>` : '<button class="ghost" data-ctselmode>Выбрать видео</button>'}</div>`}
     ${st.weeks.filter(x => x.items.length).map(x => `<section class="ct-wk"><h3>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></h3>
       <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}
-    ${ui.ctAddOpen ? '' : addForm}`;
+    `;
 }
 // «Этапы» в «План / Факт»: шкала на каждый этап видео — сколько видео сейчас на нём (длина полосы от всех видео цикла),
 // ответственный этапа; самый загруженный (не последний) этап подсвечен — там затор
