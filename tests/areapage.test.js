@@ -31,7 +31,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   });
   return { dom, w: dom.window, errors };
 }
-// Отдельная страница области: /?area=<id> — только эта область
+// Отдельная версия KaizenHub /igor — только область «Игорь Шаламов»
 (async () => {
   const be = makeBackend(); const A = 'aaaaaaaa-0000-0000-0000-0000000000b1';
   const o = openApp(be, A); await wait(4500);
@@ -39,17 +39,11 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   D.getElementById('spPick')?.remove(); E(`layer.innerHTML = ''`);
   const area = await w.eval(`createArea('Игорь Шаламов')`); await wait(200);
   const sp = await w.eval(`createSpace({ name:'Игорь: запуск', kind:'agency', area:'${area}', copy:false })`); await wait(400);
-  E(`ui.areaMenu = true; renderSide();`); await wait(30);
-  const ext = [...D.querySelectorAll('.am-ext')].find(a => a.getAttribute('href').endsWith('area=' + area));
-  assert.ok(ext && ext.target === '_blank'); ok('у области в меню — «Открыть отдельной страницей» (↗)');
-  E(`openPick ? openPick() : maybePick()`); await wait(50);
-  assert.ok([...D.querySelectorAll('.sp-pick-ext')].some(x => x.getAttribute('href').endsWith('area=' + area))); ok('на экране «Где работаем?» у области — «Отдельно ↗»');
-  D.getElementById('spPick')?.remove();
   const store = {}; for (let i = 0; i < w.localStorage.length; i++){ const k = w.localStorage.key(i); store[k] = w.localStorage.getItem(k); }
   o.w.close();
   // открываем ссылку области
   const reloads = [];
-  const o2 = openApp(be, A, 'https://kz.test/?area=' + area, {}, store); o2.w.kzReloadHook = () => reloads.push(1); await wait(4500);
+  const o2 = openApp(be, A, 'https://kz.test/igor', {}, store); o2.w.kzReloadHook = () => reloads.push(1); await wait(4500);
   const w2 = o2.w, E2 = x => w2.eval(x);
   assert.ok(E2('focusOn()')); ok('страница области узнаёт свою область');
   assert.ok(!w2.document.getElementById('spPick')); ok('без экрана «Где работаем?»');
@@ -57,7 +51,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E2(`ui.areaMenu = true; renderSide();`); await wait(30);
   const names = [...w2.document.querySelectorAll('.area-menu [data-areaopen]')].map(b => b.dataset.areaopen);
   assert.deepEqual(names, [area]); ok('в меню только эта область — других не видно');
-  assert.ok(!w2.document.querySelector('[data-areamnew]') && w2.document.querySelector('.area-menu a.am-new[href="/"]')); ok('нет «Новой области», есть «← Все области»');
+  assert.ok(!w2.document.querySelector('[data-areamnew]') && !w2.document.querySelector('.area-menu a[href="/"]')); ok('нет «Новой области» и ссылки на остальные области');
+  w2.eval(`ui.areaMenu = false; render();`); assert.ok(![...w2.document.querySelectorAll('.side-spaces button[title], .side-spaces [aria-label]')].some(b => /Основное/.test(b.getAttribute('title') || b.textContent))); ok('пространств других областей не видно');
   assert.ok(/Игорь Шаламов/.test(w2.document.title)); ok('вкладка браузера подписана названием области');
   assert.deepEqual([...o.errors, ...o2.errors].filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);

@@ -3870,7 +3870,7 @@ function render(){
   try { const vn = $('#viewName'); if (vn) vn.textContent = ({ production:'Производство', templates:'Настройки', internal:'Внутренние задачи' })[ui.view] || MNAV[ui.view]?.[0] || ''; } catch(e) {}
   paintSpace(); rememberView();
   document.body.dataset.view = ui.view;
-  document.body.classList.toggle('focus-area', focusOn()); if (focusOn()) document.title = `${areaById(FOCUS_AREA).name} — KaizenHub`;
+  document.body.classList.toggle('focus-area', focusOn()); if (focusOn()) document.title = `${areaById(focusId()).name} — KaizenHub`;
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.view === ui.view ? 'page' : 'false'));
   $('#mineTab').hidden = !GUEST && !ext.projects.length && ui.view !== 'mine';
   $('#myTasksTab').hidden = false;
@@ -6022,13 +6022,17 @@ const spaces = { list:[], orgs:[], ws:[], areas:[], ready:false, mainColor:'', m
 const WS0 = 'w0', AREA0 = 'a0';
 // Отдельная страница области: /?area=<id> — видна только эта область и её пространства (без выбора других областей).
 // Ссылку даёт кнопка ↗ у области в меню областей. Данные те же, просто вкладка работает только с этой областью.
-const FOCUS_AREA = (() => { try { const v = new URLSearchParams(location.search).get('area') || ''; return /^a[\w-]{1,30}$/.test(v) ? v : ''; } catch(e) { return ''; } })();
-const focusOn = () => !!FOCUS_AREA && !ORG && (FOCUS_AREA === 'a0' || spaces.areas.some(x => x.id === FOCUS_AREA));
+// Отдельные версии KaizenHub по адресу: только одна область, без выбора и без остальных областей.
+const AREA_SITES = { igor:/игор|шалам/i };
+const SITE = (() => { try { const m = location.pathname.match(/^\/([a-z0-9-]+)\/?$/); return m && AREA_SITES[m[1]] ? m[1] : ''; } catch(e) { return ''; } })();
+const FOCUS_Q = (() => { try { const v = new URLSearchParams(location.search).get('area') || ''; return /^a[\w-]{1,30}$/.test(v) ? v : ''; } catch(e) { return ''; } })();
+const focusId = () => SITE ? (spaces.areas.find(x => AREA_SITES[SITE].test(x.name || ''))?.id || '') : FOCUS_Q;
+const focusOn = () => { const f = focusId(); return !!f && !ORG && (f === 'a0' || spaces.areas.some(x => x.id === f)); };
 const areaPageUrl = a => `${location.origin}/?area=${encodeURIComponent(a)}`;
 // Области — уровень над разделами: data/users/<id>/spaces/area/<a…> { name, at }; у раздела .area (нет — основная область 'a0').
 const areaListAll = () => { const d0 = spaces.areas.find(x => x.id === AREA0);
   return [{ id:AREA0, name:d0?.name || 'Мой бизнес', at:'' }, ...spaces.areas.filter(x => x.id !== AREA0)]; };
-const areaList = () => focusOn() ? areaListAll().filter(a => a.id === FOCUS_AREA) : areaListAll();
+const areaList = () => focusOn() ? areaListAll().filter(a => a.id === focusId()) : areaListAll();
 const areaById = id => areaList().find(x => x.id === id) || areaList()[0];
 const wsArea = w => w && w.id !== WS0 && w.area && spaces.areas.some(x => x.id === w.area) ? w.area : AREA0;
 const wsOfArea = a => wsList().filter(w => wsArea(w) === a);
@@ -6164,17 +6168,17 @@ function sideViews(){
 // кружки в панели: пространства текущего раздела (у руководителя чужой команды — раздел его владельца) и команды руководителей
 // область в панели: название со стрелкой ▾ — выпадающий список областей (и команд, где вы руководитель) + «Новая область»
 function areaBar(){
-  const name = ORG ? (spaces.orgs.find(x => x.id === ORGK)?.label || (ORGSP ? 'Пространство' : 'Проекты руководителя')) : areaById(curArea()).name;
+  const name = ORG ? (spaces.orgs.find(x => x.id === ORGK)?.label || (ORGSP ? 'Пространство' : 'Проекты руководителя')) : areaById(focusOn() ? focusId() : curArea()).name;
   const open = !!ui.areaMenu;
-  const items = [...areaList().map(a => `<div class="am-row"><button role="menuitem" class="am-i${!ORG && a.id === curArea() ? ' cur' : ''}" data-areaopen="${a.id}">${esc(a.name)}<small>${esc(spacesOfArea(a.id).map(x => x.name).join(' · ') || 'пусто')}</small></button>${focusOn() ? '' : `<a class="am-ext" href="${areaPageUrl(a.id)}" target="_blank" rel="noopener" title="Открыть «${esc(a.name)}» отдельной страницей" aria-label="Открыть «${esc(a.name)}» отдельной страницей">↗</a>`}</div>`),
+  const items = [...areaList().map(a => `<div class="am-row"><button role="menuitem" class="am-i${!ORG && a.id === curArea() ? ' cur' : ''}" data-areaopen="${a.id}">${esc(a.name)}<small>${esc(spacesOfArea(a.id).map(x => x.name).join(' · ') || 'пусто')}</small></button></div>`),
     ...(focusOn() ? [] : spaces.orgs.map(o => `<button role="menuitem" class="am-i${ORGK === o.id ? ' cur' : ''}" data-areaorg="${o.id}">${esc(o.label)}<small>${esc(o.sub)}</small></button>`))].join('')
-    + (focusOn() ? `<a class="am-i am-new" href="/" title="Все области и пространства">← Все области</a>` : '');
+    + (focusOn() && !SITE ? `<a class="am-i am-new" href="/" title="Все области и пространства">← Все области</a>` : '');
   return `<div class="side-ws"><button class="side-ws-n" data-areamenu aria-haspopup="menu" aria-expanded="${open}">${esc(name)}<span class="am-car" aria-hidden="true">▾</span></button>
     ${open ? `<div class="area-menu" role="menu">${items}${cloud.store && cloud.uid && !focusOn() ? '<button role="menuitem" class="am-i am-new" data-areamnew>+ Новая область</button>' : ''}</div>` : ''}</div>`;
 }
 function sideSpaces(){
   // все пространства текущей области (всех её разделов — агентство, SMM…)
-  const all = ORG ? spacesOfArea(AREA0) : spacesOfArea(curArea());
+  const all = ORG ? spacesOfArea(AREA0) : spacesOfArea(focusOn() ? focusId() : curArea());
   return [...all.map(x => ({ id:x.id, name:x.name, color:spColor(x.id), icon:spIcon(x.id), cur:!ORG && (x.id || '') === SPACE })),
     ...(focusOn() ? [] : spaces.orgs).map(o => ({ id:'o:' + o.id, name:o.label, color:o.color || spColorsCache()['o:' + o.id] || hashColor(o.id), icon:o.icon || 'users', cur:ORGK === o.id }))];
 }
@@ -6256,7 +6260,7 @@ const picked = () => { try { return sessionStorage.getItem(PICK_KEY) === '1'; } 
 function maybePick(){
   if (spaces.ready && !ORG) try { localStorage.setItem(AREA_LAST(curArea()), SPACE); } catch(e) {}
   if (spaces.ready && focusOn()){   // отдельная страница области: без выбора, сразу её пространство
-    markPicked(); if (curArea() !== FOCUS_AREA && spacesOfArea(FOCUS_AREA).length){ openArea(FOCUS_AREA); } return; }
+    markPicked(); if (curArea() !== focusId() && spacesOfArea(focusId()).length){ openArea(focusId()); } return; }
   if (GUEST || !cloud.uid || !spaces.ready || picked() || $('#spPick')) return;
   if (typeof ownerBooted === 'undefined' || !ownerBooted || !db?.onboarded) return;
   document.body.insertAdjacentHTML('beforeend', '<div class="sp-pick" id="spPick" role="dialog" aria-modal="true" aria-labelledby="spPickT"></div>');
@@ -6281,7 +6285,7 @@ function paintPick(){
   el.innerHTML = `<div class="sp-pick-in"><h1 id="spPickT">Где работаем?</h1>
     <p>Выберите область. Внутри — пространства (кружки в панели слева), у каждого свои проекты, команда и шаблоны.</p>
     <div class="sp-pick-list">
-      ${areaList().map((a, i) => `<div class="sp-pick-row">${card(`data-pickarea="${a.id}"`, a.name, hashColor(a.id + 'area'), spIco(SP_ICON_KEYS[i % SP_ICON_KEYS.length]), esc(aSub(a)), curArea() === a.id)}${focusOn() ? '' : `<a class="sp-pick-ext" href="${areaPageUrl(a.id)}" target="_blank" rel="noopener" title="KaizenHub только с областью «${esc(a.name)}» — в новой вкладке">Отдельно ↗</a>`}</div>`).join('')}
+      ${areaList().map((a, i) => `<div class="sp-pick-row">${card(`data-pickarea="${a.id}"`, a.name, hashColor(a.id + 'area'), spIco(SP_ICON_KEYS[i % SP_ICON_KEYS.length]), esc(aSub(a)), curArea() === a.id)}</div>`).join('')}
       ${spaces.orgs.map(o => card(`data-pickorg="${o.id}"`, o.label, o.color || spColorsCache()['o:' + o.id] || hashColor(o.id), spIco(o.icon || 'users'), esc(o.sub[0].toUpperCase() + o.sub.slice(1)), ORGK === o.id)).join('')}
     </div>
     ${ui.areaNew ? `<form class="ws-new" id="areaNew"><input id="areaNewName" placeholder="Название области, например «Второй бизнес»" maxlength="60" aria-label="Название области">
