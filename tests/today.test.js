@@ -65,7 +65,9 @@ function openPage(backend, code){
   // «сверх плана» не показывается: только задачи на сегодня и просроченные
   assert.ok(!/Сверх плана/i.test($('.tdy-pf-box').textContent) && !E(`dayFact(dayPlan()).extra.length`)); ok('блока «сверх плана» нет');
   // ссылка для Игоря
-  const shareBtn = [...D.querySelectorAll('[data-tdyshare]')].find(b => b.dataset.tdyshare === 'uIg'); shareBtn.click(); await wait(400);
+  const btns = [...D.querySelectorAll('[data-tdyshare]')];
+  assert.ok(btns.length === 1 && btns[0].dataset.tdyshare === '*' && !D.querySelector('[data-tdyrefresh]') && !/Поделиться всем|Ссылка на весь/.test($('.tdy-pf-box').textContent)); ok('одна иконка «Поделиться» на весь план, без лишних кнопок');
+  E(`todayShare('uIg')`); await wait(400);
   const url = $('#tdyUrl').value; const code = url.split('c=')[1];
   assert.ok(/\/today\/\?c=[a-z0-9]{20,40}$/.test(url)); ok('ссылка без входа для человека');
   E(`layer.innerHTML = ''`);
@@ -96,7 +98,7 @@ function openPage(backend, code){
   // план / факт — в стиле блока SMM: цифры, полоса, таблица по людям
   assert.ok($('.smm-pf .smm-kpi') && $('.smm-pf .smm-bar') && /Игорь/.test($('.smm-pf .smm-wk').textContent)); ok('план / факт оформлен как в контенте: цифры, полоса, таблица по людям');
   // закрыть ссылку
-  E(`ui.tdMode = 'plan'; render();`); [...D.querySelectorAll('[data-tdyshare]')].find(b => b.dataset.tdyshare === 'uIg').click(); await wait(300);
+  E(`ui.tdMode = 'plan'; render(); todayShare('uIg')`); await wait(300);
   $('#tdyOff').click(); await wait(400);
   assert.ok(!be.rows.has('today/' + code) && !E(`(db.prefs.todayLinks || []).length`)); ok('ссылку можно закрыть');
   // ответственный за пункт чек-листа: по умолчанию — как у подэтапа, можно выбрать свой

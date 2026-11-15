@@ -4648,7 +4648,7 @@ function renderToday(){
       <span><b>${esc(i.title)}</b><small>${esc(extra ? tdWhere(i) : i.where)}${late ? ` · <span class="tdy-late">просрочено с ${fmt(i.due)}</span>` : !dn ? ' · <span class="tdy-run">сегодня</span>' : ''}${extra ? ' · сверх плана' : ''}</small></span></li>`; };
   const card = u => { const dn = u.plan.filter(i => f.done.has(i.k)).length; const p2 = u.plan.length ? Math.round(dn / u.plan.length * 100) : 100; const ln = links.find(l => l.who === u.id);
     return `<section class="panel tdy-card"><header class="tdy-h"><b>${esc(u.name)}</b><span class="tdy-pf">${dn} <small>из ${u.plan.length}</small>${u.extra.length ? ` · +${u.extra.length} сверх` : ''}</span>
-      ${u.id !== '' && isToday ? `<button class="ghost tdy-share${ln ? ' on' : ''}" data-tdyshare="${u.id}" title="Ссылка без входа: человек отмечает задачи, отметки попадают на общую доску">${ln ? 'Ссылка открыта' : 'Поделиться'}</button>` : ''}</header>
+      </header>
       <div class="smm-bar"><i style="width:${p2}%"></i></div>
       <ul class="tdy-list">${u.plan.filter(i => !tdIsContent(i)).map(i => row(i, false)).join('')}${contentRow(u.plan.filter(tdIsContent), u.id)}${u.extra.filter(i => !tdIsContent(i)).map(i => row(i, true)).join('')}</ul></section>`; };
   // «Контент» (видео) — одной строкой: сколько на сегодня и сколько сделано; список раскрывается плашками
@@ -4658,7 +4658,7 @@ function renderToday(){
   app.innerHTML = `<section class="smm-pf tdy-pf-box" aria-label="План и факт на день">
     <div class="smm-hd"><h2>План / Факт</h2>
       <span class="smm-m"><button class="icon-btn" data-tdday="-1" ${di > 0 ? '' : 'disabled'} aria-label="Предыдущий день">‹</button><b>${isToday ? 'Сегодня, ' : ''}${esc(title)}</b><button class="icon-btn" data-tdday="1" ${!isToday ? '' : 'disabled'} aria-label="Следующий день">›</button></span>
-      ${isToday ? `<span class="tdy-acts"><button class="ghost" data-tdyrefresh>Добавить новые на сегодня</button><button class="ghost" data-tdyshare="*">${links.some(l => l.who === '*') ? 'Ссылка на весь план' : 'Поделиться всем планом'}</button></span>` : ''}</div>
+      ${isToday ? `<span class="tdy-acts"><button class="icon-btn pf-shareic${links.some(l => l.who === '*') ? ' on' : ''}" data-tdyshare="*" title="Поделиться планом на сегодня: ссылка без входа, по ней отмечают задачи" aria-label="Поделиться планом на сегодня">${SHARE_ICON}</button></span>` : ''}</div>
     <div class="smm-kpi">
       <div><b>${total}</b><small>План${isToday ? ` · сложился в ${new Date(pl.at).toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' })}` : ''}</small></div>
       <div><b>${doneN} <small>из ${total}</small></b><small>Факт: сделано${pace ? ' · ' + pace : ''}</small></div>
