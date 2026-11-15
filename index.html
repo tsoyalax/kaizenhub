@@ -1282,7 +1282,9 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .flp-list ol{margin:0;padding:0;list-style:none;display:grid;gap:2px}
 .flp-row{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;align-items:center;text-align:left;border:0;background:transparent;color:var(--ink);padding:7px 8px;border-radius:9px;font:inherit;font-size:13.5px;cursor:pointer}
 .flp-row:hover{background:var(--surface)}
-.ip-board{margin-top:18px;padding-top:14px;border-top:3px solid var(--bc)}
+.ab-board{margin-top:4px}
+.ab-ip{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-weight:600}.ab-ip i{width:7px;height:7px;border-radius:50%;background:var(--bc)}
+.ab-hint{margin:8px 2px 0}
 .flp-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bc);margin-right:5px;vertical-align:1px}
 .flp-rn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
 .flp-row small{grid-column:1;color:var(--muted);font-size:12px}
@@ -5312,20 +5314,25 @@ function flowNode(p, v){
       ${a?.reason ? `<small class="fl-ai-why">${esc(a.reason)}</small>` : ''}</div>`;
 }
 // «Все»: просроченные и ближайшие задачи всех инфоповодов (у задачи — инфоповод и отдел), ниже общий таймлайн
-// «Все» → «Доска»: доски всех незавершённых инфоповодов одна под другой (каждая — как обычно, со своей шапкой);
-// клик, ввод и перетаскивание внутри доски сначала делают её инфоповод текущим (ui.prodProject), поэтому работают все обычные обработчики
+// «Все» → «Доска»: одна доска, одинаковые отделы всех незавершённых площадок объединены в одну колонку (по названию,
+// порядок — как у первой площадки). У карточки — цветная точка и название площадки; клик открывает её карточку ([data-tgsub])
 function allBoardsHtml(){
-  const keep = ui.prodProject; const out = [];
-  infoBoards().filter(p => p.state !== 'completed').forEach(p => {
-    ui.prodProject = p.id; renderProjectFocus(); const m = app.querySelector('.pf-main');
-    out.push(`<div class="ip-board" data-pfboard="${p.id}" style="--bc:${tgColor(p)}">${m ? m.innerHTML : ''}</div>`); });
-  ui.prodProject = keep; return out.join('');
+  const boards = infoBoards().filter(p => p.state !== 'completed'); const t0 = today();
+  const cols = new Map();
+  boards.forEach(p => p.stages.filter(s => !isMaint(s)).forEach(s => { const k = norm(s.name);
+    if (!cols.has(k)) cols.set(k, { name:s.name, items:[] });
+    sortCards(p, s, boardSubs(p, s)).forEach(x => cols.get(k).items.push({ p, s, x })); }));
+  const card = ({ p, s, x }) => { const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x); const due = t?.due_date || x.due_date || '';
+    return `<button class="pf-card${done ? ' done' : ''}" data-tgsub="${p.id}|${s.id}|${x.id}" aria-label="${esc(p.name)}: ${esc(x.name)}">
+      <span class="ab-ip"><i style="--bc:${tgColor(p)}"></i>${esc(p.name)}</span>
+      <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}</b>
+      <small>${whoChip(x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t))}${due ? ` · <span class="pf-due${due < t0 && !done ? ' late' : ''}">${t?.start_date ? rangeTxt(t.start_date, due) : 'срок ' + fmt(due)}</span>` : ''}</small>
+      ${pr && pr.total ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.n} из ${pr.total} выполнено</small>` : done ? '<small>Выполнено</small>' : ''}</button>`; };
+  return `<div class="pf-board ab-board">${[...cols.values()].map(c => { const dn = c.items.filter(i => subDone(i.p, i.s, i.x)).length;
+    return `<section class="pf-col" aria-label="${esc(c.name)}"><header><div><b>${esc(c.name)}</b></div><small>Задачи ${dn}/${c.items.length}</small></header>
+      <div class="pf-cards">${c.items.map(card).join('') || '<p class="hint">Задач нет</p>'}</div></section>`; }).join('')}</div>
+    <p class="hint ab-hint">Здесь все площадки вместе. Добавлять задачи и менять столбики — на доске своей площадки.</p>`;
 }
-['click', 'change', 'submit', 'input', 'focusin', 'dragstart'].forEach(ev => document.addEventListener(ev, e => {
-  const b = e.target.closest?.('[data-pfboard]'); if (b && ui.prodProject !== b.dataset.pfboard) ui.prodProject = b.dataset.pfboard; }, true));
-// карточки и столбики не переносятся между досками разных инфоповодов
-['dragover', 'drop'].forEach(ev => document.addEventListener(ev, e => {
-  const b = e.target.closest?.('[data-pfboard]'); if (b && b.dataset.pfboard !== ui.prodProject) e.stopPropagation(); }, true));
 function flowAllHtml(){
   const t0 = today(); const boards = infoBoards().filter(p => p.state !== 'completed');
   const all = boards.flatMap(p => [...flowState(p).values()].flatMap(v => v.open.filter(i => i.due).map(i => ({ ...i, p, s:v.s }))));
