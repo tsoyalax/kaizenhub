@@ -278,10 +278,11 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.ok(!E(`subIdsOf(infoBoard()).includes('zDel')`)); ok('вернувшаяся из копии задача сразу убирается');
   E(`onSharedProject(infoBoard().id, { exists:true, metadata:{}, data:() => ({ json:JSON.stringify(window.__old) }) })`);
   assert.ok(!E(`subIdsOf(infoBoard()).includes('zDel')`)); ok('старая копия из общего документа удалённую задачу не возвращает');
-  // дорожная карта в PDF: кнопка у площадки, в документе — задачи с датами, пункты чек-листа
-  E(`ui.view = 'production'; ui.prodProject = infoBoard().id; render()`);
-  assert.ok(D.querySelector(`[data-roadmap="${E('infoBoard().id')}"]`)); ok('у площадки есть кнопка «Дорожная карта в PDF»');
-  { const h = E(`roadmapHtml(infoBoard())`); assert.ok(/Дорожная карта/.test(h) && /<table/.test(h) && /print\(\)/.test(h)); ok('дорожная карта — таблица задач с датами, открывается печать (PDF)'); }
+  // дорожная карта в PDF — во «Все»: все площадки одной таблицей
+  E(`window.__k2 = db.prefs.kind; db.prefs.kind = 'info'; ui.view = 'production'; ui.infoAll = true; ui.infoMode = 'board'; render()`);
+  assert.ok(D.querySelector('[data-roadmap="all"]') && !D.querySelector('.pf-head [data-roadmap]')); ok('кнопка «Дорожная карта в PDF» — во «Все»');
+  { const h = E(`roadmapHtml(infoBoards())`); assert.ok(/все площадки/.test(h) && /Площадка · отдел/.test(h) && /print\(\)/.test(h)); ok('дорожная карта всех площадок — одна таблица с датами, открывается печать (PDF)'); }
+  E(`ui.infoAll = false; db.prefs.kind = window.__k2; render()`);
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });
