@@ -67,6 +67,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(D.querySelector('#layer .d-kd [data-kdadd], .d-kd [data-kdadd]') && /Эфир Игоря/.test(D.querySelector('.d-kd').textContent)); ok('ключевые даты видны и добавляются в карточке инфоповода');
   E(`closeLayer ? closeLayer() : (layer.innerHTML = ''); ui.open = null; ui.prodProject = em.id; render();`); await wait(30);
   // столбики доски: переименовать, удалить, добавить — только в этом инфоповоде
+  assert.ok(!$('[data-pfsren]') && !$('[data-pfsdel]') && !$('[data-pfscol]') && $('[data-pfedit]')); ok('без «Редактировать доску» значков правки и «+ Столбик» не видно');
+  $('[data-pfedit]').click(); await wait(30); assert.ok($('[data-pfsren]') && $('[data-pfscol]') && $('[data-pfcolmove]')); ok('«Редактировать доску» открывает правку столбиков');
   $('[data-pfsren]').click(); await wait(30); f = $('[data-pfrenf]'); f.querySelector('input').value = 'Продукт и оффер'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
   E(`syncAllTemplates(INFO_TPL_ID); render();`); await wait(30);
   assert.ok(E(`em.stages[0].name`) === 'Продукт и оффер' && E(`ig.stages[0].name`) === 'Продукт'); ok('столбик переименовывается и не возвращается шаблоном; у другого инфоповода прежний');
@@ -74,6 +76,12 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(E(`em.stages.some(s => s.name === 'Монтаж')`) && !E(`ig.stages.some(s => s.name === 'Монтаж')`)); ok('новый столбик добавляется');
   D.querySelector(`[data-pfsdel="${E(`em.stages.find(s => s.name === 'Монтаж').id`)}"]`).click(); await wait(30); $('#cfmOk').click(); await wait(80);
   E(`syncAllTemplates(INFO_TPL_ID);`); assert.ok(!E(`em.stages.some(s => s.name === 'Монтаж')`)); ok('лишний столбик удаляется');
+  // переставить столбики (в режиме правки): второй встаёт первым
+  { const ids = E(`JSON.stringify(em.stages.map(s => s.id))`); const [a0, a1] = JSON.parse(ids);
+    E(`reorderStage(em, '${a1}', '${a0}')`); assert.ok(E(`em.stages[0].id`) === a1 && E(`em.stages[1].id`) === a0 && E(`em.stages[0].position`) === 0); ok('столбики переставляются местами');
+    E(`syncAllTemplates(INFO_TPL_ID);`); assert.ok(E(`em.stages[0].id`) === a1); ok('порядок не сбрасывается шаблоном');
+    E(`reorderStage(em, '${a0}', '${a1}')`); }
+  $('[data-pfedit]').click(); await wait(30); assert.ok(!$('[data-pfsren]')); ok('«Готово» прячет правку');
   // порядок карточек в столбике: как на доске / по ближайшим датам / по приоритету
   E(`layer.innerHTML = ''; ui.open = null; ui.infoMode = 'board'; ui.prodProject = em.id; { const s = em.stages[1]; s.subs = [
      { id:'cA', name:'Поздняя', done:false, due_date:addDays(T, 9) }, { id:'cB', name:'Без срока', done:false }, { id:'cC', name:'Ближайшая', done:false, due_date:addDays(T, 1) }, { id:'cD', name:'Срочная', done:false, due_date:addDays(T, 5) } ];

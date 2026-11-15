@@ -2015,6 +2015,10 @@ table.cx{border-collapse:collapse}
 .pf-items::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:3px}
 .pf-items::-webkit-scrollbar-track{background:transparent}
 .pf-head{align-items:flex-start;flex-wrap:nowrap}
+.pf-editbtn{display:inline-flex;align-items:center;gap:6px;margin-right:auto}.pf-editbtn svg{width:14px;height:14px}.pf-editbtn.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.pf-col.editing header[draggable]{cursor:grab}.pf-col.editing{outline:1px dashed color-mix(in srgb,var(--ink) 18%,transparent);outline-offset:-1px}
+.pf-colgrip{margin:0 4px 0 -2px;color:var(--muted);font-size:14px;line-height:20px;user-select:none}
+.pf-col.dragging{opacity:.45}.pf-col.col-before{box-shadow:-3px 0 0 var(--brand)}.pf-board.col-end > .pf-col[data-pfcolid]:last-of-type{box-shadow:3px 0 0 var(--brand)}
 .pf-shareic{position:relative;flex:none;width:36px;height:36px;border:1px solid var(--fbd,var(--line));background:var(--surface);border-radius:10px;color:var(--muted)}
 .pf-shareic:hover{color:var(--ink)}
 .pf-shareic svg{width:16px;height:16px}
@@ -4774,6 +4778,28 @@ document.addEventListener('click', e => {
 // ---------- Столбики доски «Производства»: переименовать, удалить, добавить (только в этой доске/проекте) ----------
 // Переименованный столбик отвязывается от шаблона (иначе синхронизация вернула бы старое название): p.tplSkip + custom.
 const pfProj = () => projById(ui[ui.view === 'mine' ? 'myProject' : 'prodProject']);
+// режим «Редактировать доску»: переименовать/удалить/добавить столбик и переставить столбики перетаскиванием
+document.addEventListener('click', e => { if (!e.target.closest?.('[data-pfedit]')) return; ui.pfEdit = !ui.pfEdit; ui.pfRen = null; render(); });
+// переставить столбик (этап) перед другим (или в конец, до «Ведения»); номера и сроки цепочки пересчитываются
+function reorderStage(p, sid, beforeId){
+  const s = p.stages.find(x => x.id === sid); if (!s || isMaint(s) || sid === beforeId) return false;
+  const rest = p.stages.filter(x => x !== s);
+  let i = beforeId ? rest.findIndex(x => x.id === beforeId) : -1;
+  if (i < 0){ const m = rest.findIndex(isMaint); i = m < 0 ? rest.length : m; }
+  rest.splice(i, 0, s);
+  if (rest.map(x => x.id).join() === p.stages.map(x => x.id).join()) return false;
+  p.stages = rest; normalizeChain(p); syncState(p); addLog(p, `Столбик «${s.name}» переставлен на место ${s.position + 1}`); commit(); return true;
+}
+let pfColDrag = null;
+const colBefore = (board, x) => [...board.querySelectorAll('[data-pfcolid]')].filter(c => c.dataset.pfcolid !== pfColDrag).find(c => { const r = c.getBoundingClientRect(); return x < r.left + r.width / 2; });
+document.addEventListener('dragstart', e => { const h = e.target.closest?.('[data-pfcolmove]'); if (!h || e.target.closest?.('[data-pfdrag]')) return;
+  pfColDrag = h.dataset.pfcolmove; e.dataTransfer.setData('text/kz-col', pfColDrag); e.dataTransfer.effectAllowed = 'move'; const c = h.closest('.pf-col'); setTimeout(() => c?.classList.add('dragging'), 0); });
+document.addEventListener('dragover', e => { if (!pfColDrag) return; const b = e.target.closest?.('.pf-board'); if (!b) return; e.preventDefault();
+  b.querySelectorAll('.pf-col.col-before').forEach(x => x.classList.remove('col-before')); b.classList.remove('col-end');
+  const t = colBefore(b, e.clientX); if (t) t.classList.add('col-before'); else b.classList.add('col-end'); });
+document.addEventListener('drop', e => { if (!pfColDrag) return; const b = e.target.closest?.('.pf-board'); if (!b) return; e.preventDefault();
+  const t = colBefore(b, e.clientX); const p = pfProj(); const id = pfColDrag; pfColDrag = null; if (p) reorderStage(p, id, t?.dataset.pfcolid || ''); });
+document.addEventListener('dragend', () => { if (!pfColDrag) return; pfColDrag = null; app.querySelectorAll('.pf-col.dragging,.pf-col.col-before').forEach(x => x.classList.remove('dragging', 'col-before')); app.querySelector('.pf-board')?.classList.remove('col-end'); });
 function renameStage(p, s, name){
   const v = String(name || '').trim().slice(0, 60); if (!v || v === s.name) return false;
   if (p.stages.some(x => x !== s && norm(x.name) === norm(v))){ toast('Столбик с таким названием уже есть'); return false; }
@@ -4860,7 +4886,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
     }).join('');
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" data-pmcol="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
       <header><div>${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`}${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}
-        ${canEdit && !mine && !GUEST && !isMaint(s) && ui.pfRen !== s.id ? `<span class="pf-coltools"><button type="button" data-pfsren="${s.id}" title="Переименовать столбик" aria-label="Переименовать столбик «${esc(s.name)}»">${ICON_EDIT}</button>${p.stages.filter(x => !isMaint(x)).length > 1 ? `<button type="button" data-pfsdel="${s.id}" title="Удалить столбик" aria-label="Удалить столбик «${esc(s.name)}»">${ICON_X}</button>` : ''}</span>` : ''}</div>
+        ${canEdit && !mine && !GUEST && !isMaint(s) && ui.pfRen !== s.id && ui.pfEdit ? `<span class="pf-coltools"><button type="button" data-pfsren="${s.id}" title="Переименовать столбик" aria-label="Переименовать столбик «${esc(s.name)}»">${ICON_EDIT}</button>${p.stages.filter(x => !isMaint(x)).length > 1 ? `<button type="button" data-pfsdel="${s.id}" title="Удалить столбик" aria-label="Удалить столбик «${esc(s.name)}»">${ICON_X}</button>` : ''}</span>` : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
       ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}${stageSubmitBox(p, s, mine)}
@@ -9276,9 +9302,10 @@ function renderProjectFocus(mine = false){
              : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
       </button>`;
     }).join('');
-    return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}" ${dnd ? `data-pfcol="${s.id}"` : ''} aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
-      <header><div>${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`}${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}
-        ${canEdit && !mine && !GUEST && !isMaint(s) && ui.pfRen !== s.id ? `<span class="pf-coltools"><button type="button" data-pfsren="${s.id}" title="Переименовать столбик" aria-label="Переименовать столбик «${esc(s.name)}»">${ICON_EDIT}</button>${p.stages.filter(x => !isMaint(x)).length > 1 ? `<button type="button" data-pfsdel="${s.id}" title="Удалить столбик" aria-label="Удалить столбик «${esc(s.name)}»">${ICON_X}</button>` : ''}</span>` : ''}</div>
+    const colMove = canEdit && !mine && !GUEST && ui.pfEdit && !isMaint(s);
+    return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}${ui.pfEdit ? ' editing' : ''}" ${dnd ? `data-pfcol="${s.id}"` : ''} ${colMove ? `data-pfcolid="${s.id}"` : ''} aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
+      <header ${colMove ? `draggable="true" data-pfcolmove="${s.id}" title="Перетащите, чтобы переставить столбик"` : ''}><div>${colMove ? '<span class="pf-colgrip" aria-hidden="true">⠿</span>' : ''}${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`}${isCur ? '<span class="pf-now">Текущий этап</span>' : ''}
+        ${canEdit && !mine && !GUEST && !isMaint(s) && ui.pfRen !== s.id && ui.pfEdit ? `<span class="pf-coltools"><button type="button" data-pfsren="${s.id}" title="Переименовать столбик" aria-label="Переименовать столбик «${esc(s.name)}»">${ICON_EDIT}</button>${p.stages.filter(x => !isMaint(x)).length > 1 ? `<button type="button" data-pfsdel="${s.id}" title="Удалить столбик" aria-label="Удалить столбик «${esc(s.name)}»">${ICON_X}</button>` : ''}</span>` : ''}</div>
         <small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}</div>
       ${canEdit && !mine && !GUEST && !isMaint(s) ? `<form class="pf-add" data-pfadd="${s.id}"><input placeholder="Добавить подэтап" aria-label="Новый подэтап этапа ${esc(s.name)}"><button class="ghost" aria-label="Добавить">+</button></form>` : ''}${stageSubmitBox(p, s, mine)}
@@ -9296,8 +9323,8 @@ function renderProjectFocus(mine = false){
           </div>
           ${!mine ? `<button class="icon-btn pf-shareic${shareCount(p) ? ' on' : ''}" data-share="${p.id}" title="Поделиться проектом${shareCount(p) ? ` · доступ у ${shareCount(p)}` : ''}" aria-label="Поделиться проектом">${SHARE_ICON}${shareCount(p) ? `<span>${shareCount(p)}</span>` : ''}</button>` : ''}
         </div>
-        ${!mine ? `<div class="pf-sort"><label class="hint" for="pfSort">Карточки:</label><select id="pfSort" aria-label="Порядок карточек в столбиках">${Object.entries(CARD_SORT).map(([k, l]) => `<option value="${k}" ${cardSortMode() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>` : ''}
-        <div class="pf-board">${cols}${canEdit && !mine && !GUEST ? '<button type="button" class="col-add pf-coladd" data-pfscol><span aria-hidden="true">+</span>Столбик</button>' : ''}</div>
+        ${!mine ? `<div class="pf-sort">${canEdit && !GUEST ? `<button type="button" class="ghost pf-editbtn${ui.pfEdit ? ' on' : ''}" data-pfedit aria-pressed="${!!ui.pfEdit}">${ui.pfEdit ? 'Готово' : `${ICON_EDIT}Редактировать доску`}</button>` : ''}<label class="hint" for="pfSort">Карточки:</label><select id="pfSort" aria-label="Порядок карточек в столбиках">${Object.entries(CARD_SORT).map(([k, l]) => `<option value="${k}" ${cardSortMode() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>` : ''}
+        <div class="pf-board">${cols}${canEdit && !mine && !GUEST && ui.pfEdit ? '<button type="button" class="col-add pf-coladd" data-pfscol><span aria-hidden="true">+</span>Столбик</button>' : ''}</div>
       </div>
     </div>`;
   // доска не прыгает в начало при перерисовке; при смене проекта — показываем текущий этап
