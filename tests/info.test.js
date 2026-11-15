@@ -264,6 +264,10 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     assert.ok(D.querySelector('.pf-col.ct-col') && nv() === 3 && /Показать все/.test(D.querySelector('[data-ctmore]').textContent)); ok('колонка «Контент» выделена, видно 3 видео и «Показать все»');
     D.querySelector('[data-ctmore]').click(); assert.equal(nv(), total); ok('«Показать все» раскрывает все видео');
     D.querySelector('[data-ctmore]').click(); assert.equal(nv(), 3); ok('«Свернуть» снова прячет'); }
+  E(`window.__k = db.prefs.kind; db.prefs.kind = 'info'; createInfoBoard('Вторая площадка', today()); ui.infoAll = true; ui.ctOpen = {}; render();`);
+  { const ct = D.querySelector('.ab-board .pf-col.ct-col'); assert.ok(ct && ct.querySelectorAll('.ct-ico').length === 3 && ct.querySelector('[data-ctmore="__all"]')); ok('во «Все» колонка «Контент» тоже выделена и свёрнута');
+    ct.querySelector('[data-ctmore]').click(); assert.ok(D.querySelector('.ab-board .pf-col.ct-col').querySelectorAll('.ct-ico').length > 3); ok('во «Все» — «Показать все» раскрывает'); }
+  E(`ui.infoAll = false; db.prefs.kind = window.__k; render();`);
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });

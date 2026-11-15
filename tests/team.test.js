@@ -123,6 +123,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   $(own, '[data-view="kanban"]').click(); await wait(150);
   assert.ok(own.w.document.querySelectorAll('.card select[data-qassign]').length > 0); ok('«Канбан»: на карточке можно выбрать ответственного');
   $(own, '[data-view="production"]').click(); await wait(150);
+  assert.ok(!own.w.document.querySelector('.pf-col select[data-qassign]')); ok('«Производство»: без правки выбора ответственного у столбиков нет');
+  own.w.eval('ui.pfEdit = true; render()'); await wait(30);
   assert.ok(own.w.document.querySelectorAll('.pf-col select[data-qassign]').length > 0); ok('«Производство»: у каждого этапа можно выбрать ответственного');
   const card = $(own, '.pf-card[data-pfsub]'); card.click(); await wait(200);
   assert.ok($(own, '[data-tqassign]')); ok('окно подэтапа: ответственного можно выбрать без режима редактирования');
@@ -145,6 +147,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(tt.includes('Гоша Ссылкин') && tt.includes('вошёл по ссылке на доску'), tt.slice(0, 300)); ok('вошедший по ссылке на доску появился в «Команде»');
   $(own, '[data-view="production"]').click(); await wait(150);
   $(own, `.pf-item[data-pfsel="${p2}"]`).click(); await wait(150);
+  own.w.eval('ui.pfEdit = true; render()'); await wait(30);
   const qs = $(own, '.pf-col select[data-qassign]');
   change(own, qs, [...qs.options].find(o => o.textContent.startsWith('Гоша')).value); await wait(4000);
   assert.ok(be.rows.get('sp/' + p2).data.memberIds.includes(G)); ok('его можно назначить на другой проект прямо с доски');

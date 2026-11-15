@@ -1480,6 +1480,7 @@ body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .pf-col header small{color:var(--muted);font-size:12.5px;display:flex;gap:6px;align-items:center}
 .pf-now{font-size:11px;font-weight:600;background:var(--ink);color:var(--surface);border-radius:6px;padding:1px 7px}
 .pf-cards{display:grid;gap:8px}
+.pf-colwho{display:block;margin-top:6px}
 .pf-col.ct-col{background:color-mix(in srgb,var(--m) 8%,var(--surface));border-color:color-mix(in srgb,var(--m) 35%,var(--line));box-shadow:inset 0 3px 0 var(--m)}
 .pf-col.ct-col header b::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--m);margin-right:6px;vertical-align:1px}
 .ct-more{width:100%;justify-content:center;font-size:13px;color:var(--m);border-style:dashed}
@@ -2701,7 +2702,7 @@ function contentBoardHtml(s, items){
   return `<div class="pf-board ct-board">${cs.map((c, ci) => { const list = items.filter(x => vidCol(x) === c);
     return `<section class="pf-col${ci === cs.length - 1 ? ' passed' : ''}" data-ctcol="${c.id}" aria-label="${esc(c.name)}">
       <header><div><b>${ci + 1}. ${esc(c.name)}</b></div><small>${list.length} ${plural(list.length, 'видео', 'видео', 'видео')}${(c.subs || []).length ? ` · подэтапов ${c.subs.length}` : ''}</small>
-        ${GUEST ? '' : `<select class="pf-status" data-vidwho="${c.id}" aria-label="Ответственный за этап «${esc(c.name)}»">${peopleOpts((infoBoard()?.vidWho || {})[c.id] || '', 'Ответственный не назначен')}</select>`}</header>
+        ${GUEST ? '' : `<select class="pf-status" data-vidwho="${c.id}" aria-label="Ответственный за этап «${esc(c.name)}»">${peopleOpts((infoBoard()?.vidWho || {})[c.id] || '', '—')}</select>`}</header>
       <div class="pf-cards">${list.map(x => { const t = taskFor(infoBoard().id, s.id, x.id);
         return `<div class="pf-card ct-card${x.done ? ' done' : ''}" draggable="true" data-ctdrag="${x.id}">
           <div class="ct-title"><button class="ct-open" data-pfsub="${s.id}|${x.id}"><span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><b>${esc(x.name)}</b>${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}</div>
@@ -5055,7 +5056,7 @@ function renderKanban(){
       <div class="meta">${p.client ? `${esc(p.client)} · ` : ''}PM ${esc(short(p.pm_id))}</div>
       <div class="stline"><span class="pill s-${h.key}"><i class="sw ${h.key}"></i>${h.label}</span><span>${h.note}</span></div>
       ${c && c.subs?.length ? `<div class="meta subnow">${curSubTxt(p) ? `Сейчас: ${esc(curSubTxt(p))}` : `Подэтапы ${subsDone} из ${c.subs.length}`}</div>` : ''}
-      <div class="ctrl">${statusSel}${moveSel}${c ? `<select class="wide" data-qassign="${p.id}|${c.id}" aria-label="Ответственный за этап ${esc(c.name)}">${peopleOpts(c.assignee_id, 'Ответственный не назначен')}</select>` : ''}</div></article>`;
+      <div class="ctrl">${statusSel}${moveSel}${c ? `<select class="wide" data-qassign="${p.id}|${c.id}" aria-label="Ответственный за этап ${esc(c.name)}">${peopleOpts(c.assignee_id, '—')}</select>` : ''}</div></article>`;
   };
   const colHtml = c => {
     const own = typeof c.pos === 'number';
@@ -5346,8 +5347,12 @@ function allBoardsHtml(){
       <small>${whoChip(x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t))}${due ? ` · <span class="pf-due${due < t0 && !done ? ' late' : ''}">${t?.start_date ? rangeTxt(t.start_date, due) : 'срок ' + fmt(due)}</span>` : ''}</small>
       ${pr && pr.total ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.n} из ${pr.total} выполнено</small>` : done ? '<small>Выполнено</small>' : ''}</button>`; };
   return `<div class="pf-board ab-board">${[...cols.values()].map(c => { const dn = c.items.filter(i => subDone(i.p, i.s, i.x)).length;
-    return `<section class="pf-col" aria-label="${esc(c.name)}"><header><div><b>${esc(c.name)}</b></div><small>Задачи ${dn}/${c.items.length}</small></header>
-      <div class="pf-cards">${c.items.map(card).join('') || '<p class="hint">Задач нет</p>'}</div></section>`; }).join('')}</div>
+    // «Контент» — выделен и свёрнут, как на доске площадки: видео до CT_FOLD, остальные — «Показать все»
+    const isCt = c.items.some(i => contentStage(i.p)?.id === i.s.id) || /контент/i.test(c.name);
+    const vids = isCt ? c.items.filter(i => i.x.cycle) : []; const open = !!ui.ctOpen?.__all; const fold = vids.length > CT_FOLD;
+    const keep = new Set(vids.slice(0, CT_FOLD)); const shown = fold && !open ? c.items.filter(i => !i.x.cycle || keep.has(i)) : c.items;
+    return `<section class="pf-col${isCt ? ' ct-col' : ''}" aria-label="${esc(c.name)}"><header><div><b>${esc(c.name)}</b></div><small>Задачи ${dn}/${c.items.length}</small></header>
+      <div class="pf-cards">${shown.map(card).join('') || '<p class="hint">Задач нет</p>'}${fold ? `<button type="button" class="ghost ct-more" data-ctmore="__all" aria-expanded="${open}">${open ? 'Свернуть' : `Показать все (${vids.length})`}</button>` : ''}</div></section>`; }).join('')}</div>
     <p class="hint ab-hint">Здесь все площадки вместе. Добавлять задачи и менять столбики — на доске своей площадки.</p>`;
 }
 function flowAllHtml(){
@@ -9127,7 +9132,9 @@ document.addEventListener('change', e => {
   else updateProject(p, 'worker_id', e.target.value || null, `Исполнитель: ${e.target.value ? nameOf(e.target.value) : 'не назначен'}`);
   assignNote(e.target.value, p);
 });
-const stageAssignSelect = (p, s) => p._ext ? '' : `<select class="pf-status" data-qassign="${p.id}|${s.id}" aria-label="Ответственный за этап ${esc(s.name)}">${peopleOpts(s.assignee_id, 'Ответственный не назначен')}</select>`;
+// ответственный за столбик: выбор — только в «Редактировать доску»; вне правки — плашка, если назначен (пункта «не назначен» нет)
+const stageAssignSelect = (p, s) => p._ext ? '' : ui.pfEdit ? `<select class="pf-status" data-qassign="${p.id}|${s.id}" aria-label="Ответственный за этап ${esc(s.name)}">${peopleOpts(s.assignee_id, '—')}</select>`
+  : s.assignee_id ? `<span class="pf-colwho">${whoChip(s.assignee_id)}</span>` : '';
 document.addEventListener('change', e => {
   const q = e.target.dataset?.qassign;
   if (q){ const [pid, sid] = q.split('|'); const p = projById(pid); const s = p?.stages.find(y => y.id === sid); if (s && canEditProject(p)) setAssignee(p, s, e.target.value); return; }
