@@ -101,6 +101,14 @@ function openPage(backend, code){
   E(`ui.tdMode = 'plan'; render(); todayShare('uIg')`); await wait(300);
   $('#tdyOff').click(); await wait(400);
   assert.ok(!be.rows.has('today/' + code) && !E(`(db.prefs.todayLinks || []).length`)); ok('ссылку можно закрыть');
+  // подэтап без карточки на ответственного по умолчанию; открыли, создалась карточка, поставили себя — в «Сегодня» не дублируется
+  E(`{ const p = db.projects.find(p => p.state === 'active' && currentStage(p) && !isMaint(currentStage(p))); const s = currentStage(p); s.assignee_id = 'uIg';
+     s.subs.push({ id:'xDup', name:'Найти монтажёра', done:false, due_date:today() }); ui.view = 'today'; commit(); }`); await wait(50);
+  const dupN = () => [...D.querySelectorAll('.tdy-i')].filter(x => /Найти монтажёра/.test(x.textContent)).length;
+  assert.equal(dupN(), 1);
+  E(`{ const p = db.projects.find(p => p.stages.some(s => (s.subs || []).some(x => x.id === 'xDup'))); const s = p.stages.find(s => s.subs.some(x => x.id === 'xDup'));
+     tasksFromSubs(p, { ...s, subs:s.subs.filter(x => x.id === 'xDup') }); const t = taskFor(p.id, s.id, 'xDup'); t.assignee_id = 'uEm'; t.due_date = today(); commit(); }`); await wait(50);
+  assert.equal(dupN(), 1); ok('задача, у которой появилась карточка и сменился ответственный, в «Сегодня» одна — без дубля у прежнего');
   // ответственный за пункт чек-листа: по умолчанию — как у подэтапа, можно выбрать свой
   E(`{ const t = db.tasks.find(t => t.substage_id === 'xStart'); t.checklist = [{ id:'ck1', text:'Написать вакансию', done:false }, { id:'ck2', text:'Созвон', done:false }]; commit(); openTask(t.id); }`); await wait(50);
   const sel = D.querySelector('[data-ckwho="ck1"]');

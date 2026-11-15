@@ -20,7 +20,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.ok(['matrix', 'kanban', 'archive'].every(v => D.querySelector(`.tabs [data-view="${v}"]`).hidden)); ok('матрицы, канбана и архива в меню нет');
   E('openCreate()'); assert.ok(!D.querySelector('#cForm') && E('db.projects.length') === 1); ok('новый проект не создаётся');
   E(`(() => { const t = db.templates.find(t => t.id === INFO_TPL_ID); t.stages[0].subs = [{ id:'a1', name:'Упаковка продукта' }]; t.stages.push({ id:'z1', name:'Вебинар', days:3, approval:false, subs:[] }); syncAllTemplates(INFO_TPL_ID); })()`);
-  assert.ok(E(`projById('infoboard').stages[0].subs.some(x => x.name === 'Упаковка продукта')`)); ok('подэтап из шаблона появился на доске');
+  assert.ok(!E(`projById('infoboard').stages[0].subs.some(x => x.name === 'Упаковка продукта')`)); ok('задачи из шаблона на площадку не расходятся — у площадки свои задачи');
   assert.ok(E(`projById('infoboard').stages.some(s => s.name === 'Вебинар')`)); ok('этап из шаблона появился на доске');
   // «Контент»: видео — карточки колонки «Контент» на доске; отметка в одном месте видна в другом
   assert.ok(!D.querySelector('.tabs [data-view="content"]').hidden); ok('в меню есть «Контент»');

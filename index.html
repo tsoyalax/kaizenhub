@@ -4651,7 +4651,9 @@ function dayPlanTopUp(){
   const pl = dayPlan(); const t0 = today(); let n = 0;
   // план сверяется с «Производством»: перенесли срок на будущее — задача уходит из плана, поменяли название/ответственного — обновляется
   const live = new Map(tdAll().map(i => [i.k, i]));
-  const keep = pl.items.filter(it => { const x = live.get(it.k); if (!x || x.done || tdDone(it.k)) return true;
+  // строки, которых больше нет на доске (например, у подэтапа появилась карточка — ключ x|… сменился на t|…, или задачу удалили),
+  // убираем, если они не выполнены: иначе задача висела дважды — у прежнего ответственного и у нового
+  const keep = pl.items.filter(it => { const x = live.get(it.k); if (!x) return tdDone(it.k); if (x.done || tdDone(it.k)) return true;
     if (!tdForDay(x, t0)) return false;
     if (it.due !== x.due || it.title !== x.title || (it.who || '') !== (x.who || '')){ it.due = x.due; it.title = x.title; it.who = x.who || ''; n++; }
     return true; });
@@ -6219,6 +6221,9 @@ function syncProjectWithTemplate(p, tpl){
     const t = T(s.tsid); if (!t || s._lost) return;
     if (s.name !== t.name){ addLog(p, `Этап «${s.name}» переименован в «${t.name}» по шаблону`); s.name = t.name; }
     s.approval = !!t.approval; s.gate = !!t.gate || !!s.gateOwn;
+    // площадки инфобизнеса: из шаблона берём только колонки — задачи у каждой площадки свои (иначе задача, попавшая в шаблон,
+    // расходилась по всем площадкам и возвращалась после удаления)
+    if (isInfoBoardP(p)) return;
     const old = s.subs || []; const next = []; const skipSub = new Set(p.subSkip || []);
     (t.subs || []).forEach(ts => {
       let x = old.find(y => y.tsub === ts.id && !y._lost);
@@ -8785,7 +8790,7 @@ function renderTaskModal(focusSel){
           <input data-ckbtext="${k}" value="${esc(it.text)}" aria-label="Пункт ${k + 1}" class="${it.done ? 'is-done' : ''}">
           <button type="button" class="ckb-x" data-ckbdel="${k}" aria-label="Удалить пункт ${k + 1}" title="Удалить пункт">×</button></li>`).join('')}</ol>
         <div class="row ckb-add"><input id="ckbNew" placeholder="Новый пункт, Enter — добавить" aria-label="Новый пункт чек-листа"><button type="button" class="ghost" data-ckbadd>Добавить</button></div></div>
-      ${sub && !p._ext ? `<label class="tpl-check"><input type="checkbox" id="tdTpl" ${d.asTpl ? 'checked' : ''}><span>Сохранить как шаблон карточки «${esc(sub.name)}»${tplById(p.template_id) ? ` для процесса «${esc(tplById(p.template_id).name)}»` : ''}<small>Описание, ссылки, видео и чек-лист обновятся в этом подэтапе во всех проектах процесса «${esc(tplById(p.template_id)?.name || '')}»${(() => { const k = db.projects.filter(x => x.template_id === p.template_id && x.state !== 'archived' && x.id !== p.id).length; return k ? ` (ещё ${k})` : ''; })()} и в новых. Проекты других процессов не изменятся. Отметки выполнения сохранятся.</small></span></label>` : ''}
+      ${sub && !p._ext && !isInfoBoardP(p) ? `<label class="tpl-check"><input type="checkbox" id="tdTpl" ${d.asTpl ? 'checked' : ''}><span>Сохранить как шаблон карточки «${esc(sub.name)}»${tplById(p.template_id) ? ` для процесса «${esc(tplById(p.template_id).name)}»` : ''}<small>Описание, ссылки, видео и чек-лист обновятся в этом подэтапе во всех проектах процесса «${esc(tplById(p.template_id)?.name || '')}»${(() => { const k = db.projects.filter(x => x.template_id === p.template_id && x.state !== 'archived' && x.id !== p.id).length; return k ? ` (ещё ${k})` : ''; })()} и в новых. Проекты других процессов не изменятся. Отметки выполнения сохранятся.</small></span></label>` : ''}
       <div class="err" id="tdErr"></div>
       <div class="tk-actions"><button type="button" class="ghost danger" data-tdel>Удалить подэтап</button>
         <span><button type="button" class="ghost" data-tcancel>Отмена</button> <button class="primary">Сохранить</button></span></div>
