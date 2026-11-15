@@ -4963,7 +4963,7 @@ function renderFunnel(){
 }
 document.addEventListener('click', e => { const g = e.target.closest?.('[data-view-go]'); if (g){ ui.view = g.dataset.viewGo; render(); scrollTo(0, 0); } });
 // ---------- Инфобизнес: таймлайн — все задачи доски на одной шкале времени ----------
-// Строка — этап, точка — задача в день её срока (t.due_date или x.due_date). Стрелки — связи этапов (p.flow):
+// Строка — этап, точка — задача в день её срока (t.due_date или x.due_date). Связей (стрелок) в таймлайне нет — только на доске.
 // от последнего срока этапа-источника к первому сроку зависимого. Красное — просрочено, зелёное — сделано, линия — сегодня.
 const TL_DW = 34, TL_ROW = 30;
 function timelineHtml(p){
@@ -4984,13 +4984,7 @@ function timelineHtml(p){
   const H = y; const byId = new Map(lanes.map(l => [l.v.s.id, l]));
   // связь: от последнего срока этапа-источника — к строке зависимого этапа (туда, где он может продолжаться после источника)
   const lastPt = l => { const ps = l.placed; if (!ps.length) return null; const i = ps.reduce((m, q) => q.px > m.px ? q : m, ps[0]); return { x:i.px, y:l.top + 8 + i.r * TL_ROW + TL_ROW / 2 }; };
-  const arrows = lanes.flatMap(l => flowDeps(p, l.v.s).map(id => byId.get(id)).filter(Boolean).map(src => {
-    const a = lastPt(src); if (!a) return ''; const red = src.v.own === 'red' || src.v.own === 'paused';
-    const next = l.placed.filter(q => q.px >= a.x).sort((m, q) => m.px - q.px)[0];     // первая задача зависимого после источника
-    const b = next ? { x:next.px - 9, y:l.top + 8 + next.r * TL_ROW + TL_ROW / 2 } : { x:a.x + 26, y:l.top + l.h / 2 };
-    const dy = b.y - a.y;
-    return `<path d="M${a.x},${a.y + Math.sign(dy) * 8} C${a.x},${a.y + dy * 0.6} ${b.x - 24},${b.y} ${b.x},${b.y}" class="tl-arr${red ? ' red' : ''}" marker-end="url(#tlHead${red ? 'R' : ''})"/>`;
-  })).join('');
+  // связи этапов (стрелки) в таймлайне не показываем — они путали; связи видны на доске и в «AI-воронке»
   const days = Array.from({ length:nd }, (_, i) => addDays(from, i));
   const head = days.map(d => { const dt = parse(d); const wk = dt.getDay() === 0 || dt.getDay() === 6;
     return `<span class="tl-d${wk ? ' wk' : ''}${d === t0 ? ' now' : ''}" style="left:${diffDays(d, from) * TL_DW}px">${dt.getDate() === 1 || d === from ? `<em>${dt.toLocaleDateString('ru-RU', { month:'short' })}</em>` : ''}${dt.getDate()}</span>`; }).join('');
@@ -5006,9 +5000,7 @@ function timelineHtml(p){
         ${lanes.map(l => `<div class="tl-lane" style="top:${l.top}px;height:${l.h}px"></div>`).join('')}
         <i class="tl-today" style="left:${xOf(t0)}px"></i>
         ${p.deadline ? `<i class="tl-goal" style="left:${xOf(p.deadline)}px"><span>${FLAG}${esc(goalName(p))} · ${fmt(p.deadline)}</span></i>` : ''}
-        <svg class="tl-svg" width="${W}" height="${H}" aria-hidden="true"><defs>
-          <marker id="tlHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="tl-hd"/></marker>
-          <marker id="tlHeadR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="tl-hd red"/></marker></defs>${arrows}</svg>
+
         ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task k-${k(i)}" data-pfsub="${l.v.s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px" title="${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}"><i></i><span>${esc(i.x.name)}</span></button>`)).join('')}
       </div></div></div></div>`;
 }
