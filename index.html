@@ -725,6 +725,9 @@ body.side-pinned .side-btn{color:var(--ink)}
 .sp-pick h1{font-size:24px;margin:0 0 6px}
 .sp-pick p{color:var(--muted);margin:0 0 18px}
 .sp-pick-list{display:grid;gap:10px;margin-bottom:16px}
+.sp-pick-row{display:flex;gap:8px;align-items:stretch}.sp-pick-row .sp-pick-card{flex:1;min-width:0}
+.sp-pick-ext{display:grid;place-items:center;flex:none;padding:0 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--muted);text-decoration:none;font-size:13px;white-space:nowrap}.sp-pick-ext:hover{color:var(--ink);border-color:var(--brand)}
+@media (max-width:640px){.sp-pick-ext{padding:0 10px;font-size:12px}}
 .sp-pick-card{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:left;cursor:pointer;font:inherit}
 .sp-pick-card:hover{border-color:var(--c)}
 .sp-pick-card .side-sp-ico{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--c);color:#fff;flex:none}
@@ -6278,7 +6281,7 @@ function paintPick(){
   el.innerHTML = `<div class="sp-pick-in"><h1 id="spPickT">Где работаем?</h1>
     <p>Выберите область. Внутри — пространства (кружки в панели слева), у каждого свои проекты, команда и шаблоны.</p>
     <div class="sp-pick-list">
-      ${areaList().map((a, i) => card(`data-pickarea="${a.id}"`, a.name, hashColor(a.id + 'area'), spIco(SP_ICON_KEYS[i % SP_ICON_KEYS.length]), esc(aSub(a)), curArea() === a.id)).join('')}
+      ${areaList().map((a, i) => `<div class="sp-pick-row">${card(`data-pickarea="${a.id}"`, a.name, hashColor(a.id + 'area'), spIco(SP_ICON_KEYS[i % SP_ICON_KEYS.length]), esc(aSub(a)), curArea() === a.id)}${focusOn() ? '' : `<a class="sp-pick-ext" href="${areaPageUrl(a.id)}" target="_blank" rel="noopener" title="KaizenHub только с областью «${esc(a.name)}» — в новой вкладке">Отдельно ↗</a>`}</div>`).join('')}
       ${spaces.orgs.map(o => card(`data-pickorg="${o.id}"`, o.label, o.color || spColorsCache()['o:' + o.id] || hashColor(o.id), spIco(o.icon || 'users'), esc(o.sub[0].toUpperCase() + o.sub.slice(1)), ORGK === o.id)).join('')}
     </div>
     ${ui.areaNew ? `<form class="ws-new" id="areaNew"><input id="areaNewName" placeholder="Название области, например «Второй бизнес»" maxlength="60" aria-label="Название области">

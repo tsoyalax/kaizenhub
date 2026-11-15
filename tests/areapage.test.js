@@ -42,6 +42,9 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E(`ui.areaMenu = true; renderSide();`); await wait(30);
   const ext = [...D.querySelectorAll('.am-ext')].find(a => a.getAttribute('href').endsWith('area=' + area));
   assert.ok(ext && ext.target === '_blank'); ok('у области в меню — «Открыть отдельной страницей» (↗)');
+  E(`openPick ? openPick() : maybePick()`); await wait(50);
+  assert.ok([...D.querySelectorAll('.sp-pick-ext')].some(x => x.getAttribute('href').endsWith('area=' + area))); ok('на экране «Где работаем?» у области — «Отдельно ↗»');
+  D.getElementById('spPick')?.remove();
   const store = {}; for (let i = 0; i < w.localStorage.length; i++){ const k = w.localStorage.key(i); store[k] = w.localStorage.getItem(k); }
   o.w.close();
   // открываем ссылку области
