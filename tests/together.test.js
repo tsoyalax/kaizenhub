@@ -141,6 +141,11 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     { const d = $('[data-tkdate]'); d.value = E('addDays(today(), 1)'); d.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20); } assert.equal(E('taskById(ui.taskId).due_date'), E('addDays(today(), 1)')); ok('срок — дата в поле с календарём');
     $(`[data-tkrem="${E('ui.taskId')}|${E('today()')}T10:00"]`).click(); await wait(20); assert.equal(E('taskById(ui.taskId).remind.at'), E('today()') + 'T10:00'); ok('напоминание «За день, 10:00» от срока');
     E('closeTask()'); }
+  // чек-лист двигает задачу по канбану: первая галочка — «В работе», последняя — «Готово»
+  { const r = E(`(() => { const s = ig.stages.find(y => !isMaint(y) && !isCtStage(ig, y)); const x = { id:'ckMove', name:'Задача с чек-листом', done:false }; s.subs.push(x); tasksFromSubs(ig, { ...s, subs:[x] });
+      const t = taskFor(ig.id, s.id, x.id); t.checklist = [{ id:'a1', text:'раз', done:false }, { id:'a2', text:'два', done:false }];
+      const st0 = kbStatus(ig, s, x); t.checklist[0].done = true; syncTaskToSub(t); const st1 = kbStatus(ig, s, x); t.checklist[1].done = true; syncTaskToSub(t); const st2 = kbStatus(ig, s, x); return [st0, st1, st2].join(); })()`);
+    assert.equal(r, 'todo,doing,done'); ok('первая галочка — «В работе», последняя — «Готово»'); }
   // «Тестовое · бета»: воронка +10к Telegram — как в таблице «Декомпозиция»
   assert.ok(!D.querySelector('.tabs [data-view="beta"]').hidden); E(`ui.view = 'beta'; render()`);
   { const p = E('JSON.stringify(bfPlan(bfCfg()))'); const q = JSON.parse(p); assert.ok(Math.round(q.code) === 21984 && Math.round(q.pub * 10) === 366 && Math.round(q.client) === 45); ok('бета-воронка: план как в таблице (21 984 кодовых слова, 36,6 рилс, 45 клиентов)'); }
