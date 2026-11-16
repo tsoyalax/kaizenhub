@@ -2534,6 +2534,8 @@ svg.clip{width:14px;height:14px;flex:none}
 .ar-list{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:6px}.ar-row{display:flex;align-items:center;gap:10px;padding:6px 8px;border:1px solid var(--line);border-radius:10px}.ar-row.cur{border-color:var(--line-strong)}
 .ar-row input{flex:1;min-width:0;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 10px;font-weight:600}.ar-row small{color:var(--muted);font-size:12px;white-space:nowrap}
 .ar-new{display:flex;gap:6px;margin-bottom:14px}.ar-new input{flex:1;height:34px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;padding:0 10px}
+.td-sec{margin:14px 0 18px}.td-sec>h3{font-size:15px;margin:0 0 8px;display:flex;gap:8px;align-items:baseline}.td-strat>h3{color:var(--ink)}
+.td-add{display:flex;gap:6px;margin-bottom:8px}.td-add input{height:34px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;padding:0 10px;font:inherit;font-size:13.5px}.td-add input:first-child{flex:1;min-width:0}.td-add input:focus{border-style:solid;outline:0;background:var(--surface)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -8952,8 +8954,21 @@ function renderTodo(who){
       <label class="inl hint"><input type="checkbox" id="dayDone" ${showDone ? 'checked' : ''}> Выполненные${doneN ? ` (${doneN})` : ''}</label></div>
     ${asU ? `<div class="as-note">Так видит свои задачи <b>${esc(asU.name || 'сотрудник')}</b>${asU.account_id ? '' : ' (ещё не вошёл в приложение)'}. <button class="link" data-dayas="">Вернуться к моим</button></div>` : ''}
     <p class="fn-sum">${mtab ? 'Регулярные задачи проектов на ведении. Отметьте галочкой — задача уйдёт на следующий цикл.' : list.filter(i => !i.done).length ? `Задач: ${list.filter(i => !i.done).length}${overN ? `, просрочено: ${overN}` : ''}. Отметьте галочкой, когда сделано.` : 'Все задачи выполнены.'}</p>
-    ${list.length ? `<ul class="td-list">${list.map(row).join('')}</ul>` : '<div class="empty">Задач нет.</div>'}`;
+    ${mtab ? (list.length ? `<ul class="td-list">${list.map(row).join('')}</ul>` : '<div class="empty">Задач нет.</div>') : tdSplitHtml(list, row)}`;
 }
+// «Мои задачи» двумя блоками — «Операционные» и «Стратегические»; в каждом поле «Новая задача» (своя внутренняя задача с этим типом)
+const tdType = i => i.kind === 'i' ? (i.it.ttype === 'strat' ? 'strat' : 'oper') : i.x ? kbTT(i.x) : 'oper';
+function tdSplitHtml(list, row){
+  return [['oper', 'Операционные'], ['strat', 'Стратегические']].map(([k, l]) => { const xs = list.filter(i => tdType(i) === k);
+    return `<section class="td-sec td-${k}"><h3>${l} <span class="hint">${xs.filter(i => !i.done).length}</span></h3>
+      ${GUEST ? '' : `<form class="td-add" data-tdadd="${k}"><input placeholder="Новая ${k === 'strat' ? 'стратегическая' : 'операционная'} задача" maxlength="200" aria-label="Новая задача: ${l}"><input type="date" aria-label="Срок"><button class="ghost">Добавить</button></form>`}
+      ${xs.length ? `<ul class="td-list">${xs.map(row).join('')}</ul>` : '<p class="hint">Пока пусто.</p>'}</section>`; }).join('');
+}
+document.addEventListener('submit', e => { const f = e.target.closest?.('[data-tdadd]'); if (!f) return; e.preventDefault();
+  const [ti, di] = f.querySelectorAll('input'); const title = ti.value.trim(); if (!title) return;
+  const k = f.dataset.tdadd; const now = new Date().toISOString();
+  itSave({ id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Руководитель', created_at:now, title, description:'', assignee_id:ui.dayAs || ME, priority:'', category:'other', status:'todo', due_date:di.value || '', dept:'', project_id:'', ...(k === 'strat' ? { ttype:'strat' } : {}) });
+  render(); toast(k === 'strat' ? 'Стратегическая задача добавлена' : 'Задача добавлена'); setTimeout(() => app.querySelector(`[data-tdadd="${k}"] input`)?.focus(), 0); });
 // галочка «выполнено»: внутренняя — статус «Готово»; карточка — все пункты чек-листа; подэтап — отметка подэтапа
 document.addEventListener('change', e => {
   const k = e.target.dataset?.tddone; if (!k) return;

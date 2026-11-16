@@ -146,6 +146,11 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
       const t = taskFor(ig.id, s.id, x.id); t.checklist = [{ id:'a1', text:'раз', done:false }, { id:'a2', text:'два', done:false }];
       const st0 = kbStatus(ig, s, x); t.checklist[0].done = true; syncTaskToSub(t); const st1 = kbStatus(ig, s, x); t.checklist[1].done = true; syncTaskToSub(t); const st2 = kbStatus(ig, s, x); t.checklist[1].done = false; syncTaskToSub(t); const st3 = kbStatus(ig, s, x); t.checklist[0].done = false; syncTaskToSub(t); const st4 = kbStatus(ig, s, x); return [st0, st1, st2, st3, st4].join(); })()`);
     assert.equal(r, 'todo,doing,done,doing,todo'); ok('первая галочка — «В работе», последняя — «Готово»; снятые галочки возвращают назад'); }
+  // «Мои задачи»: два блока — операционные и стратегические, в каждом можно написать задачу
+  E(`ui.view = 'mytasks'; ui.dayAs = ''; render()`);
+  assert.ok($('.td-oper') && $('.td-strat')); ok('«Мои задачи»: блоки «Операционные» и «Стратегические»');
+  { const f = $('[data-tdadd="strat"]'); f.querySelector('input').value = 'Стратегия на квартал'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30); }
+  assert.ok(/Стратегия на квартал/.test($('.td-strat').textContent) && !/Стратегия на квартал/.test($('.td-oper').textContent)); ok('задача, написанная в «Стратегических», — там и стоит');
   // «Тестовое · бета»: воронка +10к Telegram — как в таблице «Декомпозиция»
   assert.ok(!D.querySelector('.tabs [data-view="beta"]').hidden); E(`ui.view = 'beta'; render()`);
   { const p = E('JSON.stringify(bfPlan(bfCfg()))'); const q = JSON.parse(p); assert.ok(Math.round(q.code) === 21984 && Math.round(q.pub * 10) === 366 && Math.round(q.client) === 45); ok('бета-воронка: план как в таблице (21 984 кодовых слова, 36,6 рилс, 45 клиентов)'); }
