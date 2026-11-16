@@ -10692,6 +10692,14 @@ function mergeStageFields(target, other){
   if (accepted && other.state) target.state = other.state;
   return changed;
 }
+// пришла копия общего проекта без задач, которые есть у меня (её писало устройство со старыми данными) — возвращаем их
+// в тот же этап; задачи, удалённые где-то специально, в p.subDel — их не трогаем. Возвращает, сколько вернули.
+function keepLocalSubs(next, local){
+  const have = new Set((next.stages || []).flatMap(s => (s.subs || []).map(x => x.id))); const del = new Set(next.subDel || []); let n = 0;
+  (local.stages || []).forEach(ls => { const ns = (next.stages || []).find(s => s.id === ls.id); if (!ns) return;
+    (ls.subs || []).forEach(x => { if (have.has(x.id) || del.has(x.id)) return; (ns.subs = ns.subs || []).push(JSON.parse(JSON.stringify(x))); have.add(x.id); n++; }); });
+  return n;
+}
 function onSharedProject(pid, snap){
   if (!snap.exists || snap.metadata?.hasPendingWrites) return;
   const body = snap.data(); const s = sharedCanon(`sp/${pid}`, body);
@@ -10707,7 +10715,8 @@ function onSharedProject(pid, snap){
   }
   const next = { ...remote, share:local.share, log:mergeLogs(local.log, remote.log) };
   const del = unionDel(local.subDel, remote.subDel); if (del){ next.subDel = del; const ds = new Set(del); (next.stages || []).forEach(s => { s.subs = (s.subs || []).filter(x => !ds.has(x.id)); }); }
-  const keepMine = mergeStageFields(next, local);               // у меня новее — оставляем и досылаем
+  const kept = keepLocalSubs(next, local);                       // свои новые задачи, которых нет в пришедшей (старой) копии, не теряем
+  const keepMine = mergeStageFields(next, local) || kept > 0;    // у меня новее (или были свои новые задачи) — оставляем и досылаем
   if (keepMine) syncState(next);
   db.projects[i] = next; rememberStages([next]);
   if (keepMine){ localSave(); scheduleShared(); }
