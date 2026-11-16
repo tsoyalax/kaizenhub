@@ -62,7 +62,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E(`ui.view = 'production'; render();`);
 
   assert.ok($('.tg-tl') && D.querySelectorAll('.tg-lane').length === 2); ok('«Вместе»: блок Игоря и челлендж Эма — две полосы на одной шкале');
-  assert.equal(D.querySelectorAll('.tg-task').length, 5); ok('задачи обоих инфоповодов на таймлайне');
+  assert.equal(D.querySelectorAll('.tg-task').length, 3); assert.ok(![...D.querySelectorAll('.tg-task')].some(b => /Рилс|Анонс/.test(b.textContent))); ok('задачи обоих инфоповодов на таймлайне, без «Контента»');
   assert.ok(!$('.tg-cross') && !$('.tg-cnt') && !/Пересечени/.test($('.tg').textContent)); ok('без строки «Пересечения» — просто общий таймлайн');
   assert.ok($('[data-ipall]').classList.contains('on') && !$('[data-tgp]') && !$('.ab-board')); ok('«Все» → «Таймлайн»: общий таймлайн без лишнего выбора');
   // клик по задаче другого инфоповода — её карточка

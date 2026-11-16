@@ -57,6 +57,9 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     D.getElementById('ctN').value = '3'; D.getElementById('ctName').value = ''; D.getElementById('ctAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
     assert.equal(E('contentStage().subs.filter(x => x.kind === "stories").length'), 3); assert.equal(E('ctStats(ctCur()).stories.n'), 3); assert.equal(E('ctStats(ctCur()).plan'), before);
     ok('сторис добавляются отдельно: «Сторис 1–3», в плане рилсов не считаются'); }
+  E(`ui.ctMode = 'timeline'; ui.ctAddOpen = false; render()`);
+  { const n = [...D.querySelectorAll('.ct-tl .tl-lbl b')].map(b => b.textContent.trim()); assert.ok(n.includes('Рилсы') && n.includes('Сторис')); assert.equal(D.querySelectorAll('.ct-tl .tl-task').length, E('ctItems().filter(x => x.due_date).length')); ok('«Контент» → «Таймлайн»: публикации рилсов и сторис по строкам'); }
+  E(`ui.ctMode = 'board'`);
   E(`ui.view = 'production'; ui.kbView = 'dept'; render()`);
   assert.ok(D.querySelector('.dept-h .dept-ico')); ok('у отделов — иконки'); E(`ui.kbView = 'status'`);
   // доска видео в «Контенте»: колонки SMM, «Опубликовано» = отметка на основной доске
@@ -158,10 +161,10 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   // таймлайн: все задачи с датой на одной шкале, связи стрелками
   E(`ui.infoMode = 'timeline'; render()`);
   assert.ok(D.querySelector('.tl') && !D.querySelector('.pf-board')); ok('«Таймлайн» вместо доски');
-  assert.equal(D.querySelectorAll('.tl-task').length, E(`flowState(infoBoard()) && [...flowState(infoBoard()).values()].reduce((n, v) => n + v.items.filter(i => i.due).length, 0)`)); ok('на таймлайне все задачи со сроком');
-  assert.equal(D.querySelectorAll('.tl-lbl').length, 6); ok('строка на каждый этап');
+  assert.equal(D.querySelectorAll('.tl-task').length, E(`[...flowState(infoBoard()).values()].filter(v => !isCtStage(infoBoard(), v.s)).reduce((n, v) => n + v.items.filter(i => i.due && !i.x.cycle).length, 0)`)); ok('на таймлайне все задачи со сроком, кроме «Контента»');
+  assert.equal(D.querySelectorAll('.tl-lbl').length, 5); assert.ok(![...D.querySelectorAll('.tl-lbl b')].some(b => /Контент/.test(b.textContent))); ok('строка на каждый отдел, «Контента» нет');
   assert.ok(D.querySelector('.tl-task.k-red') && !D.querySelector('.tl-arr, .tl-svg')); ok('просроченное — красное, стрелок-связей в таймлайне нет');
-  E(`(() => { const p = infoBoard(), s = p.stages[0], x = s.subs[0]; tasksFromSubs(p, { ...s, subs:[x] }); const t = taskFor(p.id, s.id, x.id); t.start_date = addDays(today(), 1); t.due_date = addDays(today(), 4); render(); })()`);
+  E(`(() => { const p = infoBoard(), s = p.stages.find(y => !isCtStage(p, y) && y.subs?.length), x = s.subs[0]; tasksFromSubs(p, { ...s, subs:[x] }); const t = taskFor(p.id, s.id, x.id); t.start_date = addDays(today(), 1); t.due_date = addDays(today(), 4); render(); })()`);
   assert.ok(D.querySelector('.tl-bar')); ok('срок от и до — полосой на таймлайне');
   E(`ui.infoMode = 'board'`);
   // этапы и подэтапы видео — из шаблона SMM-пространства
