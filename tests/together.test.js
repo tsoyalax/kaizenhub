@@ -43,6 +43,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
      ui.view = 'production'; ui.prodProject = ig.id; ui.infoMode = 'board'; commit();`); await wait(100);
   assert.ok(!$('[data-infomode="together"]') && !$('[data-tlscope]')); ok('отдельной кнопки «Вместе» и выпадающего списка нет');
   assert.ok($('[data-ipall]')); ok('в строке инфоповодов — «Все»');
+  E(`ui.infoAll = true; ui.prodTab = 'internal'; render()`); assert.ok($('[data-prodtab="internal"][aria-pressed="true"]') && D.querySelectorAll('.it-allp').length === 2); ok('во «Все» — «Внутренние задачи» всех площадок');
+  E(`ui.prodTab = 'board'; ui.infoAll = false; render()`);
   $('[data-ipall]').click(); await wait(100);
   { const cols = [...D.querySelectorAll('.kb-board .kb-col')].map(c => c.querySelector('header b').textContent);
     assert.deepEqual(cols, ['К выполнению', 'В работе', 'Готово']); ok('«Все» → «Доска»: обычный канбан — К выполнению / В работе / Готово');

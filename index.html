@@ -2503,6 +2503,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .bs-d input{flex:1;min-width:0;height:32px;border:1px solid transparent;border-radius:8px;background:transparent;padding:0 8px;font-size:14px;font-weight:500}.bs-d input:hover,.bs-d input:focus{border-color:var(--line);background:var(--surface);outline:0}
 .bs-d small{color:var(--muted);font-size:12px;white-space:nowrap}.bs-act{display:flex;gap:4px}.bs-act .icon-btn{width:28px;height:28px}
 .bs-add{display:flex;gap:6px}.bs-add input{flex:1;height:34px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;padding:0 10px}
+.it-allp{margin-top:14px}.it-allp>h3{font-size:16px;margin:0 0 8px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2712,7 +2713,8 @@ function ensureInfoTemplate(d){ d.templates = d.templates || []; if (!d.template
 const infoBoards = () => db.projects.filter(p => p.state !== 'archived' && (p.template_id === INFO_TPL_ID || p.id === INFO_BOARD_ID))
   .sort((a, b) => String(a.start_date || '').localeCompare(String(b.start_date || '')));
 const infoBoard = () => { const all = infoBoards(); const cur = all.find(p => p.id === ui.prodProject);
-  if (cur) return cur; const t0 = today(); return all.filter(p => (p.start_date || '') <= t0 && p.state !== 'completed').at(-1) || all.find(p => p.id === INFO_BOARD_ID) || all[0]; };
+  if (cur) return cur;   // по умолчанию — основная площадка (первая), а не последняя запущенная
+  const live = all.filter(p => p.state !== 'completed'); return live.find(p => p.id === INFO_BOARD_ID) || live[0] || all[0]; };
 // «Все» в строке инфоповодов: просроченные и ближайшие задачи всех инфоповодов и общий таймлайн (ui.infoAll)
 const infoAllOn = () => !!ui.infoAll && ui.view === 'production' && infoBoards().length > 1;
 // состояние инфоповода словами — в шапке воронки (на вкладках инфоповодов плашек нет)
@@ -5438,14 +5440,19 @@ function renderProduction(){
   const cur = projById(ui.prodProject);
   const board = app.querySelector('.pf-main .pf-board, .pm-board');
   const itab = ui.prodTab === 'internal' && cur && !GUEST && !cur._ext;
-  if (cur && !GUEST && !cur._ext && board){
+  if (cur && !GUEST && !cur._ext && board && !(isInfo() && infoAllOn())){
     board.insertAdjacentHTML('beforebegin', `<div class="prod-tabs kind-seg" role="tablist" aria-label="Вид"><button type="button" data-prodtab="board" aria-pressed="${!itab}">Доска</button><button type="button" data-prodtab="internal" aria-pressed="${!!itab}">Внутренние задачи${(() => { const n = itAll().filter(t => t.project_id === cur.id && t.status !== 'done').length; return n ? ` <span class="pt-n">${n}</span>` : ''; })()}</button></div>`);
     if (itab){ board.outerHTML = internalBoardHtml(cur); return; }
   }
   const p = infoBoard();
   if (!isInfo() || GUEST || !p || projById(ui.prodProject) !== p) return;
-  if (infoAllOn()){ const tl = ui.infoMode === 'timeline' || ui.infoMode === 'together'; const boards = tl ? '' : kbDeptView() ? allBoardsHtml() : kanbanHtml(infoBoards().filter(p => p.state !== 'completed'), true);
-    app.innerHTML = infoTabsHtml() + flowAllHtml() + (tl ? togetherHtml(true) : boards); return; }
+  if (infoAllOn()){ const live = infoBoards().filter(p => p.state !== 'completed'); const itab = ui.prodTab === 'internal';
+    // «Все»: тоже «Доска | Внутренние задачи»; внутренние и регулярные (из «Ведения») — по каждой площадке
+    const n = itAll().filter(t => live.some(p => p.id === t.project_id) && t.status !== 'done').length;
+    const tabs = `<div class="prod-tabs kind-seg" role="tablist" aria-label="Вид"><button type="button" data-prodtab="board" aria-pressed="${!itab}">Доска</button><button type="button" data-prodtab="internal" aria-pressed="${itab}">Внутренние задачи${n ? ` <span class="pt-n">${n}</span>` : ''}</button></div>`;
+    if (itab){ app.innerHTML = infoTabsHtml() + flowAllHtml() + tabs + live.map(p => `<section class="it-allp"><h3>${esc(p.name)}</h3>${internalBoardHtml(p)}</section>`).join(''); return; }
+    const tl = ui.infoMode === 'timeline' || ui.infoMode === 'together'; const boards = tl ? '' : kbDeptView() ? allBoardsHtml() : kanbanHtml(live, true);
+    app.innerHTML = infoTabsHtml() + flowAllHtml() + tabs + (tl ? togetherHtml(true) : boards); return; }
   app.insertAdjacentHTML('afterbegin', infoTabsHtml() + flowPanelHtml(p, 'prod'));
   const b = app.querySelector('.pf-main .pf-board, .pm-board');
   if (ui.infoMode === 'timeline' || ui.infoMode === 'together'){ if (b) b.outerHTML = timelineHtml(p); }
