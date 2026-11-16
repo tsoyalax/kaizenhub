@@ -25,6 +25,9 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.ok(E(`projById('infoboard').stages.some(s => s.name === 'Вебинар')`)); ok('этап из шаблона появился на доске');
   // «Контент»: видео — карточки колонки «Контент» на доске; отметка в одном месте видна в другом
   assert.ok(!D.querySelector('.tabs [data-view="content"]').hidden); ok('раздел «Контент» в меню');
+  E(`ui.view = 'templates'; ui.setTab = 'deadlines'; render()`);
+  assert.deepEqual([...D.querySelectorAll('[data-settab]')].map(b => b.dataset.settab), ['spaces', 'ai']); ok('настройки инфобизнеса: только «Пространства» и «AI» — без дедлайнов, шаблонов, категорий');
+  E(`ui.setTab = ''; ui.view = 'production'; render()`);
   E(`ui.view = 'content'; render()`);
   D.getElementById('ctName').value = 'Ролик'; D.getElementById('ctN').value = '12';
   D.getElementById('ctAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(50);

@@ -439,9 +439,9 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .space-name{margin-left:10px;border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:2px 10px;font:inherit;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .space-name:hover{color:var(--ink);border-color:var(--line-strong)}
 .sp-list{list-style:none;margin:12px 0;padding:0;display:grid;gap:4px}
-.sp-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto auto;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line)}
+.sp-row{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line)}
 .sp-row b{padding:0 8px}
-.sp-name{display:flex;align-items:center;gap:4px;min-width:0}.sp-name input{flex:1}
+.sp-name{display:flex;align-items:center;gap:6px;min-width:0;flex:1 1 100%}.sp-name input{flex:1;max-width:420px}
 .sp-dot{width:26px;height:26px;border-radius:8px;flex:none;margin-left:2px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
 .sp-dot svg{width:15px;height:15px}
 .sp-icons{display:flex;flex-wrap:wrap;gap:2px;grid-column:1/-1;order:5;padding:2px 0 4px 32px}
@@ -453,7 +453,7 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .sp-c.on{border-color:var(--ink)}
 @media (max-width:640px){.sp-row{grid-template-columns:1fr auto auto auto}.sp-colors{grid-column:1/-1;order:3}}
 .sp-row:hover .tx{opacity:1}
-.sp-row input{height:34px;border:1px solid transparent;border-radius:8px;background:transparent;padding:0 8px;font-weight:600;font-size:14.5px;min-width:0}
+.sp-row input{height:34px;border:1px solid var(--line);border-radius:8px;background:transparent;padding:0 8px;font-weight:600;font-size:14.5px;min-width:0}
 .sp-row input:hover{border-color:var(--line)}.sp-row input:focus{border-color:var(--line-strong);outline:0;background:var(--surface)}
 .sp-new{display:grid;gap:10px;margin-top:6px;max-width:460px}
 .sp-new #spNewName{height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:0 10px;font-size:14.5px}
@@ -6501,9 +6501,13 @@ document.addEventListener('click', async e => {
     try { const smp = await getSample(); if (!smp) throw { message:'Нужно войти в аккаунт' }; const r = await smp('Ответь одним словом: работает', { modelTier:'fast' }); m.textContent = r?.text ? 'Ключ работает ✓' : 'Ответ пустой'; }
     catch(err) { m.textContent = sampleErr(err); } }
 });
-const setNav = () => `<div class="set-nav seg-toggle" role="tablist" aria-label="Разделы настроек">
-  <button data-settab="deadlines" aria-pressed="${!ui.setTab || ui.setTab === 'deadlines'}">Дедлайны</button><button data-settab="templates" aria-pressed="${ui.setTab === 'templates'}">Шаблоны</button><button data-settab="categories" aria-pressed="${ui.setTab === 'categories'}">Категории</button><button data-settab="spaces" aria-pressed="${ui.setTab === 'spaces'}">Пространства</button><button data-settab="ai" aria-pressed="${ui.setTab === 'ai'}">AI</button></div>`;
+// в инфобизнесе «Дедлайны», «Шаблоны» и «Категории» не нужны (по просьбе) — в настройках только «Пространства» и «AI»
+const SET_INFO_HIDE = ['deadlines', 'templates', 'categories'];
+const setTabs = () => [['deadlines', 'Дедлайны'], ['templates', 'Шаблоны'], ['categories', 'Категории'], ['spaces', 'Пространства'], ['ai', 'AI']].filter(([k]) => !(isInfo() && SET_INFO_HIDE.includes(k)));
+const setTabNow = () => { const t = ui.setTab || 'deadlines'; return setTabs().some(([k]) => k === t) ? t : setTabs()[0][0]; };
+const setNav = () => `<div class="set-nav seg-toggle" role="tablist" aria-label="Разделы настроек">${setTabs().map(([k, l]) => `<button data-settab="${k}" aria-pressed="${setTabNow() === k}">${l}</button>`).join('')}</div>`;
 function renderSettings(){
+  ui.setTab = setTabNow();
   if (ui.setTab === 'ai'){ renderAiSettings(); return; }
   if (ui.setTab === 'templates'){ renderTemplates(); return; }
   if (ui.setTab === 'categories'){ renderCategories(); return; }
