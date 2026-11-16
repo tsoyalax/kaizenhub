@@ -2454,7 +2454,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .in-to{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.in-to select,.in-to input{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 8px;font-size:13px;max-width:100%}.in-to .primary{height:32px;padding:0 12px}
 .kb-in{flex:0 0 300px;background:color-mix(in srgb,#0EA5E9 7%,var(--surface-2));border:1.5px dashed color-mix(in srgb,#0EA5E9 55%,transparent)}
 .kb-in header b{display:inline-flex;align-items:center;gap:6px;color:#0284C7}.kb-in header small{display:block;color:var(--muted);font-size:12px;margin-top:2px}.in-ico{width:18px;height:18px}
-.kb-in .in-add{padding:8px;margin:8px 0;border-radius:10px;gap:6px}.kb-in .in-add textarea{font-size:13px;padding:8px 10px}
+.kb-in .in-add{padding:8px;margin:8px 0;border-radius:10px;gap:6px}.in-go{height:32px}.kb-in .in-add textarea{font-size:13px;padding:8px 10px}
 .kb-in .in-add-row select{height:30px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:12.5px;padding:0 6px}.kb-in .in-add-row .primary,.kb-in .in-add-row .ghost{height:30px;padding:0 10px;font-size:12.5px}
 .in-err{color:var(--r,#DC2626);font-size:12px}
 .in-card{display:grid;gap:5px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}.in-card b{font-weight:500;font-size:13.5px;line-height:1.35}.in-card>small{color:var(--muted);font-size:11.5px}
@@ -2481,7 +2481,9 @@ svg.clip{width:14px;height:14px;flex:none}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tl-dn{background:hsl(var(--kh) 40% 22%);color:hsl(var(--kh) 80% 78%)!important}}
 .pf-board.ab-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));overflow:visible;align-items:start}.ab-board>.pf-col{min-width:0;flex:none}
 .kb-board .kb-col{flex:1 1 230px;min-width:210px}.kb-board .kb-in{flex:0 1 290px;min-width:250px}
-.tl-task .tlp-t i.tgp-dot{width:8px;height:8px;border-radius:50%;background:var(--bc);flex:none;border:0;box-shadow:none;margin-right:1px}
+.tgp-b{font-style:normal;font-size:10.5px;font-weight:700;color:#fff;background:var(--bc);border-radius:5px;padding:2px 6px;line-height:1.2;letter-spacing:.01em}
+.tg-legend{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px;color:var(--muted);margin:2px 0 8px}.tg-legend span{display:inline-flex;align-items:center;gap:6px}
+.tg-tl .tl-task.tl-dk .tlp-t{border-left:3px solid var(--bc);padding-left:12px}
 .pg-tiles{display:flex;gap:3px;margin-top:4px}.pg-tiles i{flex:1 1 0;height:7px;border-radius:3px;background:var(--line);min-width:6px;max-width:28px}
 .pg-tiles i.on{background:var(--g,#16A34A)}.pg-tiles.full i{background:var(--g,#16A34A)}.pg-n{font-size:11.5px;color:var(--muted)}
 </style>
@@ -5448,7 +5450,7 @@ function inboxColHtml(boards){
     return ss.map(s => `<option value="${s.id}" ${s === pick ? 'selected' : ''}>${esc(s.name)}</option>`).join(''); };
   const item = x => { const p = boards.find(b => b.id === x.pid) || boards[0]; if (!p) return '';
     return `<div class="in-card"><b>${esc(x.text)}</b>
-      <small><span class="in-src s-${x.src}">${srcName(x.src)}</span>${x.who ? ` · ${esc(x.who)}` : ''}${x.due ? ` · срок ${fmt(x.due)}` : ''}</small>
+      ${x.who || x.due ? `<small>${[x.who ? esc(x.who) : '', x.due ? 'срок ' + fmt(x.due) : ''].filter(Boolean).join(' · ')}</small>` : ''}
       <form class="in-to" data-into="${x.id}">
         ${one ? '' : `<select data-inb aria-label="Площадка">${boards.map(b => `<option value="${b.id}" ${b.id === p.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select>`}
         <select data-ind aria-label="Отдел">${deptSel(p, x.dept)}</select>
@@ -5457,8 +5459,7 @@ function inboxColHtml(boards){
         <span class="in-act"><button class="primary">В задачи</button><button type="button" class="icon-btn" data-indel="${x.id}" title="Удалить" aria-label="Удалить «${esc(x.text)}»">${ICON_X}</button></span></form></div>`; };
   return `<section class="pf-col kb-in" aria-label="Входящие"><header><div><b>${INBOX_ICO}Входящие</b><span class="kb-n">${list.length}</span></div><small>После планёрок, созвонов, переговоров — потом разносим по отделам</small></header>
     <form class="in-add" id="inAdd"><textarea id="inText" rows="${ui.inBig ? 6 : 2}" placeholder="Вставьте выжимку созвона или планёрки — Claude найдёт задачи. Или впишите задачу" aria-label="Выжимка или задача"></textarea>
-      <div class="in-add-row"><select id="inSrc" aria-label="Откуда">${INBOX_SRC.map(([k, l]) => `<option value="${k}" ${src === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
-        <button type="button" class="primary" data-inai ${ui.inBusy ? 'disabled' : ''}>${ui.inBusy ? 'Ищу задачи…' : '✦ Найти задачи'}</button><button class="ghost" title="Каждая строка — задача, без Claude">Добавить</button></div>
+      <button class="primary in-go" ${ui.inBusy ? 'disabled' : ''}>${ui.inBusy ? 'Ищу задачи…' : '✦ Найти задачи'}</button>
       ${ui.inErr ? `<small class="in-err">${esc(ui.inErr)}</small>` : ''}</form>
     <div class="pf-cards">${list.map(item).join('') || '<p class="hint">Пусто — всё разобрано</p>'}</div></section>`;
 }
@@ -5476,7 +5477,7 @@ ${text.slice(0, 12000)}`;
 async function inboxAi(){
   const text = ($('#inText')?.value || '').trim(); if (!text){ toast('Вставьте выжимку созвона или планёрки'); return; }
   const smp = await getSample(); if (!smp?.json){ toast('Разбор доступен после входа в аккаунт'); return; }
-  ui.inSrc = $('#inSrc')?.value || ui.inSrc; ui.inDraft = text; ui.inBusy = true; ui.inErr = ''; render();
+  ui.inDraft = text; ui.inBusy = true; ui.inErr = ''; render();
   try {
     const boards = infoBoards().filter(p => p.state !== 'completed');
     const res = await smp.json(INBOX_AI_PROMPT(text, inboxDepts(boards), (db.users || []).map(u => u.name)), { modelTier:'default' });
@@ -5502,7 +5503,7 @@ document.addEventListener('change', e => { const b = e.target.closest?.('[data-i
   if (p && sel) sel.innerHTML = p.stages.filter(s => !isMaint(s) && !isCtStage(p, s)).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join(''); ui.inBoard = b.value; });
 document.addEventListener('focusin', e => { if (e.target.id === 'inText' && !ui.inBig){ ui.inBig = true; e.target.rows = 6; } });
 document.addEventListener('submit', e => {
-  if (e.target.id === 'inAdd'){ e.preventDefault(); ui.inSrc = $('#inSrc')?.value || ui.inSrc; const t = $('#inText'); inboxAdd(t.value); return; }
+  if (e.target.id === 'inAdd'){ e.preventDefault(); inboxAi(); return; }   // одна кнопка: вставили текст → «Найти задачи»
   const f = e.target.closest?.('[data-into]'); if (!f) return; e.preventDefault();
   const x = inboxAll().find(y => y.id === f.dataset.into); if (!x) return;
   const p = projById(f.querySelector('[data-inb]')?.value) || infoBoards().find(b => b.state !== 'completed'); const s = p?.stages.find(y => y.id === f.querySelector('[data-ind]').value);
@@ -5546,7 +5547,7 @@ const TL_ZOOM = [4, 7, 12, 20, 34, 52, 80];
 const TL_ZNAME = ['Квартал', 'Квартал', 'Месяц', 'Месяц', 'Неделя', 'Дни', 'Дни подробно'];
 const tlZ = () => { const z = ui.tlZoom ?? 4; return Math.max(0, Math.min(TL_ZOOM.length - 1, z)); };
 const tlDW = () => TL_ZOOM[tlZ()];
-const tlZoomBar = () => `<div class="tl-zoom" role="group" aria-label="Масштаб таймлайна"><button type="button" class="icon-btn" data-tlzoom="-1" aria-label="Мельче" ${tlZ() === 0 ? 'disabled' : ''}>−</button><span class="tl-zl">${TL_ZNAME[tlZ()]}</span><button type="button" class="icon-btn" data-tlzoom="1" aria-label="Крупнее" ${tlZ() === TL_ZOOM.length - 1 ? 'disabled' : ''}>+</button><button type="button" class="ghost" data-tltoday>Сегодня</button></div>`;
+const tlZoomBar = () => '';   // панели масштаба нет (по просьбе): масштаб — Ctrl/⌘ + колёсико, к сегодняшнему дню таймлайн прокручивается сам
 // шапка дней: на крупном масштабе — каждый день, на мелком — понедельники и начало месяца
 const tlHead = (days, from, DW, t0) => days.map(d => { const dt = parse(d); const g = dt.getDay(), wk = g === 0 || g === 6; const first = dt.getDate() === 1 || d === from;
   const show = DW >= 20 || (DW >= 7 ? g === 1 : dt.getDate() === 1 || dt.getDate() === 15) || first || d === t0;
@@ -5608,6 +5609,8 @@ function timelineHtml(p){
 // ---------- Инфобизнес: таймлайн «Вместе» — несколько инфоповодов (блок Игоря, челлендж Эма…) на одной шкале ----------
 // У каждого инфоповода своя полоса и свой цвет; задачи — точками в день срока (как в обычном таймлайне).
 const TG_COLORS = ['#3B82F6', '#F97316', '#10B981', '#A855F7', '#EC4899', '#EAB308', '#06B6D4', '#EF4444'];
+// короткое имя площадки для плашек таймлайна «Все»: первое слово («Блог», «Челлендж»)
+const tgShort = p => (p?.name || '').trim().split(/\s+/)[0].slice(0, 12);
 const tgColor = p => { const i = infoBoards().findIndex(x => x.id === p?.id); return TG_COLORS[(i < 0 ? 0 : i) % TG_COLORS.length]; };
 function togetherHtml(everything){
   const all = infoBoards(); const t0 = today();
@@ -5636,7 +5639,7 @@ function togetherHtml(everything){
   const k = i => i.done ? 'done' : i.due < t0 ? 'red' : i.due <= addDays(t0, 1) ? 'yellow' : 'green';
   return `<div class="tg">
     ${everything ? '' : `<div class="tg-pick"><span class="hint">Площадки на шкале:</span>${all.map(p => `<button class="tg-chip" data-tgp="${p.id}" aria-pressed="${sel.includes(p.id)}" style="--bc:${tgColor(p)}"><i></i>${esc(p.name)}</button>`).join('')}</div>`}
-    ${tlZoomBar()}<div class="tl tg-tl${compact ? ' compact' : ''}" aria-label="Таймлайн площадок вместе">
+    ${tlZoomBar()}${boards.length > 1 ? `<div class="tg-legend">${boards.map(p => `<span style="--bc:${tgColor(p)}"><em class="tgp-b">${esc(tgShort(p))}</em>${esc(p.name)} · ${per.reduce((n, l) => n + l.items.filter(i => i.p === p && i.due).length, 0)}</span>`).join('')}</div>` : ''}<div class="tl tg-tl${compact ? ' compact' : ''}" aria-label="Таймлайн площадок вместе">
       <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl tl-dlbl" style="height:${l.h}px;--kh:${kbHue(l.name)}"><b class="dept-h">${deptIco(l.name)}<span>${esc(l.name)}<small>${l.placed.length} ${plural(l.placed.length, 'задача', 'задачи', 'задач')}</small></span></b></div>`).join('')}</div>
       <div class="tl-scroll"><div class="tl-in" style="width:${W}px">
         <div class="tl-head">${head}</div>
@@ -5645,7 +5648,7 @@ function togetherHtml(everything){
           <i class="tl-today" style="left:${xOf(t0)}px"></i>
           ${boards.filter(p => p.deadline && (p.goalName || p.goalSet) && p.deadline >= from && p.deadline <= to).map(p => `<i class="tl-goal" style="left:${xOf(p.deadline)}px"><span>${FLAG}${esc(goalName(p))} · ${esc(p.name)} · ${fmt(p.deadline)}</span></i>`).join('')}
           ${kds.slice().sort((a, z) => a.d.localeCompare(z.d)).map((k, j) => `<i class="tl-goal tl-key" style="left:${xOf(k.d)}px"><span style="top:${4 + (j % 3) * 20}px">${FLAG}${esc(k.name)} · ${esc(k.p.name)} · ${fmt(k.d)}</span></i>`).join('')}
-          ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task tg-task tl-dk k-${k(i)}" data-tgsub="${i.p.id}|${i.s.id}|${i.x.id}" style="--kh:${kbHue(i.s.name)};left:${i.px - 12}px;top:${l.top + 8 + i.r * TL_ROW + 3}px;--bc:${tgColor(i.p)}" title="${esc(i.p.name)} · ${esc(i.s.name)} · ${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}">${deptIco(i.s.name)}<span class="tlp-t">${boards.length > 1 ? `<i class="tgp-dot" title="${esc(i.p.name)}"></i>` : ''}${esc(i.x.name)}<small>${fmt(i.due)}</small></span></button>`)).join('')}
+          ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task tg-task tl-dk k-${k(i)}" data-tgsub="${i.p.id}|${i.s.id}|${i.x.id}" style="--kh:${kbHue(i.s.name)};left:${i.px - 12}px;top:${l.top + 8 + i.r * TL_ROW + 3}px;--bc:${tgColor(i.p)}" title="${esc(i.p.name)} · ${esc(i.s.name)} · ${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}">${deptIco(i.s.name)}<span class="tlp-t">${boards.length > 1 ? `<em class="tgp-b" title="${esc(i.p.name)}">${esc(tgShort(i.p))}</em>` : ''}${esc(i.x.name)}<small>${fmt(i.due)}</small></span></button>`)).join('')}
         </div></div></div></div></div>`;
 }
 document.addEventListener('click', e => {

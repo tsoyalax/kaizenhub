@@ -65,7 +65,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E(`INFO_HIDDEN.splice(INFO_HIDDEN.indexOf('today'), 1); ui.view = 'today'; ui.tdIp = ''; render();`); { const due = $('.tdy-due'); assert.ok(due && /Оффер/.test(due.textContent) && /Анонс челленджа/.test(due.textContent)); ok('«Сегодня»: «Ближайшие» — задачи всех площадок'); }
   E(`INFO_HIDDEN.push('today'); ui.view = 'production'; render();`);
 
-  assert.ok($('.tg-tl') && D.querySelectorAll('.tg-tl .tl-dlane').length >= 2 && D.querySelectorAll('.tg-tl .tgp-dot').length === D.querySelectorAll('.tg-task').length); ok('«Все» → таймлайн: строки — отделы обеих площадок, у задачи точка площадки');
+  assert.ok($('.tg-tl') && D.querySelectorAll('.tg-tl .tl-dlane').length >= 2 && D.querySelectorAll('.tg-tl .tgp-b').length === D.querySelectorAll('.tg-task').length && D.querySelectorAll('.tg-legend span').length === 2); ok('«Все» → таймлайн: строки — отделы обеих площадок, у задачи — метка площадки, сверху легенда');
   assert.equal(D.querySelectorAll('.tg-task').length, 3); assert.ok(![...D.querySelectorAll('.tg-task')].some(b => /Рилс|Анонс/.test(b.textContent))); ok('задачи обоих инфоповодов на таймлайне, без «Контента»');
   assert.ok(!$('.tg-cross') && !$('.tg-cnt') && !/Пересечени/.test($('.tg').textContent)); ok('без строки «Пересечения» — просто общий таймлайн');
   assert.ok($('[data-ipall]').classList.contains('on') && !$('[data-tgp]') && !$('.ab-board')); ok('«Все» → «Таймлайн»: общий таймлайн без лишнего выбора');
@@ -135,13 +135,12 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   // «Входящие»: колонка слева на канбане «Производства»; выжимка созвона → Claude находит задачи → разнести по отделам
   assert.ok(!D.querySelector('.tabs [data-view="inbox"]')); E(`ui.view = 'production'; ui.infoAll = false; ui.prodProject = ig.id; ui.infoMode = 'board'; ui.kbView = 'status'; ui.pfEdit = false; render()`);
   assert.ok($('.kb-board > .kb-in:first-child')); ok('«Входящие» — первой колонкой в «Производстве», не отдельным пунктом меню');
-  D.getElementById('inSrc').value = 'talk'; D.getElementById('inText').value = 'Отправить КП партнёру\nСозвон с монтажёром'; D.getElementById('inAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
-  assert.equal(E('db.prefs.inbox.length'), 2); assert.ok(/Переговоры/.test($('.kb-in').textContent)); ok('«Добавить»: каждая строка — задача, с источником');
+  assert.ok(!D.getElementById('inSrc') && D.querySelectorAll('#inAdd button').length === 1); ok('во «Входящих» — только поле и одна кнопка «Найти задачи»');
   E(`_sample = { json: async p => { window.__inP = p; return { tasks:[{ title:'Запустить рекламу VSL', dept:'${E('ig.stages.find(s => !isCtStage(ig, s) && !isMaint(s)).name')}', type:'strat', due:'2026-12-01', who:'Эм' }, { title:'', dept:'x' }] }; } }`);
-  D.getElementById('inText').value = 'Обсудили запуск. Решили: запустить рекламу VSL до 1 декабря, отвечает Эм.'; $('[data-inai]').click(); await wait(80);
-  assert.ok(/реальные|РЕАЛЬНЫЕ/.test(E('window.__inP')) && E('db.prefs.inbox.length') === 3 && E(`db.prefs.inbox.find(x => x.text === 'Запустить рекламу VSL').due`) === '2026-12-01'); ok('«Найти задачи»: Claude выделяет задачи из выжимки — отдел, тип, срок');
+  D.getElementById('inText').value = 'Обсудили запуск. Решили: запустить рекламу VSL до 1 декабря, отвечает Эм.'; D.getElementById('inAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(80);
+  assert.ok(/реальные|РЕАЛЬНЫЕ/.test(E('window.__inP')) && E('db.prefs.inbox.length') === 1 && E(`db.prefs.inbox.find(x => x.text === 'Запустить рекламу VSL').due`) === '2026-12-01'); ok('«Найти задачи»: Claude выделяет задачи из выжимки — отдел, тип, срок');
   { const f = [...D.querySelectorAll('[data-into]')].find(x => /рекламу VSL/.test(x.closest('.in-card').textContent)); assert.equal(f.querySelector('[data-intt]').value, 'strat'); f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30); }
-  assert.equal(E('db.prefs.inbox.length'), 2); assert.ok(E(`infoBoards().some(p => p.stages.some(s => (s.subs || []).some(x => x.name === 'Запустить рекламу VSL' && x.ttype === 'strat' && x.due_date === '2026-12-01')))`)); ok('«В задачи» — задача в отделе с типом и сроком, из входящих убрана');
+  assert.equal(E('db.prefs.inbox.length'), 0); assert.ok(E(`infoBoards().some(p => p.stages.some(s => (s.subs || []).some(x => x.name === 'Запустить рекламу VSL' && x.ttype === 'strat' && x.due_date === '2026-12-01')))`)); ok('«В задачи» — задача в отделе с типом и сроком, из входящих убрана');
   assert.deepEqual(o.errors.filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });
