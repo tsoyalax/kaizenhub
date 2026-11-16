@@ -2481,7 +2481,9 @@ svg.clip{width:14px;height:14px;flex:none}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tl-dn{background:hsl(var(--kh) 40% 22%);color:hsl(var(--kh) 80% 78%)!important}}
 .pf-board.ab-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));overflow:visible;align-items:start}.ab-board>.pf-col{min-width:0;flex:none}
 .kb-board .kb-col{flex:1 1 230px;min-width:210px}.kb-board .kb-in{flex:0 1 290px;min-width:250px}
-.tgp-dot{width:7px;height:7px;border-radius:50%;background:var(--bc);flex:none;box-shadow:0 0 0 1.5px var(--surface)}
+.tl-task .tlp-t i.tgp-dot{width:8px;height:8px;border-radius:50%;background:var(--bc);flex:none;border:0;box-shadow:none;margin-right:1px}
+.pg-tiles{display:flex;gap:3px;margin-top:4px}.pg-tiles i{flex:1 1 0;height:7px;border-radius:3px;background:var(--line);min-width:6px;max-width:28px}
+.pg-tiles i.on{background:var(--g,#16A34A)}.pg-tiles.full i{background:var(--g,#16A34A)}.pg-n{font-size:11.5px;color:var(--muted)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2854,7 +2856,7 @@ function ctTimelineHtml(p, s){
     const placed = l.items.map(x => { const px = xOf(x.due_date); const who = contentWho(p, s, x, taskFor(p.id, s.id, x.id)); const wn = who ? short(who) : '';
       let r = rowsEnd.findIndex(e => e < px - 8); if (r < 0){ r = rowsEnd.length; rowsEnd.push(0); }
       rowsEnd[r] = px + 14 + (compact ? 0 : Math.min(220, (x.name.length + wn.length + (vidCol(x)?.name || '').length + 6) * 6.4)); return { x, px, r, wn }; });
-    const h = Math.max(62, Math.max(1, rowsEnd.length) * TL_ROW + 16); const lane = { ...l, top:y, h, placed }; y += h; return lane; });
+    const h = Math.max(72, Math.max(1, rowsEnd.length) * TL_ROW + 20); const lane = { ...l, top:y, h, placed }; y += h; return lane; });
   const days = Array.from({ length:nd }, (_, i) => addDays(from, i));
   const k = x => x.done ? 'done' : x.due_date < t0 ? 'red' : x.due_date <= addDays(t0, 1) ? 'yellow' : 'green';
   return tlZoomBar() + `<div class="tl ct-tl${compact ? ' compact' : ''}" aria-label="Таймлайн публикаций">
@@ -5185,7 +5187,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}<b>${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
         <small>${whoChip(whoId(p, s, t))}${isInfoBoardP(p) && !done && !(t?.due_date || x.due_date) ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}</small>
-        ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span>${pr.total ? `<small>${pr.n} из ${pr.total} выполнено</small>` : isInfoBoardP(p) ? '' : '<small>Чек-лист пуст</small>'}`
+        ${pr ? `${pr.total ? progTiles(pr) : '<span class="tk-bar"><i style="width:0%"></i></span>'}${pr.total ? `<small>${pr.n} из ${pr.total} выполнено</small>` : isInfoBoardP(p) ? '' : '<small>Чек-лист пуст</small>'}`
              : isInfoBoardP(p) ? '' : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}</button>`;
     }).join('');
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}${ctv.isCt ? ' ct-col' : ''}" data-pmcol="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
@@ -5538,7 +5540,7 @@ document.addEventListener('click', e => { const g = e.target.closest?.('[data-vi
 // ---------- Инфобизнес: таймлайн — все задачи доски на одной шкале времени ----------
 // Строка — этап, точка — задача в день её срока (t.due_date или x.due_date). Связей (стрелок) в таймлайне нет — только на доске.
 // от последнего срока этапа-источника к первому сроку зависимого. Красное — просрочено, зелёное — сделано, линия — сегодня.
-const TL_DW = 34, TL_ROW = 30;
+const TL_DW = 34, TL_ROW = 36;   // строка задач выше — плашки не теснятся
 // масштаб таймлайна: пикселей на день (кнопки −/+, Ctrl/⌘ + колёсико), «Сегодня» — прокрутка к текущей дате
 const TL_ZOOM = [4, 7, 12, 20, 34, 52, 80];
 const TL_ZNAME = ['Квартал', 'Квартал', 'Месяц', 'Месяц', 'Неделя', 'Дни', 'Дни подробно'];
@@ -5580,7 +5582,7 @@ function timelineHtml(p){
     const items = v.items.filter(i => i.due).sort((a, b) => a.due.localeCompare(b.due)); const rowsEnd = [];
     const placed = items.map(i => { const px = xOf(i.due), sx = i.start ? xOf(i.start) : px; let r = rowsEnd.findIndex(e => e < sx - 8); if (r < 0){ r = rowsEnd.length; rowsEnd.push(0); }
       const who = tlWho(p, v.s, i.x); rowsEnd[r] = px + 26 + (compact ? 0 : Math.min(260, i.x.name.length * 6.7 + 64)); return { ...i, px, sx, r, who }; });
-    const h = Math.max(62, Math.max(1, rowsEnd.length) * TL_ROW + 16); /* не ниже подписи этапа с плашкой */ const lane = { v, top:y, h, placed, nodate:v.items.filter(i => !i.due) }; y += h; return lane;
+    const h = Math.max(72, Math.max(1, rowsEnd.length) * TL_ROW + 20); /* не ниже подписи этапа с плашкой */ const lane = { v, top:y, h, placed, nodate:v.items.filter(i => !i.due) }; y += h; return lane;
   });
   const H = y; const byId = new Map(lanes.map(l => [l.v.s.id, l]));
   // связь: от последнего срока этапа-источника — к строке зависимого этапа (туда, где он может продолжаться после источника)
@@ -5626,7 +5628,7 @@ function togetherHtml(everything){
     const items = b.items.filter(i => i.due).sort((a, z) => a.due.localeCompare(z.due)); const rowsEnd = [];
     const placed = items.map(i => { const px = xOf(i.due), sx = i.start ? xOf(i.start) : px; let r = rowsEnd.findIndex(e => e < sx - 8); if (r < 0){ r = rowsEnd.length; rowsEnd.push(0); }
       const who = tlWho(i.p, i.s, i.x); rowsEnd[r] = px + 26 + (compact ? 0 : Math.min(260, i.x.name.length * 6.7 + 64)); return { ...i, px, sx, r, who }; });
-    const h = Math.max(62, Math.max(1, rowsEnd.length) * TL_ROW + 16); const lane = { ...b, top:y, h, placed, nodate:b.items.filter(i => !i.due && !i.done).length }; y += h; return lane;
+    const h = Math.max(72, Math.max(1, rowsEnd.length) * TL_ROW + 20); const lane = { ...b, top:y, h, placed, nodate:b.items.filter(i => !i.due && !i.done).length }; y += h; return lane;
   });
   const H = y; const days = Array.from({ length:nd }, (_, i) => addDays(from, i));
   const head = tlHead(days, from, DW, t0);
@@ -5733,7 +5735,7 @@ function allBoardsHtml(){
       <span class="ab-ip"><i style="--bc:${tgColor(p)}"></i>${esc(p.name)}</span>
       <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span>` : ''}${esc(x.name)}</b>
       <small>${whoChip(x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t))}${due ? ` · <span class="pf-due${due < t0 && !done ? ' late' : ''}">${t?.start_date ? rangeTxt(t.start_date, due) : 'срок ' + fmt(due)}</span>` : !done ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}</small>
-      ${pr && pr.total ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.n} из ${pr.total} выполнено</small>` : done ? '<small>Выполнено</small>' : ''}</button>`; };
+      ${pr && pr.total ? `${progTiles(pr)}<small>${pr.n} из ${pr.total} выполнено</small>` : done ? '<small>Выполнено</small>' : ''}</button>`; };
   return `<div class="pf-board ab-board">${[...cols.values()].map(c => { const dn = c.items.filter(i => subDone(i.p, i.s, i.x)).length;
     // «Контент» — выделен и свёрнут, как на доске площадки: видео до CT_FOLD, остальные — «Показать все»
     const isCt = c.items.some(i => contentStage(i.p)?.id === i.s.id) || /контент/i.test(c.name);
@@ -5765,6 +5767,9 @@ const DEPT_ICONS = [
 const deptIco = name => { const n = norm(name || ''); const hit = DEPT_ICONS.find(([rx]) => rx.test(n)); return `<span class="dept-tile" style="--kh:${kbHue(name)}" aria-hidden="true">${DEPT_SVG(hit ? hit[1] : '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>')}</span>`; };   // квадратная плитка с иконкой в цвете отдела
 // отдел «Контент» живёт в своём разделе: на канбане и в «По отделам» его нет
 const isCtStage = (p, s) => s === contentStage(p) || /контент/i.test(s?.name || '');
+// прогресс задачи плитками: одна плитка — один пункт чек-листа (больше 24 — полосой)
+const progTiles = pr => !pr?.total ? '' : pr.total > 24 ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span>`
+  : `<span class="pg-tiles${pr.n === pr.total ? ' full' : ''}" role="img" aria-label="Выполнено ${pr.n} из ${pr.total}">${Array.from({ length:pr.total }, (_, i) => `<i class="${i < pr.n ? 'on' : ''}"></i>`).join('')}</span>`;
 const KB_COLS = [['todo', 'К выполнению'], ['doing', 'В работе'], ['done', 'Готово']];
 const KB_TYPES = { oper:'Операционная', strat:'Стратегическая' };
 const KB_TYPE_HINT = { oper:'Операционная — текущая работа, держит процесс', strat:'Стратегическая — связана со стратегией и ростом' };
@@ -5803,7 +5808,7 @@ function kanbanHtml(boards, all = false){
       <span class="kb-tags"><span class="kb-dept" style="--kh:${kbHue(s.name)}">${deptIco(s.name)}${esc(s.name)}</span><span class="kb-type t-${kbTT(x)}"${can ? ` data-kbtt="${p.id}|${s.id}|${x.id}" role="button" tabindex="0"` : ''} title="${KB_TYPE_HINT[kbTT(x)]}${can ? '. Нажмите, чтобы сменить' : ''}">${kbTT(x) === 'strat' ? 'Стратегическая' : 'Операционная'}</span>${all ? `<span class="ab-ip"><i style="--bc:${tgColor(p)}"></i>${esc(p.name)}</span>` : ''}</span>
       <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span>` : ''}${esc(x.name)}</b>
       <small>${whoChip(x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t))}${due ? ` · <span class="pf-due${due < t0 && !done ? ' late' : ''}">${t?.start_date ? rangeTxt(t.start_date, due) : 'срок ' + fmt(due)}</span>` : !done ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}</small>
-      ${pr && pr.total && !done ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span>` : ''}</button>`; };
+      ${pr && pr.total && !done ? `${progTiles(pr)}<small class="pg-n">${pr.n} из ${pr.total}</small>` : ''}</button>`; };
   const p0 = boards.length === 1 ? boards[0] : null; const canAdd = p0 && canEditProject(p0) && !GUEST;
   const addDepts = p0 ? p0.stages.filter(s => !isMaint(s)) : [];
   const defDept = addDepts.find(s => norm(s.name) === ui.kbDept)?.id || ui.kbAddDept || addDepts[0]?.id;
@@ -9896,7 +9901,7 @@ function renderProjectFocus(mine = false){
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
         <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span>` : ''}${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
         <small>${x.cycle && isInfoBoardP(p) && vidCol(x) ? `<span class="vid-st">${esc(vidCol(x).name)}</span>` : ''}${whoChip(x.cycle && isInfoBoardP(p) ? contentWho(p, s, x, t) : whoId(p, s, t))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : `срок ${fmt(t.due_date)}`}</span>` : x.due_date ? ` · <span class="pf-due${x.due_date < today() && !done ? ' late' : ''}">срок ${fmt(x.due_date)}</span>` : isInfoBoardP(p) && !done ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
-        ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span>${pr.total ? `<small>${pr.n} из ${pr.total} выполнено</small>` : isInfoBoardP(p) ? '' : '<small>Чек-лист пуст</small>'}`
+        ${pr ? `${pr.total ? progTiles(pr) : '<span class="tk-bar"><i style="width:0%"></i></span>'}${pr.total ? `<small>${pr.n} из ${pr.total} выполнено</small>` : isInfoBoardP(p) ? '' : '<small>Чек-лист пуст</small>'}`
              : isInfoBoardP(p) ? '' : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}
       </button>`;
     }).join('');
