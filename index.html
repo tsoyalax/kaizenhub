@@ -2429,6 +2429,11 @@ svg.clip{width:14px;height:14px;flex:none}
 .tl-task.ct-mk{align-items:center;gap:7px;height:24px}.tl-task.ct-mk i.ct-mk-i{width:24px;height:24px;border:0;border-radius:7px;background:var(--ckb);color:var(--ck);box-shadow:0 0 0 2px var(--surface)}
 .tl-task.ct-mk.k-done i.ct-mk-i{background:var(--ck);color:#fff}.tl-task.ct-mk.k-red i.ct-mk-i{box-shadow:0 0 0 2px #EF4444}.tl-task.ct-mk.k-yellow i.ct-mk-i{box-shadow:0 0 0 2px #F59E0B}.tl-task.ct-mk span{color:var(--ink)}
 .ct-tag{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.02em;color:var(--ck);background:var(--ckb);border-radius:5px;padding:1px 5px;margin-right:5px}
+.ct-viewbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between;margin:10px 0}.ct-viewbar .ct-seltools{margin:0}
+.ct-split{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:16px;align-items:start}.ct-split.one{grid-template-columns:1fr}
+.ct-left .ct-wk h3{font-size:13px}.ct-row.slim{grid-template-columns:auto 1fr auto auto;gap:8px;padding:6px 8px}.ct-row[draggable="true"]{cursor:grab}
+.ct-due-s{font-size:12px;color:var(--muted);white-space:nowrap}.ct-right .ct-board .pf-col{flex-basis:220px}
+@media (max-width:900px){.ct-split{grid-template-columns:1fr}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2783,6 +2788,7 @@ document.addEventListener('dragleave', e => { const col = e.target.closest?.('[d
 document.addEventListener('drop', e => { const col = e.target.closest?.('[data-ctcol]'); const id = e.dataTransfer?.getData('text/kz-video'); if (!col || !id) return; e.preventDefault(); col.classList.remove('drop-on'); moveVideo(id, col.dataset.ctcol); });
 document.addEventListener('click', e => { if (!e.target.closest?.('[data-ctplus]')) return; ui.ctAddOpen = !ui.ctAddOpen; render(); if (ui.ctAddOpen) $('#ctName')?.focus(); });
 document.addEventListener('click', e => { const m = e.target.closest?.('[data-ctmode]'); if (m){ ui.ctMode = m.dataset.ctmode; render(); } });
+document.addEventListener('click', e => { const v = e.target.closest?.('[data-ctview]'); if (v){ ui.ctView = v.dataset.ctview; render(); } });
 function renderContent(){
   renderContentBody();
   if (isInfo() && !GUEST && infoBoards().length > 1) app.insertAdjacentHTML('afterbegin', infoTabsHtml());
@@ -2839,11 +2845,12 @@ function renderContentBody(){
   const t = today(); const live = t >= c && t <= cycleEnd(c); const nowW = live ? weekOfDate(c, t) : 0;
   const due = live ? st.weeks.slice(0, nowW).reduce((m, x) => m + x.plan, 0) : t > cycleEnd(c) ? st.plan : 0;
   const pace = !st.plan || (!live && t < c) ? '' : st.pub >= due ? 'идём по плану' : `отстаём на ${due - st.pub}`;
-  const row = x => `<li class="ct-row${x.done ? ' done' : ''}">
-      ${ui.ctSelMode ? `<input type="checkbox" class="ct-pick" data-ctpick="${x.id}" ${ui.ctSel?.has(x.id) ? 'checked' : ''} aria-label="Выбрать ${esc(x.name)}">` : ''}<input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="${x.done ? 'Опубликовано' : 'Готово — на следующий этап'}: ${esc(x.name)}" title="${x.done ? 'Опубликовано' : 'Этап готов — перевести видео на следующий'}">
+  const split = ui.ctView !== 'list';
+  const row = x => `<li class="ct-row${x.done ? ' done' : ''}${split ? ' slim' : ''}" ${GUEST ? '' : `draggable="true" data-ctdrag="${x.id}"`}>
+      ${ui.ctSelMode ? `<input type="checkbox" class="ct-pick" data-ctpick="${x.id}" ${ui.ctSel?.has(x.id) ? 'checked' : ''} aria-label="Выбрать ${esc(x.name)}">` : ''}
       <span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b>${x.done ? `<small>опубликовано ${fmt(ctDoneAt(x))}</small>` : ''}</button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}
-      ${vidCols().length ? `<select class="ct-stsel${x.done ? ' done' : ''}" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}" title="Этап видео — выберите, чтобы перенести">${vidCols().map(y => `<option value="${y.id}" ${y === vidCol(x) ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select>` : ''}
-      ${whoChip(contentWho(p, s, x, taskFor(p.id, s.id, x.id)))}<input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
+      ${split ? `<span class="ct-due-s">${x.due_date ? fmt(x.due_date) : 'без даты'}</span>` : ''}${!split && vidCols().length ? `<select class="ct-stsel${x.done ? ' done' : ''}" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}" title="Этап видео — выберите, чтобы перенести">${vidCols().map(y => `<option value="${y.id}" ${y === vidCol(x) ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select>` : ''}
+      ${split ? '' : `${whoChip(contentWho(p, s, x, taskFor(p.id, s.id, x.id)))}<input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}">`}</li>`;
   // по умолчанию — «План / Факт», доска — вторым видом
   const modeSeg = `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode !== 'board' && ui.ctMode !== 'timeline'}">План / Факт</button><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode === 'board'}">Доска</button><button type="button" data-ctmode="timeline" aria-pressed="${ui.ctMode === 'timeline'}">Таймлайн</button></span>`;
   const plus = GUEST ? '' : `<button class="icon-btn ct-plus${ui.ctAddOpen ? ' on' : ''}" data-ctplus title="Добавить видео" aria-label="Добавить видео" aria-expanded="${!!ui.ctAddOpen}">+</button>`;
@@ -2874,11 +2881,10 @@ function renderContentBody(){
       ${st.stories.n ? `<div><b>${st.stories.pub} <small>из ${st.stories.n}</small></b><small>Сторис</small></div>` : ''}
     </div>
     <div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>
-    ${ctStagesHtml(p, s, st)}
     </section>
-    ${GUEST ? '' : `<div class="ct-seltools">${ui.ctSelMode ? `<button class="ghost" data-ctselall>Выбрать все (${st.items.length})</button><button class="ghost danger" data-ctseldel ${ui.ctSel?.size ? '' : 'disabled'}>Удалить${ui.ctSel?.size ? ` (${ui.ctSel.size})` : ''}</button><button class="ghost" data-ctselmode>Готово</button>` : '<button class="ghost" data-ctselmode>Выбрать видео</button>'}</div>`}
-    ${st.weeks.filter(x => x.items.length).map(x => `<section class="ct-wk"><h3>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></h3>
-      <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}
+    <div class="ct-viewbar"><span class="kind-seg" role="group" aria-label="Вид роликов"><button type="button" data-ctview="split" aria-pressed="${split}">Список и доска</button><button type="button" data-ctview="list" aria-pressed="${!split}">Список</button></span>${GUEST ? '' : `<span class="ct-seltools">${ui.ctSelMode ? `<button class="ghost" data-ctselall>Выбрать все (${st.items.length})</button><button class="ghost danger" data-ctseldel ${ui.ctSel?.size ? '' : 'disabled'}>Удалить${ui.ctSel?.size ? ` (${ui.ctSel.size})` : ''}</button><button class="ghost" data-ctselmode>Готово</button>` : '<button class="ghost" data-ctselmode>Выбрать видео</button>'}</span>`}</div>
+    <div class="ct-split${split ? '' : ' one'}"><div class="ct-left">${st.weeks.filter(x => x.items.length).map(x => `<section class="ct-wk"><h3>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></h3>
+      <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}</div>${split ? `<div class="ct-right">${contentBoardHtml(s, st.items)}</div>` : ''}</div>
     `;
 }
 // «Этапы» в «План / Факт»: шкала на каждый этап видео — сколько видео сейчас на нём (длина полосы от всех видео цикла),

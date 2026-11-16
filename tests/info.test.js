@@ -34,8 +34,13 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.deepEqual(E('ctStats(ctCur()).weeks.map(x => x.plan)'), [3, 3, 3, 3]); ok('план поровну на 4 недели');
   E(`ui.ctMode = 'plan'; render()`);
   const xid = E('contentStage().subs[0].id');
-  for (let k = 0; k < E('vidCols().length') && !E(`contentStage().subs[0].done`); k++){ const cb = D.querySelector(`[data-ctdone="${xid}"]`); cb.checked = true; cb.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30); }
-  assert.ok(E(`projById('infoboard').stages.find(s => s.id === contentStage().id).subs[0].done`)); ok('галочками видео проходит этапы до «опубликовано» — это отметка карточки на доске');
+  assert.ok(!D.querySelector('[data-ctdone]') && D.querySelector('.ct-split .ct-left [data-ctdrag]') && D.querySelector('.ct-split .ct-right [data-ctcol]')); ok('«План / Факт»: слева список рилсов без галочек, справа доска');
+  { const dt = { d:{}, types:['text/kz-video'], setData(k, v){ this.d[k] = v; }, getData(k){ return this.d[k]; } };
+    const ev = (type, el) => { const e = new w.Event(type, { bubbles:true, cancelable:true }); Object.defineProperty(e, 'dataTransfer', { value:dt }); el.dispatchEvent(e); };
+    ev('dragstart', D.querySelector(`.ct-left [data-ctdrag="${xid}"]`)); const last = [...D.querySelectorAll('.ct-right [data-ctcol]')].at(-1); ev('dragover', last); ev('drop', last); await wait(30); }
+  assert.ok(E(`projById('infoboard').stages.find(s => s.id === contentStage().id).subs[0].done`)); ok('рилс из списка перетащили в «Опубликовано» на доске — отмечен на доске площадки');
+  D.querySelector('[data-ctview="list"]').click(); await wait(20); assert.ok(!D.querySelector('.ct-right') && D.querySelector('.ct-row [data-ctmove]')); ok('вид «Список» — без доски, с этапом и датой в строке');
+  D.querySelector('[data-ctview="split"]').click(); await wait(20);
   assert.equal(E('ctStats(ctCur()).pub'), 1); ok('факт считается по отметкам');
   // KPI: одно число на цикл, само делится на 4 недели
   E(`ui.ctMode = 'plan'; ui.ctEdit = ctCur(); render()`);
@@ -324,12 +329,9 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     ok('счётчик сценариев считается по этапам'); }
   // галочка у видео в «Контенте» — следующий этап
   E(`{ const x = contentStage(infoBoard()).subs.find(y => y.id === 'vSt'); x.done = false; x.vst = vidCols()[0].id; ui.view = 'content'; ui.ctMode = 'plan'; commit(); }`);
-  { const cb = D.querySelector('[data-ctdone="vSt"]'); cb.checked = true; cb.dispatchEvent(new w.Event('change', { bubbles:true }));
-    assert.equal(E(`vidCol(contentStage(infoBoard()).subs.find(y => y.id === 'vSt')).id`), E('vidCols()[1].id')); ok('галочка у видео — следующий этап');
-    assert.ok(!D.querySelector('.ct-next')); ok('блока «Что дальше» нет'); }
-  assert.ok(D.querySelectorAll('.ct-stg-r').length === E('vidCols().length') && !D.querySelector('.ct-row .ct-mini')); ok('«План / Факт»: шкалы этапов и мини-шкала у каждого видео');
-  { const sel = D.querySelector('.ct-stg [data-vidwho]'); sel.value = 'uStg'; sel.dispatchEvent(new w.Event('change', { bubbles:true }));
-    assert.equal(E(`infoBoard().vidWho[vidCols()[0].id]`), 'uStg'); ok('в «Этапах» ответственного этапа можно назначить сразу'); }
+  assert.ok(!D.querySelector('.ct-stg') && !D.querySelector('.ct-next') && !D.querySelector('.ct-row .ct-mini')); ok('«План / Факт»: без блока «Этапы» и лишнего');
+  { const sel = D.querySelector('.ct-right [data-vidwho]'); sel.value = 'uStg'; sel.dispatchEvent(new w.Event('change', { bubbles:true }));
+    assert.equal(E(`infoBoard().vidWho[vidCols()[0].id]`), 'uStg'); ok('ответственного этапа назначаем на доске справа'); }
   // выбрать и удалить видео в «Контенте»
   E(`ui.view = 'content'; ui.ctMode = 'plan'; render()`);
   D.querySelector('[data-ctselmode]').click();
