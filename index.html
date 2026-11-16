@@ -2531,6 +2531,9 @@ svg.clip{width:14px;height:14px;flex:none}
 .bf-dc>small{font-size:12px;color:var(--muted)}.bf-dc b{font-size:22px;font-weight:700}.bf-dc b span{font-size:13px;font-weight:400;color:var(--muted)}.bf-dbar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}.bf-dbar i{display:block;height:100%;background:var(--brand)}
 .look-seg button{display:inline-flex;align-items:center;gap:6px}.look-seg svg{width:15px;height:15px}
 .fl-viewbar{display:flex;justify-content:flex-end;margin:4px 0 10px}
+.ar-list{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:6px}.ar-row{display:flex;align-items:center;gap:10px;padding:6px 8px;border:1px solid var(--line);border-radius:10px}.ar-row.cur{border-color:var(--line-strong)}
+.ar-row input{flex:1;min-width:0;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 10px;font-weight:600}.ar-row small{color:var(--muted);font-size:12px;white-space:nowrap}
+.ar-new{display:flex;gap:6px;margin-bottom:14px}.ar-new input{flex:1;height:34px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;padding:0 10px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -7434,8 +7437,10 @@ function renderSpaces(){
     ${spaces.orgs.length ? `<h3 class="sh-h">Проекты руководителей</h3><p class="hint">Команды и области, где вы руководитель: открываются их проекты, шаблоны и команда.</p>
       <ol class="sp-list">${spaces.orgs.map(o => `<li class="sp-row${ORGK === o.id ? ' cur' : ''}"><b>${esc(o.label)}<small class="hint"> · ${esc(o.sub)}</small></b>${ORGK === o.id ? '<span class="pill s-green"><i class="sw green"></i>Открыто</span>' : `<button class="ghost" data-orgopen="${o.id}">Открыть</button>`}<span></span></li>`).join('')}</ol>
       <h3 class="sh-h">Мои пространства</h3>` : ''}
-    ${online && !ORG ? `<div class="ws-row"><label>Область <input data-areaname="${curArea()}" value="${esc(areaById(curArea()).name)}" maxlength="60" aria-label="Название области"></label></div>
-` : ''}
+    ${online && !ORG ? `<h3 class="sh-h">Области</h3><p class="hint">Область объединяет пространства (например, «Агентство» и «Игорь»). Название меняется прямо в поле.</p>
+      <ol class="ar-list">${areaListAll().map(x => `<li class="ar-row${x.id === curArea() ? ' cur' : ''}"><input data-areaname="${x.id}" value="${esc(x.name)}" maxlength="60" aria-label="Название области"><small>${spacesOfArea(x.id).length} ${plural(spacesOfArea(x.id).length, 'пространство', 'пространства', 'пространств')}</small>${x.id === curArea() ? '<span class="pill s-green"><i class="sw green"></i>Открыта</span>' : `<button class="ghost" data-areaopen="${x.id}">Открыть</button>`}</li>`).join('')}</ol>
+      <form class="ar-new" id="arNew"><input id="arNewName" placeholder="Название новой области" maxlength="60" aria-label="Название новой области"><button class="ghost">+ Область</button></form>
+      <h3 class="sh-h">Пространства области «${esc(areaById(curArea()).name)}»</h3>` : ''}
     <ol class="sp-list">${spacesOfArea(curArea() || AREA0).map(x => x.id ? row(x.id, x.name, x.id === SPACE && !ORG, `<button type="button" class="sp-del" data-spdel="${x.id}" aria-label="Удалить пространство ${esc(x.name)}">${TRASH_ICO}<span>Удалить</span></button>`) : row('', mainName(), !SPACE && !ORG)).join('')}</ol>
     ${online ? `<form class="sp-new" id="spNew"><input id="spNewName" placeholder="Название нового пространства" maxlength="60" aria-label="Название нового пространства">
       <div class="sp-kind" role="radiogroup" aria-label="Тип пространства">${Object.entries(KINDS).map(([k, [a, b]]) => `<label><input type="radio" name="spKind" value="${k}"${k === 'agency' ? ' checked' : ''}> ${a}: ${b}</label>`).join('')}</div>
@@ -7473,6 +7478,9 @@ async function createSpace({ name, kind, area, copy }){
 }
 // новый раздел: документ раздела + его первое пространство «Основное»
 // новая область: документ области; дальше на экране выбора сразу открывается «+ Новый раздел» в ней
+document.addEventListener('submit', async e => { if (e.target.id !== 'arNew') return; e.preventDefault();
+  const v = $('#arNewName').value.trim().slice(0, 60); if (!v){ toast('Назовите область'); return; }
+  const a = await createArea(v); if (a){ toast(`Область «${v}» создана`); render(); } });
 async function createArea(name){
   if (!cloud.store || !cloud.uid){ toast('Области работают, когда вы вошли в аккаунт'); return null; }
   const a = 'a' + uid().toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12);
