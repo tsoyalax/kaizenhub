@@ -2435,6 +2435,16 @@ svg.clip{width:14px;height:14px;flex:none}
 .ct-due-s{font-size:12px;color:var(--muted);white-space:nowrap}.ct-right .ct-board .pf-col{flex-basis:220px}
 @media (max-width:900px){.ct-split{grid-template-columns:1fr}}
 .ct-pf{margin-top:4px;grid-template-columns:260px minmax(0,1fr)}body[data-kind="info"] .ct-pf{grid-template-columns:260px minmax(0,1fr)}@media (max-width:860px){.ct-pf .pf-list{display:grid!important;position:static;max-height:240px}body[data-kind="info"] .ct-pf{grid-template-columns:1fr}}.ct-pf .pf-name{display:flex;align-items:center;gap:6px}.ct-pf .pf-name .ct-ico svg{width:15px;height:15px}.ct-reel .pf-col{flex:0 0 230px}.ct-sub{display:flex;gap:8px;align-items:flex-start;cursor:pointer}.ct-sub.done span{text-decoration:line-through;color:var(--muted)}.ct-card.here{border-color:var(--brand)}
+.kb-depts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.kb-dbtn{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;text-align:left;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--surface);cursor:pointer;min-height:62px}
+.kb-dbtn .dept-tile{--ts:40px;grid-row:1 / 3}.kb-dbtn b{font-size:14px;font-weight:600;line-height:1.2}.kb-dbtn small{font-size:12px;color:var(--muted)}
+.kb-dbtn:hover{border-color:var(--line-strong)}.kb-dbtn.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.kb-all{--kh:220;background:var(--surface-2)!important;color:var(--ink)!important}
+.kb-fbtn{position:relative;display:grid;place-items:center;border-radius:14px;border:1px solid var(--line);background:var(--surface);cursor:pointer;min-height:62px;color:var(--ink)}.kb-fbtn svg{width:24px;height:24px}
+.kb-fbtn.on,.kb-fbtn.act{border-color:var(--ink)}.kb-fbtn span{position:absolute;top:6px;right:8px;font-size:11px;background:var(--brand);color:#fff;border-radius:9px;padding:0 6px}
+.kb-fpanel{display:grid;gap:8px;padding:10px;border:1px solid var(--line);border-radius:12px;margin-bottom:12px}
+.kb-type[data-kbtt]{cursor:pointer}.kb-type[data-kbtt]:hover{border-color:currentColor}
+.ct-to{height:26px;padding:0 9px;font-size:12px;margin-left:auto}.ct-to.pub{color:var(--g, #16A34A);border-color:currentColor}.ct-reel header>div{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2838,7 +2848,7 @@ function ctReelHtml(p, s, items){
   const t = taskFor(p.id, s.id, cur.id); const ci = idx(cur);
   const cols = cs.map((c, i) => { const here = i === ci; const subs = c.subs || [];
     return `<section class="pf-col${here ? ' cur' : ''}${i < ci || cur.done ? ' passed' : ''}" data-ctcol="${c.id}" aria-label="${i + 1}. ${esc(c.name)}">
-      <header><div><b>${i + 1}. ${esc(c.name)}</b>${here && !cur.done ? '<span class="pf-now">Сейчас здесь</span>' : ''}</div>
+      <header><div><b>${i + 1}. ${esc(c.name)}</b>${here && !cur.done ? '<span class="pf-now">Сейчас здесь</span>' : ''}${!here && !GUEST ? `<button type="button" class="ghost ct-to${i === cs.length - 1 ? ' pub' : ''}" data-ctto="${cur.id}|${c.id}">${i === cs.length - 1 ? 'Опубликовано ✓' : 'Перенести сюда'}</button>` : ''}</div>
         ${GUEST ? whoChip((p.vidWho || {})[c.id] || null) : `<select class="pf-status" data-vidwho="${c.id}" aria-label="Ответственный за этап «${esc(c.name)}»">${peopleOpts((p.vidWho || {})[c.id] || '', 'Ответственный не назначен')}</select>`}</header>
       <div class="pf-cards">${here ? `<div class="pf-card ct-card here" ${GUEST ? '' : `draggable="true" data-ctdrag="${cur.id}"`}><span class="pf-here">${cur.done ? 'Опубликовано' : 'Ролик сейчас здесь'}</span><b>${esc(cur.name)}</b><small>перетащите в другой этап</small></div>` : ''}
         ${subs.length ? subs.map(y => `<label class="pf-card ct-sub${cur.vs?.[y.id] || i < ci || cur.done ? ' done' : ''}"><input type="checkbox" data-ctvs="${cur.id}|${y.id}" ${cur.vs?.[y.id] || i < ci || cur.done ? 'checked' : ''} ${i !== ci || cur.done ? 'disabled' : ''}><span>${esc(y.name)}</span></label>`).join('') : here ? '' : '<p class="hint">Подэтапов нет</p>'}</div></section>`; }).join('');
@@ -2851,6 +2861,8 @@ function ctReelHtml(p, s, items){
       <div class="pf-board ct-reel">${cols}</div>
     </div></div>`;
 }
+// «Перенести сюда» / «Опубликовано ✓» — ролик в этот этап; «Опубликовано» = ролик готов и засчитан в план
+document.addEventListener('click', e => { const b = e.target.closest?.('[data-ctto]'); if (!b) return; const [id, col] = b.dataset.ctto.split('|'); moveVideo(id, col); if (vidCols().at(-1)?.id === col) toast('Опубликовано — засчитано в план'); });
 document.addEventListener('click', e => { const b = e.target.closest?.('[data-ctsel]'); if (b && ui.view === 'content'){ ui.ctSelVid = b.dataset.ctsel; render(); } });
 document.addEventListener('input', e => { if (e.target.id === 'ctQ'){ ui.ctQ = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#ctQ'); q?.focus(); q?.setSelectionRange(pos, pos); } });
 function renderContentBody(){
@@ -5637,7 +5649,9 @@ const deptIco = name => { const n = norm(name || ''); const hit = DEPT_ICONS.fin
 // отдел «Контент» живёт в своём разделе: на канбане и в «По отделам» его нет
 const isCtStage = (p, s) => s === contentStage(p) || /контент/i.test(s?.name || '');
 const KB_COLS = [['todo', 'К выполнению'], ['doing', 'В работе'], ['done', 'Готово']];
-const KB_TYPES = { strat:'Стратегическая', oper:'Операционная' };
+const KB_TYPES = { oper:'Операционная', strat:'Стратегическая' };
+const KB_TYPE_HINT = { oper:'Операционная — текущая работа, держит процесс', strat:'Стратегическая — связана со стратегией и ростом' };
+const kbTT = x => x?.ttype === 'strat' ? 'strat' : 'oper';   // тип по умолчанию — операционная
 const kbStatus = (p, s, x) => subDone(p, s, x) ? 'done' : x.kst === 'doing' || (x.cycle && x.vst && vidCols()[0]?.id !== x.vst) ? 'doing' : 'todo';
 const kbHue = name => { let h = 0; for (const ch of norm(name)) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
 function kbItems(boards){
@@ -5650,20 +5664,26 @@ function kanbanHtml(boards, all = false){
   const dueOf = i => { const t = taskFor(i.p.id, i.s.id, i.x.id); return t?.due_date || i.x.due_date || ''; };
   const wk = addDays(t0, 7);
   const dueOk = i => { const d = dueOf(i); return !ui.kbDue || (ui.kbDue === 'none' ? !d : !!d && i.st !== 'done' && (ui.kbDue === 'late' ? d < t0 : ui.kbDue === 'today' ? d <= t0 : d <= wk)); };
-  const base = items.filter(i => (!ui.kbDept || norm(i.s.name) === ui.kbDept) && (!ui.kbType || (ui.kbType === 'none' ? !i.x.ttype : i.x.ttype === ui.kbType)));
+  const base = items.filter(i => (!ui.kbDept || norm(i.s.name) === ui.kbDept) && (!ui.kbType || kbTT(i.x) === ui.kbType));
   // ближайшие сроки — сверху колонки, без срока — внизу
   const shown = base.filter(dueOk).sort((a, b) => { const da = dueOf(a), db = dueOf(b); return (da ? 0 : 1) - (db ? 0 : 1) || da.localeCompare(db); });
   const cntD = k => base.filter(i => { const o = ui.kbDue; ui.kbDue = k; const r = dueOk(i); ui.kbDue = o; return r; }).length;
   const chip = (attr, v, label, on, n) => `<button type="button" class="kb-chip${on ? ' on' : ''}" ${attr}="${v}" aria-pressed="${on}">${label}${n != null ? ` <span>${n}</span>` : ''}</button>`;
-  const cntT = k => items.filter(i => (!ui.kbDept || norm(i.s.name) === ui.kbDept) && (k === 'none' ? !i.x.ttype : i.x.ttype === k)).length;
+  if (ui.kbType === 'none') ui.kbType = '';
+  const cntT = k => items.filter(i => (!ui.kbDept || norm(i.s.name) === ui.kbDept) && kbTT(i.x) === k).length;
+  const cntDept = d => items.filter(i => norm(i.s.name) === d && i.st !== 'done').length;
+  const nF = (ui.kbType ? 1 : 0) + (ui.kbDue ? 1 : 0);
+  // отделы — большими кнопками-плитками; тип задачи и сроки — за иконкой «Фильтры»
   const filters = `<div class="kb-filters">
-    <div class="kb-frow" role="group" aria-label="Тип задачи">${chip('data-kbtype', '', 'Все задачи', !ui.kbType)}${chip('data-kbtype', 'strat', 'Стратегические', ui.kbType === 'strat', cntT('strat'))}${chip('data-kbtype', 'oper', 'Операционные', ui.kbType === 'oper', cntT('oper'))}${chip('data-kbtype', 'none', 'Без типа', ui.kbType === 'none', cntT('none'))}</div>
-    <div class="kb-frow" role="group" aria-label="Сроки">${chip('data-kbdue', '', 'Все сроки', !ui.kbDue)}${chip('data-kbdue', 'late', 'Просрочено', ui.kbDue === 'late', cntD('late'))}${chip('data-kbdue', 'today', 'На сегодня', ui.kbDue === 'today', cntD('today'))}${chip('data-kbdue', 'week', 'На неделю', ui.kbDue === 'week', cntD('week'))}${chip('data-kbdue', 'none', 'Без срока', ui.kbDue === 'none', cntD('none'))}</div>
-    <div class="kb-frow" role="group" aria-label="Отдел">${chip('data-kbdept', '', 'Все отделы', !ui.kbDept)}${depts.map(d => `<button type="button" class="kb-chip kb-dchip${ui.kbDept === norm(d) ? ' on' : ''}" data-kbdept="${esc(norm(d))}" aria-pressed="${ui.kbDept === norm(d)}" style="--kh:${kbHue(d)}">${deptIco(d)}${esc(d)}</button>`).join('')}</div></div>`;
+    <div class="kb-depts" role="group" aria-label="Отдел"><button type="button" class="kb-dbtn${!ui.kbDept ? ' on' : ''}" data-kbdept="" aria-pressed="${!ui.kbDept}"><span class="dept-tile kb-all" aria-hidden="true">${DEPT_SVG('<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>')}</span><b>Все отделы</b><small>${items.filter(i => i.st !== 'done').length} в работе</small></button>${depts.map(d => `<button type="button" class="kb-dbtn${ui.kbDept === norm(d) ? ' on' : ''}" data-kbdept="${esc(norm(d))}" aria-pressed="${ui.kbDept === norm(d)}" style="--kh:${kbHue(d)}">${deptIco(d)}<b>${esc(d)}</b><small>${cntDept(norm(d))} в работе</small></button>`).join('')}
+      <button type="button" class="kb-fbtn${ui.kbFOpen ? ' on' : ''}${nF ? ' act' : ''}" data-kbfopen aria-expanded="${!!ui.kbFOpen}" title="Фильтры: тип задачи и сроки" aria-label="Фильтры"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4 1.5v-8z"/></svg>${nF ? `<span>${nF}</span>` : ''}</button></div>
+    ${ui.kbFOpen ? `<div class="kb-fpanel">
+    <div class="kb-frow" role="group" aria-label="Тип задачи">${chip('data-kbtype', '', 'Все задачи', !ui.kbType)}${chip('data-kbtype', 'strat', 'Стратегические', ui.kbType === 'strat', cntT('strat'))}${chip('data-kbtype', 'oper', 'Операционные', ui.kbType === 'oper', cntT('oper'))}</div>
+    <div class="kb-frow" role="group" aria-label="Сроки">${chip('data-kbdue', '', 'Все сроки', !ui.kbDue)}${chip('data-kbdue', 'late', 'Просрочено', ui.kbDue === 'late', cntD('late'))}${chip('data-kbdue', 'today', 'На сегодня', ui.kbDue === 'today', cntD('today'))}${chip('data-kbdue', 'week', 'На неделю', ui.kbDue === 'week', cntD('week'))}${chip('data-kbdue', 'none', 'Без срока', ui.kbDue === 'none', cntD('none'))}</div></div>` : ''}</div>`;
   const card = ({ p, s, x, st }) => { const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const due = t?.due_date || x.due_date || ''; const done = st === 'done';
     const can = canEditProject(p) && !GUEST;
     return `<button class="pf-card kb-card${done ? ' done' : ''}" data-tgsub="${p.id}|${s.id}|${x.id}" ${can ? `draggable="true" data-kbdrag="${p.id}|${s.id}|${x.id}"` : ''} aria-label="${esc(s.name)}: ${esc(x.name)}">
-      <span class="kb-tags"><span class="kb-dept" style="--kh:${kbHue(s.name)}">${deptIco(s.name)}${esc(s.name)}</span>${x.ttype ? `<span class="kb-type t-${x.ttype}">${x.ttype === 'strat' ? 'Стратег.' : 'Операц.'}</span>` : ''}${all ? `<span class="ab-ip"><i style="--bc:${tgColor(p)}"></i>${esc(p.name)}</span>` : ''}</span>
+      <span class="kb-tags"><span class="kb-dept" style="--kh:${kbHue(s.name)}">${deptIco(s.name)}${esc(s.name)}</span><span class="kb-type t-${kbTT(x)}"${can ? ` data-kbtt="${p.id}|${s.id}|${x.id}" role="button" tabindex="0"` : ''} title="${KB_TYPE_HINT[kbTT(x)]}${can ? '. Нажмите, чтобы сменить' : ''}">${kbTT(x) === 'strat' ? 'Стратегическая' : 'Операционная'}</span>${all ? `<span class="ab-ip"><i style="--bc:${tgColor(p)}"></i>${esc(p.name)}</span>` : ''}</span>
       <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span>` : ''}${esc(x.name)}</b>
       <small>${whoChip(x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t))}${due ? ` · <span class="pf-due${due < t0 && !done ? ' late' : ''}">${t?.start_date ? rangeTxt(t.start_date, due) : 'срок ' + fmt(due)}</span>` : !done ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}</small>
       ${pr && pr.total && !done ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span>` : ''}</button>`; };
@@ -5672,7 +5692,7 @@ function kanbanHtml(boards, all = false){
   const defDept = addDepts.find(s => norm(s.name) === ui.kbDept)?.id || ui.kbAddDept || addDepts[0]?.id;
   const addForm = canAdd && addDepts.length ? `<form class="kb-add" data-kbadd="${p0.id}"><input placeholder="Новая задача" aria-label="Новая задача" maxlength="200">
       <div class="kb-add-row"><select data-kbadddept aria-label="Отдел">${addDepts.map(s => `<option value="${s.id}" ${s.id === defDept ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>
-      <select data-kbaddtype aria-label="Тип задачи"><option value="">Без типа</option>${Object.entries(KB_TYPES).map(([k, l]) => `<option value="${k}" ${ui.kbType === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <select data-kbaddtype aria-label="Тип задачи">${Object.entries(KB_TYPES).map(([k, l]) => `<option value="${k}" ${(ui.kbType || 'oper') === k ? 'selected' : ''} title="${KB_TYPE_HINT[k]}">${l}</option>`).join('')}</select>
       <button class="ghost" aria-label="Добавить">+</button></div></form>` : '';
   const LIM = 40;
   return filters + `<div class="pf-board kb-board">${KB_COLS.map(([k, label]) => { const list = shown.filter(i => i.st === k);
@@ -5694,6 +5714,7 @@ document.addEventListener('click', e => {
   const t = e.target.closest?.('[data-kbtype]'); if (t){ ui.kbType = t.dataset.kbtype; render(); return; }
   const d = e.target.closest?.('[data-kbdept]'); if (d){ ui.kbDept = d.dataset.kbdept; render(); return; }
   const du = e.target.closest?.('[data-kbdue]'); if (du){ ui.kbDue = du.dataset.kbdue; render(); return; }
+  if (e.target.closest?.('[data-kbfopen]')){ ui.kbFOpen = !ui.kbFOpen; render(); return; }
   const m = e.target.closest?.('[data-kbmore]'); if (m){ ui.kbOpen = ui.kbOpen === m.dataset.kbmore ? '' : m.dataset.kbmore; render(); }
 });
 document.addEventListener('submit', e => {
@@ -5701,7 +5722,7 @@ document.addEventListener('submit', e => {
   const v = f.querySelector('input').value.trim(); if (!v) return;
   const p = projById(f.dataset.kbadd); if (!canEditProject(p)) return;
   const s = p.stages.find(y => y.id === f.querySelector('[data-kbadddept]').value); if (!s) return;
-  const nx = { id:uid(), name:v, done:false, at:new Date().toISOString() }; const ty = f.querySelector('[data-kbaddtype]').value; if (ty) nx.ttype = ty;
+  const nx = { id:uid(), name:v, done:false, at:new Date().toISOString() }; const ty = f.querySelector('[data-kbaddtype]').value; if (ty === 'strat') nx.ttype = 'strat';
   if (isInfo() && s === contentStage(p)) (s.subs = s.subs || []).unshift(nx); else (s.subs = s.subs || []).push(nx);
   ui.kbAddDept = s.id;
   addLog(p, `Добавлена задача «${v}» в отдел «${s.name}»`); commit();
@@ -5710,9 +5731,14 @@ document.addEventListener('submit', e => {
 document.addEventListener('change', e => {
   const t = e.target.closest?.('[data-kbttype]'); if (!t) return;
   const [pid, sid, xid] = t.dataset.kbttype.split('|'); const p = projById(pid); const x = p?.stages.find(y => y.id === sid)?.subs?.find(y => y.id === xid);
-  if (!x || !canEditProject(p)) return; if (t.value) x.ttype = t.value; else delete x.ttype;
-  addLog(p, `Задача «${x.name}»: ${t.value ? KB_TYPES[t.value].toLowerCase() : 'без типа'}`); commit(); if (ui.taskId) renderTaskModal();
+  if (!x || !canEditProject(p)) return; if (t.value === 'strat') x.ttype = 'strat'; else delete x.ttype;
+  addLog(p, `Задача «${x.name}»: ${KB_TYPES[kbTT(x)].toLowerCase()}`); commit(); if (ui.taskId) renderTaskModal();
 });
+// метка типа на карточке: нажатие переключает «Операционная ⇄ Стратегическая» (карточку не открывает)
+document.addEventListener('click', e => { const b = e.target.closest?.('[data-kbtt]'); if (!b) return; e.preventDefault(); e.stopPropagation();
+  const [pid, sid, xid] = b.dataset.kbtt.split('|'); const p = projById(pid); const x = p?.stages.find(y => y.id === sid)?.subs?.find(y => y.id === xid);
+  if (!x || !canEditProject(p)) return; if (kbTT(x) === 'strat') delete x.ttype; else x.ttype = 'strat';
+  addLog(p, `Задача «${x.name}»: ${KB_TYPES[kbTT(x)].toLowerCase()}`); commit(); }, true);
 let kbDrag = null;
 document.addEventListener('dragstart', e => { const c = e.target.closest?.('[data-kbdrag]'); if (!c) return; kbDrag = c.dataset.kbdrag; c.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', kbDrag); } catch(_) {} });
 document.addEventListener('dragover', e => { if (!kbDrag) return; const col = e.target.closest?.('[data-kbcol]'); if (!col) return; e.preventDefault();
@@ -9160,7 +9186,7 @@ function renderTaskModal(focusSel){
         <span>${pr.done ? 'Подэтап выполнен' : pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Без чек-листа'}</span></div>
         ${editable && !p?._ext ? `<label class="tk-who"><span>Ответственный</span><select class="tk-as" data-tqassign="${t.id}" aria-label="Ответственный за подэтап">${peopleOpts(t.assignee_id, s?.assignee_id ? `Как у этапа: ${short(s.assignee_id)}` : 'Как у этапа: не назначен')}</select></label>`
           : `<span class="tk-who"><span>Ответственный</span>${whoChip(whoId(p, s, t))}</span>`}
-        ${isInfoBoardP(p) && sub ? (editable && !p?._ext ? `<label class="tk-who"><span>Тип</span><select class="tk-as" data-kbttype="${p.id}|${s.id}|${sub.id}" aria-label="Тип задачи"><option value="">Без типа</option>${Object.entries(KB_TYPES).map(([k, l]) => `<option value="${k}" ${sub.ttype === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : sub.ttype ? `<span class="tk-who"><span>Тип</span>${KB_TYPES[sub.ttype]}</span>` : '') : ''}
+        ${isInfoBoardP(p) && sub ? (editable && !p?._ext ? `<label class="tk-who"><span>Тип</span><select class="tk-as" data-kbttype="${p.id}|${s.id}|${sub.id}" aria-label="Тип задачи" title="${KB_TYPE_HINT[kbTT(sub)]}">${Object.entries(KB_TYPES).map(([k, l]) => `<option value="${k}" ${kbTT(sub) === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : `<span class="tk-who" title="${KB_TYPE_HINT[kbTT(sub)]}"><span>Тип</span>${KB_TYPES[kbTT(sub)]}</span>`) : ''}
         ${dueRemindHtml(t, editable)}</div>
       <section class="tk-sec"><h3>Задание</h3>
         <div class="tk-text">${t.description ? linkify(t.description) : '<span class="hint">Описания пока нет.</span>'}</div>

@@ -40,6 +40,9 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     const ev = (type, el) => { const e = new w.Event(type, { bubbles:true, cancelable:true }); Object.defineProperty(e, 'dataTransfer', { value:dt }); el.dispatchEvent(e); };
     ev('dragstart', D.querySelector(`.ct-reel [data-ctdrag="${xid}"]`)); const last = [...D.querySelectorAll('.ct-reel [data-ctcol]')].at(-1); ev('dragover', last); ev('drop', last); await wait(30); }
   assert.ok(E(`projById('infoboard').stages.find(s => s.id === contentStage().id).subs[0].done`)); ok('ролик перетащили в «Опубликовано» — отмечен на доске площадки');
+  E(`{ const x = contentStage().subs[0]; x.done = false; x.vst = vidCols()[0].id; ui.ctSelVid = x.id; commit(); }`); await wait(20);
+  { const pub0 = E('ctStats(ctCur()).pub'); D.querySelector(`[data-ctto="${xid}|${E('vidCols().at(-1).id')}"]`).click(); await wait(30);
+    assert.ok(E('contentStage().subs[0].done') && E('ctStats(ctCur()).pub') === pub0 + 1); ok('«Опубликовано ✓» — ролик готов и засчитан в план'); }
   D.querySelector('[data-ctview="list"]').click(); await wait(20); assert.ok(!D.querySelector('.ct-reel') && D.querySelector('.ct-row [data-ctmove]')); ok('вид «Список» — без доски, с этапом и датой в строке');
   D.querySelector('[data-ctview="split"]').click(); await wait(20);
   assert.equal(E('ctStats(ctCur()).pub'), 1); ok('факт считается по отметкам');

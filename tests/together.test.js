@@ -48,8 +48,12 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     assert.deepEqual(cols, ['К выполнению', 'В работе', 'Готово']); ok('«Все» → «Доска»: обычный канбан — К выполнению / В работе / Готово');
     const todo = $('.kb-todo'); const c = [...todo.querySelectorAll('.kb-card')].find(x => /Эфир/.test(x.textContent));
     assert.ok(c && /Блок Игоря/.test(c.textContent) && c.querySelector('.kb-dept') && [...todo.querySelectorAll('.kb-card')].some(x => /Старт/.test(x.textContent) && /Челлендж Эма/.test(x.textContent))); ok('задачи обеих площадок с плашкой отдела и площадки');
+    assert.ok($('.kb-depts .kb-dbtn .dept-tile') && !$('[data-kbtype]')); ok('отделы — большими кнопками, остальные фильтры за иконкой');
+    $('[data-kbfopen]').click(); await wait(30);
+    assert.ok([...D.querySelectorAll('.kb-type')].every(b => /Операционная/.test(b.textContent))); ok('по умолчанию задачи операционные');
     $('[data-kbtype="strat"]').click(); await wait(50); assert.equal(D.querySelectorAll('.kb-card').length, 0);
     $('[data-kbtype=""]').click(); await wait(50); E(`ui.kbType = ''`); ok('фильтр «Стратегические»');
+    $('.kb-type[data-kbtt]').click(); await wait(30); assert.equal(D.querySelectorAll('.kb-type.t-strat').length, 1); assert.ok(!E('ui.taskId')); ok('нажатие на метку — «Стратегическая», карточка не открывается');
     $('[data-kbdue="week"]').click(); await wait(50);
     { const t = [...D.querySelectorAll('.kb-todo .kb-card b')].map(b => b.textContent); assert.ok(t.length && t.every(x => !/Старт/.test(x))); ok('фильтр «На неделю»: дальние сроки скрыты'); }
     $('[data-kbdue=""]').click(); await wait(50);
