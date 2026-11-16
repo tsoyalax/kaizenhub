@@ -8660,7 +8660,9 @@ function syncTaskToSub(t){
   if (!total){ t.completed_at = null; return false; }   // пустой чек-лист не открывает и не закрывает подэтап
   // канбан площадки: первая галочка чек-листа — задача сама «В работе»; последняя — «Готово» (ниже, через x.done)
   { const p0 = projById(t.project_id); const x0 = p0?.stages.find(y => y.id === t.stage_id)?.subs?.find(y => y.id === t.substage_id);
-    if (x0 && isInfoBoardP(p0) && !done && n > 0 && x0.kst !== 'doing'){ x0.kst = 'doing'; addLog(p0, `Задача «${x0.name}»: в работе (отмечен пункт чек-листа)`); } }
+    if (x0 && isInfoBoardP(p0) && !done && n > 0 && x0.kst !== 'doing'){ x0.kst = 'doing'; addLog(p0, `Задача «${x0.name}»: в работе (отмечен пункт чек-листа)`); }
+    // сняли все галочки — обратно в «К выполнению»
+    if (x0 && isInfoBoardP(p0) && n === 0 && x0.kst === 'doing'){ x0.kst = ''; addLog(p0, `Задача «${x0.name}»: снова к выполнению (галочки сняты)`); } }
   const was = !!t.completed_at;
   t.completed_at = done ? (t.completed_at || new Date().toISOString()) : null;
   if (p && done !== was) addLog(p, `Задача «${t.title}»: ${done ? 'чек-лист выполнен на 100%' : 'снова в работе'}`);

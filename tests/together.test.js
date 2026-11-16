@@ -144,8 +144,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   // чек-лист двигает задачу по канбану: первая галочка — «В работе», последняя — «Готово»
   { const r = E(`(() => { const s = ig.stages.find(y => !isMaint(y) && !isCtStage(ig, y)); const x = { id:'ckMove', name:'Задача с чек-листом', done:false }; s.subs.push(x); tasksFromSubs(ig, { ...s, subs:[x] });
       const t = taskFor(ig.id, s.id, x.id); t.checklist = [{ id:'a1', text:'раз', done:false }, { id:'a2', text:'два', done:false }];
-      const st0 = kbStatus(ig, s, x); t.checklist[0].done = true; syncTaskToSub(t); const st1 = kbStatus(ig, s, x); t.checklist[1].done = true; syncTaskToSub(t); const st2 = kbStatus(ig, s, x); return [st0, st1, st2].join(); })()`);
-    assert.equal(r, 'todo,doing,done'); ok('первая галочка — «В работе», последняя — «Готово»'); }
+      const st0 = kbStatus(ig, s, x); t.checklist[0].done = true; syncTaskToSub(t); const st1 = kbStatus(ig, s, x); t.checklist[1].done = true; syncTaskToSub(t); const st2 = kbStatus(ig, s, x); t.checklist[1].done = false; syncTaskToSub(t); const st3 = kbStatus(ig, s, x); t.checklist[0].done = false; syncTaskToSub(t); const st4 = kbStatus(ig, s, x); return [st0, st1, st2, st3, st4].join(); })()`);
+    assert.equal(r, 'todo,doing,done,doing,todo'); ok('первая галочка — «В работе», последняя — «Готово»; снятые галочки возвращают назад'); }
   // «Тестовое · бета»: воронка +10к Telegram — как в таблице «Декомпозиция»
   assert.ok(!D.querySelector('.tabs [data-view="beta"]').hidden); E(`ui.view = 'beta'; render()`);
   { const p = E('JSON.stringify(bfPlan(bfCfg()))'); const q = JSON.parse(p); assert.ok(Math.round(q.code) === 21984 && Math.round(q.pub * 10) === 366 && Math.round(q.client) === 45); ok('бета-воронка: план как в таблице (21 984 кодовых слова, 36,6 рилс, 45 клиентов)'); }
