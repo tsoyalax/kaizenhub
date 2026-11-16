@@ -26,7 +26,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   // «Контент»: видео — карточки колонки «Контент» на доске; отметка в одном месте видна в другом
   assert.ok(!D.querySelector('.tabs [data-view="content"]').hidden); ok('раздел «Контент» в меню');
   E(`ui.view = 'templates'; ui.setTab = 'deadlines'; render()`);
-  assert.deepEqual([...D.querySelectorAll('[data-settab]')].map(b => b.dataset.settab), ['spaces', 'ai']); ok('настройки инфобизнеса: только «Пространства» и «AI» — без дедлайнов, шаблонов, категорий');
+  assert.deepEqual([...D.querySelectorAll('[data-settab]')].map(b => b.dataset.settab), ['boards', 'spaces', 'ai']); ok('настройки инфобизнеса: «Площадки», «Пространства», «AI» — без дедлайнов, шаблонов, категорий');
   E(`ui.setTab = ''; ui.view = 'production'; render()`);
   E(`ui.view = 'content'; render()`);
   D.getElementById('ctName').value = 'Ролик'; D.getElementById('ctN').value = '12';
@@ -84,19 +84,10 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.ok(E(`contentStage().subs.find(x => x.id === '${x2}').done`)); ok('«Опубликовано» отмечает видео на основной доске');
   // срок и напоминание у задачи
   E(`(() => { const p = infoBoard(), s = contentStage(p), x = s.subs[3]; tasksFromSubs(p, { ...s, subs:[x] }); openTask(taskFor(p.id, s.id, x.id).id); })()`); await wait(50);
-  // быстрый календарь: срок — день одним нажатием; напоминание — день, потом время
-  D.querySelector('[data-duepick]').click(); assert.ok(D.getElementById('dpPop')); ok('по нажатию на «Срок» открывается календарь');
-  D.querySelector(`[data-dpday="${E('addDays(today(), 1)')}"]`).click();
-  assert.ok(D.getElementById('dpPop') && /теперь нажмите день окончания/.test(D.querySelector('.dp-hint').textContent)); ok('срок «от и до»: после первого дня — выбор окончания');
-  D.querySelector(`[data-dpday="${E('addDays(today(), 3)')}"]`).click();
-  assert.equal(E('taskById(ui.taskId).start_date'), E('addDays(today(), 1)')); assert.equal(E('taskById(ui.taskId).due_date'), E('addDays(today(), 3)')); ok('у задачи ставится срок от и до');
-  assert.ok(/–/.test(D.querySelector('[data-duepick]').textContent)); ok('на кнопке — период');
-  assert.ok(!D.getElementById('dpPop')); ok('календарь закрылся сам');
-  D.querySelector('[data-duepick]').click(); [...D.querySelectorAll('[data-dpq]')].find(b => b.textContent === 'Завтра').click();
-  assert.equal(E('taskById(ui.taskId).due_date'), E('addDays(today(), 1)')); ok('быстрый вариант «Завтра»');
-  assert.ok(!E('taskById(ui.taskId).start_date')); ok('один день — без начала');
-  D.querySelector('[data-duepick]').click(); const d2 = E('addDays(today(), 2)'); D.querySelector(`[data-dpday="${d2}"]`).click(); D.querySelector(`[data-dpday="${d2}"]`).click();
-  assert.equal(E('taskById(ui.taskId).due_date'), d2); assert.ok(!E('taskById(ui.taskId).start_date')); ok('двойное нажатие на день — срок на один день');
+  // срок в карточке площадки — поле с календарём (дата)
+  { const d = D.querySelector('.tk-props [data-tkdate]'); assert.ok(d && d.type === 'date' && !D.querySelector('.tk-props [data-duepick]')); ok('срок — поле с календарём');
+    d.value = E('addDays(today(), 2)'); d.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
+    assert.equal(E('taskById(ui.taskId).due_date'), E('addDays(today(), 2)')); assert.ok(!E('taskById(ui.taskId).start_date')); ok('дата из поля — срок задачи'); }
   D.querySelector('[data-rempick]').click(); D.querySelector(`[data-dpday="${E('addDays(today(), 1)')}"]`).click();
   assert.ok(D.getElementById('dpPop')); ok('после дня для напоминания — выбор времени');
   D.querySelector('[data-dptime="10:00"]').click();
@@ -187,21 +178,14 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.deepEqual(E('vidCols().map(c => c.name)'), ['Сценарий', 'Съёмка', 'Публикация']); ok('этапы видео — как в шаблоне SMM-пространства');
   E(`addContent('Рилс', 3, today()); ui.view = 'content'; ui.ctMode = 'board'; render()`);
   assert.ok(/Хук/.test(D.querySelector('.ct-subs')?.textContent || '')); ok('подэтапы этапа SMM — на карточке видео');
-  // свои задачи в колонке «Контент» доски — наверху, над видео; новые первыми (доска по отделам — в режиме «Отделы»)
-  E(`ui.view = 'production'; ui.infoMode = 'board'; ui.pfEdit = true; render()`);
-  const addIn = () => D.querySelector(`[data-pfadd="${E('contentStage().id')}"]`);
-  addIn().querySelector('input').value = 'Сценарий вебинара'; addIn().dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
-  addIn().querySelector('input').value = 'Запросить отзывы'; addIn().dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
-  assert.deepEqual(E('boardSubs(infoBoard(), contentStage()).slice(0, 2).map(x => x.name)'), ['Запросить отзывы', 'Сценарий вебинара']); ok('свои задачи «Контента» — наверху, новые первыми');
-  assert.ok(E('boardSubs(infoBoard(), contentStage()).slice(-3).every(x => x.cycle)')); ok('видео — ниже своих задач');
   // перетаскивание карточки на доске инфобизнеса в другую колонку
-  E(`ui.view = 'production'; ui.infoMode = 'board'; render()`);
+  E(`(() => { const p = infoBoard(); const ss = p.stages.filter(y => !isMaint(y) && !isCtStage(p, y)); window.__fs = ss[0]; window.__ts = ss[2]; (__fs.subs = __fs.subs || []).push({ id:'dragX', name:'Перенести меня', done:false }); ui.view = 'production'; ui.infoMode = 'board'; ui.kbView = 'dept'; commit(); })()`);
   { const dt = { setData(){}, getData(){ return ''; }, types:['text/kz-card'], effectAllowed:'' };
     const ev = (type, el) => { const e = new w.Event(type, { bubbles:true, cancelable:true }); Object.defineProperty(e, 'dataTransfer', { value:dt }); el.dispatchEvent(e); };
-    const fromSid = E(`infoBoard().stages[1].id`), toSid = E(`infoBoard().stages[3].id`), xid = E(`infoBoard().stages[1].subs[0].id`);
+    const fromSid = E(`__fs.id`), toSid = E(`__ts.id`), xid = 'dragX';
     const card = D.querySelector(`[data-pfdrag="${fromSid}|${xid}"]`); assert.ok(card && card.getAttribute('draggable') === 'true'); ok('карточки доски перетаскиваются');
     ev('dragstart', card); const col = D.querySelector(`[data-pfcol="${toSid}"]`); ev('dragover', col); ev('drop', col); await wait(20);
-    assert.ok(E(`infoBoard().stages[3].subs.some(x => x.id === '${xid}') && !infoBoard().stages[1].subs.some(x => x.id === '${xid}')`)); ok('карточка переехала в другую колонку');
+    assert.ok(E(`__ts.subs.some(x => x.id === '${xid}') && !__fs.subs.some(x => x.id === '${xid}')`)); E(`ui.kbView = 'status'`); ok('карточка переехала в другую колонку');
   }
   // инфоповоды: новый — своя доска с теми же колонками и связями, «Контент» — у выбранного
   E(`infoBoard().name = 'Контент Игоря'; ui.view = 'production'; ui.ipNew = true; render()`);
@@ -231,7 +215,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   E(`moveVideo('${vx}', '${c1}')`);
   assert.equal(E(`contentWho(infoBoard(), contentStage(), contentStage().subs.find(x => x.id === '${vx}'), null)`), 'uig'); ok('перешло на «Съёмку» — у Игоря');
   E(`ui.view = 'production'; ui.infoMode = 'board'; render()`);
-  const mc = D.querySelector(`.pf-board [data-pfsub$="|${vx}"]`); assert.ok(/Игорь/.test(mc.textContent) && mc.querySelector('.vid-st')); ok('на главной доске у видео — этап и имя ответственного за него');
+  assert.ok(!D.querySelector(`.pf-board [data-pfsub$="|${vx}"]`)); ok('видео на досках «Производства» нет — оно в «Контенте»');
   assert.ok(E(`dayProjectItems('uig').some(i => i.x?.id === '${vx}')`) && !E(`dayProjectItems('uyu').some(i => i.x?.id === '${vx}')`)); ok('«Мои задачи»: видео у того, у кого оно сейчас на этапе');
   // «Мои задачи»: задачи из всех колонок доски инфобизнеса, а не только текущего этапа
   E(`(() => { const p = infoBoard(); const s = p.stages.find(z => z !== contentStage(p) && !isMaint(z)); s.subs = s.subs || []; s.subs.push({ id:'mine1', name:'Моя задача в другой колонке', done:false }); s.assignee_id = 'me'; })()`);
@@ -251,7 +235,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.equal(E(`taskFor(infoBoard().id, '${psid}', '${pxid}').priority`), 'high'); ok('приоритет ставится прямо в списке');
   assert.ok(/Высокий/.test(D.querySelector('.pr-grp h3').textContent)); ok('задача — в группе «Высокий» наверху');
   E(`ui.view = 'production'; ui.prodTab = 'board'; ui.infoMode = 'board'; render()`);
-  assert.ok(D.querySelector(`[data-pfsub="${psid}|${pxid}"] .tpri-r`)); ok('на доске — значок приоритета');
+  { const c = D.querySelector(`[data-tgsub$="|${psid}|${pxid}"]`); assert.ok(E(`isCtStage(infoBoard(), infoBoard().stages.find(s => s.id === '${psid}'))`) ? !c : c?.querySelector('.tpri-r')); } ok('на доске — значок приоритета');
   E(`db.prefs.kind = 'agency'; render()`);
   assert.ok(!D.querySelector('.tabs [data-view="matrix"]').hidden); ok('в агентстве матрица на месте');
   // «Внутренние задачи» — вкладка в «Производстве» у проекта: отделы + «Регулярные» из «Ведения»
@@ -288,12 +272,6 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   E(`ui.prodProject = '${op}'; render()`);
   assert.ok(!/Контент-план на декабрь/.test(D.getElementById('app').textContent)); ok('у другого проекта — свои внутренние задачи');
   E(`ui.prodTab = 'board'`);
-  // колонка «Контент»: выделена, видео свёрнуты до 3 — «Показать все (N)»
-  E(`{ const p = infoBoard(); const s = contentStage(p); for (let i = 0; i < 5; i++) s.subs.push({ id:'fold' + i, name:'Видео ' + i, done:false, cycle:today() }); ui.view = 'production'; ui.prodProject = p.id; ui.infoAll = false; ui.infoMode = 'board'; ui.ctOpen = {}; render(); }`);
-  { const nv = () => D.querySelector('.pf-col.ct-col').querySelectorAll('.pf-card .ct-ico').length; const total = E(`contentStage(infoBoard()).subs.filter(x => x.cycle).length`);
-    assert.ok(D.querySelector('.pf-col.ct-col') && nv() === 3 && /Показать все/.test(D.querySelector('[data-ctmore]').textContent)); ok('колонка «Контент» выделена, видно 3 видео и «Показать все»');
-    D.querySelector('[data-ctmore]').click(); assert.equal(nv(), total); ok('«Показать все» раскрывает все видео');
-    D.querySelector('[data-ctmore]').click(); assert.equal(nv(), 3); ok('«Свернуть» снова прячет'); }
   E(`window.__k = db.prefs.kind; db.prefs.kind = 'info'; createInfoBoard('Вторая площадка', today()); ui.infoAll = true; ui.ctOpen = {}; render();`);
   assert.ok(D.querySelector('.kb-board') && !D.querySelector('.ab-board')); ok('во «Все» — общий канбан площадок');
   E(`ui.infoAll = false; db.prefs.kind = window.__k; render();`);
@@ -312,8 +290,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   { const h = E(`roadmapHtml(infoBoards())`); assert.ok(/все площадки/.test(h) && (h.match(/<section>/g) || []).length === E('infoBoards().length') && /print\(\)/.test(h)); ok('дорожная карта всех площадок — раздел на каждую площадку, как у одной; открывается печать (PDF)'); }
   E(`ui.infoAll = false; db.prefs.kind = window.__k2; render()`);
   // задача без срока подсвечена на доске
-  E(`{ const p = infoBoard(); const s = p.stages.find(x => !isMaint(x)); s.subs.push({ id:'noDue', name:'Без даты', done:false }); ui.view = 'production'; ui.prodProject = p.id; ui.infoAll = false; commit(); }`);
-  { const c = D.querySelector('.pf-board [data-pfsub$="|noDue"]'); assert.ok(c && c.querySelector('.pf-due.nodue')); ok('задача без срока подсвечена «без срока»'); }
+  E(`{ const p = infoBoard(); const s = p.stages.find(x => !isMaint(x) && !isCtStage(p, x)); s.subs.push({ id:'noDue', name:'Без даты', done:false }); ui.view = 'production'; ui.prodProject = p.id; ui.infoAll = false; ui.infoMode = 'board'; ui.kbView = 'status'; ui.kbDept = ''; ui.kbDue = ''; ui.kbType = ''; commit(); }`);
+  { const c = D.querySelector('.pf-board [data-pfsub$="|noDue"], .pf-board [data-tgsub$="|noDue"]'); assert.ok(c && c.querySelector('.pf-due.nodue')); ok('задача без срока подсвечена «без срока»'); }
   // «Контент» → «План / Факт»: этап видео меняется выбором прямо в строке
   E(`window.__k3 = db.prefs.kind; db.prefs.kind = 'info'; contentStage(infoBoard()).subs.push({ id:'vSt', name:'Видео этап', done:false, cycle:today(), due_date:today() }); ui.ctCycle = today(); ui.view = 'content'; ui.ctMode = 'plan'; commit()`);
   { const sel = D.querySelector('.ct-row [data-ctmove="vSt"]') || D.querySelector('.ct-row [data-ctmove]');
@@ -324,7 +302,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   // на главной у видео — ответственный текущего этапа, даже если в карточке стоял другой
   E(`{ const p = infoBoard(); const s = contentStage(p); const x = s.subs.find(y => y.id === 'vSt'); tasksFromSubs(p, { ...s, subs:[x] }); taskFor(p.id, s.id, 'vSt').assignee_id = 'me';
      if (!db.users.some(u => u.id === 'uStg')) db.users.push({ id:'uStg', name:'Монтажёр', status:'active' }); p.vidWho = { ...(p.vidWho || {}), [vidCol(x).id]:'uStg' }; ui.view = 'production'; commit(); }`);
-  assert.ok(/Монтажёр/.test(D.querySelector('.pf-board [data-pfsub$="|vSt"]').textContent)); ok('на главной у видео подсвечен ответственный его текущего этапа');
+  assert.equal(E(`contentWho(infoBoard(), contentStage(infoBoard()), contentStage(infoBoard()).subs.find(y => y.id === 'vSt'), taskFor(infoBoard().id, contentStage(infoBoard()).id, 'vSt'))`), 'uStg'); ok('у видео ответственный — его текущего этапа');
   // «Контент» → «План / Факт»: «Сценариев написано» — видео дальше этапа «Сценарий»
   E(`ui.view = 'content'; ui.ctMode = 'plan'; render()`);
   { const has = E(`vidCols().some(y => /сценар/i.test(y.name))`); const kpi = D.querySelector('.smm-kpi');

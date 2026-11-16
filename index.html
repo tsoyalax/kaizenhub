@@ -2487,6 +2487,21 @@ svg.clip{width:14px;height:14px;flex:none}
 .pg-tiles{display:flex;gap:3px;margin-top:4px}.pg-tiles i{flex:1 1 0;height:7px;border-radius:3px;background:var(--line);min-width:6px;max-width:28px}
 .pg-tiles i.on{background:var(--g,#16A34A)}.pg-tiles.full i{background:var(--g,#16A34A)}.pg-n{font-size:11.5px;color:var(--muted)}
 .tl-task.tl-dk .tlp-t{max-width:none;overflow:visible}
+.tk-props{display:grid;gap:2px;padding:4px 0 14px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.tkp{display:grid;grid-template-columns:150px minmax(0,1fr);align-items:center;gap:12px;min-height:38px;padding:3px 0}
+.tkp-l{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}.tkp-l svg{width:14px;height:14px}
+.tkp-v{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}.tkp-sel{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 8px;font-size:13px;max-width:280px}
+.tkp-seg button{height:30px;font-size:12.5px}.tkp-qs{display:inline-flex;flex-wrap:wrap;gap:4px}
+.tkp-q{height:26px;padding:0 9px;border-radius:7px;border:1px solid var(--line);background:none;font-size:12px;color:var(--muted);cursor:pointer}.tkp-q:hover{color:var(--ink);border-color:var(--line-strong)}.tkp-q.on{color:var(--ink);border-color:var(--ink)}.tkp-q.x{padding:0 7px}
+.tkp-date{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 10px;font:inherit;font-size:13px;color:var(--ink)}.tkp-date.late{border-color:var(--r);color:var(--r)}
+.tkp-late{font-size:12px;font-weight:600;color:var(--r)}.tkp-n{font-size:12px;color:var(--muted)}.tkp .pg-tiles{flex:1 1 180px;max-width:320px;margin:0}
+@media (max-width:640px){.tkp{grid-template-columns:1fr;gap:4px}}
+.bs-p{border:1px solid var(--line);border-radius:14px;padding:12px;margin:12px 0;display:grid;gap:10px}
+.bs-hd{display:flex;gap:8px;align-items:center}.bs-name{flex:1;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 12px;font-size:15px;font-weight:600}
+.bs-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}.bs-d{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:10px;background:var(--surface-2)}.bs-d .dept-tile{--ts:30px}
+.bs-d input{flex:1;min-width:0;height:32px;border:1px solid transparent;border-radius:8px;background:transparent;padding:0 8px;font-size:14px;font-weight:500}.bs-d input:hover,.bs-d input:focus{border-color:var(--line);background:var(--surface);outline:0}
+.bs-d small{color:var(--muted);font-size:12px;white-space:nowrap}.bs-act{display:flex;gap:4px}.bs-act .icon-btn{width:28px;height:28px}
+.bs-add{display:flex;gap:6px}.bs-add input{flex:1;height:34px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;padding:0 10px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2707,8 +2722,8 @@ function infoTabsHtml(){
     ${all.length > 1 && ui.view === 'production' ? `<button class="ip-chip ip-all${infoAllOn() ? ' on' : ''}" role="tab" aria-selected="${infoAllOn()}" data-ipall><b>Все</b></button>` : ''}
     ${all.map(p => { const on = p === cur && !infoAllOn(); return `<button class="ip-chip${on ? ' on' : ''}" role="tab" aria-selected="${on}" data-ipsel="${p.id}"><b>${esc(p.name)}</b></button>`; }).join('')}
     ${ui.ipNew ? `<form class="ip-new" id="ipNew"><input id="ipName" placeholder="Например, Челлендж Эма" aria-label="Название площадки" required><input type="date" id="ipStart" value="${addDays(plannedEnd(cur) || t0, 1) > t0 ? addDays(plannedEnd(cur) || t0, 1) : t0}" aria-label="Старт"><button class="primary">Добавить</button><button type="button" class="ghost" data-ipcancel>Отмена</button></form>`
-      : `<button class="ghost ip-add" data-ipnew>+ Площадка</button>`}
-    ${cur && !infoAllOn() ? `<button class="icon-btn ip-card" data-open="${cur.id}" title="Карточка площадки: название, даты, архив" aria-label="Карточка площадки">${ICON_EDIT}</button>` : ''}</div>`;
+      : `<button class="icon-btn ip-add" data-ipnew title="Новая площадка" aria-label="Новая площадка">+</button>`}
+    </div>`;
 }
 function createInfoBoard(name, start){
   ensureInfoTemplate(db); const src = infoBoard();
@@ -4198,7 +4213,7 @@ function restoreView(){
     const v = JSON.parse(sessionStorage.getItem(VIEW_KEY) || 'null'); if (!v) return;
     const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine', 'mytasks', 'review');
     if (ok.includes(v.view)) ui.view = v.view;
-    if (['deadlines','templates','categories','spaces'].includes(v.setTab)) ui.setTab = v.setTab;
+    if (['deadlines','templates','categories','spaces','boards'].includes(v.setTab)) ui.setTab = v.setTab;
     if (v.view === 'production' && v.prodMode === 'tasks') ui.view = 'mytasks';
   } catch(e) {}
 }
@@ -5416,6 +5431,7 @@ function openSubsModal(t, i){
 // ---------- Производство: доска выбранного проекта (поиск и список всех проектов слева) ----------
 // «Производство»: над доской проекта — вкладки «Доска | Внутренние задачи» (внутренние задачи отделов этого проекта и регулярные из «Ведения»)
 function renderProduction(){
+  if (isInfo()) ui.pfEdit = false;   // отделы площадки правятся в «Настройках → Площадки»
   if (isInfo() && !GUEST && infoBoard()) ui.prodProject = infoBoard().id;
   renderProjectFocus();
   const cur = projById(ui.prodProject);
@@ -5823,7 +5839,7 @@ function kanbanHtml(boards, all = false){
   const LIM = 40;
   return filters + `<div class="pf-board kb-board">${inboxColHtml(boards.filter(p => canEditProject(p)))}${KB_COLS.map(([k, label]) => { const list = shown.filter(i => i.st === k);
     const open = ui.kbOpen === k; const vis = k === 'done' && !open ? list.slice(0, LIM) : list;
-    return `<section class="pf-col kb-col kb-${k}" data-kbcol="${k}" aria-label="${label}"><header><div><b>${label}</b><span class="kb-n">${list.length}</span></div></header>
+    return `<section class="pf-col kb-col kb-${k}" data-kbcol="${k}" aria-label="${label}"><header><div><b>${label}</b>${(() => { const sub = list.reduce((m, i) => m + (taskFor(i.p.id, i.s.id, i.x.id)?.checklist || []).filter(c => k === 'done' || !c.done).length, 0); return `<span class="kb-n" title="Задач: ${list.length}, подзадач: ${sub}">${list.length + sub}</span>`; })()}</div></header>
       <div class="pf-cards">${k === 'todo' ? addForm : ''}${vis.map(card).join('') || '<p class="hint">Задач нет</p>'}${vis.length < list.length ? `<button type="button" class="ghost ct-more" data-kbmore="${k}">Показать все (${list.length})</button>` : ''}</div></section>`; }).join('')}</div>`;
 }
 function kbMove(key, st){
@@ -6533,11 +6549,12 @@ document.addEventListener('click', async e => {
 });
 // в инфобизнесе «Дедлайны», «Шаблоны» и «Категории» не нужны (по просьбе) — в настройках только «Пространства» и «AI»
 const SET_INFO_HIDE = ['deadlines', 'templates', 'categories'];
-const setTabs = () => [['deadlines', 'Дедлайны'], ['templates', 'Шаблоны'], ['categories', 'Категории'], ['spaces', 'Пространства'], ['ai', 'AI']].filter(([k]) => !(isInfo() && SET_INFO_HIDE.includes(k)));
+const setTabs = () => [...(isInfo() && !GUEST ? [['boards', 'Площадки']] : []), ['deadlines', 'Дедлайны'], ['templates', 'Шаблоны'], ['categories', 'Категории'], ['spaces', 'Пространства'], ['ai', 'AI']].filter(([k]) => !(isInfo() && SET_INFO_HIDE.includes(k)));
 const setTabNow = () => { const t = ui.setTab || 'deadlines'; return setTabs().some(([k]) => k === t) ? t : setTabs()[0][0]; };
 const setNav = () => `<div class="set-nav seg-toggle" role="tablist" aria-label="Разделы настроек">${setTabs().map(([k, l]) => `<button data-settab="${k}" aria-pressed="${setTabNow() === k}">${l}</button>`).join('')}</div>`;
 function renderSettings(){
   ui.setTab = setTabNow();
+  if (ui.setTab === 'boards'){ renderBoardSettings(); return; }
   if (ui.setTab === 'ai'){ renderAiSettings(); return; }
   if (ui.setTab === 'templates'){ renderTemplates(); return; }
   if (ui.setTab === 'categories'){ renderCategories(); return; }
@@ -7255,6 +7272,38 @@ function switchSpace(id){
   setTimeout(() => (window.kzReloadHook || (() => location.reload()))(), cloud.writing ? 900 : 150);
 }
 const TRASH_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>';
+// «Настройки → Площадки» (инфобизнес): название и карточка площадки, её отделы — переименовать, переставить, удалить, добавить
+function renderBoardSettings(){
+  const boards = infoBoards();
+  const dept = (p, s, i, list) => `<li class="bs-d" style="--kh:${kbHue(s.name)}">${deptIco(s.name)}
+      <input value="${esc(s.name)}" maxlength="60" data-bsren="${p.id}|${s.id}" aria-label="Название отдела">
+      <small>${(s.subs || []).length} ${plural((s.subs || []).length, 'задача', 'задачи', 'задач')}</small>
+      <span class="bs-act"><button type="button" class="icon-btn" data-bsup="${p.id}|${s.id}" ${i ? '' : 'disabled'} aria-label="Выше">↑</button><button type="button" class="icon-btn" data-bsdown="${p.id}|${s.id}" ${i < list.length - 1 ? '' : 'disabled'} aria-label="Ниже">↓</button><button type="button" class="icon-btn" data-bsdel="${p.id}|${s.id}" ${list.length > 1 ? '' : 'disabled'} aria-label="Удалить отдел">${ICON_X}</button></span></li>`;
+  app.innerHTML = `${setNav()}<div class="panel set-panel"><h2>Площадки</h2><p class="hint">Название площадки и её отделы. Здесь же — добавить или убрать отдел.</p>
+    ${boards.map(p => { const ds = p.stages.filter(x => !isMaint(x));
+      return `<section class="bs-p"><div class="bs-hd"><input class="bs-name" value="${esc(p.name)}" maxlength="80" data-bsname="${p.id}" aria-label="Название площадки"><button class="ghost" data-open="${p.id}">Даты и архив</button></div>
+        <ol class="bs-list">${ds.map((s, i) => dept(p, s, i, ds)).join('')}</ol>
+        <form class="bs-add" data-bsadd="${p.id}"><input placeholder="Новый отдел" maxlength="60" aria-label="Новый отдел"><button class="ghost">+ Отдел</button></form></section>`; }).join('') || '<p class="hint">Площадок пока нет.</p>'}
+  </div>`;
+}
+const bsPS = v => { const [pid, sid] = v.split('|'); const p = projById(pid); return [p, p?.stages.find(x => x.id === sid)]; };
+document.addEventListener('change', e => {
+  const r = e.target.dataset?.bsren; if (r){ const [p, s] = bsPS(r); if (p && s && !renameStage(p, s, e.target.value)) e.target.value = s.name; return; }
+  const n = e.target.dataset?.bsname; if (n){ const p = projById(n); const v = e.target.value.trim().slice(0, 80); if (p && v && v !== p.name){ addLog(p, `Площадка переименована: «${p.name}» → «${v}»`); p.name = v; commit(); toast('Название сохранено'); } }
+});
+document.addEventListener('click', e => {
+  const u = e.target.closest?.('[data-bsup],[data-bsdown]'); if (u){ const [p, s] = bsPS(u.dataset.bsup || u.dataset.bsdown); if (!p || !s) return;
+    const ds = p.stages.filter(x => !isMaint(x)); const i = ds.indexOf(s);
+    if (u.dataset.bsup) reorderStage(p, s.id, ds[i - 1]?.id || ''); else reorderStage(p, s.id, ds[i + 2]?.id || ''); return; }
+  const d = e.target.closest?.('[data-bsdel]'); if (d){ const [p, s] = bsPS(d.dataset.bsdel); if (!p || !s) return; const n = (s.subs || []).length;
+    askConfirm({ title:`Удалить отдел «${s.name}»?`, text:n ? `В нём ${n} ${plural(n, 'задача', 'задачи', 'задач')} — они удалятся вместе с отделом.` : 'Отдел пустой.', ok:'Удалить', danger:true })
+      .then(yes => { if (!yes) return; db.tasks = (db.tasks || []).filter(t => !(t.project_id === p.id && t.stage_id === s.id)); removeStage(p, s); toast(`Отдел «${s.name}» удалён`); });
+  }
+});
+document.addEventListener('submit', e => { const f = e.target.closest?.('[data-bsadd]'); if (!f) return; e.preventDefault();
+  const p = projById(f.dataset.bsadd); const v = f.querySelector('input').value.trim().slice(0, 60); if (!p || !v) return;
+  if (p.stages.some(x => norm(x.name) === norm(v))){ toast('Такой отдел уже есть'); return; }
+  const s = addStage(p); s.name = v; addLog(p, `Добавлен отдел «${v}»`); commit(); toast(`Отдел «${v}» добавлен`); });
 function renderSpaces(){
   const online = !!(cloud.store && cloud.uid);
   const row = (id, name, cur, extra) => `<li class="sp-row${cur ? ' cur' : ''}">
@@ -9295,6 +9344,39 @@ function draftOf(t){
   return { title:t.title, substage_id:t.substage_id || '', assignee_id:t.assignee_id || '', description:t.description || '',
     regulation_link:'', video_url:'', items:t.checklist.map(i => ({ id:i.id, text:i.text, done:i.done })), blocks:lt.blocks, asTpl:false };   // в шаблон (и во все проекты/инфоповоды шаблона) — только если отметили галочку
 }
+// карточка задачи площадки: свойства аккуратной таблицей — статус, тип, отдел, ответственный, срок (с быстрыми кнопками),
+// напоминание (быстрые варианты от срока), приоритет; прогресс — плитками по пунктам чек-листа
+function infoPropsHtml(p, s, x, t, can, pr){
+  const st = kbStatus(p, s, x); const key = `${p.id}|${s.id}|${x.id}`; const t0 = today();
+  const late = t.due_date && t.due_date < t0 && !subDone(p, s, x);
+  const seg = (attr, cur, opts, title = {}) => `<span class="kind-seg tkp-seg" role="group">${opts.map(([k, l]) => `<button type="button" ${can ? `${attr}="${key}|${k}"` : 'disabled'} aria-pressed="${cur === k}" ${title[k] ? `title="${title[k]}"` : ''}>${l}</button>`).join('')}</span>`;
+  const depts = p.stages.filter(y => !isMaint(y));
+  const dueQuick = can ? [['Сегодня', t0], ['Завтра', addDays(t0, 1)], ['Через неделю', addDays(t0, 7)]].map(([l, d]) => `<button type="button" class="tkp-q${t.due_date === d && !t.start_date ? ' on' : ''}" data-tkdue="${t.id}|${d}">${l}</button>`).join('') + (t.due_date ? `<button type="button" class="tkp-q x" data-tkdue="${t.id}|" title="Снять срок">✕</button>` : '') : '';
+  const remQuick = can && t.due_date ? [['В день срока, 10:00', `${t.due_date}T10:00`], ['За день, 10:00', `${addDays(t.due_date, -1)}T10:00`]].map(([l, at]) => `<button type="button" class="tkp-q${t.remind?.at === at ? ' on' : ''}" data-tkrem="${t.id}|${at}">${l}</button>`).join('') + (t.remind?.at ? `<button type="button" class="tkp-q x" data-tkrem="${t.id}|" title="Убрать напоминание">✕</button>` : '') : '';
+  const row = (ico, label, body) => `<div class="tkp"><span class="tkp-l">${ico}${label}</span><div class="tkp-v">${body}</div></div>`;
+  return `<div class="tk-props">
+    ${row('', 'Тип', seg('data-tktt', kbTT(x), [['oper', 'Операционная'], ['strat', 'Стратегическая']], KB_TYPE_HINT))}
+    ${row('', 'Отдел', can ? `<select class="tkp-sel" data-tkdept="${key}" aria-label="Отдел">${depts.map(y => `<option value="${y.id}" ${y.id === s.id ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select>` : `<b>${esc(s.name)}</b>`)}
+    ${row('', 'Ответственный', can ? `<select class="tkp-sel" data-tqassign="${t.id}" aria-label="Ответственный">${peopleOpts(t.assignee_id, s?.assignee_id ? `Как у отдела: ${short(s.assignee_id)}` : 'Не назначен')}</select>` : whoChip(whoId(p, s, t)))}
+    ${row(FLAG, 'Срок', `${can ? `<input type="date" class="tkp-date${late ? ' late' : ''}" data-tkdate="${t.id}" value="${t.due_date || ''}" aria-label="Срок">` : `<b class="${late ? 'late' : ''}">${t.due_date ? fmt(t.due_date) : 'не задан'}</b>`}${late ? '<span class="tkp-late">просрочено</span>' : ''}`)}
+    ${row(BELL_ICO, 'Напоминание', `${can ? `<button type="button" class="dp-btn${t.remind?.at ? '' : ' empty'}" data-rempick="${t.id}">${t.remind?.at ? remShort(t.remind.at) : 'Нет'}</button>` : `<b>${t.remind?.at ? remShort(t.remind.at) : 'нет'}</b>`}<span class="tkp-qs">${remQuick || (can && !t.due_date ? '<small class="hint">Поставьте срок — появятся быстрые варианты</small>' : '')}</span>`)}
+    ${pr.total ? row('', 'Прогресс', `${progTiles(pr)}<small class="tkp-n">${pr.n} из ${pr.total}</small>`) : ''}
+  </div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-tkst],[data-tktt],[data-tkdue],[data-tkrem]'); if (!b || !ui.taskId) return;
+  if (b.dataset.tkst){ const v = b.dataset.tkst.split('|'); kbMove(v.slice(0, 3).join('|'), v[3]); renderTaskModal(); return; }
+  if (b.dataset.tktt){ const [pid, sid, xid, k] = b.dataset.tktt.split('|'); const p = projById(pid); const x = p?.stages.find(y => y.id === sid)?.subs?.find(y => y.id === xid);
+    if (!x || !canEditProject(p)) return; if (k === 'strat') x.ttype = 'strat'; else delete x.ttype; addLog(p, `Задача «${x.name}»: ${KB_TYPES[kbTT(x)].toLowerCase()}`); commit(); renderTaskModal(); return; }
+  if (b.dataset.tkdue != null){ const [id, d] = b.dataset.tkdue.split('|'); const t = taskById(id); if (t) setTaskDue(t, d || ''); return; }
+  if (b.dataset.tkrem != null){ const [id, at] = b.dataset.tkrem.split('|'); const t = taskById(id); if (t){ setTaskRemind(t, at || null); toast(at ? `Напомню ${remTxt(at)}` : 'Напоминание снято'); } }
+});
+document.addEventListener('change', e => { const id = e.target.dataset?.tkdate; if (!id) return; const t = taskById(id); if (t) setTaskDue(t, e.target.value || ''); });
+document.addEventListener('change', e => { const v = e.target.dataset?.tkdept; if (!v) return;
+  const [pid, sid, xid] = v.split('|'); const p = projById(pid); const from = p?.stages.find(y => y.id === sid); const to = p?.stages.find(y => y.id === e.target.value);
+  const x = from?.subs?.find(y => y.id === xid); if (!x || !to || to === from || !canEditProject(p)) return;
+  from.subs = from.subs.filter(y => y.id !== xid); (to.subs = to.subs || []).push(x); const t = taskFor(pid, sid, xid); if (t) t.stage_id = to.id;
+  addLog(p, `Задача «${x.name}»: отдел «${from.name}» → «${to.name}»`); commit(); renderTaskModal(); toast(`Перенесено в «${to.name}»`); });
 function renderTaskModal(focusSel){
   const t = taskById(ui.taskId); if (!t){ closeTask(); return; }
   const p = projById(t.project_id); const s = p?.stages.find(x => x.id === t.stage_id); const pr = taskProgress(t);
@@ -9312,12 +9394,12 @@ function renderTaskModal(focusSel){
   if (!d){
     const reg = safeUrl(t.regulation_link), res = safeUrl(t.result_link);
     // сверху одной строкой: прогресс и ответственный; дальше — задание, чек-лист, сдача работы
-    body = `<div class="tk-meta"><div class="tk-progress"><div class="tk-bar big"><i style="width:${pr.pct}%"></i></div>
+    body = `${isInfoBoardP(p) && sub ? infoPropsHtml(p, s, sub, t, editable && !p?._ext, pr) : `<div class="tk-meta"><div class="tk-progress"><div class="tk-bar big"><i style="width:${pr.pct}%"></i></div>
         <span>${pr.done ? 'Подэтап выполнен' : pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Без чек-листа'}</span></div>
         ${editable && !p?._ext ? `<label class="tk-who"><span>Ответственный</span><select class="tk-as" data-tqassign="${t.id}" aria-label="Ответственный за подэтап">${peopleOpts(t.assignee_id, s?.assignee_id ? `Как у этапа: ${short(s.assignee_id)}` : 'Как у этапа: не назначен')}</select></label>`
           : `<span class="tk-who"><span>Ответственный</span>${whoChip(whoId(p, s, t))}</span>`}
         ${isInfoBoardP(p) && sub ? (editable && !p?._ext ? `<label class="tk-who"><span>Тип</span><select class="tk-as" data-kbttype="${p.id}|${s.id}|${sub.id}" aria-label="Тип задачи" title="${KB_TYPE_HINT[kbTT(sub)]}">${Object.entries(KB_TYPES).map(([k, l]) => `<option value="${k}" ${kbTT(sub) === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : `<span class="tk-who" title="${KB_TYPE_HINT[kbTT(sub)]}"><span>Тип</span>${KB_TYPES[kbTT(sub)]}</span>`) : ''}
-        ${dueRemindHtml(t, editable)}</div>
+        ${dueRemindHtml(t, editable)}</div>`}
       <section class="tk-sec"><h3>Задание</h3>
         <div class="tk-text">${t.description ? linkify(t.description) : '<span class="hint">Описания пока нет.</span>'}</div>
         ${reg ? `<p><a class="ghost tk-reg" href="${esc(reg)}" target="_blank" rel="noopener noreferrer">Открыть регламент ↗</a></p>` : ''}
@@ -9931,7 +10013,7 @@ function renderProjectFocus(mine = false){
           
           ${!mine ? `<button class="icon-btn pf-shareic${shareCount(p) ? ' on' : ''}" data-share="${p.id}" title="Поделиться проектом${shareCount(p) ? ` · доступ у ${shareCount(p)}` : ''}" aria-label="Поделиться проектом">${SHARE_ICON}${shareCount(p) ? `<span>${shareCount(p)}</span>` : ''}</button>` : ''}
         </div>
-        ${!mine ? `<div class="pf-sort">${canEdit && !GUEST ? `<button type="button" class="ghost pf-editbtn${ui.pfEdit ? ' on' : ''}" data-pfedit aria-pressed="${!!ui.pfEdit}">${ui.pfEdit ? 'Готово' : `${ICON_EDIT}${isInfoBoardP(p) ? 'Отделы' : 'Редактировать доску'}`}</button>` : ''}<label class="hint" for="pfSort">Карточки:</label><select id="pfSort" aria-label="Порядок карточек в столбиках">${Object.entries(CARD_SORT).map(([k, l]) => `<option value="${k}" ${cardSortMode() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>` : ''}
+        ${!mine && !isInfoBoardP(p) ? `<div class="pf-sort">${canEdit && !GUEST ? `<button type="button" class="ghost pf-editbtn${ui.pfEdit ? ' on' : ''}" data-pfedit aria-pressed="${!!ui.pfEdit}">${ui.pfEdit ? 'Готово' : `${ICON_EDIT}${isInfoBoardP(p) ? 'Отделы' : 'Редактировать доску'}`}</button>` : ''}<label class="hint" for="pfSort">Карточки:</label><select id="pfSort" aria-label="Порядок карточек в столбиках">${Object.entries(CARD_SORT).map(([k, l]) => `<option value="${k}" ${cardSortMode() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>` : ''}
         <div class="pf-board">${cols}${canEdit && !mine && !GUEST && ui.pfEdit ? '<button type="button" class="col-add pf-coladd" data-pfscol><span aria-hidden="true">+</span>Столбик</button>' : ''}</div>
       </div>
     </div>`;

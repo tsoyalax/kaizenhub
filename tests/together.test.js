@@ -93,33 +93,22 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     assert.ok(fin && kd && /\.tl-goal\.tl-key\{background:var\(--y\)\}/.test(D.documentElement.innerHTML) && /\.tl-goal\{[^}]*background:var\(--g\)/.test(D.documentElement.innerHTML)); ok('на таймлайне финал — своей (зелёной) линией, ключевые даты — другой (жёлтой)'); }
   E(`ui.infoAll = false; ui.infoMode = 'board'; openProject(em.id)`); await wait(100); D.querySelector('.d-kd [data-kddel]').click(); await wait(30); assert.equal(E('em.keyDates.length'), 0); ok('ключевую дату можно удалить');
   E(`closeLayer ? closeLayer() : (layer.innerHTML = ''); ui.open = null; ui.prodProject = em.id; render();`); await wait(30);
-  // столбики доски: переименовать, удалить, добавить — только в этом инфоповоде
-  assert.ok(!$('[data-pfsren]') && !$('[data-pfsdel]') && !$('[data-pfscol]') && $('[data-pfedit]')); ok('без «Редактировать доску» значков правки и «+ Столбик» не видно');
-  $('[data-pfedit]').click(); await wait(30); assert.ok($('[data-pfsren]') && $('[data-pfscol]') && $('[data-pfcolmove]')); ok('«Редактировать доску» открывает правку столбиков');
-  $('[data-pfsren]').click(); await wait(30); f = $('[data-pfrenf]'); f.querySelector('input').value = 'Продукт и оффер'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
+  // отделы площадки: на доске правки нет — переименовать, добавить, удалить, переставить в «Настройки → Площадки»
+  assert.ok(!$('[data-pfedit]') && !$('#pfSort') && !$('.ip-card') && /^\+$/.test($('[data-ipnew]').textContent.trim())); ok('на доске нет «Отделы», «Карточки: …» и карандаша площадки; новая площадка — «+»');
+  E(`ui.view = 'templates'; ui.setTab = ''; render()`); assert.equal($('[data-settab][aria-pressed="true"]').dataset.settab, 'boards'); ok('«Настройки → Площадки» открывается первой');
+  { const inp = D.querySelector(`[data-bsren="${E('em.id')}|${E('em.stages[0].id')}"]`); inp.value = 'Продукт и оффер'; inp.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30); }
   E(`syncAllTemplates(INFO_TPL_ID); render();`); await wait(30);
-  assert.ok(E(`em.stages[0].name`) === 'Продукт и оффер' && E(`ig.stages[0].name`) === 'Продукт'); ok('столбик переименовывается и не возвращается шаблоном; у другого инфоповода прежний');
-  $('[data-pfscol]').click(); await wait(30); f = $('[data-pfrenf]'); f.querySelector('input').value = 'Монтаж'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
-  assert.ok(E(`em.stages.some(s => s.name === 'Монтаж')`) && !E(`ig.stages.some(s => s.name === 'Монтаж')`)); ok('новый столбик добавляется');
-  D.querySelector(`[data-pfsdel="${E(`em.stages.find(s => s.name === 'Монтаж').id`)}"]`).click(); await wait(30); $('#cfmOk').click(); await wait(80);
-  E(`syncAllTemplates(INFO_TPL_ID);`); assert.ok(!E(`em.stages.some(s => s.name === 'Монтаж')`)); ok('лишний столбик удаляется');
-  // переставить столбики (в режиме правки): второй встаёт первым
-  { const ids = E(`JSON.stringify(em.stages.map(s => s.id))`); const [a0, a1] = JSON.parse(ids);
-    E(`reorderStage(em, '${a1}', '${a0}')`); assert.ok(E(`em.stages[0].id`) === a1 && E(`em.stages[1].id`) === a0 && E(`em.stages[0].position`) === 0); ok('столбики переставляются местами');
+  assert.ok(E(`em.stages[0].name`) === 'Продукт и оффер' && E(`ig.stages[0].name`) === 'Продукт'); ok('отдел переименовывается и не возвращается шаблоном; у другой площадки — свой');
+  { const f = D.querySelector(`[data-bsadd="${E('em.id')}"]`); f.querySelector('input').value = 'Монтаж'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30); }
+  assert.ok(E(`em.stages.some(s => s.name === 'Монтаж')`) && !E(`ig.stages.some(s => s.name === 'Монтаж')`)); ok('новый отдел добавляется');
+  D.querySelector(`[data-bsdel="${E('em.id')}|${E(`em.stages.find(s => s.name === 'Монтаж').id`)}"]`).click(); await wait(30); $('#cfmOk').click(); await wait(80);
+  E(`syncAllTemplates(INFO_TPL_ID);`); assert.ok(!E(`em.stages.some(s => s.name === 'Монтаж')`)); ok('лишний отдел удаляется');
+  { const [a0, a1] = JSON.parse(E(`JSON.stringify(em.stages.map(s => s.id))`)); D.querySelector(`[data-bsup="${E('em.id')}|${a1}"]`).click(); await wait(30);
+    assert.ok(E(`em.stages[0].id`) === a1 && E(`em.stages[1].id`) === a0); ok('↑ переставляет отдел выше');
     E(`syncAllTemplates(INFO_TPL_ID);`); assert.ok(E(`em.stages[0].id`) === a1); ok('порядок не сбрасывается шаблоном');
     E(`reorderStage(em, '${a0}', '${a1}')`); }
-  $('[data-pfedit]').click(); await wait(30); assert.ok(!$('[data-pfsren]')); ok('«Готово» прячет правку');
-  // порядок карточек в столбике: как на доске / по ближайшим датам / по приоритету
-  E(`layer.innerHTML = ''; ui.open = null; ui.infoMode = 'board'; ui.prodProject = em.id; { const s = em.stages[1]; s.subs = [
-     { id:'cA', name:'Поздняя', done:false, due_date:addDays(T, 9) }, { id:'cB', name:'Без срока', done:false }, { id:'cC', name:'Ближайшая', done:false, due_date:addDays(T, 1) }, { id:'cD', name:'Срочная', done:false, due_date:addDays(T, 5) } ];
-     tasksFromSubs(em, { ...s, subs:[s.subs[3]] }); taskFor(em.id, s.id, 'cD').priority = 'urgent'; } ui.pfEdit = true; render();`); await wait(50);
-  const order = () => [...D.querySelectorAll('.pf-col')[1].querySelectorAll('.pf-card b')].map(b => b.textContent.trim());
-  assert.deepEqual(order(), ['Поздняя', 'Без срока', 'Ближайшая', 'Срочная']); ok('по умолчанию — как на доске');
-  const sel = $('#pfSort'); sel.value = 'due'; sel.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
-  assert.deepEqual(order().map(x => x.replace(/^[^А-Яа-яЁё]+/, '')), ['Ближайшая', 'Срочная', 'Поздняя', 'Без срока']); ok('«по ближайшим датам»: ближайшие сверху, без срока внизу');
-  const sel2 = $('#pfSort'); sel2.value = 'pri'; sel2.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
-  assert.equal(order()[0].replace(/^[^А-Яа-яЁё]+/, ''), 'Срочная'); ok('«по приоритету»: срочные сверху');
-  assert.equal(w.localStorage.getItem('kz-card-sort'), 'pri'); ok('выбор запоминается');
+  { const n = D.querySelector(`[data-bsname="${E('em.id')}"]`); n.value = 'Челлендж Эма 2'; n.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20); assert.equal(E('em.name'), 'Челлендж Эма 2'); E(`em.name = 'Челлендж Эма'`); ok('площадку переименовывают в настройках'); }
+  E(`ui.view = 'production'; layer.innerHTML = ''; ui.open = null; ui.infoMode = 'board'; ui.prodProject = em.id; render();`);
   // «Сегодня» в инфобизнесе: выбор площадки, задачи обеих площадок, люди из обеих
   E(`{ db.users.push({ id:'uEmm', name:'Эм', role:'specialist', status:'active' }); const s = em.stages.find(x => !/контент/i.test(x.name) && !isMaint(x)); s.subs.push({ id:'tdE', name:'Сторис Эма', done:false, due_date:today() });
      tasksFromSubs(em, { ...s, subs:[s.subs.at(-1)] }); taskFor(em.id, s.id, 'tdE').assignee_id = 'uEmm'; taskFor(em.id, s.id, 'tdE').due_date = today();
@@ -141,6 +130,15 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(/реальные|РЕАЛЬНЫЕ/.test(E('window.__inP')) && E('db.prefs.inbox.length') === 1 && E(`db.prefs.inbox.find(x => x.text === 'Запустить рекламу VSL').due`) === '2026-12-01'); ok('«Найти задачи»: Claude выделяет задачи из выжимки — отдел, тип, срок');
   { const f = [...D.querySelectorAll('[data-into]')].find(x => /рекламу VSL/.test(x.closest('.in-card').textContent)); assert.equal(f.querySelector('[data-intt]').value, 'strat'); f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30); }
   assert.equal(E('db.prefs.inbox.length'), 0); assert.ok(E(`infoBoards().some(p => p.stages.some(s => (s.subs || []).some(x => x.name === 'Запустить рекламу VSL' && x.ttype === 'strat' && x.due_date === '2026-12-01')))`)); ok('«В задачи» — задача в отделе с типом и сроком, из входящих убрана');
+  // карточка задачи площадки: свойства — статус, тип, отдел, срок и напоминание быстрыми кнопками
+  { const [sid, xid] = E(`(() => { const s = ig.stages.find(y => !isMaint(y) && !isCtStage(ig, y) && (y.subs || []).length); const x = s.subs[0]; tasksFromSubs(ig, { ...s, subs:[x] }); commit(); return [s.id, x.id]; })()`);
+    E(`openTask(taskFor(ig.id, '${sid}', '${xid}').id)`); await wait(30);
+    assert.ok($('.tk-props') && !$('[data-tkst]') && !$('.tk-props .pri-sel, .tk-props [data-pri]') && $('[data-tktt]') && $('[data-tkdept]') && $('.tk-props input[type="date"][data-tkdate]')); ok('карточка: тип, отдел, ответственный, срок полем с календарём, напоминание — без статуса и приоритета');
+    $(`[data-tktt="${E('ig.id')}|${sid}|${xid}|strat"]`).click(); await wait(20); assert.equal(E(`ig.stages.find(y => y.id === '${sid}').subs.find(y => y.id === '${xid}').ttype`), 'strat'); ok('тип ставится в карточке');
+
+    { const d = $('[data-tkdate]'); d.value = E('addDays(today(), 1)'); d.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20); } assert.equal(E('taskById(ui.taskId).due_date'), E('addDays(today(), 1)')); ok('срок — дата в поле с календарём');
+    $(`[data-tkrem="${E('ui.taskId')}|${E('today()')}T10:00"]`).click(); await wait(20); assert.equal(E('taskById(ui.taskId).remind.at'), E('today()') + 'T10:00'); ok('напоминание «За день, 10:00» от срока');
+    E('closeTask()'); }
   assert.deepEqual(o.errors.filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });
