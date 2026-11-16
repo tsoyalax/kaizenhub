@@ -2504,6 +2504,8 @@ svg.clip{width:14px;height:14px;flex:none}
 .bs-d small{color:var(--muted);font-size:12px;white-space:nowrap}.bs-act{display:flex;gap:4px}.bs-act .icon-btn{width:28px;height:28px}
 .bs-add{display:flex;gap:6px}.bs-add input{flex:1;height:34px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;padding:0 10px}
 .it-allp{margin-top:14px}.it-allp>h3{font-size:16px;margin:0 0 8px}
+.beta-b{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#fff;background:#7C3AED;border-radius:6px;padding:2px 7px;vertical-align:middle}
+.beta-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}.beta-c{display:grid;gap:4px;padding:14px;border:1px dashed var(--line-strong);border-radius:14px;background:var(--surface)}.beta-c small{color:var(--muted)}.beta-s{font-size:12px;color:var(--muted)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2531,6 +2533,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="team">Команда</button>
     <button data-view="archive">Архив</button>
     <button data-view="templates">Настройки</button>
+    <button data-view="beta" hidden>Тестовое · бета</button>
   </nav>
   <span class="view-name" id="viewName"></span>
   <div class="top-actions">
@@ -4225,10 +4228,10 @@ function render(){
   document.body.dataset.kind = GUEST ? '' : (db?.prefs?.kind || 'agency');
   if (isInfo() && !GUEST){ if (INFO_HIDDEN.includes(ui.view)) ui.view = 'production'; try { ensureInfoBoard(); syncInfoNames(); } catch(e) {} }
   INFO_HIDDEN.forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = isInfo() && !GUEST; });
-  ['content', 'funnel', 'priority'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST || (v === 'funnel' && !SHOW_AI_FUNNEL) || (v === 'content' && !SHOW_CONTENT); });
+  ['content', 'funnel', 'priority', 'beta'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST || (v === 'funnel' && !SHOW_AI_FUNNEL) || (v === 'content' && !SHOW_CONTENT); });
   if (ui.view === 'content' && !SHOW_CONTENT) ui.view = 'production';
   if (ui.view === 'inbox') ui.view = 'production';   // «Входящие» теперь колонка в «Производстве»
-  if (['content', 'funnel', 'priority'].includes(ui.view) && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
+  if (['content', 'funnel', 'priority', 'beta'].includes(ui.view) && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
   if (ui.view === 'funnel' && !SHOW_AI_FUNNEL) ui.view = 'production';
   try { renderSide(); } catch(e) {}
   setTimeout(() => { try { paintReviewBadge(); } catch(e) {} }, 0);
@@ -4243,7 +4246,7 @@ function render(){
   renderFilters();
   const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер');
   if (!isCRM()) ui.crmStage = null;
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, priority:renderPriority, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, today:renderToday, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, priority:renderPriority, beta:renderBeta, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, today:renderToday, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
   if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST && !(ui.view === 'matrix' && density() === 'funnel')) app.insertAdjacentHTML('afterbegin', crmSumHtml());
   if (ui.open) renderDrawer();
@@ -5538,6 +5541,12 @@ document.addEventListener('submit', e => {
   (s.subs = s.subs || []).push(nx); db.prefs.inbox = inboxAll().filter(y => y.id !== x.id);
   addLog(p, `Из входящих: задача «${x.text}» → отдел «${s.name}»`); commit(); toast(`Задача в «${s.name}»`);
 });
+// «Тестовое · бета» (инфобизнес, внизу меню): место под воронку с интеграциями — Instagram, Salebot, Telegram-бот. Пока заготовка.
+function renderBeta(){
+  app.innerHTML = `<div class="it-top"><h2>Тестовое <span class="beta-b">бета</span></h2></div>
+    <p class="hint">Здесь будет воронка: данные из Instagram, Salebot и Telegram-бота собираются в одном месте. Раздел в разработке.</p>
+    <div class="beta-grid">${[['Instagram', 'охваты, переходы из рилсов и сторис'], ['Salebot', 'заявки и диалоги из бота'], ['Telegram', 'подписчики и действия в боте']].map(([n, d]) => `<div class="beta-c"><b>${n}</b><small>${d}</small><span class="beta-s">не подключено</span></div>`).join('')}</div>`;
+}
 // раздел «Приоритеты» (инфобизнес): все задачи инфоповода по приоритету, приоритет меняется в строке
 function renderPriority(){
   const p = infoBoard(); if (!p){ app.innerHTML = '<div class="empty">Доски пока нет</div>'; return; }
@@ -11171,6 +11180,7 @@ const MNAV = {
   mytasks:['Мои задачи', MI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5 2.5-2.5"/>')],
   reports:['AI-отчёты', MI('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')],
   team:['Команда', MI('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>')],
+  beta:['Тестовое · бета', MI('<path d="M9 3h6M10 3v6L5 18a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3L14 9V3"/><path d="M7.5 14h9"/>')],
   templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
 };
 const MNAV_MAIN_ALL = ['matrix', 'kanban', 'production', 'load'];
