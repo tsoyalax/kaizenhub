@@ -228,17 +228,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   const rb = D.querySelector('[data-ctren]'); const rid = rb.dataset.ctren; rb.click();
   D.getElementById('npName').value = 'Рилс про кейс клиента с очень длинным названием'; D.getElementById('npForm').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
   assert.equal(E(`contentStage().subs.find(x => x.id === '${rid}').name`), 'Рилс про кейс клиента с очень длинным названием'); ok('видео переименовывается прямо в «Контенте»');
-  // «Приоритеты»: все задачи инфоповода по группам, приоритет меняется в строке, значок — на доске
-  assert.ok(!D.querySelector('.tabs [data-view="priority"]').hidden); ok('в меню инфобизнеса есть «Приоритеты»');
-  E(`ui.view = 'priority'; render()`);
-  const prow = D.querySelector('.pr-grp:last-of-type [data-tpri]'); const pkey = prow.dataset.tpri;
-  assert.ok(![...prow.options].some(o => o.value === 'urgent')); ok('приоритеты: высокий, средний, низкий — без «Срочно»');
-  prow.value = 'high'; prow.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
-  const [, psid, pxid] = pkey.split('|');
-  assert.equal(E(`taskFor(infoBoard().id, '${psid}', '${pxid}').priority`), 'high'); ok('приоритет ставится прямо в списке');
-  assert.ok(/Высокий/.test(D.querySelector('.pr-grp h3').textContent)); ok('задача — в группе «Высокий» наверху');
-  E(`ui.view = 'production'; ui.prodTab = 'board'; ui.infoMode = 'board'; render()`);
-  { const c = D.querySelector(`[data-tgsub$="|${psid}|${pxid}"]`); assert.ok(E(`isCtStage(infoBoard(), infoBoard().stages.find(s => s.id === '${psid}'))`) ? !c : c?.querySelector('.tpri-r')); } ok('на доске — значок приоритета');
+  assert.ok(['priority', 'assign', 'reports'].every(v => D.querySelector(`.tabs [data-view="${v}"]`).hidden)); ok('в инфобизнесе нет «Приоритетов», «Поручений», «AI-отчётов»');
   E(`db.prefs.kind = 'agency'; render()`);
   assert.ok(!D.querySelector('.tabs [data-view="matrix"]').hidden); ok('в агентстве матрица на месте');
   // «Внутренние задачи» — вкладка в «Производстве» у проекта: отделы + «Регулярные» из «Ведения»

@@ -2728,7 +2728,7 @@ function ensureKindTemplate(d, k){ if (k === 'smm') ensureSmmTemplate(d); else i
 // В пространстве нет списка проектов и «Нового проекта»: сразу открывается доска «Производства» — один проект-доска
 // (постоянный id INFO_BOARD_ID, чтобы два устройства не создали по своей доске). Колонки — этапы шаблона «Инфобизнес: запуск».
 const INFO_TPL_ID = 'tinfo', INFO_BOARD_ID = 'infoboard';
-const INFO_HIDDEN = ['matrix', 'kanban', 'archive', 'today', 'load'];   // «Сегодня» в инфобизнесе убран из меню (по просьбе) — открывается «Производство»
+const INFO_HIDDEN = ['matrix', 'kanban', 'archive', 'today', 'load', 'priority', 'assign', 'reports'];   // в инфобизнесе нет и «Приоритетов», «Поручений», «AI-отчётов»   // «Сегодня» в инфобизнесе убран из меню (по просьбе) — открывается «Производство»
 // раздел «AI-воронка» пока скрыт из меню (по просьбе); код остался — вернуть: SHOW_AI_FUNNEL = true
 let SHOW_AI_FUNNEL = false;
 function infoTemplate(){
@@ -4256,7 +4256,7 @@ function render(){
   document.body.dataset.kind = GUEST ? '' : (db?.prefs?.kind || 'agency');
   if (isInfo() && !GUEST){ if (INFO_HIDDEN.includes(ui.view)) ui.view = 'production'; try { ensureInfoBoard(); syncInfoNames(); } catch(e) {} }
   INFO_HIDDEN.forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = isInfo() && !GUEST; });
-  ['content', 'funnel', 'priority', 'beta'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST || (v === 'funnel' && !SHOW_AI_FUNNEL) || (v === 'content' && !SHOW_CONTENT); });
+  ['content', 'funnel', 'priority', 'beta'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST || INFO_HIDDEN.includes(v) || (v === 'funnel' && !SHOW_AI_FUNNEL) || (v === 'content' && !SHOW_CONTENT); });
   if (ui.view === 'content' && !SHOW_CONTENT) ui.view = 'production';
   if (ui.view === 'inbox') ui.view = 'production';   // «Входящие» теперь колонка в «Производстве»
   if (['content', 'funnel', 'priority', 'beta'].includes(ui.view) && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
