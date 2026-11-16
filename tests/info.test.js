@@ -48,8 +48,11 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     assert.ok(JSON.parse(ds).every(d => d <= end) && /закончить к/.test(D.getElementById('app').textContent)); ok('«Закончить к»: даты видео расставлены до этой даты'); }
   E(`addContent('Пачка', 3, today(), false, addDays(today(), 6))`);
   assert.deepEqual(JSON.parse(E(`JSON.stringify(contentStage().subs.filter(x => /^Пачка/.test(x.name)).map(x => x.due_date))`)), [E('today()'), E('addDays(today(), 3)'), E('addDays(today(), 6)')]); ok('новые видео: старт и конец — даты поровну между ними');
-  E(`ui.view = 'production'; render()`);
-  assert.equal(D.querySelectorAll('.pf-card.done').length, 1); ok('на доске карточка тоже отмечена');
+  E(`ui.view = 'production'; ui.kbView = 'status'; render()`);
+  assert.ok(!D.querySelector('.kb-card .ct-ico') && ![...D.querySelectorAll('.kb-dept')].some(b => /Контент/.test(b.textContent))); ok('на канбане нет отдела «Контент» и рилсов');
+  E(`ui.kbView = 'dept'; render()`);
+  assert.equal(D.querySelectorAll('.pf-card.done').length, 1); ok('в виде «По отделам» карточка видео отмечена');
+  assert.ok(D.querySelector('.dept-h .dept-ico')); ok('у отделов — иконки'); E(`ui.kbView = 'status'`);
   // доска видео в «Контенте»: колонки SMM, «Опубликовано» = отметка на основной доске
   E(`ui.view = 'content'; ui.ctMode = 'board'; render()`);
   assert.deepEqual([...D.querySelectorAll('[data-ctcol] header b')].map(b => b.textContent.replace(/^\d+\. /, '')), E('vidCols().map(c => c.name)')); ok('в «Контенте» — доска видео с этапами SMM');

@@ -46,10 +46,14 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   $('[data-ipall]').click(); await wait(100);
   { const cols = [...D.querySelectorAll('.kb-board .kb-col')].map(c => c.querySelector('header b').textContent);
     assert.deepEqual(cols, ['К выполнению', 'В работе', 'Готово']); ok('«Все» → «Доска»: обычный канбан — К выполнению / В работе / Готово');
-    const todo = $('.kb-todo'); const c = [...todo.querySelectorAll('.kb-card')].find(x => /Рилс 1/.test(x.textContent));
-    assert.ok(c && /Блок Игоря/.test(c.textContent) && c.querySelector('.kb-dept') && [...todo.querySelectorAll('.kb-card')].some(x => /Анонс челленджа/.test(x.textContent) && /Челлендж Эма/.test(x.textContent))); ok('задачи обеих площадок с плашкой отдела и площадки');
+    const todo = $('.kb-todo'); const c = [...todo.querySelectorAll('.kb-card')].find(x => /Эфир/.test(x.textContent));
+    assert.ok(c && /Блок Игоря/.test(c.textContent) && c.querySelector('.kb-dept') && [...todo.querySelectorAll('.kb-card')].some(x => /Старт/.test(x.textContent) && /Челлендж Эма/.test(x.textContent))); ok('задачи обеих площадок с плашкой отдела и площадки');
     $('[data-kbtype="strat"]').click(); await wait(50); assert.equal(D.querySelectorAll('.kb-card').length, 0);
     $('[data-kbtype=""]').click(); await wait(50); E(`ui.kbType = ''`); ok('фильтр «Стратегические»');
+    $('[data-kbdue="week"]').click(); await wait(50);
+    { const t = [...D.querySelectorAll('.kb-todo .kb-card b')].map(b => b.textContent); assert.ok(t.length && t.every(x => !/Старт/.test(x))); ok('фильтр «На неделю»: дальние сроки скрыты'); }
+    $('[data-kbdue=""]').click(); await wait(50);
+    { const d = [...D.querySelectorAll('.kb-todo .kb-card .pf-due:not(.nodue)')].map(e => e.textContent); assert.ok(d.length > 1); ok('ближайшие сроки — сверху колонки'); }
     $('[data-kbview="dept"]').click(); await wait(50); assert.ok($('.ab-board') && !$('.kb-board')); ok('вид «По отделам»: столбик = отдел');
     $('[data-kbview="status"]').click(); await wait(50); assert.ok($('.kb-board')); ok('вид «Канбан» возвращается'); }
   E(`ui.infoAll = true; render();`); $('[data-infomode="timeline"]').click(); await wait(100);

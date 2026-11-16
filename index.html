@@ -2405,6 +2405,9 @@ svg.clip{width:14px;height:14px;flex:none}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .kb-dept{background:hsl(var(--kh) 40% 22%);color:hsl(var(--kh) 80% 80%)}}
 .kb-add{display:grid;gap:6px;margin-bottom:4px}.kb-add input,.kb-add select{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 8px;font-size:13px;min-width:0}
 .kb-add-row{display:grid;grid-template-columns:1fr 1fr auto;gap:6px}
+.dept-ico{width:13px;height:13px;flex:none;vertical-align:-2px;margin-right:4px}
+.kb-dept{display:inline-flex;align-items:center}.kb-dchip .dept-ico{color:hsl(var(--kh) 60% 45%);margin-right:0}
+.dept-h{display:inline-flex;align-items:center}.dept-h .dept-ico{width:16px;height:16px;margin-right:6px;color:hsl(var(--kh) 60% 45%)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -5046,7 +5049,7 @@ function renderFocusPhone({ mine, p, list, all, role, canEdit, cur, pg, curStage
              : isInfoBoardP(p) ? '' : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}</button>`;
     }).join('');
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}${ctv.isCt ? ' ct-col' : ''}" data-pmcol="${s.id}" aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
-      <header><div>${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`}${isCur && !isInfoBoardP(p) ? '<span class="pf-now">Текущий этап</span>' : ''}
+      <header><div>${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : (isInfoBoardP(p) ? `<b class="dept-h" style="--kh:${kbHue(s.name)}">${deptIco(s.name)}${esc(s.name)}</b>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`)}${isCur && !isInfoBoardP(p) ? '<span class="pf-now">Текущий этап</span>' : ''}
         ${canEdit && !mine && !GUEST && !isMaint(s) && ui.pfRen !== s.id && ui.pfEdit ? `<span class="pf-coltools"><button type="button" data-pfsren="${s.id}" title="Переименовать столбик" aria-label="Переименовать столбик «${esc(s.name)}»">${ICON_EDIT}</button>${p.stages.filter(x => !isMaint(x)).length > 1 ? `<button type="button" data-pfsdel="${s.id}" title="Удалить столбик" aria-label="Удалить столбик «${esc(s.name)}»">${ICON_X}</button>` : ''}</span>` : ''}</div>
         ${isInfoBoardP(p) ? '' : `<small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>`}${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}${ctv.btn}</div>
@@ -5493,34 +5496,57 @@ function allBoardsHtml(){
     const isCt = c.items.some(i => contentStage(i.p)?.id === i.s.id) || /контент/i.test(c.name);
     const vids = isCt ? c.items.filter(i => i.x.cycle) : []; const open = !!ui.ctOpen?.__all; const fold = vids.length > CT_FOLD;
     const keep = new Set(vids.slice(0, CT_FOLD)); const shown = fold && !open ? c.items.filter(i => !i.x.cycle || keep.has(i)) : c.items;
-    return `<section class="pf-col${isCt ? ' ct-col' : ''}" aria-label="${esc(c.name)}"><header><div><b>${esc(c.name)}</b></div><small>Задачи ${dn}/${c.items.length}</small></header>
+    return `<section class="pf-col${isCt ? ' ct-col' : ''}" aria-label="${esc(c.name)}"><header><div><b class="dept-h" style="--kh:${kbHue(c.name)}">${deptIco(c.name)}${esc(c.name)}</b></div><small>Задачи ${dn}/${c.items.length}</small></header>
       <div class="pf-cards">${shown.map(card).join('') || '<p class="hint">Задач нет</p>'}${fold ? `<button type="button" class="ghost ct-more" data-ctmore="__all" aria-expanded="${open}">${open ? 'Свернуть' : `Показать все (${vids.length})`}</button>` : ''}</div></section>`; }).join('')}</div>
     <p class="hint ab-hint">Здесь все площадки вместе. Добавлять задачи и менять столбики — на доске своей площадки.</p>`;
 }
 // ---------- Канбан площадки: «К выполнению → В работе → Готово». Отдел — плашкой на карточке, тип задачи — стратегическая / операционная ----------
 // Статус: выполнено → «Готово»; x.kst = 'doing' (или видео дальше первого этапа) → «В работе»; иначе «К выполнению».
 // Отделы (столбики площадки) меняются в «Редактировать доску» — там прежняя доска по отделам.
+// иконки отделов площадки: по ключевому слову в названии отдела (плашка на карточке, фильтр, заголовок столбика)
+const DEPT_SVG = p => `<svg class="dept-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const DEPT_ICONS = [
+  [/контент|рилс|видео/, '<rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3"/>'],
+  [/vsl|всл/, '<circle cx="12" cy="12" r="9"/><path d="m10 8.5 5.5 3.5-5.5 3.5z"/>'],
+  [/стать|текст|блог/, '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>'],
+  [/канал|телеграм|telegram/, '<path d="M21 4 3 11l6 2.5L11.5 20l3-5 5 4z"/><path d="m9 13.5 6-4.5"/>'],
+  [/продаж|продажи|сделк/, '<path d="M5 4h2l2 11h9l2-8H8"/><circle cx="10" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/>'],
+  [/эфир|вебинар|трансляц/, '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>'],
+  [/рынок|сша|америк|англ/, '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'],
+  [/продукт|оффер/, '<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/>'],
+  [/прогрев|сторис/, '<path d="M12 21c-4 0-7-2.7-7-6.5 0-3.3 2.5-5.4 4-8 .8 1.6 1.5 2.5 3 3 0-2.5 1-5 3-6.5.5 3 4 5.5 4 10S16 21 12 21z"/>'],
+  [/аналит|цифр|метрик/, '<path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/>'],
+  [/сопровожд|поддержк|после оплат/, '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'],
+];
+const deptIco = name => { const n = norm(name || ''); const hit = DEPT_ICONS.find(([rx]) => rx.test(n)); return DEPT_SVG(hit ? hit[1] : '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'); };
 const KB_COLS = [['todo', 'К выполнению'], ['doing', 'В работе'], ['done', 'Готово']];
 const KB_TYPES = { strat:'Стратегическая', oper:'Операционная' };
 const kbStatus = (p, s, x) => subDone(p, s, x) ? 'done' : x.kst === 'doing' || (x.cycle && x.vst && vidCols()[0]?.id !== x.vst) ? 'doing' : 'todo';
 const kbHue = name => { let h = 0; for (const ch of norm(name)) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
 function kbItems(boards){
-  return boards.flatMap(p => p.stages.filter(s => !isMaint(s)).flatMap(s => sortCards(p, s, boardSubs(p, s)).map(x => ({ p, s, x, st:kbStatus(p, s, x) }))));
+  return boards.flatMap(p => p.stages.filter(s => !isMaint(s) && s !== contentStage(p) && !/контент/i.test(s.name)).flatMap(s => sortCards(p, s, boardSubs(p, s)).filter(x => !x.cycle).map(x => ({ p, s, x, st:kbStatus(p, s, x) }))));   // отдел «Контент» и рилсы на канбан не попадают (по просьбе) — они в виде «По отделам»
 }
 function kanbanHtml(boards, all = false){
   const t0 = today(); const items = kbItems(boards);
   const depts = [...new Map(items.map(i => [norm(i.s.name), i.s.name])).values()];
   if (ui.kbDept && !depts.some(d => norm(d) === ui.kbDept)) ui.kbDept = '';
-  const shown = items.filter(i => (!ui.kbDept || norm(i.s.name) === ui.kbDept) && (!ui.kbType || (ui.kbType === 'none' ? !i.x.ttype : i.x.ttype === ui.kbType)));
+  const dueOf = i => { const t = taskFor(i.p.id, i.s.id, i.x.id); return t?.due_date || i.x.due_date || ''; };
+  const wk = addDays(t0, 7);
+  const dueOk = i => { const d = dueOf(i); return !ui.kbDue || (ui.kbDue === 'none' ? !d : !!d && i.st !== 'done' && (ui.kbDue === 'late' ? d < t0 : ui.kbDue === 'today' ? d <= t0 : d <= wk)); };
+  const base = items.filter(i => (!ui.kbDept || norm(i.s.name) === ui.kbDept) && (!ui.kbType || (ui.kbType === 'none' ? !i.x.ttype : i.x.ttype === ui.kbType)));
+  // ближайшие сроки — сверху колонки, без срока — внизу
+  const shown = base.filter(dueOk).sort((a, b) => { const da = dueOf(a), db = dueOf(b); return (da ? 0 : 1) - (db ? 0 : 1) || da.localeCompare(db); });
+  const cntD = k => base.filter(i => { const o = ui.kbDue; ui.kbDue = k; const r = dueOk(i); ui.kbDue = o; return r; }).length;
   const chip = (attr, v, label, on, n) => `<button type="button" class="kb-chip${on ? ' on' : ''}" ${attr}="${v}" aria-pressed="${on}">${label}${n != null ? ` <span>${n}</span>` : ''}</button>`;
   const cntT = k => items.filter(i => (!ui.kbDept || norm(i.s.name) === ui.kbDept) && (k === 'none' ? !i.x.ttype : i.x.ttype === k)).length;
   const filters = `<div class="kb-filters">
     <div class="kb-frow" role="group" aria-label="Тип задачи">${chip('data-kbtype', '', 'Все задачи', !ui.kbType)}${chip('data-kbtype', 'strat', 'Стратегические', ui.kbType === 'strat', cntT('strat'))}${chip('data-kbtype', 'oper', 'Операционные', ui.kbType === 'oper', cntT('oper'))}${chip('data-kbtype', 'none', 'Без типа', ui.kbType === 'none', cntT('none'))}</div>
-    <div class="kb-frow" role="group" aria-label="Отдел">${chip('data-kbdept', '', 'Все отделы', !ui.kbDept)}${depts.map(d => `<button type="button" class="kb-chip kb-dchip${ui.kbDept === norm(d) ? ' on' : ''}" data-kbdept="${esc(norm(d))}" aria-pressed="${ui.kbDept === norm(d)}" style="--kh:${kbHue(d)}"><i></i>${esc(d)}</button>`).join('')}</div></div>`;
+    <div class="kb-frow" role="group" aria-label="Сроки">${chip('data-kbdue', '', 'Все сроки', !ui.kbDue)}${chip('data-kbdue', 'late', 'Просрочено', ui.kbDue === 'late', cntD('late'))}${chip('data-kbdue', 'today', 'На сегодня', ui.kbDue === 'today', cntD('today'))}${chip('data-kbdue', 'week', 'На неделю', ui.kbDue === 'week', cntD('week'))}${chip('data-kbdue', 'none', 'Без срока', ui.kbDue === 'none', cntD('none'))}</div>
+    <div class="kb-frow" role="group" aria-label="Отдел">${chip('data-kbdept', '', 'Все отделы', !ui.kbDept)}${depts.map(d => `<button type="button" class="kb-chip kb-dchip${ui.kbDept === norm(d) ? ' on' : ''}" data-kbdept="${esc(norm(d))}" aria-pressed="${ui.kbDept === norm(d)}" style="--kh:${kbHue(d)}">${deptIco(d)}${esc(d)}</button>`).join('')}</div></div>`;
   const card = ({ p, s, x, st }) => { const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const due = t?.due_date || x.due_date || ''; const done = st === 'done';
     const can = canEditProject(p) && !GUEST;
     return `<button class="pf-card kb-card${done ? ' done' : ''}" data-tgsub="${p.id}|${s.id}|${x.id}" ${can ? `draggable="true" data-kbdrag="${p.id}|${s.id}|${x.id}"` : ''} aria-label="${esc(s.name)}: ${esc(x.name)}">
-      <span class="kb-tags"><span class="kb-dept" style="--kh:${kbHue(s.name)}">${esc(s.name)}</span>${x.ttype ? `<span class="kb-type t-${x.ttype}">${x.ttype === 'strat' ? 'Стратег.' : 'Операц.'}</span>` : ''}${all ? `<span class="ab-ip"><i style="--bc:${tgColor(p)}"></i>${esc(p.name)}</span>` : ''}</span>
+      <span class="kb-tags"><span class="kb-dept" style="--kh:${kbHue(s.name)}">${deptIco(s.name)}${esc(s.name)}</span>${x.ttype ? `<span class="kb-type t-${x.ttype}">${x.ttype === 'strat' ? 'Стратег.' : 'Операц.'}</span>` : ''}${all ? `<span class="ab-ip"><i style="--bc:${tgColor(p)}"></i>${esc(p.name)}</span>` : ''}</span>
       <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}</b>
       <small>${whoChip(x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t))}${due ? ` · <span class="pf-due${due < t0 && !done ? ' late' : ''}">${t?.start_date ? rangeTxt(t.start_date, due) : 'срок ' + fmt(due)}</span>` : !done ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}</small>
       ${pr && pr.total && !done ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span>` : ''}</button>`; };
@@ -5550,6 +5576,7 @@ function kbMove(key, st){
 document.addEventListener('click', e => {
   const t = e.target.closest?.('[data-kbtype]'); if (t){ ui.kbType = t.dataset.kbtype; render(); return; }
   const d = e.target.closest?.('[data-kbdept]'); if (d){ ui.kbDept = d.dataset.kbdept; render(); return; }
+  const du = e.target.closest?.('[data-kbdue]'); if (du){ ui.kbDue = du.dataset.kbdue; render(); return; }
   const m = e.target.closest?.('[data-kbmore]'); if (m){ ui.kbOpen = ui.kbOpen === m.dataset.kbmore ? '' : m.dataset.kbmore; render(); }
 });
 document.addEventListener('submit', e => {
@@ -9611,7 +9638,7 @@ function renderProjectFocus(mine = false){
     }).join('');
     const colMove = canEdit && !mine && !GUEST && ui.pfEdit && !isMaint(s);
     return `<section class="pf-col${isCur ? ' cur' : ''}${passed ? ' passed' : ''}${ui.pfEdit ? ' editing' : ''}${ctv.isCt ? ' ct-col' : ''}" ${dnd ? `data-pfcol="${s.id}"` : ''} ${colMove ? `data-pfcolid="${s.id}"` : ''} aria-label="Этап ${s.position + 1}. ${esc(s.name)}">
-      <header ${colMove ? `draggable="true" data-pfcolmove="${s.id}" title="Перетащите, чтобы переставить столбик"` : ''}><div>${colMove ? '<span class="pf-colgrip" aria-hidden="true">⠿</span>' : ''}${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`}${isCur && !isInfoBoardP(p) ? '<span class="pf-now">Текущий этап</span>' : ''}
+      <header ${colMove ? `draggable="true" data-pfcolmove="${s.id}" title="Перетащите, чтобы переставить столбик"` : ''}><div>${colMove ? '<span class="pf-colgrip" aria-hidden="true">⠿</span>' : ''}${ui.pfRen === s.id ? `<form class="pf-ren" data-pfrenf="${s.id}"><input value="${esc(s.name)}" maxlength="60" aria-label="Название столбика"></form>` : (isInfoBoardP(p) ? `<b class="dept-h" style="--kh:${kbHue(s.name)}">${deptIco(s.name)}${esc(s.name)}</b>` : `<b>${s.position + 1}. ${esc(s.name)}</b>`)}${isCur && !isInfoBoardP(p) ? '<span class="pf-now">Текущий этап</span>' : ''}
         ${canEdit && !mine && !GUEST && !isMaint(s) && ui.pfRen !== s.id && ui.pfEdit ? `<span class="pf-coltools"><button type="button" data-pfsren="${s.id}" title="Переименовать столбик" aria-label="Переименовать столбик «${esc(s.name)}»">${ICON_EDIT}</button>${p.stages.filter(x => !isMaint(x)).length > 1 ? `<button type="button" data-pfsdel="${s.id}" title="Удалить столбик" aria-label="Удалить столбик «${esc(s.name)}»">${ICON_X}</button>` : ''}</span>` : ''}</div>
         ${isInfoBoardP(p) ? '' : `<small><i class="sw ${h.key}"></i>${h.key === 'red' ? h.note : h.label + (s.status !== 'not_started' && s.status !== 'done' ? `, ${h.note.toLowerCase()}` : '')}. Подэтапы ${doneN}/${subs.length}</small>`}${mine ? stageStatusSelect(p, s) : stageAssignSelect(p, s)}${gateBox(p, s, mine)}</header>
       <div class="pf-cards${isMaint(s) ? ' pf-maint' : ''}">${cards || '<p class="hint">Подэтапов нет</p>'}${ctv.btn}</div>
