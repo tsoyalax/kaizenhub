@@ -2408,6 +2408,10 @@ svg.clip{width:14px;height:14px;flex:none}
 .dept-ico{width:13px;height:13px;flex:none;vertical-align:-2px;margin-right:4px}
 .kb-dept{display:inline-flex;align-items:center}.kb-dchip .dept-ico{color:hsl(var(--kh) 60% 45%);margin-right:0}
 .dept-h{display:inline-flex;align-items:center}.dept-h .dept-ico{width:16px;height:16px;margin-right:6px;color:hsl(var(--kh) 60% 45%)}
+.tl-zoom{display:flex;align-items:center;gap:6px;margin:0 0 8px;flex-wrap:wrap}.tl-zoom .icon-btn{width:30px;height:30px;font-size:16px}.tl-zl{min-width:96px;text-align:center;font-size:13px;font-weight:500}
+.tl-d.sparse{white-space:nowrap;width:auto!important;border-left:1px solid var(--line);padding-left:3px}
+.tl.compact .tl-task span{display:none}.tl.compact .tl-task:hover span,.tl.compact .tl-task:focus span{display:inline;position:relative;z-index:3;background:var(--surface);padding:1px 6px;border-radius:6px;box-shadow:0 0 0 1px var(--line)}
+.tl-task small{color:var(--muted);font-weight:400}.tl-task small .dept-ico{width:11px;height:11px;margin:0 2px 0 0}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -5319,6 +5323,32 @@ document.addEventListener('click', e => { const g = e.target.closest?.('[data-vi
 // Строка — этап, точка — задача в день её срока (t.due_date или x.due_date). Связей (стрелок) в таймлайне нет — только на доске.
 // от последнего срока этапа-источника к первому сроку зависимого. Красное — просрочено, зелёное — сделано, линия — сегодня.
 const TL_DW = 34, TL_ROW = 30;
+// масштаб таймлайна: пикселей на день (кнопки −/+, Ctrl/⌘ + колёсико), «Сегодня» — прокрутка к текущей дате
+const TL_ZOOM = [4, 7, 12, 20, 34, 52, 80];
+const TL_ZNAME = ['Квартал', 'Квартал', 'Месяц', 'Месяц', 'Неделя', 'Дни', 'Дни подробно'];
+const tlZ = () => { const z = ui.tlZoom ?? 4; return Math.max(0, Math.min(TL_ZOOM.length - 1, z)); };
+const tlDW = () => TL_ZOOM[tlZ()];
+const tlZoomBar = () => `<div class="tl-zoom" role="group" aria-label="Масштаб таймлайна"><button type="button" class="icon-btn" data-tlzoom="-1" aria-label="Мельче" ${tlZ() === 0 ? 'disabled' : ''}>−</button><span class="tl-zl">${TL_ZNAME[tlZ()]}</span><button type="button" class="icon-btn" data-tlzoom="1" aria-label="Крупнее" ${tlZ() === TL_ZOOM.length - 1 ? 'disabled' : ''}>+</button><button type="button" class="ghost" data-tltoday>Сегодня</button><span class="hint">Ctrl/⌘ + колёсико — масштаб</span></div>`;
+// шапка дней: на крупном масштабе — каждый день, на мелком — понедельники и начало месяца
+const tlHead = (days, from, DW, t0) => days.map(d => { const dt = parse(d); const g = dt.getDay(), wk = g === 0 || g === 6; const first = dt.getDate() === 1 || d === from;
+  const show = DW >= 20 || (DW >= 7 ? g === 1 : dt.getDate() === 1 || dt.getDate() === 15) || first || d === t0;
+  return show ? `<span class="tl-d${wk ? ' wk' : ''}${d === t0 ? ' now' : ''}${DW < 20 ? ' sparse' : ''}" style="left:${diffDays(d, from) * DW}px">${first && DW >= 20 ? `<em>${dt.toLocaleDateString('ru-RU', { month:'short' })}</em>` : ''}${DW >= 20 ? dt.getDate() : dt.getDate() + (DW >= 7 ? ' ' + dt.toLocaleDateString('ru-RU', { month:'short' }).replace('.', '') : '')}</span>` : ''; }).join('');
+const tlShade = (days, from, DW) => DW < 7 ? '' : days.map(d => { const g = parse(d).getDay(); return g === 0 || g === 6 ? `<i class="tl-wk" style="left:${diffDays(d, from) * DW}px;width:${DW}px"></i>` : ''; }).join('');
+// подпись задачи: название, отдел (иконка), ответственный, срок
+const tlWho = (p, s, x) => { const t = taskFor(p.id, s.id, x.id); const w = x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t); return w ? short(w) : ''; };
+function tlScrollToday(){ requestAnimationFrame(() => app.querySelectorAll('.tl-scroll').forEach(sc => { const t = sc.querySelector('.tl-today'); if (t) sc.scrollLeft = Math.max(0, parseFloat(t.style.left) - sc.clientWidth / 3); })); }
+function tlSetZoom(z){
+  const sc = app.querySelector('.tl-scroll'); const old = tlDW(); const mid = sc ? (sc.scrollLeft + sc.clientWidth / 2) / old : null;
+  ui.tlZoom = Math.max(0, Math.min(TL_ZOOM.length - 1, z)); render();
+  requestAnimationFrame(() => { const s2 = app.querySelector('.tl-scroll'); if (s2 && mid != null) s2.scrollLeft = Math.max(0, mid * tlDW() - s2.clientWidth / 2); });
+}
+document.addEventListener('click', e => {
+  const z = e.target.closest?.('[data-tlzoom]'); if (z){ tlSetZoom(tlZ() + Number(z.dataset.tlzoom)); return; }
+  if (e.target.closest?.('[data-tltoday]')) tlScrollToday();
+  if (e.target.closest?.('[data-infomode="timeline"]')) tlScrollToday();
+});
+document.addEventListener('wheel', e => { if (!(e.ctrlKey || e.metaKey)) return; const sc = e.target.closest?.('.tl-scroll'); if (!sc) return; e.preventDefault();
+  const now = Date.now(); if (now - (tlSetZoom.t || 0) < 180) return; tlSetZoom.t = now; tlSetZoom(tlZ() + (e.deltaY < 0 ? 1 : -1)); }, { passive:false });
 function timelineHtml(p){
   const st = flowState(p); const list = [...st.values()]; const t0 = today();
   const dated = list.flatMap(v => v.items.filter(i => i.due).map(i => i.due));
@@ -5326,13 +5356,13 @@ function timelineHtml(p){
   const kds = kdList(p).map(k => k.d);
   let from = [addDays(t0, -7), ...dated, ...starts, ...kds].sort()[0], to = [addDays(t0, 21), ...dated, ...kds, ...(p.deadline && (p.goalName || p.goalSet) ? [p.deadline] : [])].sort().at(-1);
   from = addDays(from, -1); to = addDays(to, 2);
-  const nd = diffDays(to, from) + 1; const W = nd * TL_DW;
-  const xOf = d => diffDays(d, from) * TL_DW + TL_DW / 2;
+  const DW = tlDW(), compact = DW < 12; const nd = diffDays(to, from) + 1; const W = nd * DW;
+  const xOf = d => diffDays(d, from) * DW + DW / 2;
   // раскладка: в строке этапа задачи по своим дорожкам, чтобы подписи не налезали
   let y = 0; const lanes = list.map(v => {
     const items = v.items.filter(i => i.due).sort((a, b) => a.due.localeCompare(b.due)); const rowsEnd = [];
     const placed = items.map(i => { const px = xOf(i.due), sx = i.start ? xOf(i.start) : px; let r = rowsEnd.findIndex(e => e < sx - 8); if (r < 0){ r = rowsEnd.length; rowsEnd.push(0); }
-      rowsEnd[r] = px + 14 + Math.min(180, i.x.name.length * 7); return { ...i, px, sx, r }; });
+      const who = tlWho(p, v.s, i.x); rowsEnd[r] = px + 14 + (compact ? 0 : Math.min(240, (i.x.name.length + who.length + 8) * 6.6)); return { ...i, px, sx, r, who }; });
     const h = Math.max(62, Math.max(1, rowsEnd.length) * TL_ROW + 16); /* не ниже подписи этапа с плашкой */ const lane = { v, top:y, h, placed, nodate:v.items.filter(i => !i.due) }; y += h; return lane;
   });
   const H = y; const byId = new Map(lanes.map(l => [l.v.s.id, l]));
@@ -5340,12 +5370,11 @@ function timelineHtml(p){
   const lastPt = l => { const ps = l.placed; if (!ps.length) return null; const i = ps.reduce((m, q) => q.px > m.px ? q : m, ps[0]); return { x:i.px, y:l.top + 8 + i.r * TL_ROW + TL_ROW / 2 }; };
   // связи этапов (стрелки) в таймлайне не показываем — они путали; связи видны на доске и в «AI-воронке»
   const days = Array.from({ length:nd }, (_, i) => addDays(from, i));
-  const head = days.map(d => { const dt = parse(d); const wk = dt.getDay() === 0 || dt.getDay() === 6;
-    return `<span class="tl-d${wk ? ' wk' : ''}${d === t0 ? ' now' : ''}" style="left:${diffDays(d, from) * TL_DW}px">${dt.getDate() === 1 || d === from ? `<em>${dt.toLocaleDateString('ru-RU', { month:'short' })}</em>` : ''}${dt.getDate()}</span>`; }).join('');
-  const shade = days.map(d => { const g = parse(d).getDay(); return g === 0 || g === 6 ? `<i class="tl-wk" style="left:${diffDays(d, from) * TL_DW}px;width:${TL_DW}px"></i>` : ''; }).join('');
+  const head = tlHead(days, from, DW, t0);
+  const shade = tlShade(days, from, DW);
   const k = i => i.done ? 'done' : i.due < t0 ? 'red' : i.due <= addDays(t0, 1) ? 'yellow' : 'green';
-  return `<div class="tl" aria-label="Таймлайн задач">
-    <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl" style="height:${l.h}px"><b>${esc(l.v.s.name)}</b>
+  return tlZoomBar() + `<div class="tl${compact ? ' compact' : ''}" aria-label="Таймлайн задач">
+    <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl" style="height:${l.h}px"><b class="dept-h" style="--kh:${kbHue(l.v.s.name)}">${deptIco(l.v.s.name)}${esc(l.v.s.name)}</b>
       ${flowPill(l.v)}
       ${l.nodate.length ? `<small>без срока: ${l.nodate.length}</small>` : ''}</div>`).join('')}</div>
     <div class="tl-scroll"><div class="tl-in" style="width:${W}px">
@@ -5356,7 +5385,7 @@ function timelineHtml(p){
         ${p.deadline && (p.goalName || p.goalSet) ? `<i class="tl-goal" style="left:${xOf(p.deadline)}px"><span>${FLAG}${esc(goalName(p))} · ${fmt(p.deadline)}</span></i>` : ''}
         ${kdList(p).filter(k => k.d >= from && k.d <= to).map((k, j) => `<i class="tl-goal tl-key" style="left:${xOf(k.d)}px"><span style="top:${4 + (j % 3) * 20}px">${FLAG}${esc(k.name)} · ${fmt(k.d)}</span></i>`).join('')}
 
-        ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task k-${k(i)}" data-pfsub="${l.v.s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px" title="${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}"><i></i><span>${esc(i.x.name)}</span></button>`)).join('')}
+        ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task k-${k(i)}" data-pfsub="${l.v.s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px" title="${esc(i.x.name)} · ${esc(l.v.s.name)}${i.who ? ' · ' + esc(i.who) : ''} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}"><i></i><span>${esc(i.x.name)}<small>${i.who ? ' · ' + esc(i.who) : ''} · ${fmt(i.due)}</small></span></button>`)).join('')}
       </div></div></div></div>`;
 }
 // ---------- Инфобизнес: таймлайн «Вместе» — несколько инфоповодов (блок Игоря, челлендж Эма…) на одной шкале ----------
@@ -5376,21 +5405,20 @@ function togetherHtml(everything){
   const fins = boards.filter(p => p.deadline && (p.goalName || p.goalSet)).map(p => p.deadline);
   let from = [addDays(t0, -7), ...dated, ...starts, ...kds.map(k => k.d), ...fins].sort()[0], to = [addDays(t0, 21), ...dated, ...kds.map(k => k.d), ...fins].sort().at(-1);
   from = addDays(from, -1); to = addDays(to, 2);
-  const nd = diffDays(to, from) + 1, W = nd * TL_DW; const xOf = d => diffDays(d, from) * TL_DW + TL_DW / 2;
+  const DW = tlDW(), compact = DW < 12; const nd = diffDays(to, from) + 1, W = nd * DW; const xOf = d => diffDays(d, from) * DW + DW / 2;
   let y = 0; const lanes = per.map(b => {
     const items = b.items.filter(i => i.due).sort((a, z) => a.due.localeCompare(z.due)); const rowsEnd = [];
     const placed = items.map(i => { const px = xOf(i.due), sx = i.start ? xOf(i.start) : px; let r = rowsEnd.findIndex(e => e < sx - 8); if (r < 0){ r = rowsEnd.length; rowsEnd.push(0); }
-      rowsEnd[r] = px + 14 + Math.min(200, (i.x.name.length + i.s.name.length) * 6.5); return { ...i, px, sx, r }; });
+      const who = tlWho(b.p, i.s, i.x); rowsEnd[r] = px + 14 + (compact ? 0 : Math.min(260, (i.x.name.length + i.s.name.length + who.length + 8) * 6.4)); return { ...i, px, sx, r, who }; });
     const h = Math.max(62, Math.max(1, rowsEnd.length) * TL_ROW + 16); const lane = { ...b, top:y, h, placed, nodate:b.items.filter(i => !i.due && !i.done).length }; y += h; return lane;
   });
   const H = y; const days = Array.from({ length:nd }, (_, i) => addDays(from, i));
-  const head = days.map(d => { const dt = parse(d); const wk = dt.getDay() === 0 || dt.getDay() === 6;
-    return `<span class="tl-d${wk ? ' wk' : ''}${d === t0 ? ' now' : ''}" style="left:${diffDays(d, from) * TL_DW}px">${dt.getDate() === 1 || d === from ? `<em>${dt.toLocaleDateString('ru-RU', { month:'short' })}</em>` : ''}${dt.getDate()}</span>`; }).join('');
-  const shade = days.map(d => { const g = parse(d).getDay(); return g === 0 || g === 6 ? `<i class="tl-wk" style="left:${diffDays(d, from) * TL_DW}px;width:${TL_DW}px"></i>` : ''; }).join('');
+  const head = tlHead(days, from, DW, t0);
+  const shade = tlShade(days, from, DW);
   const k = i => i.done ? 'done' : i.due < t0 ? 'red' : i.due <= addDays(t0, 1) ? 'yellow' : 'green';
   return `<div class="tg">
     ${everything ? '' : `<div class="tg-pick"><span class="hint">Площадки на шкале:</span>${all.map(p => `<button class="tg-chip" data-tgp="${p.id}" aria-pressed="${sel.includes(p.id)}" style="--bc:${tgColor(p)}"><i></i>${esc(p.name)}</button>`).join('')}</div>`}
-    <div class="tl tg-tl" aria-label="Таймлайн площадок вместе">
+    ${tlZoomBar()}<div class="tl tg-tl${compact ? ' compact' : ''}" aria-label="Таймлайн площадок вместе">
       <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl" style="height:${l.h}px;--bc:${tgColor(l.p)}"><b class="tg-n"><i></i>${esc(l.p.name)}</b>
         <small>${l.items.filter(i => !i.done).length} в работе${l.nodate ? ` · без срока: ${l.nodate}` : ''}</small></div>`).join('')}</div>
       <div class="tl-scroll"><div class="tl-in" style="width:${W}px">
@@ -5400,7 +5428,7 @@ function togetherHtml(everything){
           <i class="tl-today" style="left:${xOf(t0)}px"></i>
           ${boards.filter(p => p.deadline && (p.goalName || p.goalSet) && p.deadline >= from && p.deadline <= to).map(p => `<i class="tl-goal" style="left:${xOf(p.deadline)}px"><span>${FLAG}${esc(goalName(p))} · ${esc(p.name)} · ${fmt(p.deadline)}</span></i>`).join('')}
           ${kds.slice().sort((a, z) => a.d.localeCompare(z.d)).map((k, j) => `<i class="tl-goal tl-key" style="left:${xOf(k.d)}px"><span style="top:${4 + (j % 3) * 20}px">${FLAG}${esc(k.name)} · ${esc(k.p.name)} · ${fmt(k.d)}</span></i>`).join('')}
-          ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task tg-task k-${k(i)}" data-tgsub="${l.p.id}|${i.s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px;--bc:${tgColor(l.p)}" title="${esc(l.p.name)} · ${esc(i.s.name)} · ${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}"><i></i><span>${esc(i.x.name)}<small> · ${esc(i.s.name)}</small></span></button>`)).join('')}
+          ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task tg-task k-${k(i)}" data-tgsub="${l.p.id}|${i.s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px;--bc:${tgColor(l.p)}" title="${esc(l.p.name)} · ${esc(i.s.name)} · ${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}"><i></i><span>${esc(i.x.name)}<small> · ${deptIco(i.s.name)}${esc(i.s.name)}${i.who ? ' · ' + esc(i.who) : ''} · ${fmt(i.due)}</small></span></button>`)).join('')}
         </div></div></div></div></div>`;
 }
 document.addEventListener('click', e => {
