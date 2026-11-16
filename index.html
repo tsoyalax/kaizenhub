@@ -2780,7 +2780,7 @@ function renderContent(){
 }
 // таймлайн раздела «Контент»: публикации по датам, строка на тип — рилсы, доп. контент, сторис (масштаб как у таймлайна площадки)
 function ctTimelineHtml(p, s){
-  const t0 = today(); const all = ctItems().filter(x => x.due_date);
+  const t0 = today(); const all = ctItems().filter(x => x.cycle && x.due_date);   // только публикации (рилсы, сторис), не задачи отдела
   const kinds = [['reels', 'Рилсы', VIDEO_ICO, x => !isStories(x) && !x.extra], ['extra', 'Доп. контент', VIDEO_ICO, x => !isStories(x) && x.extra], ['stories', 'Сторис', STORIES_ICO, isStories]]
     .map(([k, name, ico, f]) => ({ k, name, ico, items:all.filter(f).sort((a, b) => a.due_date.localeCompare(b.due_date)) })).filter(l => l.items.length || l.k !== 'extra');
   if (!all.length) return '<p class="hint">Публикаций с датой пока нет. Добавьте рилсы или сторис кнопкой «+».</p>';

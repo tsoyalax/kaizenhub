@@ -58,7 +58,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     assert.equal(E('contentStage().subs.filter(x => x.kind === "stories").length'), 3); assert.equal(E('ctStats(ctCur()).stories.n'), 3); assert.equal(E('ctStats(ctCur()).plan'), before);
     ok('сторис добавляются отдельно: «Сторис 1–3», в плане рилсов не считаются'); }
   E(`ui.ctMode = 'timeline'; ui.ctAddOpen = false; render()`);
-  { const n = [...D.querySelectorAll('.ct-tl .tl-lbl b')].map(b => b.textContent.trim()); assert.ok(n.includes('Рилсы') && n.includes('Сторис')); assert.equal(D.querySelectorAll('.ct-tl .tl-task').length, E('ctItems().filter(x => x.due_date).length')); ok('«Контент» → «Таймлайн»: публикации рилсов и сторис по строкам'); }
+  { const n = [...D.querySelectorAll('.ct-tl .tl-lbl b')].map(b => b.textContent.trim()); assert.ok(n.includes('Рилсы') && n.includes('Сторис')); assert.equal(D.querySelectorAll('.ct-tl .tl-task').length, E('ctItems().filter(x => x.cycle && x.due_date).length')); ok('«Контент» → «Таймлайн»: публикации рилсов и сторис по строкам'); }
   E(`ui.ctMode = 'board'`);
   E(`ui.view = 'production'; ui.kbView = 'dept'; render()`);
   assert.ok(D.querySelector('.dept-h .dept-ico')); ok('у отделов — иконки'); E(`ui.kbView = 'status'`);
