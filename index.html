@@ -4060,7 +4060,8 @@ function render(){
   document.body.dataset.kind = GUEST ? '' : (db?.prefs?.kind || 'agency');
   if (isInfo() && !GUEST){ if (INFO_HIDDEN.includes(ui.view)) ui.view = 'production'; try { ensureInfoBoard(); syncInfoNames(); } catch(e) {} }
   INFO_HIDDEN.forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = isInfo() && !GUEST; });
-  ['content', 'funnel', 'priority'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST || (v === 'funnel' && !SHOW_AI_FUNNEL); });
+  ['content', 'funnel', 'priority'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST || (v === 'funnel' && !SHOW_AI_FUNNEL) || (v === 'content' && !SHOW_CONTENT); });
+  if (ui.view === 'content' && !SHOW_CONTENT) ui.view = 'production';
   if (['content', 'funnel', 'priority'].includes(ui.view) && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
   if (ui.view === 'funnel' && !SHOW_AI_FUNNEL) ui.view = 'production';
   try { renderSide(); } catch(e) {}
@@ -6759,6 +6760,8 @@ const sidePinned = () => { if (innerWidth <= 640) return false; try { return loc
 const setPin = on => { try { localStorage.setItem(SIDE_PIN, on ? '1' : '0'); } catch(e) {} };
 // в области «Игорь Шаламов» (и на /igor) в левом меню нет «Приоритетов», «Поручений» и «AI-отчётов» (по просьбе)
 const SIDE_HIDE_IGOR = ['priority', 'assign', 'reports'];
+// раздел «Контент» убран из меню (по просьбе); код остаётся — вернуть: SHOW_CONTENT = true
+var SHOW_CONTENT = false;
 const isIgorArea = () => { try { return !ORG && AREA_SITES.igor.test(areaById(focusOn() ? focusId() : curArea())?.name || ''); } catch(e) { return false; } };
 function sideViews(){
   if (GUEST) return guestViews();
@@ -10772,7 +10775,7 @@ const MNAV = {
   templates:['Настройки', MI('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>')],
 };
 const MNAV_MAIN_ALL = ['matrix', 'kanban', 'production', 'load'];
-const mnavMain = () => isInfo() ? ['production', ...(SHOW_AI_FUNNEL ? ['funnel'] : []), 'content', 'priority'] : MNAV_MAIN_ALL;
+const mnavMain = () => isInfo() ? ['production', ...(SHOW_AI_FUNNEL ? ['funnel'] : []), ...(SHOW_CONTENT ? ['content'] : []), 'priority'] : MNAV_MAIN_ALL;
 // иконки в боковом меню (те же, что в нижнем меню телефона)
 const NAV_FULL = { production:'Производство' };
 document.querySelectorAll('.tabs [data-view]').forEach(b => { const m = MNAV[b.dataset.view]; if (m && !b.querySelector('svg')) b.insertAdjacentHTML('afterbegin', m[1]); });

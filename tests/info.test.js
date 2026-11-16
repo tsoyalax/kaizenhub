@@ -24,7 +24,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.ok(!E(`tplById(INFO_TPL_ID).stages.some(s => (s.subs || []).length)`) && !E(`projById('infoboard').stages.some(s => (s.subs || []).some(x => x.tsub))`)); ok('подэтапы шаблона «Инфобизнес» очищены, задачи площадок отвязаны — старой версии нечего возвращать');
   assert.ok(E(`projById('infoboard').stages.some(s => s.name === 'Вебинар')`)); ok('этап из шаблона появился на доске');
   // «Контент»: видео — карточки колонки «Контент» на доске; отметка в одном месте видна в другом
-  assert.ok(!D.querySelector('.tabs [data-view="content"]').hidden); ok('в меню есть «Контент»');
+  assert.ok(D.querySelector('.tabs [data-view="content"]').hidden); E(`ui.view = 'content'; render()`); assert.equal(E('ui.view'), 'production'); ok('раздел «Контент» убран из меню');
+  E('SHOW_CONTENT = true');   // дальше проверяем сам раздел
   E(`ui.view = 'content'; render()`);
   D.getElementById('ctName').value = 'Ролик'; D.getElementById('ctN').value = '12';
   D.getElementById('ctAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(50);
