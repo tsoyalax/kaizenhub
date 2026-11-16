@@ -123,7 +123,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     ui.view = 'production'; ui.prodProject = p.id; render(); })()`);
   const fs = E(`JSON.stringify([...flowState(infoBoard()).values()].map(v => [v.s.name, v.key]))`);
   assert.deepEqual(JSON.parse(fs), [['Контент','green'],['Статья','green'],['VSL','red'],['Платный канал','yellow'],['Отдел продаж','yellow'],['Эфиры','red']]); ok('VSL просрочен — следующие за ним ждут, этап без задач — красный');
-  assert.ok(!D.querySelector('.fl-chain') && D.querySelector('.kb-board') && D.querySelectorAll('.kb-dept').length && !/AI-разбор|Воронка не работает/.test(D.querySelector('.fl').textContent) && !D.querySelector('.fl-why-box') && !D.querySelector('.fl-ai') && !/Срочно|Горит/.test(D.querySelector('.fl').textContent));
+  assert.ok(!D.querySelector('.fl-chain') && D.querySelector('.kb-board') && D.querySelectorAll('.kb-dept').length && !D.querySelector('.fl') && !D.querySelector('.fl-why-box') && !D.querySelector('.fl-ai') && D.querySelector('.fl-viewbar'));
   assert.ok(!D.querySelector('.flp-list')); ok('в «Производстве» списков «Просрочено / Ближайшие» нет — они в «Сегодня»');
   E(`ui.view = 'today'; render()`); assert.equal(E('ui.view'), 'production'); assert.ok(D.querySelector('.tabs [data-view="today"]').hidden); ok('в инфобизнесе «Сегодня» убран из меню — открывается «Производство»');
   E(`INFO_HIDDEN.splice(INFO_HIDDEN.indexOf('today'), 1); ui.view = 'today'; render()`); const lists = [...D.querySelectorAll('.tdy-due .flp-list')];   // сам раздел ещё проверяем (он есть в агентстве)

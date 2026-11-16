@@ -63,7 +63,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     $('[data-kbview="dept"]').click(); await wait(50); assert.ok($('.ab-board') && !$('.kb-board')); ok('вид «По отделам»: столбик = отдел');
     $('[data-kbview="status"]').click(); await wait(50); assert.ok($('.kb-board')); ok('вид «Канбан» возвращается'); }
   E(`ui.infoAll = true; render();`); $('[data-infomode="timeline"]').click(); await wait(100);
-  assert.ok(/Все площадки/.test($('.fl-p').textContent) && !$('.flp-list')); ok('«Все»: шапка с видом, без списков сроков');
+  assert.ok($('.fl-viewbar [data-kbview]') && !$('.fl-p') && !$('.flp-list')); ok('«Все»: только переключатель вида, без плашки');
   E(`INFO_HIDDEN.splice(INFO_HIDDEN.indexOf('today'), 1); ui.view = 'today'; ui.tdIp = ''; render();`); { const due = $('.tdy-due'); assert.ok(due && /Оффер/.test(due.textContent) && /Анонс челленджа/.test(due.textContent)); ok('«Сегодня»: «Ближайшие» — задачи всех площадок'); }
   E(`INFO_HIDDEN.push('today'); ui.view = 'production'; render();`);
 

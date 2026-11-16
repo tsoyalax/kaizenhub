@@ -2530,6 +2530,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .bf-dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:0 0 12px}.bf-dc{display:grid;gap:4px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
 .bf-dc>small{font-size:12px;color:var(--muted)}.bf-dc b{font-size:22px;font-weight:700}.bf-dc b span{font-size:13px;font-weight:400;color:var(--muted)}.bf-dbar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}.bf-dbar i{display:block;height:100%;background:var(--brand)}
 .look-seg button{display:inline-flex;align-items:center;gap:6px}.look-seg svg{width:15px;height:15px}
+.fl-viewbar{display:flex;justify-content:flex-end;margin:4px 0 10px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -6017,15 +6018,12 @@ const kbDeptView = () => ui.kbView === 'dept';
 const kbViewSeg = mode => `<span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-kbview="status" aria-pressed="${mode === 'board' && !kbDeptView()}">Канбан</button><button type="button" data-kbview="dept" aria-pressed="${mode === 'board' && kbDeptView()}">По отделам</button><button type="button" data-infomode="timeline" aria-pressed="${mode !== 'board'}">Таймлайн</button></span>`;
 document.addEventListener('click', e => { const v = e.target.closest?.('[data-kbview]'); if (v){ ui.kbView = v.dataset.kbview; ui.infoMode = 'board'; render(); } });
 function flowAllHtml(){
-  return `<section class="fl fl-p" aria-label="Все площадки">
-    <div class="fl-p-hd"><h2>Все площадки</h2><div class="fl-view">${kbViewSeg(ui.infoMode === 'timeline' || ui.infoMode === 'together' ? 'timeline' : 'board')}</div></div>
-  </section>`;
+  return `<div class="fl-viewbar">${kbViewSeg(ui.infoMode === 'timeline' || ui.infoMode === 'together' ? 'timeline' : 'board')}</div>`;
 }
 function flowProdHtml(p){
+  // без плашки «площадка · идёт с …» — только переключатель вида
   const mode = ui.infoMode === 'timeline' || ui.infoMode === 'together' ? 'timeline' : 'board';
-  return `<section class="fl fl-p" aria-label="Вид доски">
-    <div class="fl-p-hd"><h2>${esc(p.name)}</h2><span class="fl-p-st">${esc(ipState(p))}</span>
-      <div class="fl-view">${kbViewSeg(mode)}</div></div></section>`;
+  return `<div class="fl-viewbar">${kbViewSeg(mode)}</div>`;
 }
 function flowPanelHtml(p, part = 'prod'){
   if (part !== 'ai') return flowProdHtml(p);
