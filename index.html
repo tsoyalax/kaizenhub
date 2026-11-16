@@ -2494,6 +2494,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .tkp-seg button{height:30px;font-size:12.5px}.tkp-qs{display:inline-flex;flex-wrap:wrap;gap:4px}
 .tkp-q{height:26px;padding:0 9px;border-radius:7px;border:1px solid var(--line);background:none;font-size:12px;color:var(--muted);cursor:pointer}.tkp-q:hover{color:var(--ink);border-color:var(--line-strong)}.tkp-q.on{color:var(--ink);border-color:var(--ink)}.tkp-q.x{padding:0 7px}
 .tkp-date{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 10px;font:inherit;font-size:13px;color:var(--ink)}.tkp-date.late{border-color:var(--r);color:var(--r)}
+.tkp-dl{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
 .tkp-late{font-size:12px;font-weight:600;color:var(--r)}.tkp-n{font-size:12px;color:var(--muted)}.tkp .pg-tiles{flex:1 1 180px;max-width:320px;margin:0}
 @media (max-width:640px){.tkp{grid-template-columns:1fr;gap:4px}}
 .bs-p{border:1px solid var(--line);border-radius:14px;padding:12px;margin:12px 0;display:grid;gap:10px}
@@ -9358,7 +9359,7 @@ function infoPropsHtml(p, s, x, t, can, pr){
     ${row('', 'Тип', seg('data-tktt', kbTT(x), [['oper', 'Операционная'], ['strat', 'Стратегическая']], KB_TYPE_HINT))}
     ${row('', 'Отдел', can ? `<select class="tkp-sel" data-tkdept="${key}" aria-label="Отдел">${depts.map(y => `<option value="${y.id}" ${y.id === s.id ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select>` : `<b>${esc(s.name)}</b>`)}
     ${row('', 'Ответственный', can ? `<select class="tkp-sel" data-tqassign="${t.id}" aria-label="Ответственный">${peopleOpts(t.assignee_id, s?.assignee_id ? `Как у отдела: ${short(s.assignee_id)}` : 'Не назначен')}</select>` : whoChip(whoId(p, s, t)))}
-    ${row(FLAG, 'Срок', `${can ? `<input type="date" class="tkp-date${late ? ' late' : ''}" data-tkdate="${t.id}" value="${t.due_date || ''}" aria-label="Срок">` : `<b class="${late ? 'late' : ''}">${t.due_date ? fmt(t.due_date) : 'не задан'}</b>`}${late ? '<span class="tkp-late">просрочено</span>' : ''}`)}
+    ${row(FLAG, 'Срок', `${can ? `<label class="tkp-dl">с<input type="date" class="tkp-date" data-tkfrom="${t.id}" value="${t.start_date || ''}" ${t.due_date ? `max="${t.due_date}"` : ''} aria-label="Начало"></label><label class="tkp-dl">до<input type="date" class="tkp-date${late ? ' late' : ''}" data-tkdate="${t.id}" value="${t.due_date || ''}" ${t.start_date ? `min="${t.start_date}"` : ''} aria-label="Срок — до"></label>` : `<b class="${late ? 'late' : ''}">${t.due_date ? rangeTxt(t.start_date, t.due_date) : 'не задан'}</b>`}${late ? '<span class="tkp-late">просрочено</span>' : ''}`)}
     ${row(BELL_ICO, 'Напоминание', `${can ? `<button type="button" class="dp-btn${t.remind?.at ? '' : ' empty'}" data-rempick="${t.id}">${t.remind?.at ? remShort(t.remind.at) : 'Нет'}</button>` : `<b>${t.remind?.at ? remShort(t.remind.at) : 'нет'}</b>`}<span class="tkp-qs">${remQuick || (can && !t.due_date ? '<small class="hint">Поставьте срок — появятся быстрые варианты</small>' : '')}</span>`)}
     ${pr.total ? row('', 'Прогресс', `${progTiles(pr)}<small class="tkp-n">${pr.n} из ${pr.total}</small>`) : ''}
   </div>`;
@@ -9371,7 +9372,11 @@ document.addEventListener('click', e => {
   if (b.dataset.tkdue != null){ const [id, d] = b.dataset.tkdue.split('|'); const t = taskById(id); if (t) setTaskDue(t, d || ''); return; }
   if (b.dataset.tkrem != null){ const [id, at] = b.dataset.tkrem.split('|'); const t = taskById(id); if (t){ setTaskRemind(t, at || null); toast(at ? `Напомню ${remTxt(at)}` : 'Напоминание снято'); } }
 });
-document.addEventListener('change', e => { const id = e.target.dataset?.tkdate; if (!id) return; const t = taskById(id); if (t) setTaskDue(t, e.target.value || ''); });
+// срок «с … до …»: начало (t.start_date) и конец (t.due_date); только «с» — срок в этот день
+document.addEventListener('change', e => { const id = e.target.dataset?.tkdate || e.target.dataset?.tkfrom; if (!id) return; const t = taskById(id); if (!t) return;
+  const box = e.target.closest('.tkp-v'); const from = box?.querySelector('[data-tkfrom]')?.value || '', to = box?.querySelector('[data-tkdate]')?.value || '';
+  const end = to || from; if (!end){ setTaskDue(t, ''); return; } const start = from && from < end ? from : '';
+  setTaskDue(t, start ? `${start}|${end}` : end); });
 document.addEventListener('change', e => { const v = e.target.dataset?.tkdept; if (!v) return;
   const [pid, sid, xid] = v.split('|'); const p = projById(pid); const from = p?.stages.find(y => y.id === sid); const to = p?.stages.find(y => y.id === e.target.value);
   const x = from?.subs?.find(y => y.id === xid); if (!x || !to || to === from || !canEditProject(p)) return;

@@ -88,6 +88,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   { const d = D.querySelector('.tk-props [data-tkdate]'); assert.ok(d && d.type === 'date' && !D.querySelector('.tk-props [data-duepick]')); ok('срок — поле с календарём');
     d.value = E('addDays(today(), 2)'); d.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
     assert.equal(E('taskById(ui.taskId).due_date'), E('addDays(today(), 2)')); assert.ok(!E('taskById(ui.taskId).start_date')); ok('дата из поля — срок задачи'); }
+  { const f = D.querySelector('.tk-props [data-tkfrom]'); f.value = E('today()'); f.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
+    assert.equal(E('taskById(ui.taskId).start_date'), E('today()')); assert.equal(E('taskById(ui.taskId).due_date'), E('addDays(today(), 2)')); ok('срок «с … до …» — от и до'); }
   D.querySelector('[data-rempick]').click(); D.querySelector(`[data-dpday="${E('addDays(today(), 1)')}"]`).click();
   assert.ok(D.getElementById('dpPop')); ok('после дня для напоминания — выбор времени');
   D.querySelector('[data-dptime="10:00"]').click();
