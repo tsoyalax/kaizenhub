@@ -2613,7 +2613,7 @@ function ensureKindTemplate(d, k){ if (k === 'smm') ensureSmmTemplate(d); else i
 // В пространстве нет списка проектов и «Нового проекта»: сразу открывается доска «Производства» — один проект-доска
 // (постоянный id INFO_BOARD_ID, чтобы два устройства не создали по своей доске). Колонки — этапы шаблона «Инфобизнес: запуск».
 const INFO_TPL_ID = 'tinfo', INFO_BOARD_ID = 'infoboard';
-const INFO_HIDDEN = ['matrix', 'kanban', 'archive'];
+const INFO_HIDDEN = ['matrix', 'kanban', 'archive', 'today'];   // «Сегодня» в инфобизнесе убран из меню (по просьбе) — открывается «Производство»
 // раздел «AI-воронка» пока скрыт из меню (по просьбе); код остался — вернуть: SHOW_AI_FUNNEL = true
 let SHOW_AI_FUNNEL = false;
 function infoTemplate(){

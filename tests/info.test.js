@@ -119,9 +119,10 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.deepEqual(JSON.parse(fs), [['Контент','green'],['Статья','green'],['VSL','red'],['Платный канал','yellow'],['Отдел продаж','yellow'],['Эфиры','red']]); ok('VSL просрочен — следующие за ним ждут, этап без задач — красный');
   assert.ok(!D.querySelector('.fl-chain') && D.querySelector('.kb-board') && D.querySelectorAll('.kb-dept').length && !/AI-разбор|Воронка не работает/.test(D.querySelector('.fl').textContent) && !D.querySelector('.fl-why-box') && !D.querySelector('.fl-ai') && !/Срочно|Горит/.test(D.querySelector('.fl').textContent));
   assert.ok(!D.querySelector('.flp-list')); ok('в «Производстве» списков «Просрочено / Ближайшие» нет — они в «Сегодня»');
-  E(`ui.view = 'today'; render()`); const lists = [...D.querySelectorAll('.tdy-due .flp-list')];
+  E(`ui.view = 'today'; render()`); assert.equal(E('ui.view'), 'production'); assert.ok(D.querySelector('.tabs [data-view="today"]').hidden); ok('в инфобизнесе «Сегодня» убран из меню — открывается «Производство»');
+  E(`INFO_HIDDEN.splice(INFO_HIDDEN.indexOf('today'), 1); ui.view = 'today'; render()`); const lists = [...D.querySelectorAll('.tdy-due .flp-list')];   // сам раздел ещё проверяем (он есть в агентстве)
   assert.ok(/Просрочено/.test(lists[0].textContent) && /Задача VSL/.test(lists[0].textContent) && !/Задача Контент/.test(lists[0].textContent)); ok('«Просрочено» — только просроченные задачи');
-  assert.ok(/Ближайшие/.test(lists[1].textContent) && /Задача Контент/.test(lists[1].textContent) && !/Задача VSL/.test(lists[1].textContent)); ok('«Ближайшие» — ближайшие задачи по сроку'); E(`ui.view = 'production'; render()`); ok('в «Производстве» — канбан без воронки: отдел плашкой на карточке');
+  assert.ok(/Ближайшие/.test(lists[1].textContent) && /Задача Контент/.test(lists[1].textContent) && !/Задача VSL/.test(lists[1].textContent)); ok('«Ближайшие» — ближайшие задачи по сроку'); E(`INFO_HIDDEN.push('today'); ui.view = 'production'; render()`); ok('в «Производстве» — канбан без воронки: отдел плашкой на карточке');
   assert.ok(D.querySelector('.tabs [data-view="funnel"]').hidden); ok('пункт «AI-воронка» пока скрыт из меню');
   E('SHOW_AI_FUNNEL = true');   // дальше проверяем сам раздел
   E(`ui.view = 'funnel'; render()`);
