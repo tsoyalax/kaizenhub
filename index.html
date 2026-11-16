@@ -7438,7 +7438,7 @@ function renderSpaces(){
       <ol class="sp-list">${spaces.orgs.map(o => `<li class="sp-row${ORGK === o.id ? ' cur' : ''}"><b>${esc(o.label)}<small class="hint"> · ${esc(o.sub)}</small></b>${ORGK === o.id ? '<span class="pill s-green"><i class="sw green"></i>Открыто</span>' : `<button class="ghost" data-orgopen="${o.id}">Открыть</button>`}<span></span></li>`).join('')}</ol>
       <h3 class="sh-h">Мои пространства</h3>` : ''}
     ${online && !ORG ? `<h3 class="sh-h">Области</h3><p class="hint">Область объединяет пространства (например, «Агентство» и «Игорь»). Название меняется прямо в поле.</p>
-      <ol class="ar-list">${areaListAll().map(x => `<li class="ar-row${x.id === curArea() ? ' cur' : ''}"><input data-areaname="${x.id}" value="${esc(x.name)}" maxlength="60" aria-label="Название области"><small>${spacesOfArea(x.id).length} ${plural(spacesOfArea(x.id).length, 'пространство', 'пространства', 'пространств')}</small>${x.id === curArea() ? '<span class="pill s-green"><i class="sw green"></i>Открыта</span>' : `<button class="ghost" data-areaopen="${x.id}">Открыть</button>`}</li>`).join('')}</ol>
+      <ol class="ar-list">${areaListAll().map(x => `<li class="ar-row${x.id === curArea() ? ' cur' : ''}"><input data-areaname="${x.id}" value="${esc(x.name)}" maxlength="60" aria-label="Название области"><small>${spacesOfArea(x.id).length} ${plural(spacesOfArea(x.id).length, 'пространство', 'пространства', 'пространств')}</small>${x.id === curArea() ? '<span class="pill s-green"><i class="sw green"></i>Открыта</span>' : `<button class="ghost" data-areaopen="${x.id}">Открыть</button>`}${x.id !== AREA0 ? `<button type="button" class="icon-btn" data-areadel="${x.id}" title="Удалить область" aria-label="Удалить область «${esc(x.name)}»">${TRASH_ICO}</button>` : ''}</li>`).join('')}</ol>
       <form class="ar-new" id="arNew"><input id="arNewName" placeholder="Название новой области" maxlength="60" aria-label="Название новой области"><button class="ghost">+ Область</button></form>
       <h3 class="sh-h">Пространства области «${esc(areaById(curArea()).name)}»</h3>` : ''}
     <ol class="sp-list">${spacesOfArea(curArea() || AREA0).map(x => x.id ? row(x.id, x.name, x.id === SPACE && !ORG, `<button type="button" class="sp-del" data-spdel="${x.id}" aria-label="Удалить пространство ${esc(x.name)}">${TRASH_ICO}<span>Удалить</span></button>`) : row('', mainName(), !SPACE && !ORG)).join('')}</ol>
@@ -7478,6 +7478,13 @@ async function createSpace({ name, kind, area, copy }){
 }
 // новый раздел: документ раздела + его первое пространство «Основное»
 // новая область: документ области; дальше на экране выбора сразу открывается «+ Новый раздел» в ней
+// удалить область: только пустую (без пространств) и не текущую; основную — нельзя
+document.addEventListener('click', e => { const b = e.target.closest?.('[data-areadel]'); if (!b) return; const id = b.dataset.areadel; const ar = areaById(id);
+  if (id === AREA0) return; if (id === curArea()){ toast('Откройте другую область, потом удаляйте эту'); return; }
+  const n = spacesOfArea(id).filter(x => x.id).length; if (n){ toast(`В области ${n} ${plural(n, 'пространство', 'пространства', 'пространств')} — сначала удалите их`); return; }
+  askConfirm({ title:`Удалить область «${ar.name}»?`, text:'Она пустая — пространств в ней нет.', ok:'Удалить', danger:true }).then(async yes => { if (!yes || !cloud.store || !cloud.uid) return;
+    try { await cloud.store.doc(`data/users/${cloud.uid}/spaces/area/${id}`).delete(); } catch(err) { toast('Не удалось удалить. Проверьте связь.'); return; }
+    spaces.areas = spaces.areas.filter(x => x.id !== id); toast(`Область «${ar.name}» удалена`); render(); }); });
 document.addEventListener('submit', async e => { if (e.target.id !== 'arNew') return; e.preventDefault();
   const v = $('#arNewName').value.trim().slice(0, 60); if (!v){ toast('Назовите область'); return; }
   const a = await createArea(v); if (a){ toast(`Область «${v}» создана`); render(); } });
