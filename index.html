@@ -2434,6 +2434,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .ct-left .ct-wk h3{font-size:13px}.ct-row.slim{grid-template-columns:auto 1fr auto auto;gap:8px;padding:6px 8px}.ct-row[draggable="true"]{cursor:grab}
 .ct-due-s{font-size:12px;color:var(--muted);white-space:nowrap}.ct-right .ct-board .pf-col{flex-basis:220px}
 @media (max-width:900px){.ct-split{grid-template-columns:1fr}}
+.ct-pf{margin-top:4px}.ct-pf .pf-name{display:flex;align-items:center;gap:6px}.ct-pf .pf-name .ct-ico svg{width:15px;height:15px}.ct-reel .pf-col{flex:0 0 230px}.ct-sub{display:flex;gap:8px;align-items:flex-start;cursor:pointer}.ct-sub.done span{text-decoration:line-through;color:var(--muted)}.ct-card.here{border-color:var(--brand)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2819,6 +2820,39 @@ function ctTimelineHtml(p, s){
         ${lanes.flatMap(l => l.placed.map(i => `<button class="tl-task ct-mk ct-k-${l.k} k-${k(i.x)}" data-pfsub="${s.id}|${i.x.id}" style="left:${i.px - 12}px;top:${l.top + 8 + i.r * TL_ROW + 3}px" title="${esc(i.x.name)} · ${i.x.done ? 'опубликовано' : esc(vidCol(i.x)?.name || '')}${i.wn ? ' · ' + esc(i.wn) : ''} · ${fmt(i.x.due_date)}"><i class="ct-mk-i">${l.ico}</i><span>${(t => new RegExp('^' + t, 'i').test(i.x.name) ? '' : `<em class="ct-tag">${t}</em>`)(l.k === 'stories' ? 'Сторис' : l.k === 'extra' ? 'Доп.' : 'Рилс')}${esc(i.x.name)}<small>${i.x.done ? ' · опубликовано' : vidCol(i.x) ? ' · ' + esc(vidCol(i.x).name) : ''}${i.wn ? ' · ' + esc(i.wn) : ''} · ${fmt(i.x.due_date)}</small></span></button>`)).join('')}
       </div></div></div></div>`;
 }
+// «По роликам» — как «Производство» в агентстве: слева все ролики цикла (поиск), справа доска выбранного ролика:
+// колонки — этапы видео, в колонке — подэтапы этапа галочками; ролик («Сейчас здесь») перетаскивается в другой этап
+function ctReelHtml(p, s, items){
+  const cs = vidCols(); const q = norm(ui.ctQ || '');
+  const list = items.slice().sort((a, b) => (a.done - b.done) || (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true }));
+  const shown = list.filter(x => !q || norm(x.name).includes(q));
+  let cur = list.find(x => x.id === ui.ctSelVid) || list.find(x => !x.done) || list[0];
+  if (!cur) return '<p class="hint">Роликов в этом цикле пока нет. Добавьте их кнопкой «+».</p>';
+  ui.ctSelVid = cur.id;
+  const idx = x => x.done ? cs.length - 1 : Math.max(0, cs.indexOf(vidCol(x)));
+  const pct = x => cs.length > 1 ? Math.round(idx(x) / (cs.length - 1) * 100) : (x.done ? 100 : 0);
+  const item = x => `<div class="pf-row"><button class="pf-item${x.id === cur.id ? ' on' : ''}" data-ctsel="${x.id}" aria-current="${x.id === cur.id}" ${GUEST ? '' : `draggable="true" data-ctdrag="${x.id}"`}>
+      <span class="pf-name"><span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span>${esc(x.name)}</span>
+      <small>${x.done ? 'опубликовано' : esc(vidCol(x)?.name || '')}${x.due_date ? ` · ${fmt(x.due_date)}` : ''}</small>
+      <span class="pf-mini" aria-hidden="true"><i style="width:${pct(x)}%"></i></span></button></div>`;
+  const t = taskFor(p.id, s.id, cur.id); const ci = idx(cur);
+  const cols = cs.map((c, i) => { const here = i === ci; const subs = c.subs || [];
+    return `<section class="pf-col${here ? ' cur' : ''}${i < ci || cur.done ? ' passed' : ''}" data-ctcol="${c.id}" aria-label="${i + 1}. ${esc(c.name)}">
+      <header><div><b>${i + 1}. ${esc(c.name)}</b>${here && !cur.done ? '<span class="pf-now">Сейчас здесь</span>' : ''}</div>
+        ${GUEST ? whoChip((p.vidWho || {})[c.id] || null) : `<select class="pf-status" data-vidwho="${c.id}" aria-label="Ответственный за этап «${esc(c.name)}»">${peopleOpts((p.vidWho || {})[c.id] || '', 'Ответственный не назначен')}</select>`}</header>
+      <div class="pf-cards">${here ? `<div class="pf-card ct-card here" ${GUEST ? '' : `draggable="true" data-ctdrag="${cur.id}"`}><span class="pf-here">${cur.done ? 'Опубликовано' : 'Ролик сейчас здесь'}</span><b>${esc(cur.name)}</b><small>перетащите в другой этап</small></div>` : ''}
+        ${subs.length ? subs.map(y => `<label class="pf-card ct-sub${cur.vs?.[y.id] || i < ci || cur.done ? ' done' : ''}"><input type="checkbox" data-ctvs="${cur.id}|${y.id}" ${cur.vs?.[y.id] || i < ci || cur.done ? 'checked' : ''} ${i !== ci || cur.done ? 'disabled' : ''}><span>${esc(y.name)}</span></label>`).join('') : here ? '' : '<p class="hint">Подэтапов нет</p>'}</div></section>`; }).join('');
+  return `<div class="pf ct-pf">
+    <aside class="pf-list"><input type="search" id="ctQ" placeholder="Найти ролик" value="${esc(ui.ctQ || '')}" aria-label="Поиск ролика"><div class="pf-items">${shown.map(item).join('') || '<p class="hint">Ничего не найдено</p>'}</div></aside>
+    <div class="pf-main">
+      <div class="pf-head"><div><h2><button class="link-plain" data-pfsub="${s.id}|${cur.id}"><span class="ct-ico${isStories(cur) ? ' st' : ''}">${ctIco(cur)}</span> ${esc(cur.name)}</button></h2>
+        <small>${isStories(cur) ? 'Сторис' : 'Рилс'}${cur.due_date ? ` · публикация ${fmt(cur.due_date)}` : ' · без даты'} · ${esc(short(contentWho(p, s, cur, t)) || 'ответственный не назначен')}</small></div>
+        ${GUEST ? '' : `<input type="date" class="ct-date" data-ctdue="${cur.id}" value="${cur.due_date || ''}" aria-label="Дата публикации">`}</div>
+      <div class="pf-board ct-reel">${cols}</div>
+    </div></div>`;
+}
+document.addEventListener('click', e => { const b = e.target.closest?.('[data-ctsel]'); if (b && ui.view === 'content'){ ui.ctSelVid = b.dataset.ctsel; render(); } });
+document.addEventListener('input', e => { if (e.target.id === 'ctQ'){ ui.ctQ = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#ctQ'); q?.focus(); q?.setSelectionRange(pos, pos); } });
 function renderContentBody(){
   if (!vidTpl() && !GUEST){ ensureSmmTemplate(db); save(); }
   // этапы видео больше не подтягиваются из шаблона SMM-пространства (затирали свои колонки и статусы видео) — у площадки свой шаблон «SMM: видео»
@@ -2845,7 +2879,7 @@ function renderContentBody(){
   const t = today(); const live = t >= c && t <= cycleEnd(c); const nowW = live ? weekOfDate(c, t) : 0;
   const due = live ? st.weeks.slice(0, nowW).reduce((m, x) => m + x.plan, 0) : t > cycleEnd(c) ? st.plan : 0;
   const pace = !st.plan || (!live && t < c) ? '' : st.pub >= due ? 'идём по плану' : `отстаём на ${due - st.pub}`;
-  const split = ui.ctView !== 'list';
+  const split = ui.ctView !== 'list' && !ui.ctSelMode;   // «Выбрать видео» — всегда списком (там галочки выбора)
   const row = x => `<li class="ct-row${x.done ? ' done' : ''}${split ? ' slim' : ''}" ${GUEST ? '' : `draggable="true" data-ctdrag="${x.id}"`}>
       ${ui.ctSelMode ? `<input type="checkbox" class="ct-pick" data-ctpick="${x.id}" ${ui.ctSel?.has(x.id) ? 'checked' : ''} aria-label="Выбрать ${esc(x.name)}">` : ''}
       <span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b>${x.done ? `<small>опубликовано ${fmt(ctDoneAt(x))}</small>` : ''}</button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}
@@ -2882,9 +2916,9 @@ function renderContentBody(){
     </div>
     <div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>
     </section>
-    <div class="ct-viewbar"><span class="kind-seg" role="group" aria-label="Вид роликов"><button type="button" data-ctview="split" aria-pressed="${split}">Список и доска</button><button type="button" data-ctview="list" aria-pressed="${!split}">Список</button></span>${GUEST ? '' : `<span class="ct-seltools">${ui.ctSelMode ? `<button class="ghost" data-ctselall>Выбрать все (${st.items.length})</button><button class="ghost danger" data-ctseldel ${ui.ctSel?.size ? '' : 'disabled'}>Удалить${ui.ctSel?.size ? ` (${ui.ctSel.size})` : ''}</button><button class="ghost" data-ctselmode>Готово</button>` : '<button class="ghost" data-ctselmode>Выбрать видео</button>'}</span>`}</div>
-    <div class="ct-split${split ? '' : ' one'}"><div class="ct-left">${st.weeks.filter(x => x.items.length).map(x => `<section class="ct-wk"><h3>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></h3>
-      <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}</div>${split ? `<div class="ct-right">${contentBoardHtml(s, st.items)}</div>` : ''}</div>
+    <div class="ct-viewbar"><span class="kind-seg" role="group" aria-label="Вид роликов"><button type="button" data-ctview="split" aria-pressed="${split}">По роликам</button><button type="button" data-ctview="list" aria-pressed="${!split}">Список</button></span>${GUEST ? '' : `<span class="ct-seltools">${ui.ctSelMode ? `<button class="ghost" data-ctselall>Выбрать все (${st.items.length})</button><button class="ghost danger" data-ctseldel ${ui.ctSel?.size ? '' : 'disabled'}>Удалить${ui.ctSel?.size ? ` (${ui.ctSel.size})` : ''}</button><button class="ghost" data-ctselmode>Готово</button>` : '<button class="ghost" data-ctselmode>Выбрать видео</button>'}</span>`}</div>
+    ${split ? ctReelHtml(p, s, st.items) : `<div class="ct-split one"><div class="ct-left">${st.weeks.filter(x => x.items.length).map(x => `<section class="ct-wk"><h3>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></h3>
+      <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}</div></div>`}
     `;
 }
 // «Этапы» в «План / Факт»: шкала на каждый этап видео — сколько видео сейчас на нём (длина полосы от всех видео цикла),

@@ -34,12 +34,13 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.deepEqual(E('ctStats(ctCur()).weeks.map(x => x.plan)'), [3, 3, 3, 3]); ok('план поровну на 4 недели');
   E(`ui.ctMode = 'plan'; render()`);
   const xid = E('contentStage().subs[0].id');
-  assert.ok(!D.querySelector('[data-ctdone]') && D.querySelector('.ct-split .ct-left [data-ctdrag]') && D.querySelector('.ct-split .ct-right [data-ctcol]')); ok('«План / Факт»: слева список рилсов без галочек, справа доска');
+  assert.ok(!D.querySelector('[data-ctdone]') && D.querySelector('.ct-pf .pf-list [data-ctsel]') && D.querySelectorAll('.ct-pf .ct-reel [data-ctcol]').length === E('vidCols().length')); ok('«По роликам»: слева список роликов, справа доска этапов выбранного ролика');
+  D.querySelector(`[data-ctsel="${xid}"]`).click(); await wait(20); assert.ok(D.querySelector('.ct-reel .pf-col.cur .ct-card.here')); ok('выбранный ролик — «Сейчас здесь» в своём этапе');
   { const dt = { d:{}, types:['text/kz-video'], setData(k, v){ this.d[k] = v; }, getData(k){ return this.d[k]; } };
     const ev = (type, el) => { const e = new w.Event(type, { bubbles:true, cancelable:true }); Object.defineProperty(e, 'dataTransfer', { value:dt }); el.dispatchEvent(e); };
-    ev('dragstart', D.querySelector(`.ct-left [data-ctdrag="${xid}"]`)); const last = [...D.querySelectorAll('.ct-right [data-ctcol]')].at(-1); ev('dragover', last); ev('drop', last); await wait(30); }
-  assert.ok(E(`projById('infoboard').stages.find(s => s.id === contentStage().id).subs[0].done`)); ok('рилс из списка перетащили в «Опубликовано» на доске — отмечен на доске площадки');
-  D.querySelector('[data-ctview="list"]').click(); await wait(20); assert.ok(!D.querySelector('.ct-right') && D.querySelector('.ct-row [data-ctmove]')); ok('вид «Список» — без доски, с этапом и датой в строке');
+    ev('dragstart', D.querySelector(`.ct-reel [data-ctdrag="${xid}"]`)); const last = [...D.querySelectorAll('.ct-reel [data-ctcol]')].at(-1); ev('dragover', last); ev('drop', last); await wait(30); }
+  assert.ok(E(`projById('infoboard').stages.find(s => s.id === contentStage().id).subs[0].done`)); ok('ролик перетащили в «Опубликовано» — отмечен на доске площадки');
+  D.querySelector('[data-ctview="list"]').click(); await wait(20); assert.ok(!D.querySelector('.ct-reel') && D.querySelector('.ct-row [data-ctmove]')); ok('вид «Список» — без доски, с этапом и датой в строке');
   D.querySelector('[data-ctview="split"]').click(); await wait(20);
   assert.equal(E('ctStats(ctCur()).pub'), 1); ok('факт считается по отметкам');
   // KPI: одно число на цикл, само делится на 4 недели
@@ -330,8 +331,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   // галочка у видео в «Контенте» — следующий этап
   E(`{ const x = contentStage(infoBoard()).subs.find(y => y.id === 'vSt'); x.done = false; x.vst = vidCols()[0].id; ui.view = 'content'; ui.ctMode = 'plan'; commit(); }`);
   assert.ok(!D.querySelector('.ct-stg') && !D.querySelector('.ct-next') && !D.querySelector('.ct-row .ct-mini')); ok('«План / Факт»: без блока «Этапы» и лишнего');
-  { const sel = D.querySelector('.ct-right [data-vidwho]'); sel.value = 'uStg'; sel.dispatchEvent(new w.Event('change', { bubbles:true }));
-    assert.equal(E(`infoBoard().vidWho[vidCols()[0].id]`), 'uStg'); ok('ответственного этапа назначаем на доске справа'); }
+  { const sel = D.querySelector('.ct-reel [data-vidwho]'); sel.value = 'uStg'; sel.dispatchEvent(new w.Event('change', { bubbles:true }));
+    assert.equal(E(`infoBoard().vidWho[vidCols()[0].id]`), 'uStg'); ok('ответственного этапа назначаем на доске ролика'); }
   // выбрать и удалить видео в «Контенте»
   E(`ui.view = 'content'; ui.ctMode = 'plan'; render()`);
   D.querySelector('[data-ctselmode]').click();
