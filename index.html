@@ -2506,6 +2506,18 @@ svg.clip{width:14px;height:14px;flex:none}
 .it-allp{margin-top:14px}.it-allp>h3{font-size:16px;margin:0 0 8px}
 .beta-b{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#fff;background:#7C3AED;border-radius:6px;padding:2px 7px;vertical-align:middle}
 .beta-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}.beta-c{display:grid;gap:4px;padding:14px;border:1px dashed var(--line-strong);border-radius:14px;background:var(--surface)}.beta-c small{color:var(--muted)}.beta-s{font-size:12px;color:var(--muted)}
+.bf-set{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0}.bf-set label{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+.bf-in{height:34px;border:1px solid var(--line);border-radius:8px;background:color-mix(in srgb,#FACC15 10%,var(--surface));padding:0 8px;font:inherit;font-size:13px;color:var(--ink);width:130px}
+.bf-kpi{display:grid;padding:6px 14px;border-left:2px solid var(--line)}.bf-kpi b{font-size:20px}.bf-kpi small{color:var(--muted);font-size:12px}
+.bf-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.bf-t{width:100%;border-collapse:collapse;font-size:13px}.bf-t th{text-align:left;font-weight:600;font-size:12px;color:var(--muted);padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.bf-t td{padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle}.bf-t tr:last-child td{border-bottom:0}.bf-t tr.now td{background:color-mix(in srgb,var(--brand) 8%,transparent)}
+.bf-src{display:block;font-size:11px;color:var(--muted)}.bf-pct{width:72px;margin-right:3px}
+.bf-bar{display:inline-block;width:90px;height:6px;border-radius:3px;background:var(--line);margin-right:8px;vertical-align:middle;overflow:hidden}.bf-bar i{display:block;height:100%;background:var(--brand)}
+.bf-pf{font-weight:600;color:var(--muted)}.bf-pf.ok,.bf-f.ok{color:var(--g)}.bf-pf.bad,.bf-f.bad{color:var(--r)}.bf-f.ok{border-color:var(--g)}.bf-f.bad{border-color:var(--r)}
+.bf-d .bf-in{width:84px;height:30px}.bf-pl{display:block;font-size:10.5px;color:var(--muted)}
+.bf-h{margin:20px 0 8px;font-size:16px}.bf-h small{font-weight:400}
+.bf-sc{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}.bf-scc{display:grid;gap:4px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}.bf-scc.on{border-color:var(--ink)}.bf-scc span{font-size:18px;font-weight:600}.bf-scc small{font-size:12px;font-weight:400;color:var(--muted)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -5541,12 +5553,62 @@ document.addEventListener('submit', e => {
   (s.subs = s.subs || []).push(nx); db.prefs.inbox = inboxAll().filter(y => y.id !== x.id);
   addLog(p, `Из входящих: задача «${x.text}» → отдел «${s.name}»`); commit(); toast(`Задача в «${s.name}»`);
 });
-// «Тестовое · бета» (инфобизнес, внизу меню): место под воронку с интеграциями — Instagram, Salebot, Telegram-бот. Пока заготовка.
-function renderBeta(){
-  app.innerHTML = `<div class="it-top"><h2>Тестовое <span class="beta-b">бета</span></h2></div>
-    <p class="hint">Здесь будет воронка: данные из Instagram, Salebot и Telegram-бота собираются в одном месте. Раздел в разработке.</p>
-    <div class="beta-grid">${[['Instagram', 'охваты, переходы из рилсов и сторис'], ['Salebot', 'заявки и диалоги из бота'], ['Telegram', 'подписчики и действия в боте']].map(([n, d]) => `<div class="beta-c"><b>${n}</b><small>${d}</small><span class="beta-s">не подключено</span></div>`).join('')}</div>`;
+// «Тестовое · бета» (инфобизнес, внизу меню): воронка «+10к Telegram» — декомпозиция цели, сценарии, план-факт по дням.
+// Из цели (подписчики Telegram) считаем назад: охват ← кодовое слово ← переходы, и вперёд: анкета → лид → звонки → оффер → клиент.
+// Настройки и факт — db.prefs.beta { goal, days, start, reach, conv:{k:доля}, fact:{'YYYY-MM-DD':{k:n}} }. Интеграции (Instagram, Salebot, Telegram) — позже.
+const BF_STAGES = [
+  ['shot', 'Рилс снято'], ['pub', 'Рилс выпущено'], ['reach', 'Охват рилс'], ['code', 'Кодовое слово «СТАТЬЯ»', .015], ['click', 'Перешли по ссылке', .4886],
+  ['subs', 'Подписчики Telegram', .931], ['form', 'Анкета на ранний доступ', .12], ['lead', 'Лид в отделе продаж', .856], ['callset', 'Звонок назначен', .598],
+  ['calldone', 'Звонок проведён', .785], ['offer', 'Оффер отправлен', .673], ['client', 'Новый клиент', .138]];
+const BF_PREV = { code:12800, click:6254, subs:5825, form:700, lead:599, callset:358, calldone:281, offer:189, client:26 };
+const BF_SRC = { reach:'Instagram', code:'Instagram', click:'Salebot', subs:'Telegram-бот', form:'Salebot' };
+const bfCfg = () => { const c = db.prefs?.beta || {}; return { goal:+c.goal || 10000, days:Math.min(91, Math.max(1, +c.days || 21)), start:c.start || '2026-11-30', reach:+c.reach || 40000, conv:c.conv || {}, fact:c.fact || {} }; };
+const bfConv = (c, k) => { const d = BF_STAGES.find(x => x[0] === k)?.[2]; return c.conv[k] != null ? +c.conv[k] : d; };
+// план на срок по этапам; m — множители сценария (охват, доля кодового слова)
+function bfPlan(c, m = { reach:1, code:1 }){
+  const cv = k => bfConv(c, k); const p = {};
+  p.subs = c.goal; p.click = p.subs / cv('subs'); p.code = p.click / cv('click'); p.reach = p.code / cv('code'); p.shot = p.pub = p.reach / c.reach;
+  if (m.reach !== 1 || m.code !== 1){ p.reach = p.pub * c.reach * m.reach; p.code = p.reach * cv('code') * m.code; p.click = p.code * cv('click'); p.subs = p.click * cv('subs'); }
+  let prev = p.subs; ['form', 'lead', 'callset', 'calldone', 'offer', 'client'].forEach(k => { p[k] = prev * cv(k); prev = p[k]; });
+  return p;
 }
+const bfN = v => v == null || isNaN(v) ? '—' : Math.round(v).toLocaleString('ru-RU');
+function renderBeta(){
+  const c = bfCfg(); const p = bfPlan(c); const days = Array.from({ length:c.days }, (_, i) => addDays(c.start, i)); const end = days.at(-1); const t0 = today();
+  const factSum = k => days.reduce((m, d) => m + (+c.fact[d]?.[k] || 0), 0);
+  const hasFact = Object.keys(c.fact).length > 0;
+  const rows = BF_STAGES.map(([k, name, def]) => { const f = factSum(k); const pct = p[k] ? Math.round(f / p[k] * 100) : 0; const w = Math.max(2, Math.round(Math.log10(Math.max(1, p[k])) / Math.log10(Math.max(10, p.reach)) * 100));
+    return `<tr><td><b>${name}</b>${BF_SRC[k] ? `<small class="bf-src">${BF_SRC[k]}</small>` : ''}</td>
+      <td>${def != null ? `<input type="number" class="bf-in bf-pct" data-bfconv="${k}" value="${+(bfConv(c, k) * 100).toFixed(2)}" step="0.1" min="0" max="100" aria-label="Конверсия: ${name}">%` : '—'}</td>
+      <td><span class="bf-bar"><i style="width:${w}%"></i></span>${bfN(p[k])}</td><td>${bfN(p[k] * 7 / c.days)}</td><td>${bfN(p[k] / c.days)}</td>
+      <td>${hasFact ? `${bfN(f)} <small class="bf-pf ${pct >= 100 ? 'ok' : pct < 80 ? 'bad' : ''}">${pct}%</small>` : '—'}</td><td>${BF_PREV[k] ? bfN(BF_PREV[k]) : '—'}</td></tr>`; }).join('');
+  const sc = [['Пессимистичный', .9, .9], ['Реалистичный', 1, 1], ['Максимальный', 1.1, 1.1]].map(([n, r, k]) => [n, bfPlan(c, { reach:r, code:k })]);
+  const dayKeys = ['pub', 'reach', 'code', 'click', 'subs', 'form', 'lead', 'client'];
+  const dayRow = d => `<tr class="${d === t0 ? 'now' : ''}"><td>${fmt(d)}</td>${dayKeys.map(k => { const v = c.fact[d]?.[k]; const pl = p[k] / c.days; const cls = v == null || v === '' ? '' : +v >= pl ? 'ok' : +v < pl * .8 ? 'bad' : '';
+    return `<td><small class="bf-pl">${bfN(pl)}</small><input type="number" class="bf-in bf-f ${cls}" data-bffact="${d}|${k}" value="${v ?? ''}" min="0" aria-label="Факт ${fmt(d)}"></td>`; }).join('')}</tr>`;
+  app.innerHTML = `<div class="it-top"><h2>Воронка +${bfN(c.goal)} Telegram <span class="beta-b">бета</span></h2></div>
+    <p class="hint">Меняйте цель, срок и конверсии — план пересчитается. Факт вписывайте по дням ниже (позже — сам из Instagram, Salebot и Telegram-бота).</p>
+    <div class="bf-set">
+      <label>Цель, подписчиков<input type="number" class="bf-in" data-bfset="goal" value="${c.goal}" min="1"></label>
+      <label>Срок, дней<input type="number" class="bf-in" data-bfset="days" value="${c.days}" min="1" max="91"></label>
+      <label>Старт<input type="date" class="bf-in" data-bfset="start" value="${c.start}"></label>
+      <label>Средний охват рилс<input type="number" class="bf-in" data-bfset="reach" value="${c.reach}" min="1"></label>
+      <div class="bf-kpi"><b>${bfN(p.pub)}</b><small>рилс за ${c.days} дн. · ${bfN(p.pub * 7 / c.days)} в неделю</small></div>
+      <div class="bf-kpi"><b>${bfN(p.client)}</b><small>новых клиентов · финиш ${fmt(end)}</small></div></div>
+    <div class="bf-wrap"><table class="bf-t"><thead><tr><th>Этап воронки</th><th>Конверсия</th><th>План на срок</th><th>В неделю</th><th>В день</th><th>Факт</th><th>Прошлый запуск</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <h3 class="bf-h">Сценарии <small class="hint">одно число рилс, меняются охват и доля кодового слова ±10%</small></h3>
+    <div class="bf-sc">${sc.map(([n, q]) => `<div class="bf-scc${n === 'Реалистичный' ? ' on' : ''}"><b>${n}</b><span>${bfN(q.subs)} <small>подписчиков · ${Math.round(q.subs / c.goal * 100)}% цели</small></span><span>${bfN(q.client)} <small>клиентов</small></span><span>${bfN(q.reach)} <small>охват</small></span></div>`).join('')}</div>
+    <h3 class="bf-h">План-факт по дням <small class="hint">серым — план дня; факт краснеет ниже 80% плана, зеленеет от 100%</small></h3>
+    <div class="bf-wrap"><table class="bf-t bf-d"><thead><tr><th>День</th>${dayKeys.map(k => `<th>${BF_STAGES.find(x => x[0] === k)[1]}</th>`).join('')}</tr></thead><tbody>${days.map(dayRow).join('')}</tbody></table></div>
+    <h3 class="bf-h">Источники данных</h3>
+    <div class="beta-grid">${[['Instagram', 'охват рилс, кодовое слово в комментариях'], ['Salebot', 'переходы по ссылке, анкеты'], ['Telegram-бот', 'новые подписчики канала']].map(([n, d]) => `<div class="beta-c"><b>${n}</b><small>${d}</small><span class="beta-s">не подключено — факт вручную</span></div>`).join('')}</div>`;
+}
+const bfSave = f => { db.prefs = db.prefs || {}; db.prefs.beta = { ...(db.prefs.beta || {}) }; f(db.prefs.beta); commit(); };
+document.addEventListener('change', e => {
+  const st = e.target.dataset?.bfset; if (st){ bfSave(b => { b[st] = st === 'start' ? e.target.value : +e.target.value; }); return; }
+  const cv = e.target.dataset?.bfconv; if (cv){ const v = +e.target.value / 100; bfSave(b => { b.conv = { ...(b.conv || {}), [cv]:Math.max(0, Math.min(1, v)) }; }); return; }
+  const fc = e.target.dataset?.bffact; if (fc){ const [d, k] = fc.split('|'); const v = e.target.value; bfSave(b => { b.fact = { ...(b.fact || {}) }; b.fact[d] = { ...(b.fact[d] || {}) }; if (v === '') delete b.fact[d][k]; else b.fact[d][k] = Math.max(0, +v); }); }
+});
 // раздел «Приоритеты» (инфобизнес): все задачи инфоповода по приоритету, приоритет меняется в строке
 function renderPriority(){
   const p = infoBoard(); if (!p){ app.innerHTML = '<div class="empty">Доски пока нет</div>'; return; }
