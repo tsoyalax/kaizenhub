@@ -2529,6 +2529,7 @@ svg.clip{width:14px;height:14px;flex:none}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .bfv-r{background:hsl(var(--h) 35% 18%);border-color:hsl(var(--h) 35% 30%);color:hsl(var(--h) 70% 88%)}:root:not([data-theme="light"]) .bfv-f{background:hsl(var(--h) 45% 28%)}}
 .bf-dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:0 0 12px}.bf-dc{display:grid;gap:4px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
 .bf-dc>small{font-size:12px;color:var(--muted)}.bf-dc b{font-size:22px;font-weight:700}.bf-dc b span{font-size:13px;font-weight:400;color:var(--muted)}.bf-dbar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}.bf-dbar i{display:block;height:100%;background:var(--brand)}
+.look-seg button{display:inline-flex;align-items:center;gap:6px}.look-seg svg{width:15px;height:15px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -4242,7 +4243,7 @@ function restoreView(){
     const v = JSON.parse(sessionStorage.getItem(VIEW_KEY) || 'null'); if (!v) return;
     const ok = [...document.querySelectorAll('.tabs [data-view]')].map(b => b.dataset.view).concat('mine', 'mytasks', 'review');
     if (ok.includes(v.view)) ui.view = v.view;
-    if (['deadlines','templates','categories','spaces','boards'].includes(v.setTab)) ui.setTab = v.setTab;
+    if (['deadlines','templates','categories','spaces','boards','look'].includes(v.setTab)) ui.setTab = v.setTab;
     if (v.view === 'production' && v.prodMode === 'tasks') ui.view = 'mytasks';
   } catch(e) {}
 }
@@ -6657,12 +6658,13 @@ document.addEventListener('click', async e => {
 });
 // в инфобизнесе «Дедлайны», «Шаблоны» и «Категории» не нужны (по просьбе) — в настройках только «Пространства» и «AI»
 const SET_INFO_HIDE = ['deadlines', 'templates', 'categories'];
-const setTabs = () => [...(isInfo() && !GUEST ? [['boards', 'Площадки']] : []), ['deadlines', 'Дедлайны'], ['templates', 'Шаблоны'], ['categories', 'Категории'], ['spaces', 'Пространства'], ['ai', 'AI']].filter(([k]) => !(isInfo() && SET_INFO_HIDE.includes(k)));
+const setTabs = () => [...(isInfo() && !GUEST ? [['boards', 'Площадки']] : []), ['look', 'Оформление'], ['deadlines', 'Дедлайны'], ['templates', 'Шаблоны'], ['categories', 'Категории'], ['spaces', 'Пространства'], ['ai', 'AI']].filter(([k]) => !(isInfo() && SET_INFO_HIDE.includes(k)));
 const setTabNow = () => { const t = ui.setTab || 'deadlines'; return setTabs().some(([k]) => k === t) ? t : setTabs()[0][0]; };
 const setNav = () => `<div class="set-nav seg-toggle" role="tablist" aria-label="Разделы настроек">${setTabs().map(([k, l]) => `<button data-settab="${k}" aria-pressed="${setTabNow() === k}">${l}</button>`).join('')}</div>`;
 function renderSettings(){
   ui.setTab = setTabNow();
   if (ui.setTab === 'boards'){ renderBoardSettings(); return; }
+  if (ui.setTab === 'look'){ renderLookSettings(); return; }
   if (ui.setTab === 'ai'){ renderAiSettings(); return; }
   if (ui.setTab === 'templates'){ renderTemplates(); return; }
   if (ui.setTab === 'categories'){ renderCategories(); return; }
@@ -7238,9 +7240,8 @@ function sideFoot(){
   const dark = document.documentElement.getAttribute('data-theme') === 'dark' || (!document.documentElement.getAttribute('data-theme') && darkMq.matches);
   return `<div class="side-foot${GUEST ? '' : ' with-sp'}">
     <button class="side-me" data-sideme title="Мой профиль">${u && (avatarOk(u) || u.name) ? avHtml(u, 'av av-sm') : '<span class="av av-sm">?</span>'}<span><b>${esc(u?.name || 'Мой профиль')}</b><small>${esc(u?.title || u?.email || (GUEST ? 'Исполнитель' : 'Профиль'))}</small></span></button>
-    <button class="icon-btn" data-sidetheme title="${dark ? 'Светлая тема' : 'Тёмная тема'}" aria-label="${dark ? 'Включить светлую тему' : 'Включить тёмную тему'}">${dark ? SUN : MOON}</button>
     ${GUEST ? '' : `<button class="icon-btn side-cloud" data-sidecloud data-state="${cloud.status}" title="${esc(cloudText())}" aria-label="${esc(cloudText())}">${CLOUD_ICON}</button>`}</div>
-    ${GUEST ? '' : `<div class="side-sync"><button class="ghost" data-savenow title="Записать изменения в облако сейчас">${SAVE_ICO}Сохранить</button><button class="ghost" data-syncnow title="Загрузить актуальные данные из облака">${SYNC_ICO}Синхронизировать</button></div>`}
+    ${''/* «Сохранить» / «Синхронизировать» убраны: сохранение бесшовное, состояние — иконкой облака рядом с темой (нажатие — подробности и ручные кнопки) */}
     <div class="side-brand" aria-label="KaizenHub"><span class="sb-dots" aria-hidden="true"><i></i><i></i><i></i></span>KaizenHub</div>`;
 }
 function openSide(){ sideOpen = true; renderSide(); }
@@ -7381,6 +7382,13 @@ function switchSpace(id){
 }
 const TRASH_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>';
 // «Настройки → Площадки» (инфобизнес): название и карточка площадки, её отделы — переименовать, переставить, удалить, добавить
+function renderLookSettings(){
+  const m = themeMode();
+  app.innerHTML = `${setNav()}<div class="panel set-panel"><h2>Оформление</h2>
+    <p class="hint">«Как в системе» — тема меняется сама: днём светлая, вечером тёмная (вслед за настройкой телефона или компьютера).</p>
+    <span class="kind-seg look-seg" role="radiogroup" aria-label="Тема">${[['auto', 'Как в системе'], ['light', 'Светлая'], ['dark', 'Тёмная']].map(([k, l]) => `<button type="button" data-themeset="${k}" aria-pressed="${m === k}">${k === 'light' ? SUN : k === 'dark' ? MOON : ''}${l}</button>`).join('')}</span></div>`;
+}
+document.addEventListener('click', e => { const b = e.target.closest?.('[data-themeset]'); if (b) setThemeMode(b.dataset.themeset); });
 function renderBoardSettings(){
   const boards = infoBoards();
   const dept = (p, s, i, list) => `<li class="bs-d" style="--kh:${kbHue(s.name)}">${deptIco(s.name)}
@@ -7992,6 +8000,14 @@ const SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 const MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
 const darkMq = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : { matches:false };
 const effectiveTheme = () => document.documentElement.dataset.theme || (darkMq.matches ? 'dark' : 'light');
+// тема: «Как в системе» (по умолчанию — меняется сама вслед за системой), «Светлая», «Тёмная» — в «Настройки → Оформление»
+const themeMode = () => { try { return localStorage.getItem(THEME_KEY) || 'auto'; } catch(e) { return 'auto'; } };
+function setThemeMode(m){
+  if (m === 'auto'){ delete document.documentElement.dataset.theme; try { localStorage.removeItem(THEME_KEY); } catch(e) {} }
+  else { document.documentElement.dataset.theme = m; try { localStorage.setItem(THEME_KEY, m); } catch(e) {} }
+  try { syncThemeUi(); } catch(e) {} render();
+}
+try { darkMq.addEventListener?.('change', () => { if (themeMode() === 'auto'){ try { syncThemeUi(); } catch(e) {} render(); } }); } catch(e) {}
 function syncThemeUi(){
   const dark = effectiveTheme() === 'dark';
   $('#themeBtn').innerHTML = dark ? SUN : MOON;

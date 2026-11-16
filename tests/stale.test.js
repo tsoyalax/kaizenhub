@@ -60,7 +60,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.equal(d4.w.eval(`projById('${pid}').client`), 'Клиент Б'); ok('несохранённая правка подхватилась при открытии');
   await wait(2500); assert.equal(cloudP().client, 'Клиент Б'); assert.equal(cloudP().name, 'НОВОЕ ИМЯ'); ok('и дописалась в облако, не откатив имя');
   // кнопки
-  const w4 = d4.w; w4.eval(`openSide && openSide()`); await wait(50);
+  const w4 = d4.w; w4.eval(`openCloudInfo()`); await wait(50);
   assert.ok(w4.document.querySelector('[data-savenow]') && w4.document.querySelector('[data-syncnow]')); ok('кнопки «Сохранить» и «Синхронизировать» есть');
   w4.eval(`projById('${pid}').note = 'через кнопку'; save()`);
   w4.document.querySelector('[data-savenow]').click(); await wait(800);
