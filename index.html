@@ -2420,6 +2420,15 @@ svg.clip{width:14px;height:14px;flex:none}
 .ct-kind label{display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:0 12px;height:32px;border-radius:8px}.ct-kind input{position:absolute;opacity:0;pointer-events:none}.ct-kind svg{width:16px;height:16px}
 .ct-kind label:has(input:checked){background:var(--surface);box-shadow:0 0 0 1px var(--line-strong)}.ct-ico.st{color:#DB2777}
 .ct-tl-n{display:inline-flex;align-items:center;gap:8px}.ct-tl-n .ct-ico{width:26px;height:26px;display:inline-grid;place-items:center;border-radius:8px;background:var(--surface-2)}.ct-tl-n .ct-ico svg{width:16px;height:16px}
+.ct-k-reels{--ck:#7C3AED;--ckb:#EDE9FE}.ct-k-stories{--ck:#DB2777;--ckb:#FCE7F3}.ct-k-extra{--ck:#0891B2;--ckb:#CFFAFE}
+:root[data-theme="dark"] :is(.ct-k-reels,.ct-k-stories,.ct-k-extra){--ckb:color-mix(in srgb,var(--ck) 28%,#111)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) :is(.ct-k-reels,.ct-k-stories,.ct-k-extra){--ckb:color-mix(in srgb,var(--ck) 28%,#111)}}
+.ct-l-reels{background:color-mix(in srgb,#7C3AED 5%,transparent)}.ct-l-stories{background:color-mix(in srgb,#DB2777 5%,transparent)}.ct-l-extra{background:color-mix(in srgb,#0891B2 5%,transparent)}
+.ct-mk-i{width:24px;height:24px;flex:none;display:inline-grid;place-items:center;border-radius:7px;background:var(--ckb);color:var(--ck);box-shadow:0 0 0 2px var(--surface)}.ct-mk-i svg{width:15px;height:15px}
+.ct-tl-n .ct-mk-i{width:32px;height:32px;border-radius:9px;box-shadow:none}.ct-tl-n .ct-mk-i svg{width:19px;height:19px}
+.tl-task.ct-mk{align-items:center;gap:7px;height:24px}.tl-task.ct-mk i.ct-mk-i{width:24px;height:24px;border:0;border-radius:7px;background:var(--ckb);color:var(--ck);box-shadow:0 0 0 2px var(--surface)}
+.tl-task.ct-mk.k-done i.ct-mk-i{background:var(--ck);color:#fff}.tl-task.ct-mk.k-red i.ct-mk-i{box-shadow:0 0 0 2px #EF4444}.tl-task.ct-mk.k-yellow i.ct-mk-i{box-shadow:0 0 0 2px #F59E0B}.tl-task.ct-mk span{color:var(--ink)}
+.ct-tag{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.02em;color:var(--ck);background:var(--ckb);border-radius:5px;padding:1px 5px;margin-right:5px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2795,13 +2804,13 @@ function ctTimelineHtml(p, s){
   const days = Array.from({ length:nd }, (_, i) => addDays(from, i));
   const k = x => x.done ? 'done' : x.due_date < t0 ? 'red' : x.due_date <= addDays(t0, 1) ? 'yellow' : 'green';
   return tlZoomBar() + `<div class="tl ct-tl${compact ? ' compact' : ''}" aria-label="Таймлайн публикаций">
-    <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl" style="height:${l.h}px"><b class="ct-tl-n"><span class="ct-ico${l.k === 'stories' ? ' st' : l.k === 'extra' ? ' x' : ''}">${l.ico}</span>${l.name}</b><small>${l.items.filter(x => x.done).length} из ${l.items.length} опубликовано</small></div>`).join('')}</div>
+    <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl" style="height:${l.h}px"><b class="ct-tl-n ct-k-${l.k}"><span class="ct-mk-i">${l.ico}</span>${l.name}</b><small>${l.items.filter(x => x.done).length} из ${l.items.length} опубликовано</small></div>`).join('')}</div>
     <div class="tl-scroll"><div class="tl-in" style="width:${W}px">
       <div class="tl-head">${tlHead(days, from, DW, t0)}</div>
       <div class="tl-body" style="height:${y}px">${tlShade(days, from, DW)}
-        ${lanes.map(l => `<div class="tl-lane" style="top:${l.top}px;height:${l.h}px"></div>`).join('')}
+        ${lanes.map(l => `<div class="tl-lane ct-lane ct-l-${l.k}" style="top:${l.top}px;height:${l.h}px"></div>`).join('')}
         <i class="tl-today" style="left:${xOf(t0)}px"></i>
-        ${lanes.flatMap(l => l.placed.map(i => `<button class="tl-task k-${k(i.x)}" data-pfsub="${s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px" title="${esc(i.x.name)} · ${i.x.done ? 'опубликовано' : esc(vidCol(i.x)?.name || '')}${i.wn ? ' · ' + esc(i.wn) : ''} · ${fmt(i.x.due_date)}"><i></i><span>${esc(i.x.name)}<small>${i.x.done ? ' · опубликовано' : vidCol(i.x) ? ' · ' + esc(vidCol(i.x).name) : ''}${i.wn ? ' · ' + esc(i.wn) : ''} · ${fmt(i.x.due_date)}</small></span></button>`)).join('')}
+        ${lanes.flatMap(l => l.placed.map(i => `<button class="tl-task ct-mk ct-k-${l.k} k-${k(i.x)}" data-pfsub="${s.id}|${i.x.id}" style="left:${i.px - 12}px;top:${l.top + 8 + i.r * TL_ROW + 3}px" title="${esc(i.x.name)} · ${i.x.done ? 'опубликовано' : esc(vidCol(i.x)?.name || '')}${i.wn ? ' · ' + esc(i.wn) : ''} · ${fmt(i.x.due_date)}"><i class="ct-mk-i">${l.ico}</i><span>${(t => new RegExp('^' + t, 'i').test(i.x.name) ? '' : `<em class="ct-tag">${t}</em>`)(l.k === 'stories' ? 'Сторис' : l.k === 'extra' ? 'Доп.' : 'Рилс')}${esc(i.x.name)}<small>${i.x.done ? ' · опубликовано' : vidCol(i.x) ? ' · ' + esc(vidCol(i.x).name) : ''}${i.wn ? ' · ' + esc(i.wn) : ''} · ${fmt(i.x.due_date)}</small></span></button>`)).join('')}
       </div></div></div></div>`;
 }
 function renderContentBody(){
@@ -2812,7 +2821,7 @@ function renderContentBody(){
   ui.prodProject = p.id;
   const c = ctCur(); const cs = ctCycles(); const i = cs.indexOf(c);
   const addForm = `<form class="ct-add" id="ctAdd">
-      <div class="ct-add-hd"><span class="ct-ico lg">${VIDEO_ICO}</span><div><b>Новый контент</b><small>Рилсы и сторис — в плане по неделям раздела «Контент»</small></div></div>
+      <div class="ct-add-hd"><span class="ct-ico lg">${VIDEO_ICO}</span><div><b>Новый контент</b></div></div>
       <div class="ct-add-row"><span class="kind-seg ct-kind" role="radiogroup" aria-label="Тип контента"><label><input type="radio" name="ctKind" value="" ${ui.ctKind !== 'stories' ? 'checked' : ''}>${VIDEO_ICO}Рилсы</label><label><input type="radio" name="ctKind" value="stories" ${ui.ctKind === 'stories' ? 'checked' : ''}>${STORIES_ICO}Сторис</label></span></div>
       <div class="ct-add-row">
         <label class="ct-f grow"><span>Название</span><input id="ctName" placeholder="Например, Рилс или Сторис"></label>
@@ -2824,7 +2833,7 @@ function renderContentBody(){
         <label class="ct-sw"><input type="checkbox" id="ctExtra" ${ui.ctExtra ? 'checked' : ''}><i aria-hidden="true"></i><span>Доп. контент <small>вне плана, считается отдельно</small></span></label>
         <button class="primary">Добавить</button>
       </div>
-      <small class="hint">Видео распределятся поровну между стартом и концом (без конца — на 4 недели от старта).</small></form>`;
+      </form>`;
   if (!c){ app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2></div><p class="hint">Видео пока нет. Добавьте первые — например, 12 роликов на месяц.</p>${addForm}`; return; }
   const st = ctStats(c); const pct = st.plan ? Math.min(100, Math.round(st.pub / st.plan * 100)) : 0;
   const t = today(); const live = t >= c && t <= cycleEnd(c); const nowW = live ? weekOfDate(c, t) : 0;
@@ -2832,8 +2841,8 @@ function renderContentBody(){
   const pace = !st.plan || (!live && t < c) ? '' : st.pub >= due ? 'идём по плану' : `отстаём на ${due - st.pub}`;
   const row = x => `<li class="ct-row${x.done ? ' done' : ''}">
       ${ui.ctSelMode ? `<input type="checkbox" class="ct-pick" data-ctpick="${x.id}" ${ui.ctSel?.has(x.id) ? 'checked' : ''} aria-label="Выбрать ${esc(x.name)}">` : ''}<input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="${x.done ? 'Опубликовано' : 'Готово — на следующий этап'}: ${esc(x.name)}" title="${x.done ? 'Опубликовано' : 'Этап готов — перевести видео на следующий'}">
-      <span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}
-      ${ctMini(x)}${vidCols().length ? `<select class="ct-stsel${x.done ? ' done' : ''}" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}" title="Этап видео — выберите, чтобы перенести">${vidCols().map(y => `<option value="${y.id}" ${y === vidCol(x) ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select>` : ''}
+      <span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b>${x.done ? `<small>опубликовано ${fmt(ctDoneAt(x))}</small>` : ''}</button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}
+      ${vidCols().length ? `<select class="ct-stsel${x.done ? ' done' : ''}" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}" title="Этап видео — выберите, чтобы перенести">${vidCols().map(y => `<option value="${y.id}" ${y === vidCol(x) ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select>` : ''}
       ${whoChip(contentWho(p, s, x, taskFor(p.id, s.id, x.id)))}<input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
   // по умолчанию — «План / Факт», доска — вторым видом
   const modeSeg = `<span class="kind-seg ct-mode" role="group" aria-label="Вид"><button type="button" data-ctmode="plan" aria-pressed="${ui.ctMode !== 'board' && ui.ctMode !== 'timeline'}">План / Факт</button><button type="button" data-ctmode="board" aria-pressed="${ui.ctMode === 'board'}">Доска</button><button type="button" data-ctmode="timeline" aria-pressed="${ui.ctMode === 'timeline'}">Таймлайн</button></span>`;
@@ -2841,13 +2850,12 @@ function renderContentBody(){
   if (ui.ctMode === 'timeline'){ app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>${plus}${modeSeg}</div>${ui.ctAddOpen ? addForm : ''}${ctTimelineHtml(p, s)}`; return; }
   if (ui.ctMode === 'board'){
     app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>${plus}
-      <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>${modeSeg}
-      <button class="ghost" data-ctaddx>+ Доп. контент</button></div>${ui.ctAddOpen ? addForm : ''}
+      <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>${modeSeg}</div>${ui.ctAddOpen ? addForm : ''}
       ${contentBoardHtml(s, ctItems().filter(x => x.cycle === c))}`;
     return;
   }
   app.innerHTML = `<div class="smm-hd ct-top"><h2>Контент</h2>${plus}${modeSeg}</div>${ui.ctAddOpen ? addForm : ''}<section class="smm-pf" aria-label="Контент: план и факт">
-    <div class="smm-hd"><h2>План / Факт</h2>
+    <div class="smm-hd">
       <span class="smm-m"><button class="icon-btn" data-ctcyc="-1" ${i > 0 ? '' : 'disabled'} aria-label="Предыдущий цикл">‹</button><b>${cycleRange(c)}</b><button class="icon-btn" data-ctcyc="1" ${i < cs.length - 1 ? '' : 'disabled'} aria-label="Следующий цикл">›</button></span>
       ${p.ctEnd?.[c] ? `<span class="ct-endb">закончить к ${fmt(p.ctEnd[c])}</span>` : ''}
       ${ui.ctEdit === c ? '' : `<button class="ghost smm-edit" data-ctedit>${ICON_EDIT}KPI</button>`}</div>
@@ -2862,15 +2870,12 @@ function renderContentBody(){
       <div><b>${st.plan}</b><small>План${st.kpi && !st.ownWeeks ? ` · KPI ${st.kpi} в неделю` : st.ownWeeks ? ' · по неделям' : ''}</small></div>
       ${st.scr != null ? `<div><b>${st.scr} <small>из ${st.plan}</small></b><small>Сценариев написано</small></div>` : ''}
       <div><b>${st.pub} <small>из ${st.plan}</small></b><small>Опубликовано${pace ? ' · ' + pace : ''}</small></div>
-      <div><b>${Math.max(0, st.plan - st.pub)}</b><small>Осталось</small></div>
       ${st.extra.n ? `<div><b>${st.extra.pub} <small>из ${st.extra.n}</small></b><small>Доп. контент</small></div>` : ''}
       ${st.stories.n ? `<div><b>${st.stories.pub} <small>из ${st.stories.n}</small></b><small>Сторис</small></div>` : ''}
     </div>
     <div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>
     ${ctStagesHtml(p, s, st)}
-    <table class="smm-wk"><thead><tr><th>Неделя</th><th>План</th>${st.scr != null ? '<th>Сценарии</th>' : ''}<th>Опубликовано</th></tr></thead><tbody>
-      ${st.weeks.map(x => `<tr class="${x.w === nowW ? 'now' : ''}"><td>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></td><td>${x.plan}</td>${st.scr != null ? `<td>${x.scr || 0} <small class="hint">из ${x.plan}</small></td>` : ''}<td>${x.pub} <small class="hint">из ${x.plan}</small></td></tr>`).join('')}
-    </tbody></table></section>
+    </section>
     ${GUEST ? '' : `<div class="ct-seltools">${ui.ctSelMode ? `<button class="ghost" data-ctselall>Выбрать все (${st.items.length})</button><button class="ghost danger" data-ctseldel ${ui.ctSel?.size ? '' : 'disabled'}>Удалить${ui.ctSel?.size ? ` (${ui.ctSel.size})` : ''}</button><button class="ghost" data-ctselmode>Готово</button>` : '<button class="ghost" data-ctselmode>Выбрать видео</button>'}</div>`}
     ${st.weeks.filter(x => x.items.length).map(x => `<section class="ct-wk"><h3>Неделя ${x.w} <small class="hint">${weekRangeC(c, x.w)}</small></h3>
       <ul class="ct-list">${x.items.sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true })).map(row).join('')}</ul></section>`).join('')}

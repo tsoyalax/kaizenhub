@@ -327,7 +327,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   { const cb = D.querySelector('[data-ctdone="vSt"]'); cb.checked = true; cb.dispatchEvent(new w.Event('change', { bubbles:true }));
     assert.equal(E(`vidCol(contentStage(infoBoard()).subs.find(y => y.id === 'vSt')).id`), E('vidCols()[1].id')); ok('галочка у видео — следующий этап');
     assert.ok(!D.querySelector('.ct-next')); ok('блока «Что дальше» нет'); }
-  assert.ok(D.querySelectorAll('.ct-stg-r').length === E('vidCols().length') && D.querySelector('.ct-row .ct-mini')); ok('«План / Факт»: шкалы этапов и мини-шкала у каждого видео');
+  assert.ok(D.querySelectorAll('.ct-stg-r').length === E('vidCols().length') && !D.querySelector('.ct-row .ct-mini')); ok('«План / Факт»: шкалы этапов и мини-шкала у каждого видео');
   { const sel = D.querySelector('.ct-stg [data-vidwho]'); sel.value = 'uStg'; sel.dispatchEvent(new w.Event('change', { bubbles:true }));
     assert.equal(E(`infoBoard().vidWho[vidCols()[0].id]`), 'uStg'); ok('в «Этапах» ответственного этапа можно назначить сразу'); }
   // выбрать и удалить видео в «Контенте»
