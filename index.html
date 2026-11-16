@@ -2445,6 +2445,13 @@ svg.clip{width:14px;height:14px;flex:none}
 .kb-fpanel{display:grid;gap:8px;padding:10px;border:1px solid var(--line);border-radius:12px;margin-bottom:12px}
 .kb-type[data-kbtt]{cursor:pointer}.kb-type[data-kbtt]:hover{border-color:currentColor}
 .ct-to{height:26px;padding:0 9px;font-size:12px;margin-left:auto}.ct-to.pub{color:var(--g, #16A34A);border-color:currentColor}.ct-reel header>div{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.in-lead{margin:-4px 0 12px}.in-add{display:grid;gap:8px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface);margin-bottom:16px}
+.in-add textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;font-size:14px;background:var(--bg);resize:vertical}
+.in-add-row{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.in-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}.in-i{display:grid;gap:8px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.in-t{display:grid;gap:3px}.in-t b{font-weight:500;font-size:14.5px}.in-t small{color:var(--muted);font-size:12px}
+.in-src{font-weight:600;padding:1px 7px;border-radius:6px;background:var(--surface-2)}.in-src.s-meet{color:#7C3AED}.in-src.s-talk{color:#0369A1}.in-src.s-call{color:#15803D}.in-src.s-idea{color:#B45309}
+.in-to{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.in-to select,.in-to input{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 8px;font-size:13px;max-width:100%}.in-to .primary{height:32px;padding:0 12px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2461,6 +2468,7 @@ svg.clip{width:14px;height:14px;flex:none}
     <button data-view="kanban">Канбан</button>
     <button data-view="production">Производство</button>
     <button data-view="funnel" hidden>AI-воронка</button>
+    <button data-view="inbox" hidden>Входящие</button>
     <button data-view="priority" hidden>Приоритеты</button>
     <button data-view="content" hidden>Контент</button>
     <button data-view="mytasks" id="myTasksTab">Мои задачи</button>
@@ -4165,9 +4173,9 @@ function render(){
   document.body.dataset.kind = GUEST ? '' : (db?.prefs?.kind || 'agency');
   if (isInfo() && !GUEST){ if (INFO_HIDDEN.includes(ui.view)) ui.view = 'production'; try { ensureInfoBoard(); syncInfoNames(); } catch(e) {} }
   INFO_HIDDEN.forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = isInfo() && !GUEST; });
-  ['content', 'funnel', 'priority'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST || (v === 'funnel' && !SHOW_AI_FUNNEL) || (v === 'content' && !SHOW_CONTENT); });
+  ['content', 'funnel', 'priority', 'inbox'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST || (v === 'funnel' && !SHOW_AI_FUNNEL) || (v === 'content' && !SHOW_CONTENT); });
   if (ui.view === 'content' && !SHOW_CONTENT) ui.view = 'production';
-  if (['content', 'funnel', 'priority'].includes(ui.view) && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
+  if (['content', 'funnel', 'priority', 'inbox'].includes(ui.view) && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
   if (ui.view === 'funnel' && !SHOW_AI_FUNNEL) ui.view = 'production';
   try { renderSide(); } catch(e) {}
   setTimeout(() => { try { paintReviewBadge(); } catch(e) {} }, 0);
@@ -4182,7 +4190,7 @@ function render(){
   renderFilters();
   const nb = $('#newBtn'); if (nb) nb.textContent = W('Новый проект', 'Новое видео', 'Новый блогер');
   if (!isCRM()) ui.crmStage = null;
-  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, priority:renderPriority, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, today:renderToday, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
+  ({ matrix:renderMatrix, kanban:renderKanban, production:renderProduction, funnel:renderFunnel, priority:renderPriority, inbox:renderInbox, content:renderContent, mine:renderMine, mytasks:() => renderMyDay('exec'), review:renderReview, archive:renderArchive, today:renderToday, assign:() => renderMyDay('admin'), reports:renderReports, load:renderLoad, team:renderTeam, templates:renderSettings })[ui.view]();
   if (ui.view === 'matrix' && isSMM() && !GUEST) app.insertAdjacentHTML('afterbegin', smmPanelHtml());
   if ((ui.view === 'matrix' || ui.view === 'kanban') && isCRM() && !GUEST && !(ui.view === 'matrix' && density() === 'funnel')) app.insertAdjacentHTML('afterbegin', crmSumHtml());
   if (ui.open) renderDrawer();
@@ -5392,6 +5400,52 @@ function renderProduction(){
   else if (b && !ui.pfEdit && !kbDeptView()) b.outerHTML = kanbanHtml([p]);    // обычный канбан; в «Редактировать доску» — отделы столбиками
 }
 document.addEventListener('click', e => { const t = e.target.closest?.('[data-prodtab]'); if (t){ ui.prodTab = t.dataset.prodtab; render(); } });
+// ---------- «Входящие» (инфобизнес): задачи после планёрок, переговоров, случайные — сначала сюда, потом разносим по отделам ----------
+// Хранятся в db.prefs.inbox [{ id, text, src, at, by }]; «В задачи» создаёт задачу в выбранном отделе площадки и убирает из входящих.
+const INBOX_SRC = [['meet', 'Планёрка'], ['talk', 'Переговоры'], ['call', 'Звонок'], ['idea', 'Идея'], ['other', 'Другое']];
+const inboxAll = () => (db.prefs?.inbox || []);
+function renderInbox(){
+  const boards = infoBoards().filter(p => p.state !== 'completed'); const list = inboxAll().slice().sort((a, b) => String(b.at).localeCompare(String(a.at)));
+  const src = ui.inSrc || 'meet'; const srcName = k => (INBOX_SRC.find(x => x[0] === k) || INBOX_SRC.at(-1))[1];
+  const p0 = boards.find(p => p.id === ui.inBoard) || boards[0];
+  const deptOpts = p => p.stages.filter(s => !isMaint(s) && !isCtStage(p, s)).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  const item = x => { const p = boards.find(b => b.id === x.pid) || p0;
+    return `<li class="in-i"><div class="in-t"><b>${esc(x.text)}</b><small><span class="in-src s-${x.src}">${srcName(x.src)}</span> · ${fmt(String(x.at).slice(0, 10))}${x.by ? ' · ' + esc(x.by) : ''}</small></div>
+      ${GUEST || !p ? '' : `<form class="in-to" data-into="${x.id}">
+        ${boards.length > 1 ? `<select data-inb aria-label="Площадка">${boards.map(b => `<option value="${b.id}" ${b.id === p.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select>` : ''}
+        <select data-ind aria-label="Отдел">${deptOpts(p)}</select>
+        <select data-intt aria-label="Тип задачи">${Object.entries(KB_TYPES).map(([k, l]) => `<option value="${k}" title="${KB_TYPE_HINT[k]}">${l}</option>`).join('')}</select>
+        <input type="date" data-indue aria-label="Срок">
+        <button class="primary">В задачи</button><button type="button" class="icon-btn" data-indel="${x.id}" title="Удалить" aria-label="Удалить «${esc(x.text)}»">${ICON_X}</button></form>`}</li>`; };
+  app.innerHTML = infoTabsHtml() + `<div class="it-top"><h2>Входящие</h2><span class="hint">${list.length ? `${list.length} ${plural(list.length, 'задача', 'задачи', 'задач')} ждут разбора` : 'Всё разобрано'}</span></div>
+    <p class="hint in-lead">Сюда — всё, что появилось после планёрок, переговоров, звонков или само собой. Потом разносите по отделам кнопкой «В задачи».</p>
+    ${GUEST ? '' : `<form class="in-add" id="inAdd"><textarea id="inText" rows="2" placeholder="Что нужно сделать? Каждая строка — отдельная задача" aria-label="Новые входящие задачи"></textarea>
+      <div class="in-add-row"><span class="kind-seg" role="radiogroup" aria-label="Откуда задача">${INBOX_SRC.map(([k, l]) => `<button type="button" data-insrc="${k}" aria-pressed="${src === k}">${l}</button>`).join('')}</span><button class="primary">Добавить</button></div></form>`}
+    ${list.length ? `<ul class="in-list">${list.map(item).join('')}</ul>` : '<p class="hint">Входящих нет.</p>'}`;
+}
+function inboxAdd(text){
+  const lines = text.split('\n').map(x => x.trim()).filter(Boolean); if (!lines.length) return;
+  db.prefs = db.prefs || {}; db.prefs.inbox = [...inboxAll(), ...lines.map(t => ({ id:uid(), text:t.slice(0, 300), src:ui.inSrc || 'meet', at:new Date().toISOString(), by:actorName() }))];
+  commit(); toast(lines.length > 1 ? `Во входящих: +${lines.length}` : 'Добавлено во входящие');
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-insrc]'); if (b){ ui.inSrc = b.dataset.insrc; app.querySelectorAll('[data-insrc]').forEach(x => x.setAttribute('aria-pressed', x === b)); return; }
+  const d = e.target.closest?.('[data-indel]'); if (d){ db.prefs.inbox = inboxAll().filter(x => x.id !== d.dataset.indel); commit(); }
+});
+document.addEventListener('change', e => { const b = e.target.closest?.('[data-inb]'); if (!b) return; const p = projById(b.value); const sel = b.form.querySelector('[data-ind]');
+  if (p && sel) sel.innerHTML = p.stages.filter(s => !isMaint(s) && !isCtStage(p, s)).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join(''); ui.inBoard = b.value; });
+document.addEventListener('keydown', e => { if (e.target.id === 'inText' && e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); e.target.form.requestSubmit(); } });
+document.addEventListener('submit', e => {
+  if (e.target.id === 'inAdd'){ e.preventDefault(); const t = $('#inText'); inboxAdd(t.value); return; }
+  const f = e.target.closest?.('[data-into]'); if (!f) return; e.preventDefault();
+  const x = inboxAll().find(y => y.id === f.dataset.into); if (!x) return;
+  const p = projById(f.querySelector('[data-inb]')?.value) || infoBoards().find(b => b.state !== 'completed'); const s = p?.stages.find(y => y.id === f.querySelector('[data-ind]').value);
+  if (!p || !s || !canEditProject(p)) return;
+  const nx = { id:uid(), name:x.text, done:false, at:new Date().toISOString(), src:x.src }; if (f.querySelector('[data-intt]').value === 'strat') nx.ttype = 'strat';
+  const due = f.querySelector('[data-indue]').value; if (due) nx.due_date = due;
+  (s.subs = s.subs || []).push(nx); db.prefs.inbox = inboxAll().filter(y => y.id !== x.id);
+  addLog(p, `Из входящих: задача «${x.text}» → отдел «${s.name}»`); commit(); toast(`Задача в «${s.name}»`);
+});
 // раздел «Приоритеты» (инфобизнес): все задачи инфоповода по приоритету, приоритет меняется в строке
 function renderPriority(){
   const p = infoBoard(); if (!p){ app.innerHTML = '<div class="empty">Доски пока нет</div>'; return; }
@@ -10934,6 +10988,7 @@ const MNAV = {
   kanban:['Канбан', MI('<rect x="3" y="3" width="5" height="15" rx="1.5"/><rect x="10" y="3" width="5" height="10" rx="1.5"/><rect x="17" y="3" width="4" height="18" rx="1.5"/>')],
   production:['Произв.', MI('<path d="M3 12h4l3-8 4 16 3-8h4"/>')],
   today:['Сегодня', MI('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')],
+  inbox:['Входящие', MI('<path d="M4 13h4l1.5 3h5L16 13h4"/><path d="M5.5 5h13L21 13v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5z"/>')],
   priority:['Приоритеты', MI('<path d="M12 3v12"/><path d="M12 20v.5"/><path d="M5 9l7-6 7 6"/>')],
   funnel:['AI-воронка', MI('<path d="M3 4h18l-7 8.5V19l-4 2v-7.5Z"/><path d="M18 2.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6Z"/>')],
   content:['Контент', MI('<rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3"/>')],
