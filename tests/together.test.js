@@ -132,12 +132,16 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E(`{ const s = em.stages.find(x => /контент/i.test(x.name)); s.subs.push({ id:'tdC', name:'Видео дня', done:false, due_date:today() }); ui.tdIp = ''; commit(); }`); await wait(50);
   { const li = [...D.querySelectorAll('.tdy-i')].find(x => /Видео дня/.test(x.textContent)); assert.ok(li && li.querySelector('input[data-tdyk]') && !D.querySelector('.tdy-ct')); ok('«Сегодня»: задача «Контента» — обычная строка с галочкой'); }
   E(`ui.tdIp = ''; INFO_HIDDEN.push('today'); ui.view = 'production'; render();`);
-  // «Входящие»: задачи после планёрок/переговоров → разнести по отделам
-  assert.ok(!D.querySelector('.tabs [data-view="inbox"]').hidden); E(`ui.view = 'inbox'; render()`);
-  $('[data-insrc="talk"]').click(); D.getElementById('inText').value = 'Отправить КП партнёру\nСозвон с монтажёром'; D.getElementById('inAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
-  assert.equal(E('db.prefs.inbox.length'), 2); assert.ok(/Переговоры/.test($('.in-list').textContent)); ok('«Входящие»: каждая строка — задача, с источником');
-  { const f = [...D.querySelectorAll('[data-into]')].find(x => /КП партнёру/.test(x.closest('.in-i').textContent)); f.querySelector('[data-intt]').value = 'strat'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30); }
-  assert.equal(E('db.prefs.inbox.length'), 1); assert.ok(E(`infoBoards().some(p => p.stages.some(s => (s.subs || []).some(x => x.name === 'Отправить КП партнёру' && x.ttype === 'strat')))`)); ok('«В задачи» — задача в отделе площадки, из входящих убрана');
+  // «Входящие»: колонка слева на канбане «Производства»; выжимка созвона → Claude находит задачи → разнести по отделам
+  assert.ok(!D.querySelector('.tabs [data-view="inbox"]')); E(`ui.view = 'production'; ui.infoAll = false; ui.prodProject = ig.id; ui.infoMode = 'board'; ui.kbView = 'status'; ui.pfEdit = false; render()`);
+  assert.ok($('.kb-board > .kb-in:first-child')); ok('«Входящие» — первой колонкой в «Производстве», не отдельным пунктом меню');
+  D.getElementById('inSrc').value = 'talk'; D.getElementById('inText').value = 'Отправить КП партнёру\nСозвон с монтажёром'; D.getElementById('inAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
+  assert.equal(E('db.prefs.inbox.length'), 2); assert.ok(/Переговоры/.test($('.kb-in').textContent)); ok('«Добавить»: каждая строка — задача, с источником');
+  E(`_sample = { json: async p => { window.__inP = p; return { tasks:[{ title:'Запустить рекламу VSL', dept:'${E('ig.stages.find(s => !isCtStage(ig, s) && !isMaint(s)).name')}', type:'strat', due:'2026-12-01', who:'Эм' }, { title:'', dept:'x' }] }; } }`);
+  D.getElementById('inText').value = 'Обсудили запуск. Решили: запустить рекламу VSL до 1 декабря, отвечает Эм.'; $('[data-inai]').click(); await wait(80);
+  assert.ok(/реальные|РЕАЛЬНЫЕ/.test(E('window.__inP')) && E('db.prefs.inbox.length') === 3 && E(`db.prefs.inbox.find(x => x.text === 'Запустить рекламу VSL').due`) === '2026-12-01'); ok('«Найти задачи»: Claude выделяет задачи из выжимки — отдел, тип, срок');
+  { const f = [...D.querySelectorAll('[data-into]')].find(x => /рекламу VSL/.test(x.closest('.in-card').textContent)); assert.equal(f.querySelector('[data-intt]').value, 'strat'); f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30); }
+  assert.equal(E('db.prefs.inbox.length'), 2); assert.ok(E(`infoBoards().some(p => p.stages.some(s => (s.subs || []).some(x => x.name === 'Запустить рекламу VSL' && x.ttype === 'strat' && x.due_date === '2026-12-01')))`)); ok('«В задачи» — задача в отделе с типом и сроком, из входящих убрана');
   assert.deepEqual(o.errors.filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });
