@@ -1171,7 +1171,7 @@ table.rt{width:100%;border-collapse:collapse;min-width:760px;font-size:13.5px}
 .pf{display:grid;grid-template-columns:270px minmax(0,1fr);gap:16px;align-items:start}
 /* инфобизнес: одна доска — без списка проектов, выбора проекта и «Нового проекта» */
 body[data-kind="info"] .pf{grid-template-columns:minmax(0,1fr)}
-body[data-kind="info"] :is(.pf-list,.pf-select,#newBtn,.pm-cnt,.pm-nav>.icon-btn:first-child,.pm-nav>.icon-btn:last-child){display:none!important}
+body[data-kind="info"] :is(.pf-list:not(.ct-pf .pf-list),.pf-select,#newBtn,.pm-cnt,.pm-nav>.icon-btn:first-child,.pm-nav>.icon-btn:last-child){display:none!important}
 body[data-kind="info"] [data-pmpick]{pointer-events:none}
 .ct-wk{margin-top:14px}
 .it-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
@@ -2434,7 +2434,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .ct-left .ct-wk h3{font-size:13px}.ct-row.slim{grid-template-columns:auto 1fr auto auto;gap:8px;padding:6px 8px}.ct-row[draggable="true"]{cursor:grab}
 .ct-due-s{font-size:12px;color:var(--muted);white-space:nowrap}.ct-right .ct-board .pf-col{flex-basis:220px}
 @media (max-width:900px){.ct-split{grid-template-columns:1fr}}
-.ct-pf{margin-top:4px}.ct-pf .pf-name{display:flex;align-items:center;gap:6px}.ct-pf .pf-name .ct-ico svg{width:15px;height:15px}.ct-reel .pf-col{flex:0 0 230px}.ct-sub{display:flex;gap:8px;align-items:flex-start;cursor:pointer}.ct-sub.done span{text-decoration:line-through;color:var(--muted)}.ct-card.here{border-color:var(--brand)}
+.ct-pf{margin-top:4px;grid-template-columns:260px minmax(0,1fr)}body[data-kind="info"] .ct-pf{grid-template-columns:260px minmax(0,1fr)}@media (max-width:860px){.ct-pf .pf-list{display:grid!important;position:static;max-height:240px}body[data-kind="info"] .ct-pf{grid-template-columns:1fr}}.ct-pf .pf-name{display:flex;align-items:center;gap:6px}.ct-pf .pf-name .ct-ico svg{width:15px;height:15px}.ct-reel .pf-col{flex:0 0 230px}.ct-sub{display:flex;gap:8px;align-items:flex-start;cursor:pointer}.ct-sub.done span{text-decoration:line-through;color:var(--muted)}.ct-card.here{border-color:var(--brand)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
