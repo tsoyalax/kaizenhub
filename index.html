@@ -2392,6 +2392,19 @@ svg.clip{width:14px;height:14px;flex:none}
 
 .ss.ss-ret{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .ss.ss-ret .ss-send{margin:0}
+.kb-filters{display:grid;gap:8px;margin:0 0 12px}.kb-frow{display:flex;flex-wrap:wrap;gap:6px}
+.kb-chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--fbd, var(--line));background:var(--fbg, var(--surface-2));font-size:13px;color:var(--ink);cursor:pointer}
+.kb-chip span{color:var(--muted);font-size:12px}.kb-chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}.kb-chip.on span{color:inherit;opacity:.7}
+.kb-dchip i{width:8px;height:8px;border-radius:50%;background:hsl(var(--kh) 65% 50%)}
+.kb-board .kb-col{flex:1 1 280px;min-width:260px}.kb-col header div{display:flex;align-items:center;gap:8px}.kb-n{font-size:12px;color:var(--muted);background:var(--surface);border-radius:999px;padding:1px 8px}
+.kb-col.drop{border-color:var(--brand)}.kb-card.dragging{opacity:.4}
+.kb-tags{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.kb-dept{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:6px;background:hsl(var(--kh) 85% 93%);color:hsl(var(--kh) 55% 30%)}
+.kb-type{font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;border:1px solid var(--line);color:var(--muted)}.kb-type.t-strat{color:#7C3AED;border-color:#DDD6FE}.kb-type.t-oper{color:#0369A1;border-color:#BAE6FD}
+:root[data-theme="dark"] .kb-dept{background:hsl(var(--kh) 40% 22%);color:hsl(var(--kh) 80% 80%)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .kb-dept{background:hsl(var(--kh) 40% 22%);color:hsl(var(--kh) 80% 80%)}}
+.kb-add{display:grid;gap:6px;margin-bottom:4px}.kb-add input,.kb-add select{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 8px;font-size:13px;min-width:0}
+.kb-add-row{display:grid;grid-template-columns:1fr 1fr auto;gap:6px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -3230,12 +3243,14 @@ function trackSubDel(){
     stageSigs.set(k, [...now]);
   });
 }
+// отметка подэтапа: галочка, «в работе» на канбане, тип задачи
+const subSig = x => `${x.done ? 1 : 0}|${x.kst || ''}|${x.ttype || ''}`;
 function stampStages(){
   trackSubDel();
   const now = new Date().toISOString();
   [...(db.projects || []), ...((typeof ext !== 'undefined' && ext.projects) || [])].forEach(p => (p.stages || []).forEach(s => {
     const g = stageSig(s), o = stageSigs.get(s.id); if (o !== undefined && o !== g) s.su = now; stageSigs.set(s.id, g);
-    (s.subs || []).forEach(x => { const k = s.id + '|' + x.id, v = !!x.done, w = stageSigs.get(k); if (w !== undefined && w !== v) x.u = now; stageSigs.set(k, v); });
+    (s.subs || []).forEach(x => { const k = s.id + '|' + x.id, v = subSig(x), w = stageSigs.get(k); if (w !== undefined && w !== v) x.u = now; stageSigs.set(k, v); });
   }));
 }
 // Карточки подэтапов тоже пишутся целиком: пункт чек-листа получает i.u при отметке/снятии, карточка — t.u при прочих правках
@@ -3265,7 +3280,7 @@ function mergeTask(L, R){
   out.completed_at = done ? (out.completed_at || other.completed_at || new Date().toISOString()) : null;
   return out;
 }
-const rememberStages = list => (list || []).forEach(p => (p.stages || []).forEach(s => { stageSigs.set(s.id, stageSig(s)); (s.subs || []).forEach(x => stageSigs.set(s.id + '|' + x.id, !!x.done)); }));
+const rememberStages = list => (list || []).forEach(p => (p.stages || []).forEach(s => { stageSigs.set(s.id, stageSig(s)); (s.subs || []).forEach(x => stageSigs.set(s.id + '|' + x.id, subSig(x))); }));
 // Старт проекта — не день создания, а день, когда первый этап взяли в работу (p.started_at). До этого проект «не начат»,
 // а p.start_date — плановая дата; с началом работы она становится фактической, и от неё считаются день проекта и сроки.
 const projStarted = p => (p.stages || []).some(s => !isMaint(s) && (s.started_at || s.completed_at || s.status !== 'not_started'));
@@ -5263,10 +5278,12 @@ function renderProduction(){
   }
   const p = infoBoard();
   if (!isInfo() || GUEST || !p || projById(ui.prodProject) !== p) return;
-  if (infoAllOn()){ const tl = ui.infoMode === 'timeline' || ui.infoMode === 'together'; const boards = tl ? '' : allBoardsHtml();
+  if (infoAllOn()){ const tl = ui.infoMode === 'timeline' || ui.infoMode === 'together'; const boards = tl ? '' : kanbanHtml(infoBoards().filter(p => p.state !== 'completed'), true);
     app.innerHTML = infoTabsHtml() + flowAllHtml() + (tl ? togetherHtml(true) : boards); return; }
   app.insertAdjacentHTML('afterbegin', infoTabsHtml() + flowPanelHtml(p, 'prod'));
-  if (ui.infoMode === 'timeline' || ui.infoMode === 'together'){ const b = app.querySelector('.pf-board'); if (b) b.outerHTML = timelineHtml(p); }
+  const b = app.querySelector('.pf-main .pf-board, .pm-board');
+  if (ui.infoMode === 'timeline' || ui.infoMode === 'together'){ if (b) b.outerHTML = timelineHtml(p); }
+  else if (b && !ui.pfEdit) b.outerHTML = kanbanHtml([p]);    // обычный канбан; в «Редактировать доску» — отделы столбиками
 }
 document.addEventListener('click', e => { const t = e.target.closest?.('[data-prodtab]'); if (t){ ui.prodTab = t.dataset.prodtab; render(); } });
 // раздел «Приоритеты» (инфобизнес): все задачи инфоповода по приоритету, приоритет меняется в строке
@@ -5479,6 +5496,84 @@ function allBoardsHtml(){
       <div class="pf-cards">${shown.map(card).join('') || '<p class="hint">Задач нет</p>'}${fold ? `<button type="button" class="ghost ct-more" data-ctmore="__all" aria-expanded="${open}">${open ? 'Свернуть' : `Показать все (${vids.length})`}</button>` : ''}</div></section>`; }).join('')}</div>
     <p class="hint ab-hint">Здесь все площадки вместе. Добавлять задачи и менять столбики — на доске своей площадки.</p>`;
 }
+// ---------- Канбан площадки: «К выполнению → В работе → Готово». Отдел — плашкой на карточке, тип задачи — стратегическая / операционная ----------
+// Статус: выполнено → «Готово»; x.kst = 'doing' (или видео дальше первого этапа) → «В работе»; иначе «К выполнению».
+// Отделы (столбики площадки) меняются в «Редактировать доску» — там прежняя доска по отделам.
+const KB_COLS = [['todo', 'К выполнению'], ['doing', 'В работе'], ['done', 'Готово']];
+const KB_TYPES = { strat:'Стратегическая', oper:'Операционная' };
+const kbStatus = (p, s, x) => subDone(p, s, x) ? 'done' : x.kst === 'doing' || (x.cycle && x.vst && vidCols()[0]?.id !== x.vst) ? 'doing' : 'todo';
+const kbHue = name => { let h = 0; for (const ch of norm(name)) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
+function kbItems(boards){
+  return boards.flatMap(p => p.stages.filter(s => !isMaint(s)).flatMap(s => sortCards(p, s, boardSubs(p, s)).map(x => ({ p, s, x, st:kbStatus(p, s, x) }))));
+}
+function kanbanHtml(boards, all = false){
+  const t0 = today(); const items = kbItems(boards);
+  const depts = [...new Map(items.map(i => [norm(i.s.name), i.s.name])).values()];
+  if (ui.kbDept && !depts.some(d => norm(d) === ui.kbDept)) ui.kbDept = '';
+  const shown = items.filter(i => (!ui.kbDept || norm(i.s.name) === ui.kbDept) && (!ui.kbType || (ui.kbType === 'none' ? !i.x.ttype : i.x.ttype === ui.kbType)));
+  const chip = (attr, v, label, on, n) => `<button type="button" class="kb-chip${on ? ' on' : ''}" ${attr}="${v}" aria-pressed="${on}">${label}${n != null ? ` <span>${n}</span>` : ''}</button>`;
+  const cntT = k => items.filter(i => (!ui.kbDept || norm(i.s.name) === ui.kbDept) && (k === 'none' ? !i.x.ttype : i.x.ttype === k)).length;
+  const filters = `<div class="kb-filters">
+    <div class="kb-frow" role="group" aria-label="Тип задачи">${chip('data-kbtype', '', 'Все задачи', !ui.kbType)}${chip('data-kbtype', 'strat', 'Стратегические', ui.kbType === 'strat', cntT('strat'))}${chip('data-kbtype', 'oper', 'Операционные', ui.kbType === 'oper', cntT('oper'))}${chip('data-kbtype', 'none', 'Без типа', ui.kbType === 'none', cntT('none'))}</div>
+    <div class="kb-frow" role="group" aria-label="Отдел">${chip('data-kbdept', '', 'Все отделы', !ui.kbDept)}${depts.map(d => `<button type="button" class="kb-chip kb-dchip${ui.kbDept === norm(d) ? ' on' : ''}" data-kbdept="${esc(norm(d))}" aria-pressed="${ui.kbDept === norm(d)}" style="--kh:${kbHue(d)}"><i></i>${esc(d)}</button>`).join('')}</div></div>`;
+  const card = ({ p, s, x, st }) => { const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const due = t?.due_date || x.due_date || ''; const done = st === 'done';
+    const can = canEditProject(p) && !GUEST;
+    return `<button class="pf-card kb-card${done ? ' done' : ''}" data-tgsub="${p.id}|${s.id}|${x.id}" ${can ? `draggable="true" data-kbdrag="${p.id}|${s.id}|${x.id}"` : ''} aria-label="${esc(s.name)}: ${esc(x.name)}">
+      <span class="kb-tags"><span class="kb-dept" style="--kh:${kbHue(s.name)}">${esc(s.name)}</span>${x.ttype ? `<span class="kb-type t-${x.ttype}">${x.ttype === 'strat' ? 'Стратег.' : 'Операц.'}</span>` : ''}${all ? `<span class="ab-ip"><i style="--bc:${tgColor(p)}"></i>${esc(p.name)}</span>` : ''}</span>
+      <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}</b>
+      <small>${whoChip(x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t))}${due ? ` · <span class="pf-due${due < t0 && !done ? ' late' : ''}">${t?.start_date ? rangeTxt(t.start_date, due) : 'срок ' + fmt(due)}</span>` : !done ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}</small>
+      ${pr && pr.total && !done ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span>` : ''}</button>`; };
+  const p0 = boards.length === 1 ? boards[0] : null; const canAdd = p0 && canEditProject(p0) && !GUEST;
+  const addDepts = p0 ? p0.stages.filter(s => !isMaint(s)) : [];
+  const defDept = addDepts.find(s => norm(s.name) === ui.kbDept)?.id || ui.kbAddDept || addDepts[0]?.id;
+  const addForm = canAdd && addDepts.length ? `<form class="kb-add" data-kbadd="${p0.id}"><input placeholder="Новая задача" aria-label="Новая задача" maxlength="200">
+      <div class="kb-add-row"><select data-kbadddept aria-label="Отдел">${addDepts.map(s => `<option value="${s.id}" ${s.id === defDept ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>
+      <select data-kbaddtype aria-label="Тип задачи"><option value="">Без типа</option>${Object.entries(KB_TYPES).map(([k, l]) => `<option value="${k}" ${ui.kbType === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <button class="ghost" aria-label="Добавить">+</button></div></form>` : '';
+  const LIM = 40;
+  return filters + `<div class="pf-board kb-board">${KB_COLS.map(([k, label]) => { const list = shown.filter(i => i.st === k);
+    const open = ui.kbOpen === k; const vis = k === 'done' && !open ? list.slice(0, LIM) : list;
+    return `<section class="pf-col kb-col kb-${k}" data-kbcol="${k}" aria-label="${label}"><header><div><b>${label}</b><span class="kb-n">${list.length}</span></div></header>
+      <div class="pf-cards">${k === 'todo' ? addForm : ''}${vis.map(card).join('') || '<p class="hint">Задач нет</p>'}${vis.length < list.length ? `<button type="button" class="ghost ct-more" data-kbmore="${k}">Показать все (${list.length})</button>` : ''}</div></section>`; }).join('')}</div>`;
+}
+function kbMove(key, st){
+  const [pid, sid, xid] = key.split('|'); const p = projById(pid); const s = p?.stages.find(y => y.id === sid); const x = s?.subs?.find(y => y.id === xid);
+  if (!x || !canEditProject(p)) return; const was = kbStatus(p, s, x); if (was === st) return;
+  if (st === 'done'){ x.kst = ''; toggleSub(p, s, x, true); return; }
+  x.kst = st === 'doing' ? 'doing' : '';
+  if (x.cycle && st === 'todo' && vidCols()[0]) x.vst = vidCols()[0].id;
+  if (x.cycle && st === 'doing' && !x.done && (!x.vst || x.vst === vidCols()[0]?.id) && vidCols()[1] && vidCols()[1] !== vidCols().at(-1)) x.vst = vidCols()[1].id;
+  if (was === 'done' || x.done){ toggleSub(p, s, x, false); return; }
+  addLog(p, `Задача «${x.name}» (${s.name}): ${st === 'doing' ? 'в работе' : 'к выполнению'}`); commit();
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest?.('[data-kbtype]'); if (t){ ui.kbType = t.dataset.kbtype; render(); return; }
+  const d = e.target.closest?.('[data-kbdept]'); if (d){ ui.kbDept = d.dataset.kbdept; render(); return; }
+  const m = e.target.closest?.('[data-kbmore]'); if (m){ ui.kbOpen = ui.kbOpen === m.dataset.kbmore ? '' : m.dataset.kbmore; render(); }
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest?.('[data-kbadd]'); if (!f) return; e.preventDefault();
+  const v = f.querySelector('input').value.trim(); if (!v) return;
+  const p = projById(f.dataset.kbadd); if (!canEditProject(p)) return;
+  const s = p.stages.find(y => y.id === f.querySelector('[data-kbadddept]').value); if (!s) return;
+  const nx = { id:uid(), name:v, done:false, at:new Date().toISOString() }; const ty = f.querySelector('[data-kbaddtype]').value; if (ty) nx.ttype = ty;
+  if (isInfo() && s === contentStage(p)) (s.subs = s.subs || []).unshift(nx); else (s.subs = s.subs || []).push(nx);
+  ui.kbAddDept = s.id;
+  addLog(p, `Добавлена задача «${v}» в отдел «${s.name}»`); commit();
+  app.querySelector('[data-kbadd] input')?.focus();
+});
+document.addEventListener('change', e => {
+  const t = e.target.closest?.('[data-kbttype]'); if (!t) return;
+  const [pid, sid, xid] = t.dataset.kbttype.split('|'); const p = projById(pid); const x = p?.stages.find(y => y.id === sid)?.subs?.find(y => y.id === xid);
+  if (!x || !canEditProject(p)) return; if (t.value) x.ttype = t.value; else delete x.ttype;
+  addLog(p, `Задача «${x.name}»: ${t.value ? KB_TYPES[t.value].toLowerCase() : 'без типа'}`); commit(); if (ui.taskId) renderTaskModal();
+});
+let kbDrag = null;
+document.addEventListener('dragstart', e => { const c = e.target.closest?.('[data-kbdrag]'); if (!c) return; kbDrag = c.dataset.kbdrag; c.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', kbDrag); } catch(_) {} });
+document.addEventListener('dragover', e => { if (!kbDrag) return; const col = e.target.closest?.('[data-kbcol]'); if (!col) return; e.preventDefault();
+  app.querySelectorAll('.kb-col.drop').forEach(x => x !== col && x.classList.remove('drop')); col.classList.add('drop'); });
+document.addEventListener('drop', e => { if (!kbDrag) return; const col = e.target.closest?.('[data-kbcol]'); if (!col) return; e.preventDefault(); const k = kbDrag; kbDrag = null; kbMove(k, col.dataset.kbcol); });
+document.addEventListener('dragend', () => { if (!kbDrag && !app.querySelector('.kb-card.dragging')) return; kbDrag = null; app.querySelectorAll('.kb-card.dragging,.kb-col.drop').forEach(x => x.classList.remove('dragging', 'drop')); });
 // «Просрочено» и «Ближайшие» по площадкам (в «Сегодня»): у задачи — цветная точка и название площадки, отдел; клик — карточка ([data-tgsub])
 function dueListsHtml(boards){
   const t0 = today();
@@ -5501,25 +5596,10 @@ function flowAllHtml(){
   </section>`;
 }
 function flowProdHtml(p){
-  const st = flowState(p); const list = [...st.values()]; const t0 = today();
   const mode = ui.infoMode === 'timeline' || ui.infoMode === 'together' ? 'timeline' : 'board';
-  // отдел: название, статус точкой и словом, полоса готовности и «готово / всего»
-  // статус словами, чтобы было понятно «почему»: какой срок горит, кого ждёт, сколько просрочено
-  const nm = id => st.get(id)?.s.name || '';
-  const why = v => {
-    if (v.key === 'red') return !v.n ? 'Нет задач' : `Просрочено: ${v.over.length}`;
-    if (v.key === 'yellow' && v.own === 'yellow'){ const i = v.soon[0]; return `${i.due === t0 ? 'Срок сегодня' : 'Срок завтра'}: ${i.x.name}${v.soon.length > 1 ? ` и ещё ${v.soon.length - 1}` : ''}`; }
-    if (v.key === 'yellow') return `Ждёт: ${v.blockedBy.map(nm).join(', ')}`;
-    return FLOW_PILL[v.key][1](v); };
-  const step = v => { const txt = () => why(v); const pct = v.n ? Math.round(v.done / v.n * 100) : 0;
-    return `<button class="flp-st k-${v.key}" data-flgo="${v.s.id}" title="Показать «${esc(v.s.name)}» на доске">
-      <span class="flp-st-hd"><b>${esc(v.s.name)}</b><span class="flp-st-n">${v.n ? `${v.done}/${v.n}` : '—'}</span></span>
-      <span class="flp-st-bar"><i style="width:${pct}%"></i></span>
-      <span class="flp-st-s" title="${esc(txt())}"><i aria-hidden="true"></i><span>${esc(txt())}</span></span></button>`; };
-  return `<section class="fl fl-p" aria-label="Воронка: отделы и сроки">
-    <div class="fl-p-hd"><h2>Воронка</h2><span class="fl-p-st">${esc(ipState(p))}</span>
-      <div class="fl-view"><span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${mode === 'board'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${mode !== 'board'}">Таймлайн</button></span></div></div>
-    <div class="fl-chain fl-pipe" style="--n:${list.length}">${list.map(step).join('')}</div></section>`;
+  return `<section class="fl fl-p" aria-label="Вид доски">
+    <div class="fl-p-hd"><h2>${esc(p.name)}</h2><span class="fl-p-st">${esc(ipState(p))}</span>
+      <div class="fl-view"><span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${mode === 'board'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${mode !== 'board'}">Таймлайн</button></span></div></div></section>`;
 }
 function flowPanelHtml(p, part = 'prod'){
   if (part !== 'ai') return flowProdHtml(p);
@@ -8929,6 +9009,7 @@ function renderTaskModal(focusSel){
         <span>${pr.done ? 'Подэтап выполнен' : pr.total ? `${pr.n} из ${pr.total} выполнено` : 'Без чек-листа'}</span></div>
         ${editable && !p?._ext ? `<label class="tk-who"><span>Ответственный</span><select class="tk-as" data-tqassign="${t.id}" aria-label="Ответственный за подэтап">${peopleOpts(t.assignee_id, s?.assignee_id ? `Как у этапа: ${short(s.assignee_id)}` : 'Как у этапа: не назначен')}</select></label>`
           : `<span class="tk-who"><span>Ответственный</span>${whoChip(whoId(p, s, t))}</span>`}
+        ${isInfoBoardP(p) && sub ? (editable && !p?._ext ? `<label class="tk-who"><span>Тип</span><select class="tk-as" data-kbttype="${p.id}|${s.id}|${sub.id}" aria-label="Тип задачи"><option value="">Без типа</option>${Object.entries(KB_TYPES).map(([k, l]) => `<option value="${k}" ${sub.ttype === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : sub.ttype ? `<span class="tk-who"><span>Тип</span>${KB_TYPES[sub.ttype]}</span>` : '') : ''}
         ${dueRemindHtml(t, editable)}</div>
       <section class="tk-sec"><h3>Задание</h3>
         <div class="tk-text">${t.description ? linkify(t.description) : '<span class="hint">Описания пока нет.</span>'}</div>
@@ -9543,7 +9624,7 @@ function renderProjectFocus(mine = false){
           ${!mine ? `<button class="icon-btn pf-shareic pf-pdf" data-roadmap="${p.id}" title="Дорожная карта «${esc(p.name)}» в PDF: задачи с датами и ключевыми точками" aria-label="Дорожная карта в PDF">${PDF_ICON}</button>` : ''}
           ${!mine ? `<button class="icon-btn pf-shareic${shareCount(p) ? ' on' : ''}" data-share="${p.id}" title="Поделиться проектом${shareCount(p) ? ` · доступ у ${shareCount(p)}` : ''}" aria-label="Поделиться проектом">${SHARE_ICON}${shareCount(p) ? `<span>${shareCount(p)}</span>` : ''}</button>` : ''}
         </div>
-        ${!mine ? `<div class="pf-sort">${canEdit && !GUEST ? `<button type="button" class="ghost pf-editbtn${ui.pfEdit ? ' on' : ''}" data-pfedit aria-pressed="${!!ui.pfEdit}">${ui.pfEdit ? 'Готово' : `${ICON_EDIT}Редактировать доску`}</button>` : ''}<label class="hint" for="pfSort">Карточки:</label><select id="pfSort" aria-label="Порядок карточек в столбиках">${Object.entries(CARD_SORT).map(([k, l]) => `<option value="${k}" ${cardSortMode() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>` : ''}
+        ${!mine ? `<div class="pf-sort">${canEdit && !GUEST ? `<button type="button" class="ghost pf-editbtn${ui.pfEdit ? ' on' : ''}" data-pfedit aria-pressed="${!!ui.pfEdit}">${ui.pfEdit ? 'Готово' : `${ICON_EDIT}${isInfoBoardP(p) ? 'Отделы' : 'Редактировать доску'}`}</button>` : ''}<label class="hint" for="pfSort">Карточки:</label><select id="pfSort" aria-label="Порядок карточек в столбиках">${Object.entries(CARD_SORT).map(([k, l]) => `<option value="${k}" ${cardSortMode() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>` : ''}
         <div class="pf-board">${cols}${canEdit && !mine && !GUEST && ui.pfEdit ? '<button type="button" class="col-add pf-coladd" data-pfscol><span aria-hidden="true">+</span>Столбик</button>' : ''}</div>
       </div>
     </div>`;
@@ -10065,7 +10146,8 @@ function mergeStageFields(target, other){
       if (stageSig(ts) + ts.due_date !== before) changed = true;
     }
     (os.subs || []).forEach(ox => { const tx = (ts.subs || []).find(y => y.id === ox.id);
-      if (tx && String(ox.u || '') > String(tx.u || '')){ if (!!tx.done !== !!ox.done) changed = true; tx.done = !!ox.done; tx.u = ox.u; } });
+      if (tx && String(ox.u || '') > String(tx.u || '')){ if (subSig(tx) !== subSig(ox)) changed = true; tx.done = !!ox.done; tx.u = ox.u;
+        ['kst', 'ttype'].forEach(k => { if (ox[k]) tx[k] = ox[k]; else delete tx[k]; }); } });
     ['sub', 'req'].forEach(f => { if (os[f] && stampOf(os[f]) > stampOf(ts[f])){ ts[f] = JSON.parse(JSON.stringify(os[f])); changed = true;
       if (os[f].status === 'accepted' || os[f].status === 'approved') accepted = true; } });
   });

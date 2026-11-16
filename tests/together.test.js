@@ -44,10 +44,12 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(!$('[data-infomode="together"]') && !$('[data-tlscope]')); ok('отдельной кнопки «Вместе» и выпадающего списка нет');
   assert.ok($('[data-ipall]')); ok('в строке инфоповодов — «Все»');
   $('[data-ipall]').click(); await wait(100);
-  { const cols = [...D.querySelectorAll('.ab-board .pf-col')]; const names = cols.map(c => c.querySelector('header b').textContent);
-    assert.equal(new Set(names).size, names.length); ok('«Все» → «Доска»: одна доска, одинаковые отделы площадок — одной колонкой');
-    const col = cols.find(c => [...c.querySelectorAll('.pf-card')].some(x => /Рилс 1/.test(x.textContent)) && [...c.querySelectorAll('.pf-card')].some(x => /Анонс челленджа/.test(x.textContent)));
-    assert.ok(col && /Блок Игоря/.test(col.textContent) && /Челлендж Эма/.test(col.textContent)); ok('в колонке — задачи обеих площадок с подписью площадки'); }
+  { const cols = [...D.querySelectorAll('.kb-board .kb-col')].map(c => c.querySelector('header b').textContent);
+    assert.deepEqual(cols, ['К выполнению', 'В работе', 'Готово']); ok('«Все» → «Доска»: обычный канбан — К выполнению / В работе / Готово');
+    const todo = $('.kb-todo'); const c = [...todo.querySelectorAll('.kb-card')].find(x => /Рилс 1/.test(x.textContent));
+    assert.ok(c && /Блок Игоря/.test(c.textContent) && c.querySelector('.kb-dept') && [...todo.querySelectorAll('.kb-card')].some(x => /Анонс челленджа/.test(x.textContent) && /Челлендж Эма/.test(x.textContent))); ok('задачи обеих площадок с плашкой отдела и площадки');
+    $('[data-kbtype="strat"]').click(); await wait(50); assert.equal(D.querySelectorAll('.kb-card').length, 0);
+    $('[data-kbtype=""]').click(); await wait(50); E(`ui.kbType = ''`); ok('фильтр «Стратегические»'); }
   E(`ui.infoAll = true; render();`); $('[data-infomode="timeline"]').click(); await wait(100);
   assert.ok(/Все площадки/.test($('.fl-p').textContent) && !$('.flp-list')); ok('«Все»: шапка с видом, без списков сроков');
   E(`ui.view = 'today'; ui.tdIp = ''; render();`); { const due = $('.tdy-due'); assert.ok(due && /Оффер/.test(due.textContent) && /Анонс челленджа/.test(due.textContent)); ok('«Сегодня»: «Ближайшие» — задачи всех площадок'); }
@@ -100,7 +102,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   // порядок карточек в столбике: как на доске / по ближайшим датам / по приоритету
   E(`layer.innerHTML = ''; ui.open = null; ui.infoMode = 'board'; ui.prodProject = em.id; { const s = em.stages[1]; s.subs = [
      { id:'cA', name:'Поздняя', done:false, due_date:addDays(T, 9) }, { id:'cB', name:'Без срока', done:false }, { id:'cC', name:'Ближайшая', done:false, due_date:addDays(T, 1) }, { id:'cD', name:'Срочная', done:false, due_date:addDays(T, 5) } ];
-     tasksFromSubs(em, { ...s, subs:[s.subs[3]] }); taskFor(em.id, s.id, 'cD').priority = 'urgent'; } render();`); await wait(50);
+     tasksFromSubs(em, { ...s, subs:[s.subs[3]] }); taskFor(em.id, s.id, 'cD').priority = 'urgent'; } ui.pfEdit = true; render();`); await wait(50);
   const order = () => [...D.querySelectorAll('.pf-col')[1].querySelectorAll('.pf-card b')].map(b => b.textContent.trim());
   assert.deepEqual(order(), ['Поздняя', 'Без срока', 'Ближайшая', 'Срочная']); ok('по умолчанию — как на доске');
   const sel = $('#pfSort'); sel.value = 'due'; sel.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);

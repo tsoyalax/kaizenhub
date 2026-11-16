@@ -104,11 +104,11 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     ui.view = 'production'; ui.prodProject = p.id; render(); })()`);
   const fs = E(`JSON.stringify([...flowState(infoBoard()).values()].map(v => [v.s.name, v.key]))`);
   assert.deepEqual(JSON.parse(fs), [['Контент','green'],['Статья','green'],['VSL','red'],['Платный канал','yellow'],['Отдел продаж','yellow'],['Эфиры','red']]); ok('VSL просрочен — следующие за ним ждут, этап без задач — красный');
-  assert.ok(D.querySelector('.fl-chain') && !/AI-разбор|Воронка не работает/.test(D.querySelector('.fl').textContent) && !D.querySelector('.fl-why-box') && !D.querySelector('.fl-ai') && !/Срочно|Горит/.test(D.querySelector('.fl').textContent));
+  assert.ok(!D.querySelector('.fl-chain') && D.querySelector('.kb-board') && D.querySelectorAll('.kb-dept').length && !/AI-разбор|Воронка не работает/.test(D.querySelector('.fl').textContent) && !D.querySelector('.fl-why-box') && !D.querySelector('.fl-ai') && !/Срочно|Горит/.test(D.querySelector('.fl').textContent));
   assert.ok(!D.querySelector('.flp-list')); ok('в «Производстве» списков «Просрочено / Ближайшие» нет — они в «Сегодня»');
   E(`ui.view = 'today'; render()`); const lists = [...D.querySelectorAll('.tdy-due .flp-list')];
   assert.ok(/Просрочено/.test(lists[0].textContent) && /Задача VSL/.test(lists[0].textContent) && !/Задача Контент/.test(lists[0].textContent)); ok('«Просрочено» — только просроченные задачи');
-  assert.ok(/Ближайшие/.test(lists[1].textContent) && /Задача Контент/.test(lists[1].textContent) && !/Задача VSL/.test(lists[1].textContent)); ok('«Ближайшие» — ближайшие задачи по сроку'); E(`ui.view = 'production'; render()`); ok('в «Производстве» — только статусы этапов и «Срочно», без вывода воронки и AI-разбора');
+  assert.ok(/Ближайшие/.test(lists[1].textContent) && /Задача Контент/.test(lists[1].textContent) && !/Задача VSL/.test(lists[1].textContent)); ok('«Ближайшие» — ближайшие задачи по сроку'); E(`ui.view = 'production'; render()`); ok('в «Производстве» — канбан без воронки: отдел плашкой на карточке');
   assert.ok(D.querySelector('.tabs [data-view="funnel"]').hidden); ok('пункт «AI-воронка» пока скрыт из меню');
   E('SHOW_AI_FUNNEL = true');   // дальше проверяем сам раздел
   E(`ui.view = 'funnel'; render()`);
@@ -161,8 +161,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.deepEqual(E('vidCols().map(c => c.name)'), ['Сценарий', 'Съёмка', 'Публикация']); ok('этапы видео — как в шаблоне SMM-пространства');
   E(`addContent('Рилс', 3, today()); ui.view = 'content'; ui.ctMode = 'board'; render()`);
   assert.ok(/Хук/.test(D.querySelector('.ct-subs')?.textContent || '')); ok('подэтапы этапа SMM — на карточке видео');
-  // свои задачи в колонке «Контент» доски — наверху, над видео; новые первыми
-  E(`ui.view = 'production'; ui.infoMode = 'board'; render()`);
+  // свои задачи в колонке «Контент» доски — наверху, над видео; новые первыми (доска по отделам — в режиме «Отделы»)
+  E(`ui.view = 'production'; ui.infoMode = 'board'; ui.pfEdit = true; render()`);
   const addIn = () => D.querySelector(`[data-pfadd="${E('contentStage().id')}"]`);
   addIn().querySelector('input').value = 'Сценарий вебинара'; addIn().dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
   addIn().querySelector('input').value = 'Запросить отзывы'; addIn().dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
@@ -269,8 +269,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     D.querySelector('[data-ctmore]').click(); assert.equal(nv(), total); ok('«Показать все» раскрывает все видео');
     D.querySelector('[data-ctmore]').click(); assert.equal(nv(), 3); ok('«Свернуть» снова прячет'); }
   E(`window.__k = db.prefs.kind; db.prefs.kind = 'info'; createInfoBoard('Вторая площадка', today()); ui.infoAll = true; ui.ctOpen = {}; render();`);
-  { const ct = D.querySelector('.ab-board .pf-col.ct-col'); assert.ok(ct && ct.querySelectorAll('.ct-ico').length === 3 && ct.querySelector('[data-ctmore="__all"]')); ok('во «Все» колонка «Контент» тоже выделена и свёрнута');
-    ct.querySelector('[data-ctmore]').click(); assert.ok(D.querySelector('.ab-board .pf-col.ct-col').querySelectorAll('.ct-ico').length > 3); ok('во «Все» — «Показать все» раскрывает'); }
+  assert.ok(D.querySelector('.kb-board') && !D.querySelector('.ab-board')); ok('во «Все» — общий канбан площадок');
   E(`ui.infoAll = false; db.prefs.kind = window.__k; render();`);
   // удалённая задача не возвращается из старой копии (исполнитель / другое устройство пишет проект целиком)
   E(`{ const p = infoBoard(); const s = p.stages.find(x => !isMaint(x)); s.subs.push({ id:'zDel', name:'Удалю', done:false }); commit();
