@@ -2417,6 +2417,8 @@ svg.clip{width:14px;height:14px;flex:none}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .dept-tile{background:hsl(var(--kh) 45% 24%);color:hsl(var(--kh) 85% 80%)}}
 .kb-dept .dept-tile{--ts:30px}.dept-h .dept-tile{--ts:38px}.kb-dchip .dept-tile{--ts:24px;margin-left:-6px}.kb-dchip{gap:7px}
 .tl-lbl .dept-h .dept-tile{--ts:30px}.tl-task small .dept-tile{--ts:18px;margin:0 3px 0 0}
+.ct-kind label{display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:0 12px;height:32px;border-radius:8px}.ct-kind input{position:absolute;opacity:0;pointer-events:none}.ct-kind svg{width:16px;height:16px}
+.ct-kind label:has(input:checked){background:var(--surface);box-shadow:0 0 0 1px var(--line-strong)}.ct-ico.st{color:#DB2777}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -2577,6 +2579,10 @@ const projAva = (p, size = 'sm') => p?.image
 // ---------- Тип пространства: «Агентство» (проекты) или «SMM» (видео) ----------
 // Тип хранится в настройках пространства (db.prefs.kind = 'smm'); интерфейс тот же, но вместо проектов — видео,
 // группировка по неделям месяца и блок «План / Факт» (сколько снято и опубликовано за месяц против плана).
+const STORIES_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><circle cx="12" cy="11" r="3"/><path d="M10 18h4"/></svg>';
+// сторис — отдельный тип контента (x.kind = 'stories'): своя иконка, в KPI рилсов не входит, считается отдельно
+const isStories = x => x?.kind === 'stories';
+const ctIco = x => isStories(x) ? STORIES_ICO : VIDEO_ICO;
 const VIDEO_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="14" height="14" rx="3"/><path d="m16.5 10 5-3v10l-5-3"/></svg>';
 const FUNNEL_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5Z"/></svg>';
 const BOARD_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>';
@@ -2680,7 +2686,7 @@ function ctCur(){
   const t = today(); return cs.filter(c => c <= t && t <= cycleEnd(c)).at(-1) || cs.filter(c => c <= t).at(-1) || cs[0];
 }
 function ctStats(c){
-  const items = ctItems().filter(x => x.cycle === c); const main = items.filter(x => !x.extra), extra = items.filter(x => x.extra);
+  const items = ctItems().filter(x => x.cycle === c); const main = items.filter(x => !x.extra && !isStories(x)), extra = items.filter(x => x.extra && !isStories(x)), stories = items.filter(isStories);
   // недельный KPI (сколько видео в неделю): свой на каждую неделю цикла (p.ctWeeks[цикл]) → общий KPI инфоповода (p.weekKpi)
   // → старый план на 4 недели (db.prefs.infoPlans) поровну → по числу видео поровну
   const b = infoBoard(); const own = b?.ctWeeks?.[c]; const kpi = +b?.weekKpi || 0; const set = db.prefs?.infoPlans?.[c];
@@ -2690,12 +2696,12 @@ function ctStats(c){
   let pub = 0;
   items.forEach(x => {
     weeks[weekOfDate(c, x.due_date || c) - 1].items.push(x);
-    const d = ctDoneAt(x); if (d && !x.extra){ pub++; weeks[weekOfDate(c, d < c ? c : d) - 1].pub++; }
+    const d = ctDoneAt(x); if (d && !x.extra && !isStories(x)){ pub++; weeks[weekOfDate(c, d < c ? c : d) - 1].pub++; }
   });
   // сценарии: видео ушло с этапа «Сценарий» дальше (на съёмку и т. д.) или опубликовано — сценарий написан; считаем по неделе публикации
   const cs = vidCols(); const si = cs.findIndex(y => /сценар/i.test(y.name)); let scr = null;
   if (si >= 0){ scr = 0; main.forEach(x => { if (x.done || cs.indexOf(vidCol(x)) > si){ scr++; weeks[weekOfDate(c, x.due_date || c) - 1].scr = (weeks[weekOfDate(c, x.due_date || c) - 1].scr || 0) + 1; } }); }
-  return { plan, pub, items, weeks, kpi, scr, ownWeeks:!!own, extra:{ n:extra.length, pub:extra.filter(x => x.done).length } };
+  return { plan, pub, items, weeks, kpi, scr, ownWeeks:!!own, extra:{ n:extra.length, pub:extra.filter(x => x.done).length }, stories:{ n:stories.length, pub:stories.filter(x => x.done).length } };
 }
 // доска видео: колонки — этапы шаблона «SMM: видео» (правятся в «Настройках → Шаблоны»), у видео x.vst — id этапа шаблона.
 // Последняя колонка — «Опубликовано»: попасть в неё = отметить видео на основной доске (toggleSub), и наоборот.
@@ -2755,7 +2761,7 @@ function contentBoardHtml(s, items){
         ${GUEST ? '' : `<select class="pf-status" data-vidwho="${c.id}" aria-label="Ответственный за этап «${esc(c.name)}»">${peopleOpts((infoBoard()?.vidWho || {})[c.id] || '', 'Ответственный не назначен')}</select>`}</header>
       <div class="pf-cards">${list.map(x => { const t = taskFor(infoBoard().id, s.id, x.id);
         return `<div class="pf-card ct-card${x.done ? ' done' : ''}" draggable="true" data-ctdrag="${x.id}">
-          <div class="ct-title"><button class="ct-open" data-pfsub="${s.id}|${x.id}"><span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><b>${esc(x.name)}</b>${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}</div>
+          <div class="ct-title"><button class="ct-open" data-pfsub="${s.id}|${x.id}"><span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span><b>${esc(x.name)}</b>${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}</div>
           <small>${x.due_date ? `публикация ${fmt(x.due_date)}` : 'без даты'}</small>${whoChip(contentWho(infoBoard(), s, x, t))}
           ${(c.subs || []).length && !x.done ? `<div class="ct-subs">${c.subs.map(y => `<label><input type="checkbox" data-ctvs="${x.id}|${y.id}" ${x.vs?.[y.id] ? 'checked' : ''}><span>${esc(y.name)}</span></label>`).join('')}</div>` : ''}
           <select class="pf-status" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}">${cs.map(y => `<option value="${y.id}" ${y === c ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select></div>`; }).join('') || '<p class="hint">Пусто</p>'}</div></section>`; }).join('')}</div>`;
@@ -2779,9 +2785,10 @@ function renderContentBody(){
   ui.prodProject = p.id;
   const c = ctCur(); const cs = ctCycles(); const i = cs.indexOf(c);
   const addForm = `<form class="ct-add" id="ctAdd">
-      <div class="ct-add-hd"><span class="ct-ico lg">${VIDEO_ICO}</span><div><b>Новые видео</b><small>Появятся карточками в колонке «${esc(s.name)}» на доске и в плане по неделям</small></div></div>
+      <div class="ct-add-hd"><span class="ct-ico lg">${VIDEO_ICO}</span><div><b>Новый контент</b><small>Рилсы и сторис — в плане по неделям раздела «Контент»</small></div></div>
+      <div class="ct-add-row"><span class="kind-seg ct-kind" role="radiogroup" aria-label="Тип контента"><label><input type="radio" name="ctKind" value="" ${ui.ctKind !== 'stories' ? 'checked' : ''}>${VIDEO_ICO}Рилсы</label><label><input type="radio" name="ctKind" value="stories" ${ui.ctKind === 'stories' ? 'checked' : ''}>${STORIES_ICO}Сторис</label></span></div>
       <div class="ct-add-row">
-        <label class="ct-f grow"><span>Название</span><input id="ctName" placeholder="Например, Рилс" required></label>
+        <label class="ct-f grow"><span>Название</span><input id="ctName" placeholder="Например, Рилс или Сторис"></label>
         <label class="ct-f"><span>Сколько</span><input type="number" id="ctN" min="1" max="200" value="1"></label>
         <label class="ct-f"><span>Старт</span><input type="date" id="ctStart" value="${c && today() > cycleEnd(c) ? today() : (c || today())}"></label>
         <label class="ct-f"><span>Конец</span><input type="date" id="ctUntil" value=""></label>
@@ -2798,7 +2805,7 @@ function renderContentBody(){
   const pace = !st.plan || (!live && t < c) ? '' : st.pub >= due ? 'идём по плану' : `отстаём на ${due - st.pub}`;
   const row = x => `<li class="ct-row${x.done ? ' done' : ''}">
       ${ui.ctSelMode ? `<input type="checkbox" class="ct-pick" data-ctpick="${x.id}" ${ui.ctSel?.has(x.id) ? 'checked' : ''} aria-label="Выбрать ${esc(x.name)}">` : ''}<input type="checkbox" class="rt-chk" data-ctdone="${x.id}" ${x.done ? 'checked' : ''} aria-label="${x.done ? 'Опубликовано' : 'Готово — на следующий этап'}: ${esc(x.name)}" title="${x.done ? 'Опубликовано' : 'Этап готов — перевести видео на следующий'}">
-      <span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}
+      <span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span><button class="ct-name" data-pfsub="${s.id}|${x.id}"><b>${esc(x.name)}${x.extra ? ' <span class="ct-x">доп.</span>' : ''}</b><small>${x.done ? `опубликовано ${fmt(ctDoneAt(x))}` : 'на доске — колонка «' + esc(s.name) + '»'}</small></button>${GUEST ? '' : `<button class="icon-btn ct-ren" data-ctren="${x.id}" title="Переименовать" aria-label="Переименовать «${esc(x.name)}»">${PEN_ICO}</button>`}
       ${ctMini(x)}${vidCols().length ? `<select class="ct-stsel${x.done ? ' done' : ''}" data-ctmove="${x.id}" aria-label="Этап видео ${esc(x.name)}" title="Этап видео — выберите, чтобы перенести">${vidCols().map(y => `<option value="${y.id}" ${y === vidCol(x) ? 'selected' : ''}>${esc(y.name)}</option>`).join('')}</select>` : ''}
       ${whoChip(contentWho(p, s, x, taskFor(p.id, s.id, x.id)))}<input type="date" class="ct-date" data-ctdue="${x.id}" value="${x.due_date || ''}" aria-label="Дата публикации: ${esc(x.name)}"></li>`;
   // по умолчанию — «План / Факт», доска — вторым видом
@@ -2829,6 +2836,7 @@ function renderContentBody(){
       <div><b>${st.pub} <small>из ${st.plan}</small></b><small>Опубликовано${pace ? ' · ' + pace : ''}</small></div>
       <div><b>${Math.max(0, st.plan - st.pub)}</b><small>Осталось</small></div>
       ${st.extra.n ? `<div><b>${st.extra.pub} <small>из ${st.extra.n}</small></b><small>Доп. контент</small></div>` : ''}
+      ${st.stories.n ? `<div><b>${st.stories.pub} <small>из ${st.stories.n}</small></b><small>Сторис</small></div>` : ''}
     </div>
     <div class="smm-bar" role="img" aria-label="Выполнено ${pct}% плана"><i style="width:${pct}%"></i></div>
     ${ctStagesHtml(p, s, st)}
@@ -2871,29 +2879,29 @@ document.addEventListener('change', e => { const id = e.target.dataset?.ctpick; 
 function ctSpread(c){
   const p = infoBoard(); const s = contentStage(p); const end = p?.ctEnd?.[c]; if (!s || !end) return 0;
   const from = today() > c ? today() : c; if (from > end) return 0;
-  const list = (s.subs || []).filter(x => x.cycle === c && !x.done && !x.extra).sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true }));
+  const list = (s.subs || []).filter(x => x.cycle === c && !x.done && !x.extra && !isStories(x)).sort((a, b) => (a.due_date || '').localeCompare(b.due_date || '') || a.name.localeCompare(b.name, 'ru', { numeric:true }));
   const span = diffDays(end, from);
   list.forEach((x, i) => { x.due_date = list.length === 1 ? end : addDays(from, Math.round(i * span / (list.length - 1))); });
   return list.length;
 }
-function addContent(name, n, start, extra = false, until = ''){
+function addContent(name, n, start, extra = false, until = '', kind = ''){
   const p = infoBoard(); const s = contentStage(p); if (!p || !s || !name) return;
   const c = ctCycles().filter(x => start >= x && start <= cycleEnd(x)).at(-1) || start;
   const w0 = weekOfDate(c, start); let k = 0;                     // поровну на недели от недели старта до конца цикла
   splitPlan(n, CYCLE_WEEKS - w0 + 1).forEach((m, wi) => { for (let j = 0; j < m; j++){
     k++; let due = addDays(weekStart(c, w0 + wi), Math.min(6, Math.floor((j + 0.5) * 7 / m)));
     if (due < start || n === 1) due = start;
-    (s.subs = s.subs || []).push({ id:uid(), name:n > 1 ? `${name} ${k}` : name, done:false, cycle:c, due_date:due, ...(extra ? { extra:true } : {}) });
+    (s.subs = s.subs || []).push({ id:uid(), name:n > 1 ? `${name} ${k}` : name, done:false, cycle:c, due_date:due, ...(extra ? { extra:true } : {}), ...(kind === 'stories' ? { kind:'stories' } : {}) });
   } });
-  addLog(p, `Контент: добавлено ${n} ${plural(n, 'видео', 'видео', 'видео')}${extra ? ' (доп. контент)' : ''} в «${s.name}»`);
+  addLog(p, `Контент: добавлено ${n} ${kind === 'stories' ? plural(n, 'сторис', 'сторис', 'сторис') : plural(n, 'видео', 'видео', 'видео')}${extra ? ' (доп. контент)' : ''} в «${s.name}»`);
   if (until && until >= start){ const fresh = s.subs.slice(-n); const span = diffDays(until, start);   // конец задан — новые видео поровну от старта до конца
     fresh.forEach((x, i) => { x.due_date = n === 1 ? until : addDays(start, Math.round(i * span / (n - 1))); }); }
-  else if (!extra && p.ctEnd?.[c]) ctSpread(c);                  // задан «закончить к» у цикла — новые видео встают в общий график
+  else if (!extra && kind !== 'stories' && p.ctEnd?.[c]) ctSpread(c);                  // задан «закончить к» у цикла — новые видео встают в общий график
   ui.ctCycle = c; ui.ctAddOpen = false; commit();
 }
 document.addEventListener('submit', e => {
   if (e.target.id === 'ctAdd'){ e.preventDefault();
-    const n = Math.max(1, Math.min(200, +$('#ctN').value || 1)); addContent($('#ctName').value.trim(), n, $('#ctStart').value || today(), $('#ctExtra')?.checked, $('#ctUntil')?.value || ''); ui.ctExtra = false; return; }
+    const n = Math.max(1, Math.min(200, +$('#ctN').value || 1)); const kind = app.querySelector('[name="ctKind"]:checked')?.value || ''; addContent($('#ctName').value.trim() || (kind === 'stories' ? 'Сторис' : 'Рилс'), n, $('#ctStart').value || today(), $('#ctExtra')?.checked, $('#ctUntil')?.value || '', kind); ui.ctKind = kind; ui.ctExtra = false; return; }
   if (e.target.id === 'ctEd'){ e.preventDefault(); const c = ctCur();
     const b = infoBoard(); if (!b){ ui.ctEdit = null; render(); return; }
     // KPI — одно число на цикл, сам делится на 4 недели поровну (45 → 12/11/11/11)
@@ -5515,13 +5523,13 @@ function flowNode(p, v){
 function allBoardsHtml(){
   const boards = infoBoards().filter(p => p.state !== 'completed'); const t0 = today();
   const cols = new Map();
-  boards.forEach(p => p.stages.filter(s => !isMaint(s)).forEach(s => { const k = norm(s.name);
+  boards.forEach(p => p.stages.filter(s => !isMaint(s) && !isCtStage(p, s)).forEach(s => { const k = norm(s.name);
     if (!cols.has(k)) cols.set(k, { name:s.name, items:[] });
     sortCards(p, s, boardSubs(p, s)).forEach(x => cols.get(k).items.push({ p, s, x })); }));
   const card = ({ p, s, x }) => { const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const done = subDone(p, s, x); const due = t?.due_date || x.due_date || '';
     return `<button class="pf-card${done ? ' done' : ''}" data-tgsub="${p.id}|${s.id}|${x.id}" aria-label="${esc(p.name)}: ${esc(x.name)}">
       <span class="ab-ip"><i style="--bc:${tgColor(p)}"></i>${esc(p.name)}</span>
-      <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}</b>
+      <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span>` : ''}${esc(x.name)}</b>
       <small>${whoChip(x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t))}${due ? ` · <span class="pf-due${due < t0 && !done ? ' late' : ''}">${t?.start_date ? rangeTxt(t.start_date, due) : 'срок ' + fmt(due)}</span>` : !done ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}</small>
       ${pr && pr.total ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span><small>${pr.n} из ${pr.total} выполнено</small>` : done ? '<small>Выполнено</small>' : ''}</button>`; };
   return `<div class="pf-board ab-board">${[...cols.values()].map(c => { const dn = c.items.filter(i => subDone(i.p, i.s, i.x)).length;
@@ -5552,12 +5560,14 @@ const DEPT_ICONS = [
   [/сопровожд|поддержк|после оплат/, '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'],
 ];
 const deptIco = name => { const n = norm(name || ''); const hit = DEPT_ICONS.find(([rx]) => rx.test(n)); return `<span class="dept-tile" style="--kh:${kbHue(name)}" aria-hidden="true">${DEPT_SVG(hit ? hit[1] : '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>')}</span>`; };   // квадратная плитка с иконкой в цвете отдела
+// отдел «Контент» живёт в своём разделе: на канбане и в «По отделам» его нет
+const isCtStage = (p, s) => s === contentStage(p) || /контент/i.test(s?.name || '');
 const KB_COLS = [['todo', 'К выполнению'], ['doing', 'В работе'], ['done', 'Готово']];
 const KB_TYPES = { strat:'Стратегическая', oper:'Операционная' };
 const kbStatus = (p, s, x) => subDone(p, s, x) ? 'done' : x.kst === 'doing' || (x.cycle && x.vst && vidCols()[0]?.id !== x.vst) ? 'doing' : 'todo';
 const kbHue = name => { let h = 0; for (const ch of norm(name)) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
 function kbItems(boards){
-  return boards.flatMap(p => p.stages.filter(s => !isMaint(s) && s !== contentStage(p) && !/контент/i.test(s.name)).flatMap(s => sortCards(p, s, boardSubs(p, s)).filter(x => !x.cycle).map(x => ({ p, s, x, st:kbStatus(p, s, x) }))));   // отдел «Контент» и рилсы на канбан не попадают (по просьбе) — они в виде «По отделам»
+  return boards.flatMap(p => p.stages.filter(s => !isMaint(s) && !isCtStage(p, s)).flatMap(s => sortCards(p, s, boardSubs(p, s)).filter(x => !x.cycle).map(x => ({ p, s, x, st:kbStatus(p, s, x) }))));   // отдел «Контент» и рилсы на канбан не попадают (по просьбе) — они в виде «По отделам»
 }
 function kanbanHtml(boards, all = false){
   const t0 = today(); const items = kbItems(boards);
@@ -5580,7 +5590,7 @@ function kanbanHtml(boards, all = false){
     const can = canEditProject(p) && !GUEST;
     return `<button class="pf-card kb-card${done ? ' done' : ''}" data-tgsub="${p.id}|${s.id}|${x.id}" ${can ? `draggable="true" data-kbdrag="${p.id}|${s.id}|${x.id}"` : ''} aria-label="${esc(s.name)}: ${esc(x.name)}">
       <span class="kb-tags"><span class="kb-dept" style="--kh:${kbHue(s.name)}">${deptIco(s.name)}${esc(s.name)}</span>${x.ttype ? `<span class="kb-type t-${x.ttype}">${x.ttype === 'strat' ? 'Стратег.' : 'Операц.'}</span>` : ''}${all ? `<span class="ab-ip"><i style="--bc:${tgColor(p)}"></i>${esc(p.name)}</span>` : ''}</span>
-      <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}</b>
+      <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span>` : ''}${esc(x.name)}</b>
       <small>${whoChip(x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t))}${due ? ` · <span class="pf-due${due < t0 && !done ? ' late' : ''}">${t?.start_date ? rangeTxt(t.start_date, due) : 'срок ' + fmt(due)}</span>` : !done ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}</small>
       ${pr && pr.total && !done ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span>` : ''}</button>`; };
   const p0 = boards.length === 1 ? boards[0] : null; const canAdd = p0 && canEditProject(p0) && !GUEST;
@@ -6824,8 +6834,8 @@ const sidePinned = () => { if (innerWidth <= 640) return false; try { return loc
 const setPin = on => { try { localStorage.setItem(SIDE_PIN, on ? '1' : '0'); } catch(e) {} };
 // в области «Игорь Шаламов» (и на /igor) в левом меню нет «Приоритетов», «Поручений» и «AI-отчётов» (по просьбе)
 const SIDE_HIDE_IGOR = ['priority', 'assign', 'reports'];
-// раздел «Контент» убран из меню (по просьбе); код остаётся — вернуть: SHOW_CONTENT = true
-var SHOW_CONTENT = false;
+// раздел «Контент» в меню (SHOW_CONTENT); сам отдел «Контент» на канбане и в «По отделам» не показывается
+var SHOW_CONTENT = true;
 const isIgorArea = () => { try { return !ORG && AREA_SITES.igor.test(areaById(focusOn() ? focusId() : curArea())?.name || ''); } catch(e) { return false; } };
 function sideViews(){
   if (GUEST) return guestViews();
@@ -9651,7 +9661,7 @@ function renderProjectFocus(mine = false){
   }).join('');
 
   const dnd = canEditProject(p) && !mine && isInfo() && !GUEST;     // доски инфобизнеса: карточки перетаскиваются между колонками
-  const cols = p.stages.map(s => {
+  const cols = p.stages.filter(s => !(isInfoBoardP(p) && !mine && !ui.pfEdit && isCtStage(p, s))).map(s => {
     const h = health(s); const isCur = s.id === cur.stageId;
     const subs = sortCards(p, s, boardSubs(p, s));
     const doneN = subs.filter(x => subDone(p, s, x)).length;
@@ -9663,7 +9673,7 @@ function renderProjectFocus(mine = false){
       if (mine && !t) return tickCard(p, s, x, here);
       return `<button class="pf-card${done ? ' done' : ''}${here ? ' here' : ''}" data-pfsub="${s.id}|${x.id}" ${dnd ? `draggable="true" data-pfdrag="${s.id}|${x.id}"` : ''} aria-label="Подэтап ${esc(x.name)}${here ? ', проект сейчас здесь' : ''}">
         ${here ? '<span class="pf-here">Сейчас здесь</span>' : ''}
-        <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}">${VIDEO_ICO}</span>` : ''}${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
+        <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span>` : ''}${esc(x.name)}${msgIcon(p, t)}${matBadge(x, t)}</b>
         <small>${x.cycle && isInfoBoardP(p) && vidCol(x) ? `<span class="vid-st">${esc(vidCol(x).name)}</span>` : ''}${whoChip(x.cycle && isInfoBoardP(p) ? contentWho(p, s, x, t) : whoId(p, s, t))}${t?.due_date ? ` · <span class="pf-due${t.due_date < today() && !done ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : `срок ${fmt(t.due_date)}`}</span>` : x.due_date ? ` · <span class="pf-due${x.due_date < today() && !done ? ' late' : ''}">срок ${fmt(x.due_date)}</span>` : isInfoBoardP(p) && !done ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}${t?.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remTxt(t.remind.at)}</span>` : ''}</small>
         ${pr ? `<span class="tk-bar"><i style="width:${pr.pct}%"></i></span>${pr.total ? `<small>${pr.n} из ${pr.total} выполнено</small>` : isInfoBoardP(p) ? '' : '<small>Чек-лист пуст</small>'}`
              : isInfoBoardP(p) ? '' : `<small>${done ? 'Отмечен выполненным' : 'Нет чек-листа: нажмите, чтобы создать задачу'}</small>`}

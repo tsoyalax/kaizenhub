@@ -24,8 +24,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.ok(!E(`tplById(INFO_TPL_ID).stages.some(s => (s.subs || []).length)`) && !E(`projById('infoboard').stages.some(s => (s.subs || []).some(x => x.tsub))`)); ok('подэтапы шаблона «Инфобизнес» очищены, задачи площадок отвязаны — старой версии нечего возвращать');
   assert.ok(E(`projById('infoboard').stages.some(s => s.name === 'Вебинар')`)); ok('этап из шаблона появился на доске');
   // «Контент»: видео — карточки колонки «Контент» на доске; отметка в одном месте видна в другом
-  assert.ok(D.querySelector('.tabs [data-view="content"]').hidden); E(`ui.view = 'content'; render()`); assert.equal(E('ui.view'), 'production'); ok('раздел «Контент» убран из меню');
-  E('SHOW_CONTENT = true');   // дальше проверяем сам раздел
+  assert.ok(!D.querySelector('.tabs [data-view="content"]').hidden); ok('раздел «Контент» в меню');
   E(`ui.view = 'content'; render()`);
   D.getElementById('ctName').value = 'Ролик'; D.getElementById('ctN').value = '12';
   D.getElementById('ctAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(50);
@@ -51,7 +50,14 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   E(`ui.view = 'production'; ui.kbView = 'status'; render()`);
   assert.ok(!D.querySelector('.kb-card .ct-ico') && ![...D.querySelectorAll('.kb-dept')].some(b => /Контент/.test(b.textContent))); ok('на канбане нет отдела «Контент» и рилсов');
   E(`ui.kbView = 'dept'; render()`);
-  assert.equal(D.querySelectorAll('.pf-card.done').length, 1); ok('в виде «По отделам» карточка видео отмечена');
+  assert.ok(![...D.querySelectorAll('.pf-col header b')].some(b => /Контент/.test(b.textContent)) && !D.querySelector('.pf-card .ct-ico')); ok('в «По отделам» нет отдела «Контент» — он в своём разделе');
+  // сторис — отдельный тип контента, в KPI рилсов не входит
+  E(`ui.view = 'content'; ui.ctMode = 'board'; ui.ctAddOpen = true; render()`);
+  { const before = E('ctStats(ctCur()).plan'); const r = D.querySelector('[name="ctKind"][value="stories"]'); r.checked = true;
+    D.getElementById('ctN').value = '3'; D.getElementById('ctName').value = ''; D.getElementById('ctAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20);
+    assert.equal(E('contentStage().subs.filter(x => x.kind === "stories").length'), 3); assert.equal(E('ctStats(ctCur()).stories.n'), 3); assert.equal(E('ctStats(ctCur()).plan'), before);
+    ok('сторис добавляются отдельно: «Сторис 1–3», в плане рилсов не считаются'); }
+  E(`ui.view = 'production'; ui.kbView = 'dept'; render()`);
   assert.ok(D.querySelector('.dept-h .dept-ico')); ok('у отделов — иконки'); E(`ui.kbView = 'status'`);
   // доска видео в «Контенте»: колонки SMM, «Опубликовано» = отметка на основной доске
   E(`ui.view = 'content'; ui.ctMode = 'board'; render()`);
