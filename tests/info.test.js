@@ -307,8 +307,8 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   assert.ok(!E(`subIdsOf(infoBoard()).includes('zDel')`)); ok('старая копия из общего документа удалённую задачу не возвращает');
   // дорожная карта в PDF — во «Все»: все площадки одной таблицей
   E(`window.__k2 = db.prefs.kind; db.prefs.kind = 'info'; ui.view = 'production'; ui.infoAll = true; ui.infoMode = 'board'; render()`);
-  assert.ok(D.querySelector('[data-roadmap="all"]')); ok('кнопка «Дорожная карта в PDF» — во «Все»');
-  E(`ui.infoAll = false; render()`); assert.ok(D.querySelector(`.pf-head [data-roadmap="${E('infoBoard().id')}"]`)); ok('и у каждой площадки — своя дорожная карта');
+  assert.ok(!D.querySelector('[data-roadmap]')); ok('кнопки PDF во «Все» нет (убрана)');
+  E(`ui.infoAll = false; render()`); assert.ok(!D.querySelector('[data-roadmap]')); ok('и у площадки кнопки PDF нет');
   { const h = E(`roadmapHtml(infoBoards())`); assert.ok(/все площадки/.test(h) && (h.match(/<section>/g) || []).length === E('infoBoards().length') && /print\(\)/.test(h)); ok('дорожная карта всех площадок — раздел на каждую площадку, как у одной; открывается печать (PDF)'); }
   E(`ui.infoAll = false; db.prefs.kind = window.__k2; render()`);
   // задача без срока подсвечена на доске

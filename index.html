@@ -2460,6 +2460,19 @@ svg.clip{width:14px;height:14px;flex:none}
 .in-card{display:grid;gap:5px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}.in-card b{font-weight:500;font-size:13.5px;line-height:1.35}.in-card>small{color:var(--muted);font-size:11.5px}
 .in-card .in-to{display:grid;grid-template-columns:1fr 1fr;gap:5px}.in-card .in-to select,.in-card .in-to input{height:30px;font-size:12px;min-width:0}.in-act{display:flex;gap:5px;grid-column:1 / -1}.in-act .primary{flex:1;height:30px}
 .sp-row .kind-seg{flex-wrap:wrap;max-width:100%}.sp-row .sp-icons,.sp-row .sp-colors{flex-wrap:wrap;max-width:100%}.sp-row>*{min-width:0}
+.tl-dlbl .dept-h{gap:10px}.tl-dlbl .dept-h .dept-tile{--ts:34px}.tl-dlbl .dept-h>span{display:grid;line-height:1.2}.tl-dlbl .dept-h small{font-weight:400;font-size:11.5px;color:var(--muted)}
+.tl-dlbl{border-left:3px solid hsl(var(--kh) 65% 55%)}
+.tl-dlane{background:hsl(var(--kh) 70% 55% / .07)}
+.tl-task.tl-dk{color:hsl(var(--kh) 62% 48%)}.tl-task.tl-dk span{color:var(--ink)}.tl-task.tl-dk small{color:var(--muted);margin-left:6px;font-weight:400}
+.tl-task.tl-dk i{background:hsl(var(--kh) 62% 50%);box-shadow:0 0 0 1.5px hsl(var(--kh) 62% 50%)}
+.tl-task.tl-dk.k-red i{box-shadow:0 0 0 2.5px var(--r)}.tl-task.tl-dk.k-red small{color:var(--r)}.tl-task.tl-dk.k-yellow i{box-shadow:0 0 0 2.5px var(--y)}
+.tl-task.tl-dk.k-done i{background:var(--surface);box-shadow:0 0 0 1.5px hsl(var(--kh) 62% 50%)}.tl-task.tl-dk.k-done span{color:var(--muted)}
+.tl-bar.tl-dk{color:hsl(var(--kh) 62% 50%)}
+.tl-dn{font-weight:600!important;color:hsl(var(--kh) 60% 42%)!important;background:hsl(var(--kh) 80% 92%);border-radius:5px;padding:0 5px}
+:root[data-theme="dark"] .tl-dn{background:hsl(var(--kh) 40% 22%);color:hsl(var(--kh) 80% 78%)!important}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tl-dn{background:hsl(var(--kh) 40% 22%);color:hsl(var(--kh) 80% 78%)!important}}
+.pf-board.ab-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));overflow:visible;align-items:start}.ab-board>.pf-col{min-width:0;flex:none}
+.kb-board .kb-col{flex:1 1 230px;min-width:210px}.kb-board .kb-in{flex:0 1 290px;min-width:250px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -5522,7 +5535,7 @@ const TL_ZOOM = [4, 7, 12, 20, 34, 52, 80];
 const TL_ZNAME = ['Квартал', 'Квартал', 'Месяц', 'Месяц', 'Неделя', 'Дни', 'Дни подробно'];
 const tlZ = () => { const z = ui.tlZoom ?? 4; return Math.max(0, Math.min(TL_ZOOM.length - 1, z)); };
 const tlDW = () => TL_ZOOM[tlZ()];
-const tlZoomBar = () => `<div class="tl-zoom" role="group" aria-label="Масштаб таймлайна"><button type="button" class="icon-btn" data-tlzoom="-1" aria-label="Мельче" ${tlZ() === 0 ? 'disabled' : ''}>−</button><span class="tl-zl">${TL_ZNAME[tlZ()]}</span><button type="button" class="icon-btn" data-tlzoom="1" aria-label="Крупнее" ${tlZ() === TL_ZOOM.length - 1 ? 'disabled' : ''}>+</button><button type="button" class="ghost" data-tltoday>Сегодня</button><span class="hint">Ctrl/⌘ + колёсико — масштаб</span></div>`;
+const tlZoomBar = () => `<div class="tl-zoom" role="group" aria-label="Масштаб таймлайна"><button type="button" class="icon-btn" data-tlzoom="-1" aria-label="Мельче" ${tlZ() === 0 ? 'disabled' : ''}>−</button><span class="tl-zl">${TL_ZNAME[tlZ()]}</span><button type="button" class="icon-btn" data-tlzoom="1" aria-label="Крупнее" ${tlZ() === TL_ZOOM.length - 1 ? 'disabled' : ''}>+</button><button type="button" class="ghost" data-tltoday>Сегодня</button></div>`;
 // шапка дней: на крупном масштабе — каждый день, на мелком — понедельники и начало месяца
 const tlHead = (days, from, DW, t0) => days.map(d => { const dt = parse(d); const g = dt.getDay(), wk = g === 0 || g === 6; const first = dt.getDate() === 1 || d === from;
   const show = DW >= 20 || (DW >= 7 ? g === 1 : dt.getDate() === 1 || dt.getDate() === 15) || first || d === t0;
@@ -5569,18 +5582,16 @@ function timelineHtml(p){
   const shade = tlShade(days, from, DW);
   const k = i => i.done ? 'done' : i.due < t0 ? 'red' : i.due <= addDays(t0, 1) ? 'yellow' : 'green';
   return tlZoomBar() + `<div class="tl${compact ? ' compact' : ''}" aria-label="Таймлайн задач">
-    <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl" style="height:${l.h}px"><b class="dept-h" style="--kh:${kbHue(l.v.s.name)}">${deptIco(l.v.s.name)}${esc(l.v.s.name)}</b>
-      ${flowPill(l.v)}
-      ${l.nodate.length ? `<small>без срока: ${l.nodate.length}</small>` : ''}</div>`).join('')}</div>
+    <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl tl-dlbl" style="height:${l.h}px;--kh:${kbHue(l.v.s.name)}"><b class="dept-h">${deptIco(l.v.s.name)}<span>${esc(l.v.s.name)}<small>${l.placed.length} ${plural(l.placed.length, 'задача', 'задачи', 'задач')}</small></span></b></div>`).join('')}</div>
     <div class="tl-scroll"><div class="tl-in" style="width:${W}px">
       <div class="tl-head">${head}</div>
       <div class="tl-body" style="height:${H}px">${shade}
-        ${lanes.map(l => `<div class="tl-lane" style="top:${l.top}px;height:${l.h}px"></div>`).join('')}
+        ${lanes.map(l => `<div class="tl-lane tl-dlane" style="top:${l.top}px;height:${l.h}px;--kh:${kbHue(l.v.s.name)}"></div>`).join('')}
         <i class="tl-today" style="left:${xOf(t0)}px"></i>
         ${p.deadline && (p.goalName || p.goalSet) ? `<i class="tl-goal" style="left:${xOf(p.deadline)}px"><span>${FLAG}${esc(goalName(p))} · ${fmt(p.deadline)}</span></i>` : ''}
         ${kdList(p).filter(k => k.d >= from && k.d <= to).map((k, j) => `<i class="tl-goal tl-key" style="left:${xOf(k.d)}px"><span style="top:${4 + (j % 3) * 20}px">${FLAG}${esc(k.name)} · ${fmt(k.d)}</span></i>`).join('')}
 
-        ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task k-${k(i)}" data-pfsub="${l.v.s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px" title="${esc(i.x.name)} · ${esc(l.v.s.name)}${i.who ? ' · ' + esc(i.who) : ''} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}"><i></i><span>${esc(i.x.name)}<small>${i.who ? ' · ' + esc(i.who) : ''} · ${fmt(i.due)}</small></span></button>`)).join('')}
+        ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar tl-dk k-${k(i)}" style="--kh:${kbHue(l.v.s.name)};left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task tl-dk k-${k(i)}" data-pfsub="${l.v.s.id}|${i.x.id}" style="--kh:${kbHue(l.v.s.name)};left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px" title="${esc(i.x.name)} · ${esc(l.v.s.name)}${i.who ? ' · ' + esc(i.who) : ''} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}"><i></i><span>${esc(i.x.name)}<small>${fmt(i.due)}</small></span></button>`)).join('')}
       </div></div></div></div>`;
 }
 // ---------- Инфобизнес: таймлайн «Вместе» — несколько инфоповодов (блок Игоря, челлендж Эма…) на одной шкале ----------
@@ -5623,7 +5634,7 @@ function togetherHtml(everything){
           <i class="tl-today" style="left:${xOf(t0)}px"></i>
           ${boards.filter(p => p.deadline && (p.goalName || p.goalSet) && p.deadline >= from && p.deadline <= to).map(p => `<i class="tl-goal" style="left:${xOf(p.deadline)}px"><span>${FLAG}${esc(goalName(p))} · ${esc(p.name)} · ${fmt(p.deadline)}</span></i>`).join('')}
           ${kds.slice().sort((a, z) => a.d.localeCompare(z.d)).map((k, j) => `<i class="tl-goal tl-key" style="left:${xOf(k.d)}px"><span style="top:${4 + (j % 3) * 20}px">${FLAG}${esc(k.name)} · ${esc(k.p.name)} · ${fmt(k.d)}</span></i>`).join('')}
-          ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task tg-task k-${k(i)}" data-tgsub="${l.p.id}|${i.s.id}|${i.x.id}" style="left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px;--bc:${tgColor(l.p)}" title="${esc(l.p.name)} · ${esc(i.s.name)} · ${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}"><i></i><span>${esc(i.x.name)}<small> · ${deptIco(i.s.name)}${esc(i.s.name)}${i.who ? ' · ' + esc(i.who) : ''} · ${fmt(i.due)}</small></span></button>`)).join('')}
+          ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task tg-task tl-dk k-${k(i)}" data-tgsub="${l.p.id}|${i.s.id}|${i.x.id}" style="--kh:${kbHue(i.s.name)};left:${i.px - 7}px;top:${l.top + 8 + i.r * TL_ROW + 4}px;--bc:${tgColor(l.p)}" title="${esc(l.p.name)} · ${esc(i.s.name)} · ${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}"><i></i><span>${esc(i.x.name)}<small class="tl-dn" style="--kh:${kbHue(i.s.name)}">${esc(i.s.name)}</small><small>${fmt(i.due)}</small></span></button>`)).join('')}
         </div></div></div></div></div>`;
 }
 document.addEventListener('click', e => {
@@ -5864,7 +5875,7 @@ const kbViewSeg = mode => `<span class="kind-seg fl-mode" role="group" aria-labe
 document.addEventListener('click', e => { const v = e.target.closest?.('[data-kbview]'); if (v){ ui.kbView = v.dataset.kbview; ui.infoMode = 'board'; render(); } });
 function flowAllHtml(){
   return `<section class="fl fl-p" aria-label="Все площадки">
-    <div class="fl-p-hd"><h2>Все площадки</h2><div class="fl-view"><button class="icon-btn pf-shareic" data-roadmap="all" title="Дорожная карта всех площадок в PDF: задачи с датами и ключевыми точками" aria-label="Дорожная карта в PDF">${PDF_ICON}</button>${kbViewSeg(ui.infoMode === 'timeline' || ui.infoMode === 'together' ? 'timeline' : 'board')}</div></div>
+    <div class="fl-p-hd"><h2>Все площадки</h2><div class="fl-view">${kbViewSeg(ui.infoMode === 'timeline' || ui.infoMode === 'together' ? 'timeline' : 'board')}</div></div>
   </section>`;
 }
 function flowProdHtml(p){
@@ -9899,7 +9910,7 @@ function renderProjectFocus(mine = false){
           <div><h2>${mine ? esc(p.name) : `<button class="link-plain" data-open="${p.id}">${esc(p.name)}</button>`}</h2>
             <small>${mine ? `${esc(p.client)}, ваша роль: ${ROLE_RU[role].toLowerCase()}, владелец: <span class="owner-name">…</span>` : `${p.client ? `${esc(p.client)}, ` : ''}PM ${esc(short(p.pm_id))}${execTxt(p)}${isInfoBoardP(p) ? '' : `, финиш ${fmt(plannedEnd(p))}`}`}</small>
           </div>
-          ${!mine ? `<button class="icon-btn pf-shareic pf-pdf" data-roadmap="${p.id}" title="Дорожная карта «${esc(p.name)}» в PDF: задачи с датами и ключевыми точками" aria-label="Дорожная карта в PDF">${PDF_ICON}</button>` : ''}
+          
           ${!mine ? `<button class="icon-btn pf-shareic${shareCount(p) ? ' on' : ''}" data-share="${p.id}" title="Поделиться проектом${shareCount(p) ? ` · доступ у ${shareCount(p)}` : ''}" aria-label="Поделиться проектом">${SHARE_ICON}${shareCount(p) ? `<span>${shareCount(p)}</span>` : ''}</button>` : ''}
         </div>
         ${!mine ? `<div class="pf-sort">${canEdit && !GUEST ? `<button type="button" class="ghost pf-editbtn${ui.pfEdit ? ' on' : ''}" data-pfedit aria-pressed="${!!ui.pfEdit}">${ui.pfEdit ? 'Готово' : `${ICON_EDIT}${isInfoBoardP(p) ? 'Отделы' : 'Редактировать доску'}`}</button>` : ''}<label class="hint" for="pfSort">Карточки:</label><select id="pfSort" aria-label="Порядок карточек в столбиках">${Object.entries(CARD_SORT).map(([k, l]) => `<option value="${k}" ${cardSortMode() === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>` : ''}
