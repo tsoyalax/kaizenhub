@@ -5369,7 +5369,7 @@ const TL_ZOOM = [4, 7, 12, 20, 34, 52, 80];
 const TL_ZNAME = ['Квартал', 'Квартал', 'Месяц', 'Месяц', 'Неделя', 'Дни', 'Дни подробно'];
 const tlZ = () => { const z = ui.tlZoom ?? 4; return Math.max(0, Math.min(TL_ZOOM.length - 1, z)); };
 const tlDW = () => TL_ZOOM[tlZ()];
-const tlZoomBar = () => `<div class="tl-zoom" role="group" aria-label="Масштаб таймлайна"><button type="button" class="icon-btn" data-tlzoom="-1" aria-label="Мельче" ${tlZ() === 0 ? 'disabled' : ''}>−</button><span class="tl-zl">${TL_ZNAME[tlZ()]}</span><button type="button" class="icon-btn" data-tlzoom="1" aria-label="Крупнее" ${tlZ() === TL_ZOOM.length - 1 ? 'disabled' : ''}>+</button><button type="button" class="ghost" data-tltoday>Сегодня</button><span class="hint">Ctrl/⌘ + колёсико — масштаб</span></div>`;
+const tlZoomBar = () => `<div class="tl-zoom" role="group" aria-label="Масштаб таймлайна"><button type="button" class="icon-btn" data-tlzoom="-1" aria-label="Мельче" ${tlZ() === 0 ? 'disabled' : ''}>−</button><span class="tl-zl">${TL_ZNAME[tlZ()]}</span><button type="button" class="icon-btn" data-tlzoom="1" aria-label="Крупнее" ${tlZ() === TL_ZOOM.length - 1 ? 'disabled' : ''}>+</button><span class="hint">Ctrl/⌘ + колёсико — масштаб</span></div>`;
 // шапка дней: на крупном масштабе — каждый день, на мелком — понедельники и начало месяца
 const tlHead = (days, from, DW, t0) => days.map(d => { const dt = parse(d); const g = dt.getDay(), wk = g === 0 || g === 6; const first = dt.getDate() === 1 || d === from;
   const show = DW >= 20 || (DW >= 7 ? g === 1 : dt.getDate() === 1 || dt.getDate() === 15) || first || d === t0;
