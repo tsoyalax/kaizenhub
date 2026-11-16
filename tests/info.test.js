@@ -26,7 +26,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   // «Контент»: видео — карточки колонки «Контент» на доске; отметка в одном месте видна в другом
   assert.ok(!D.querySelector('.tabs [data-view="content"]').hidden); ok('раздел «Контент» в меню');
   E(`ui.view = 'templates'; ui.setTab = 'deadlines'; render()`);
-  assert.deepEqual([...D.querySelectorAll('[data-settab]')].map(b => b.dataset.settab), ['boards', 'look', 'spaces', 'ai']); ok('настройки инфобизнеса: «Площадки», «Оформление», «Пространства», «AI» — без дедлайнов, шаблонов, категорий');
+  assert.deepEqual([...D.querySelectorAll('[data-settab]')].map(b => b.dataset.settab), ['boards', 'look', 'templates', 'spaces', 'ai']); ok('настройки инфобизнеса: «Площадки», «Оформление», «Шаблоны», «Пространства», «AI» — без дедлайнов и категорий');
   E(`ui.setTab = 'look'; render()`); D.querySelector('[data-themeset="dark"]').click(); assert.equal(D.documentElement.dataset.theme, 'dark'); D.querySelector('[data-themeset="auto"]').click(); assert.ok(!D.documentElement.dataset.theme); ok('тема — в «Оформлении», «Как в системе» меняется сама');
   E(`ui.setTab = ''; ui.view = 'production'; render()`);
   E(`ui.view = 'content'; render()`);

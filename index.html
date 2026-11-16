@@ -6658,7 +6658,7 @@ document.addEventListener('click', async e => {
     catch(err) { m.textContent = sampleErr(err); } }
 });
 // в инфобизнесе «Дедлайны», «Шаблоны» и «Категории» не нужны (по просьбе) — в настройках только «Пространства» и «AI»
-const SET_INFO_HIDE = ['deadlines', 'templates', 'categories'];
+const SET_INFO_HIDE = ['deadlines', 'categories'];   // «Шаблоны» в инфобизнесе вернули (по просьбе)
 const setTabs = () => [...(isInfo() && !GUEST ? [['boards', 'Площадки']] : []), ['look', 'Оформление'], ['deadlines', 'Дедлайны'], ['templates', 'Шаблоны'], ['categories', 'Категории'], ['spaces', 'Пространства'], ['ai', 'AI']].filter(([k]) => !(isInfo() && SET_INFO_HIDE.includes(k)));
 const setTabNow = () => { const t = ui.setTab || 'deadlines'; return setTabs().some(([k]) => k === t) ? t : setTabs()[0][0]; };
 const setNav = () => `<div class="set-nav seg-toggle" role="tablist" aria-label="Разделы настроек">${setTabs().map(([k, l]) => `<button data-settab="${k}" aria-pressed="${setTabNow() === k}">${l}</button>`).join('')}</div>`;
