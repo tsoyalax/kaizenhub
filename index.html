@@ -2405,14 +2405,18 @@ svg.clip{width:14px;height:14px;flex:none}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .kb-dept{background:hsl(var(--kh) 40% 22%);color:hsl(var(--kh) 80% 80%)}}
 .kb-add{display:grid;gap:6px;margin-bottom:4px}.kb-add input,.kb-add select{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 8px;font-size:13px;min-width:0}
 .kb-add-row{display:grid;grid-template-columns:1fr 1fr auto;gap:6px}
-.dept-ico{width:17px;height:17px;flex:none;vertical-align:-3px;margin-right:5px}
-.kb-dept{display:inline-flex;align-items:center;font-size:12.5px;padding:3px 9px 3px 7px}.kb-dchip .dept-ico{color:hsl(var(--kh) 60% 45%);margin-right:0}
-.dept-h{display:inline-flex;align-items:center}.dept-h .dept-ico{width:24px;height:24px;margin-right:8px;stroke-width:1.8;color:hsl(var(--kh) 60% 45%)}
+.kb-dept{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;padding:0;background:none!important;color:var(--ink)!important;font-weight:600}
+.dept-h{display:inline-flex;align-items:center;gap:9px}
 .tl-zoom{display:flex;align-items:center;gap:6px;margin:0 0 8px;flex-wrap:wrap}.tl-zoom .icon-btn{width:30px;height:30px;font-size:16px}.tl-zl{min-width:96px;text-align:center;font-size:13px;font-weight:500}
 .tl-d.sparse{white-space:nowrap;width:auto!important;border-left:1px solid var(--line);padding-left:3px}
 .tl.compact .tl-task span{display:none}.tl.compact .tl-task:hover span,.tl.compact .tl-task:focus span{display:inline;position:relative;z-index:3;background:var(--surface);padding:1px 6px;border-radius:6px;box-shadow:0 0 0 1px var(--line)}
-.tl-task small{color:var(--muted);font-weight:400}.tl-task small .dept-ico{width:14px;height:14px;margin:0 2px 0 0}
-.kb-dchip .dept-ico{width:18px;height:18px}
+.tl-task small{color:var(--muted);font-weight:400}
+.dept-tile{--ts:30px;width:var(--ts);height:var(--ts);flex:none;display:inline-grid;place-items:center;border-radius:calc(var(--ts) * .28);background:hsl(var(--kh) 85% 92%);color:hsl(var(--kh) 60% 34%);vertical-align:middle}
+.dept-tile .dept-ico{width:calc(var(--ts) * .6);height:calc(var(--ts) * .6)}
+:root[data-theme="dark"] .dept-tile{background:hsl(var(--kh) 45% 24%);color:hsl(var(--kh) 85% 80%)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .dept-tile{background:hsl(var(--kh) 45% 24%);color:hsl(var(--kh) 85% 80%)}}
+.kb-dept .dept-tile{--ts:30px}.dept-h .dept-tile{--ts:38px}.kb-dchip .dept-tile{--ts:24px;margin-left:-6px}.kb-dchip{gap:7px}
+.tl-lbl .dept-h .dept-tile{--ts:30px}.tl-task small .dept-tile{--ts:18px;margin:0 3px 0 0}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -5547,7 +5551,7 @@ const DEPT_ICONS = [
   [/аналит|цифр|метрик/, '<path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/>'],
   [/сопровожд|поддержк|после оплат/, '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>'],
 ];
-const deptIco = name => { const n = norm(name || ''); const hit = DEPT_ICONS.find(([rx]) => rx.test(n)); return DEPT_SVG(hit ? hit[1] : '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'); };
+const deptIco = name => { const n = norm(name || ''); const hit = DEPT_ICONS.find(([rx]) => rx.test(n)); return `<span class="dept-tile" style="--kh:${kbHue(name)}" aria-hidden="true">${DEPT_SVG(hit ? hit[1] : '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>')}</span>`; };   // квадратная плитка с иконкой в цвете отдела
 const KB_COLS = [['todo', 'К выполнению'], ['doing', 'В работе'], ['done', 'Готово']];
 const KB_TYPES = { strat:'Стратегическая', oper:'Операционная' };
 const kbStatus = (p, s, x) => subDone(p, s, x) ? 'done' : x.kst === 'doing' || (x.cycle && x.vst && vidCols()[0]?.id !== x.vst) ? 'doing' : 'todo';
