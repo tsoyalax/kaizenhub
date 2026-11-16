@@ -65,7 +65,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E(`INFO_HIDDEN.splice(INFO_HIDDEN.indexOf('today'), 1); ui.view = 'today'; ui.tdIp = ''; render();`); { const due = $('.tdy-due'); assert.ok(due && /Оффер/.test(due.textContent) && /Анонс челленджа/.test(due.textContent)); ok('«Сегодня»: «Ближайшие» — задачи всех площадок'); }
   E(`INFO_HIDDEN.push('today'); ui.view = 'production'; render();`);
 
-  assert.ok($('.tg-tl') && D.querySelectorAll('.tg-lane').length === 2); ok('«Вместе»: блок Игоря и челлендж Эма — две полосы на одной шкале');
+  assert.ok($('.tg-tl') && D.querySelectorAll('.tg-tl .tl-dlane').length >= 2 && D.querySelectorAll('.tg-tl .tgp-dot').length === D.querySelectorAll('.tg-task').length); ok('«Все» → таймлайн: строки — отделы обеих площадок, у задачи точка площадки');
   assert.equal(D.querySelectorAll('.tg-task').length, 3); assert.ok(![...D.querySelectorAll('.tg-task')].some(b => /Рилс|Анонс/.test(b.textContent))); ok('задачи обоих инфоповодов на таймлайне, без «Контента»');
   assert.ok(!$('.tg-cross') && !$('.tg-cnt') && !/Пересечени/.test($('.tg').textContent)); ok('без строки «Пересечения» — просто общий таймлайн');
   assert.ok($('[data-ipall]').classList.contains('on') && !$('[data-tgp]') && !$('.ab-board')); ok('«Все» → «Таймлайн»: общий таймлайн без лишнего выбора');

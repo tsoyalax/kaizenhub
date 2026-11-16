@@ -2464,23 +2464,24 @@ svg.clip{width:14px;height:14px;flex:none}
 .tl-dlbl{border-left:3px solid hsl(var(--kh) 65% 55%)}
 .tl-dlane{background:hsl(var(--kh) 70% 55% / .07)}
 .tl-task.tl-dk{height:26px;gap:0;padding:0;border-radius:8px;color:var(--ink)}
-.tl-task.tl-dk .dept-tile svg.dept-ico{width:14px!important;height:14px!important;min-width:14px;display:block}
-.tl-task.tl-dk .dept-tile{--ts:22px;flex:none;border-radius:7px;box-shadow:0 0 0 2px var(--surface);position:relative;z-index:1}
-.tl-task.tl-dk span{display:inline-flex;align-items:center;gap:6px;height:22px;margin-left:-6px;padding:0 9px 0 12px;border-radius:0 7px 7px 0;background:hsl(var(--kh) 80% 94%);border:1px solid hsl(var(--kh) 55% 82%);border-left:0;color:hsl(var(--kh) 45% 22%);font-size:12px;font-weight:500}
-.tl-task.tl-dk small{color:hsl(var(--kh) 30% 45%);font-weight:400;font-size:11px;margin:0}
-:root[data-theme="dark"] .tl-task.tl-dk span{background:hsl(var(--kh) 35% 19%);border-color:hsl(var(--kh) 35% 30%);color:hsl(var(--kh) 70% 88%)}:root[data-theme="dark"] .tl-task.tl-dk small{color:hsl(var(--kh) 30% 68%)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tl-task.tl-dk span{background:hsl(var(--kh) 35% 19%);border-color:hsl(var(--kh) 35% 30%);color:hsl(var(--kh) 70% 88%)}:root:not([data-theme="light"]) .tl-task.tl-dk small{color:hsl(var(--kh) 30% 68%)}}
-.tl-task.tl-dk:hover span{border-color:hsl(var(--kh) 60% 55%)}
-.tl-task.tl-dk.k-red .dept-tile{box-shadow:0 0 0 2px var(--r)}.tl-task.tl-dk.k-red small{color:var(--r);font-weight:600}
+.tl-task.tl-dk{height:24px;gap:0;padding:0;border-radius:8px;color:var(--ink);align-items:center}
+.tl-task.tl-dk .dept-tile{--ts:24px;flex:none;border-radius:7px;position:relative;z-index:1;box-shadow:0 0 0 2px var(--surface)}
+.tl-task.tl-dk .tlp-t{display:inline-flex;align-items:center;gap:6px;height:24px;margin-left:-8px;padding:0 10px 0 14px;border-radius:0 8px 8px 0;background:hsl(var(--kh) 80% 94%);border:1px solid hsl(var(--kh) 55% 82%);border-left:0;color:hsl(var(--kh) 45% 22%);font-size:12px;font-weight:500;line-height:1;white-space:nowrap;box-sizing:border-box}
+.tl-task.tl-dk .tlp-t small{color:hsl(var(--kh) 30% 45%);font-weight:400;font-size:11px;margin:0}
+:root[data-theme="dark"] .tl-task.tl-dk .tlp-t{background:hsl(var(--kh) 35% 19%);border-color:hsl(var(--kh) 35% 30%);color:hsl(var(--kh) 70% 88%)}:root[data-theme="dark"] .tl-task.tl-dk .tlp-t small{color:hsl(var(--kh) 30% 68%)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tl-task.tl-dk .tlp-t{background:hsl(var(--kh) 35% 19%);border-color:hsl(var(--kh) 35% 30%);color:hsl(var(--kh) 70% 88%)}:root:not([data-theme="light"]) .tl-task.tl-dk .tlp-t small{color:hsl(var(--kh) 30% 68%)}}
+.tl-task.tl-dk:hover .tlp-t{border-color:hsl(var(--kh) 60% 55%)}
+.tl-task.tl-dk.k-red .dept-tile{box-shadow:0 0 0 2px var(--r)}.tl-task.tl-dk.k-red .tlp-t small{color:var(--r);font-weight:600}
 .tl-task.tl-dk.k-yellow .dept-tile{box-shadow:0 0 0 2px var(--y)}
-.tl-task.tl-dk.k-done{opacity:.55}.tl-task.tl-dk.k-done span{text-decoration:line-through}
-.tl.compact .tl-task.tl-dk span{display:none}.tl.compact .tl-task.tl-dk:hover span{display:inline-flex}
+.tl-task.tl-dk.k-done{opacity:.55}.tl-task.tl-dk.k-done .tlp-t{text-decoration:line-through}
+.tl.compact .tl-task.tl-dk .tlp-t{display:none}.tl.compact .tl-task.tl-dk:hover .tlp-t{display:inline-flex}
 .tl-bar.tl-dk{color:hsl(var(--kh) 62% 50%)}
 .tl-dn{font-weight:600!important;color:hsl(var(--kh) 60% 42%)!important;background:hsl(var(--kh) 80% 92%);border-radius:5px;padding:0 5px}
 :root[data-theme="dark"] .tl-dn{background:hsl(var(--kh) 40% 22%);color:hsl(var(--kh) 80% 78%)!important}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tl-dn{background:hsl(var(--kh) 40% 22%);color:hsl(var(--kh) 80% 78%)!important}}
 .pf-board.ab-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));overflow:visible;align-items:start}.ab-board>.pf-col{min-width:0;flex:none}
 .kb-board .kb-col{flex:1 1 230px;min-width:210px}.kb-board .kb-in{flex:0 1 290px;min-width:250px}
+.tgp-dot{width:7px;height:7px;border-radius:50%;background:var(--bc);flex:none;box-shadow:0 0 0 1.5px var(--surface)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -5599,7 +5600,7 @@ function timelineHtml(p){
         ${p.deadline && (p.goalName || p.goalSet) ? `<i class="tl-goal" style="left:${xOf(p.deadline)}px"><span>${FLAG}${esc(goalName(p))} · ${fmt(p.deadline)}</span></i>` : ''}
         ${kdList(p).filter(k => k.d >= from && k.d <= to).map((k, j) => `<i class="tl-goal tl-key" style="left:${xOf(k.d)}px"><span style="top:${4 + (j % 3) * 20}px">${FLAG}${esc(k.name)} · ${fmt(k.d)}</span></i>`).join('')}
 
-        ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar tl-dk k-${k(i)}" style="--kh:${kbHue(l.v.s.name)};left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task tl-dk k-${k(i)}" data-pfsub="${l.v.s.id}|${i.x.id}" style="--kh:${kbHue(l.v.s.name)};left:${i.px - 11}px;top:${l.top + 8 + i.r * TL_ROW + 2}px" title="${esc(i.x.name)} · ${esc(l.v.s.name)}${i.who ? ' · ' + esc(i.who) : ''} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}">${deptIco(l.v.s.name)}<span>${esc(i.x.name)}<small>${fmt(i.due)}</small></span></button>`)).join('')}
+        ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar tl-dk k-${k(i)}" style="--kh:${kbHue(l.v.s.name)};left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task tl-dk k-${k(i)}" data-pfsub="${l.v.s.id}|${i.x.id}" style="--kh:${kbHue(l.v.s.name)};left:${i.px - 12}px;top:${l.top + 8 + i.r * TL_ROW + 3}px" title="${esc(i.x.name)} · ${esc(l.v.s.name)}${i.who ? ' · ' + esc(i.who) : ''} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}">${deptIco(l.v.s.name)}<span class="tlp-t">${esc(i.x.name)}<small>${fmt(i.due)}</small></span></button>`)).join('')}
       </div></div></div></div>`;
 }
 // ---------- Инфобизнес: таймлайн «Вместе» — несколько инфоповодов (блок Игоря, челлендж Эма…) на одной шкале ----------
@@ -5613,7 +5614,8 @@ function togetherHtml(everything){
   if (!sel.length) sel = all.map(p => p.id);
   if (!everything) ui.tgSel = sel;
   const boards = sel.map(id => all.find(p => p.id === id)).filter(Boolean);
-  const per = boards.map(p => ({ p, items:[...flowState(p).values()].filter(v => !isCtStage(p, v.s)).flatMap(v => v.items.filter(i => !i.x.cycle).map(i => ({ ...i, s:v.s }))) }));   // без рилсов и «Контента»
+  // строки — отделы (одинаковые у площадок объединены, как на канбане «Все»); у задачи — точка цвета площадки. Без рилсов и «Контента»
+  const per = [...boards.flatMap(p => [...flowState(p).values()].filter(v => !isCtStage(p, v.s)).flatMap(v => v.items.filter(i => !i.x.cycle).map(i => ({ ...i, s:v.s, p })))).reduce((m, i) => { const k = norm(i.s.name); if (!m.has(k)) m.set(k, { name:i.s.name, items:[] }); m.get(k).items.push(i); return m; }, new Map()).values()];
   const dated = per.flatMap(b => b.items.filter(i => i.due).map(i => i.due)), starts = per.flatMap(b => b.items.filter(i => i.start).map(i => i.start));
   const kds = boards.flatMap(p => kdList(p).map(k => ({ ...k, p })));
   const fins = boards.filter(p => p.deadline && (p.goalName || p.goalSet)).map(p => p.deadline);
@@ -5623,7 +5625,7 @@ function togetherHtml(everything){
   let y = 0; const lanes = per.map(b => {
     const items = b.items.filter(i => i.due).sort((a, z) => a.due.localeCompare(z.due)); const rowsEnd = [];
     const placed = items.map(i => { const px = xOf(i.due), sx = i.start ? xOf(i.start) : px; let r = rowsEnd.findIndex(e => e < sx - 8); if (r < 0){ r = rowsEnd.length; rowsEnd.push(0); }
-      const who = tlWho(b.p, i.s, i.x); rowsEnd[r] = px + 26 + (compact ? 0 : Math.min(260, i.x.name.length * 6.7 + 64)); return { ...i, px, sx, r, who }; });
+      const who = tlWho(i.p, i.s, i.x); rowsEnd[r] = px + 26 + (compact ? 0 : Math.min(260, i.x.name.length * 6.7 + 64)); return { ...i, px, sx, r, who }; });
     const h = Math.max(62, Math.max(1, rowsEnd.length) * TL_ROW + 16); const lane = { ...b, top:y, h, placed, nodate:b.items.filter(i => !i.due && !i.done).length }; y += h; return lane;
   });
   const H = y; const days = Array.from({ length:nd }, (_, i) => addDays(from, i));
@@ -5633,16 +5635,15 @@ function togetherHtml(everything){
   return `<div class="tg">
     ${everything ? '' : `<div class="tg-pick"><span class="hint">Площадки на шкале:</span>${all.map(p => `<button class="tg-chip" data-tgp="${p.id}" aria-pressed="${sel.includes(p.id)}" style="--bc:${tgColor(p)}"><i></i>${esc(p.name)}</button>`).join('')}</div>`}
     ${tlZoomBar()}<div class="tl tg-tl${compact ? ' compact' : ''}" aria-label="Таймлайн площадок вместе">
-      <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl" style="height:${l.h}px;--bc:${tgColor(l.p)}"><b class="tg-n"><i></i>${esc(l.p.name)}</b>
-        <small>${l.items.filter(i => !i.done).length} в работе${l.nodate ? ` · без срока: ${l.nodate}` : ''}</small></div>`).join('')}</div>
+      <div class="tl-lbls" style="padding-top:34px">${lanes.map(l => `<div class="tl-lbl tl-dlbl" style="height:${l.h}px;--kh:${kbHue(l.name)}"><b class="dept-h">${deptIco(l.name)}<span>${esc(l.name)}<small>${l.placed.length} ${plural(l.placed.length, 'задача', 'задачи', 'задач')}</small></span></b></div>`).join('')}</div>
       <div class="tl-scroll"><div class="tl-in" style="width:${W}px">
         <div class="tl-head">${head}</div>
         <div class="tl-body" style="height:${H}px">${shade}
-          ${lanes.map(l => `<div class="tl-lane tg-lane" style="top:${l.top}px;height:${l.h}px;--bc:${tgColor(l.p)}"></div>`).join('')}
+          ${lanes.map(l => `<div class="tl-lane tl-dlane" style="top:${l.top}px;height:${l.h}px;--kh:${kbHue(l.name)}"></div>`).join('')}
           <i class="tl-today" style="left:${xOf(t0)}px"></i>
           ${boards.filter(p => p.deadline && (p.goalName || p.goalSet) && p.deadline >= from && p.deadline <= to).map(p => `<i class="tl-goal" style="left:${xOf(p.deadline)}px"><span>${FLAG}${esc(goalName(p))} · ${esc(p.name)} · ${fmt(p.deadline)}</span></i>`).join('')}
           ${kds.slice().sort((a, z) => a.d.localeCompare(z.d)).map((k, j) => `<i class="tl-goal tl-key" style="left:${xOf(k.d)}px"><span style="top:${4 + (j % 3) * 20}px">${FLAG}${esc(k.name)} · ${esc(k.p.name)} · ${fmt(k.d)}</span></i>`).join('')}
-          ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task tg-task tl-dk k-${k(i)}" data-tgsub="${l.p.id}|${i.s.id}|${i.x.id}" style="--kh:${kbHue(i.s.name)};left:${i.px - 11}px;top:${l.top + 8 + i.r * TL_ROW + 2}px;--bc:${tgColor(l.p)}" title="${esc(l.p.name)} · ${esc(i.s.name)} · ${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}">${deptIco(i.s.name)}<span>${esc(i.x.name)}<small>${fmt(i.due)}</small></span></button>`)).join('')}
+          ${lanes.flatMap(l => l.placed.map(i => `${i.start ? `<i class="tl-bar k-${k(i)}" style="left:${i.sx - 7}px;width:${i.px - i.sx + 14}px;top:${l.top + 8 + i.r * TL_ROW + 4}px"></i>` : ''}<button class="tl-task tg-task tl-dk k-${k(i)}" data-tgsub="${i.p.id}|${i.s.id}|${i.x.id}" style="--kh:${kbHue(i.s.name)};left:${i.px - 12}px;top:${l.top + 8 + i.r * TL_ROW + 3}px;--bc:${tgColor(i.p)}" title="${esc(i.p.name)} · ${esc(i.s.name)} · ${esc(i.x.name)} · ${i.start ? rangeTxt(i.start, i.due) : 'срок ' + fmt(i.due)}">${deptIco(i.s.name)}<span class="tlp-t">${boards.length > 1 ? `<i class="tgp-dot" title="${esc(i.p.name)}"></i>` : ''}${esc(i.x.name)}<small>${fmt(i.due)}</small></span></button>`)).join('')}
         </div></div></div></div></div>`;
 }
 document.addEventListener('click', e => {
