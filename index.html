@@ -5279,12 +5279,12 @@ function renderProduction(){
   }
   const p = infoBoard();
   if (!isInfo() || GUEST || !p || projById(ui.prodProject) !== p) return;
-  if (infoAllOn()){ const tl = ui.infoMode === 'timeline' || ui.infoMode === 'together'; const boards = tl ? '' : kanbanHtml(infoBoards().filter(p => p.state !== 'completed'), true);
+  if (infoAllOn()){ const tl = ui.infoMode === 'timeline' || ui.infoMode === 'together'; const boards = tl ? '' : kbDeptView() ? allBoardsHtml() : kanbanHtml(infoBoards().filter(p => p.state !== 'completed'), true);
     app.innerHTML = infoTabsHtml() + flowAllHtml() + (tl ? togetherHtml(true) : boards); return; }
   app.insertAdjacentHTML('afterbegin', infoTabsHtml() + flowPanelHtml(p, 'prod'));
   const b = app.querySelector('.pf-main .pf-board, .pm-board');
   if (ui.infoMode === 'timeline' || ui.infoMode === 'together'){ if (b) b.outerHTML = timelineHtml(p); }
-  else if (b && !ui.pfEdit) b.outerHTML = kanbanHtml([p]);    // обычный канбан; в «Редактировать доску» — отделы столбиками
+  else if (b && !ui.pfEdit && !kbDeptView()) b.outerHTML = kanbanHtml([p]);    // обычный канбан; в «Редактировать доску» — отделы столбиками
 }
 document.addEventListener('click', e => { const t = e.target.closest?.('[data-prodtab]'); if (t){ ui.prodTab = t.dataset.prodtab; render(); } });
 // раздел «Приоритеты» (инфобизнес): все задачи инфоповода по приоритету, приоритет меняется в строке
@@ -5591,16 +5591,20 @@ function dueListsHtml(boards){
       ${next.length ? box('Ближайшие', next, false, '') : ''}
     </div>` : '';
 }
+// вид площадки: «Канбан» (К выполнению / В работе / Готово), «По отделам» (столбик = отдел), «Таймлайн»
+const kbDeptView = () => ui.kbView === 'dept';
+const kbViewSeg = mode => `<span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-kbview="status" aria-pressed="${mode === 'board' && !kbDeptView()}">Канбан</button><button type="button" data-kbview="dept" aria-pressed="${mode === 'board' && kbDeptView()}">По отделам</button><button type="button" data-infomode="timeline" aria-pressed="${mode !== 'board'}">Таймлайн</button></span>`;
+document.addEventListener('click', e => { const v = e.target.closest?.('[data-kbview]'); if (v){ ui.kbView = v.dataset.kbview; ui.infoMode = 'board'; render(); } });
 function flowAllHtml(){
   return `<section class="fl fl-p" aria-label="Все площадки">
-    <div class="fl-p-hd"><h2>Все площадки</h2><div class="fl-view"><button class="icon-btn pf-shareic" data-roadmap="all" title="Дорожная карта всех площадок в PDF: задачи с датами и ключевыми точками" aria-label="Дорожная карта в PDF">${PDF_ICON}</button><span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${!(ui.infoMode === 'timeline' || ui.infoMode === 'together')}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${ui.infoMode === 'timeline' || ui.infoMode === 'together'}">Таймлайн</button></span></div></div>
+    <div class="fl-p-hd"><h2>Все площадки</h2><div class="fl-view"><button class="icon-btn pf-shareic" data-roadmap="all" title="Дорожная карта всех площадок в PDF: задачи с датами и ключевыми точками" aria-label="Дорожная карта в PDF">${PDF_ICON}</button>${kbViewSeg(ui.infoMode === 'timeline' || ui.infoMode === 'together' ? 'timeline' : 'board')}</div></div>
   </section>`;
 }
 function flowProdHtml(p){
   const mode = ui.infoMode === 'timeline' || ui.infoMode === 'together' ? 'timeline' : 'board';
   return `<section class="fl fl-p" aria-label="Вид доски">
     <div class="fl-p-hd"><h2>${esc(p.name)}</h2><span class="fl-p-st">${esc(ipState(p))}</span>
-      <div class="fl-view"><span class="kind-seg fl-mode" role="group" aria-label="Вид"><button type="button" data-infomode="board" aria-pressed="${mode === 'board'}">Доска</button><button type="button" data-infomode="timeline" aria-pressed="${mode !== 'board'}">Таймлайн</button></span></div></div></section>`;
+      <div class="fl-view">${kbViewSeg(mode)}</div></div></section>`;
 }
 function flowPanelHtml(p, part = 'prod'){
   if (part !== 'ai') return flowProdHtml(p);

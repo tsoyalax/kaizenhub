@@ -49,7 +49,9 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     const todo = $('.kb-todo'); const c = [...todo.querySelectorAll('.kb-card')].find(x => /Рилс 1/.test(x.textContent));
     assert.ok(c && /Блок Игоря/.test(c.textContent) && c.querySelector('.kb-dept') && [...todo.querySelectorAll('.kb-card')].some(x => /Анонс челленджа/.test(x.textContent) && /Челлендж Эма/.test(x.textContent))); ok('задачи обеих площадок с плашкой отдела и площадки');
     $('[data-kbtype="strat"]').click(); await wait(50); assert.equal(D.querySelectorAll('.kb-card').length, 0);
-    $('[data-kbtype=""]').click(); await wait(50); E(`ui.kbType = ''`); ok('фильтр «Стратегические»'); }
+    $('[data-kbtype=""]').click(); await wait(50); E(`ui.kbType = ''`); ok('фильтр «Стратегические»');
+    $('[data-kbview="dept"]').click(); await wait(50); assert.ok($('.ab-board') && !$('.kb-board')); ok('вид «По отделам»: столбик = отдел');
+    $('[data-kbview="status"]').click(); await wait(50); assert.ok($('.kb-board')); ok('вид «Канбан» возвращается'); }
   E(`ui.infoAll = true; render();`); $('[data-infomode="timeline"]').click(); await wait(100);
   assert.ok(/Все площадки/.test($('.fl-p').textContent) && !$('.flp-list')); ok('«Все»: шапка с видом, без списков сроков');
   E(`ui.view = 'today'; ui.tdIp = ''; render();`); { const due = $('.tdy-due'); assert.ok(due && /Оффер/.test(due.textContent) && /Анонс челленджа/.test(due.textContent)); ok('«Сегодня»: «Ближайшие» — задачи всех площадок'); }
