@@ -145,6 +145,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok(!D.querySelector('.tabs [data-view="beta"]').hidden); E(`ui.view = 'beta'; render()`);
   { const p = E('JSON.stringify(bfPlan(bfCfg()))'); const q = JSON.parse(p); assert.ok(Math.round(q.code) === 21984 && Math.round(q.pub * 10) === 366 && Math.round(q.client) === 45); ok('бета-воронка: план как в таблице (21 984 кодовых слова, 36,6 рилс, 45 клиентов)'); }
   { const i = D.querySelector('[data-bffact$="|subs"]'); i.value = '500'; i.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20); assert.ok(/500/.test($('.bf-t').textContent)); ok('факт по дню — в итог «Факт»'); }
+  assert.ok($('.bfv') && !/Рилс/.test($('.bfv').textContent) && ![...D.querySelectorAll('.bf-t:not(.bf-d) td b')].some(b => /Рилс/.test(b.textContent)) && /Рилс снято/.test($('.bf-dash').textContent)); ok('рилсы — сверху в дашборде, не в воронке');
   assert.deepEqual(o.errors.filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });

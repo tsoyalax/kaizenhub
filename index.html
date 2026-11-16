@@ -2518,6 +2518,17 @@ svg.clip{width:14px;height:14px;flex:none}
 .bf-d .bf-in{width:84px;height:30px}.bf-pl{display:block;font-size:10.5px;color:var(--muted)}
 .bf-h{margin:20px 0 8px;font-size:16px}.bf-h small{font-weight:400}
 .bf-sc{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}.bf-scc{display:grid;gap:4px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}.bf-scc.on{border-color:var(--ink)}.bf-scc span{font-size:18px;font-weight:600}.bf-scc small{font-size:12px;font-weight:400;color:var(--muted)}
+.bfv{display:grid;justify-items:center;gap:2px;padding:18px 14px;margin:6px 0 4px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+.bfv-g{justify-self:start;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:hsl(var(--h) 60% 50%);margin:8px 0 2px 4px}
+.bfv-r{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;min-height:38px;padding:4px 14px;border-radius:12px;overflow:hidden;
+  background:hsl(var(--h) 80% 93%);border:1px solid hsl(var(--h) 55% 80%);color:hsl(var(--h) 50% 22%);box-sizing:border-box;min-width:220px;transition:width .25s}
+.bfv-f{position:absolute;left:0;top:0;bottom:0;background:hsl(var(--h) 70% 82%);z-index:0}
+.bfv-r>*:not(.bfv-f){position:relative;z-index:1}.bfv-n{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bfv-r b{font-size:15px;font-weight:700}.bfv-r small{font-size:11px;opacity:.75;white-space:nowrap}
+.bfv-cv{font-size:11px;color:var(--muted);line-height:1.2}
+:root[data-theme="dark"] .bfv-r{background:hsl(var(--h) 35% 18%);border-color:hsl(var(--h) 35% 30%);color:hsl(var(--h) 70% 88%)}:root[data-theme="dark"] .bfv-f{background:hsl(var(--h) 45% 28%)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .bfv-r{background:hsl(var(--h) 35% 18%);border-color:hsl(var(--h) 35% 30%);color:hsl(var(--h) 70% 88%)}:root:not([data-theme="light"]) .bfv-f{background:hsl(var(--h) 45% 28%)}}
+.bf-dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:0 0 12px}.bf-dc{display:grid;gap:4px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.bf-dc>small{font-size:12px;color:var(--muted)}.bf-dc b{font-size:22px;font-weight:700}.bf-dc b span{font-size:13px;font-weight:400;color:var(--muted)}.bf-dbar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}.bf-dbar i{display:block;height:100%;background:var(--brand)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -5573,17 +5584,30 @@ function bfPlan(c, m = { reach:1, code:1 }){
   return p;
 }
 const bfN = v => v == null || isNaN(v) ? '—' : Math.round(v).toLocaleString('ru-RU');
+// воронка картинкой: полосы сужаются сверху вниз (ширина — по логарифму, т. к. охват в миллионах, а клиенты — десятки),
+// цвет — группа (контент, Instagram, Telegram, продажи), между полосами — конверсия шага; заливка внутри — факт от плана
+const BF_GROUP = { reach:['Instagram', 330], code:['Instagram', 330], click:['Telegram', 205], subs:['Telegram', 205],
+  form:['Продажи', 150], lead:['Продажи', 150], callset:['Продажи', 150], calldone:['Продажи', 150], offer:['Продажи', 150], client:['Продажи', 150] };
+function bfFunnelHtml(c, p, factSum, hasFact){
+  const keys = Object.keys(BF_GROUP); const max = Math.log10(Math.max(10, p.reach)), min = Math.log10(Math.max(1, Math.min(...keys.map(k => p[k] || 1))));
+  const W = v => 34 + 66 * (Math.log10(Math.max(1, v)) - min) / Math.max(.01, max - min);
+  let lastG = '';
+  return `<div class="bfv">${keys.map((k, i) => { const [g, h] = BF_GROUP[k]; const name = BF_STAGES.find(x => x[0] === k)[1]; const cv = i ? (k === 'reach' ? null : bfConv(c, k)) : null;
+    const f = factSum(k); const fp = p[k] ? Math.min(100, Math.round(f / p[k] * 100)) : 0; const head = g !== lastG ? `<div class="bfv-g" style="--h:${h}">${g}</div>` : ''; lastG = g;
+    return `${head}${cv != null ? `<div class="bfv-cv">↓ ${+(cv * 100).toFixed(1)}%</div>` : i ? '<div class="bfv-cv">↓</div>' : ''}
+      <div class="bfv-r" style="--h:${h};width:${W(p[k]).toFixed(1)}%"><i class="bfv-f" style="width:${hasFact ? fp : 0}%"></i><span class="bfv-n">${name}</span><b>${bfN(p[k])}</b>${hasFact ? `<small>факт ${bfN(f)} · ${fp}%</small>` : ''}</div>`; }).join('')}</div>`;
+}
 function renderBeta(){
   const c = bfCfg(); const p = bfPlan(c); const days = Array.from({ length:c.days }, (_, i) => addDays(c.start, i)); const end = days.at(-1); const t0 = today();
   const factSum = k => days.reduce((m, d) => m + (+c.fact[d]?.[k] || 0), 0);
   const hasFact = Object.keys(c.fact).length > 0;
-  const rows = BF_STAGES.map(([k, name, def]) => { const f = factSum(k); const pct = p[k] ? Math.round(f / p[k] * 100) : 0; const w = Math.max(2, Math.round(Math.log10(Math.max(1, p[k])) / Math.log10(Math.max(10, p.reach)) * 100));
+  const rows = BF_STAGES.filter(([k]) => k !== 'shot' && k !== 'pub').map(([k, name, def]) => { const f = factSum(k); const pct = p[k] ? Math.round(f / p[k] * 100) : 0; const w = Math.max(2, Math.round(Math.log10(Math.max(1, p[k])) / Math.log10(Math.max(10, p.reach)) * 100));
     return `<tr><td><b>${name}</b>${BF_SRC[k] ? `<small class="bf-src">${BF_SRC[k]}</small>` : ''}</td>
       <td>${def != null ? `<input type="number" class="bf-in bf-pct" data-bfconv="${k}" value="${+(bfConv(c, k) * 100).toFixed(2)}" step="0.1" min="0" max="100" aria-label="Конверсия: ${name}">%` : '—'}</td>
       <td><span class="bf-bar"><i style="width:${w}%"></i></span>${bfN(p[k])}</td><td>${bfN(p[k] * 7 / c.days)}</td><td>${bfN(p[k] / c.days)}</td>
       <td>${hasFact ? `${bfN(f)} <small class="bf-pf ${pct >= 100 ? 'ok' : pct < 80 ? 'bad' : ''}">${pct}%</small>` : '—'}</td><td>${BF_PREV[k] ? bfN(BF_PREV[k]) : '—'}</td></tr>`; }).join('');
   const sc = [['Пессимистичный', .9, .9], ['Реалистичный', 1, 1], ['Максимальный', 1.1, 1.1]].map(([n, r, k]) => [n, bfPlan(c, { reach:r, code:k })]);
-  const dayKeys = ['pub', 'reach', 'code', 'click', 'subs', 'form', 'lead', 'client'];
+  const dayKeys = ['shot', 'pub', 'reach', 'code', 'click', 'subs', 'form', 'lead', 'client'];
   const dayRow = d => `<tr class="${d === t0 ? 'now' : ''}"><td>${fmt(d)}</td>${dayKeys.map(k => { const v = c.fact[d]?.[k]; const pl = p[k] / c.days; const cls = v == null || v === '' ? '' : +v >= pl ? 'ok' : +v < pl * .8 ? 'bad' : '';
     return `<td><small class="bf-pl">${bfN(pl)}</small><input type="number" class="bf-in bf-f ${cls}" data-bffact="${d}|${k}" value="${v ?? ''}" min="0" aria-label="Факт ${fmt(d)}"></td>`; }).join('')}</tr>`;
   app.innerHTML = `<div class="it-top"><h2>Воронка +${bfN(c.goal)} Telegram <span class="beta-b">бета</span></h2></div>
@@ -5593,8 +5617,13 @@ function renderBeta(){
       <label>Срок, дней<input type="number" class="bf-in" data-bfset="days" value="${c.days}" min="1" max="91"></label>
       <label>Старт<input type="date" class="bf-in" data-bfset="start" value="${c.start}"></label>
       <label>Средний охват рилс<input type="number" class="bf-in" data-bfset="reach" value="${c.reach}" min="1"></label>
-      <div class="bf-kpi"><b>${bfN(p.pub)}</b><small>рилс за ${c.days} дн. · ${bfN(p.pub * 7 / c.days)} в неделю</small></div>
-      <div class="bf-kpi"><b>${bfN(p.client)}</b><small>новых клиентов · финиш ${fmt(end)}</small></div></div>
+</div>
+    <div class="bf-dash">${[['shot', 'Рилс снято'], ['pub', 'Рилс выпущено']].map(([k, l]) => { const f = factSum(k); const pc = p[k] ? Math.round(f / p[k] * 100) : 0;
+      return `<div class="bf-dc"><small>${l}</small><b>${bfN(f)} <span>из ${bfN(p[k])}</span></b><span class="bf-dbar"><i style="width:${Math.min(100, pc)}%"></i></span><small>${bfN(p[k] * 7 / c.days)} в неделю · ${bfN(p[k] / c.days)} в день</small></div>`; }).join('')}
+      <div class="bf-dc"><small>Подписчики Telegram</small><b>${bfN(factSum('subs'))} <span>из ${bfN(c.goal)}</span></b><span class="bf-dbar"><i style="width:${Math.min(100, Math.round(factSum('subs') / c.goal * 100))}%"></i></span><small>цель · финиш ${fmt(end)}</small></div>
+      <div class="bf-dc"><small>Новые клиенты</small><b>${bfN(factSum('client'))} <span>из ${bfN(p.client)}</span></b><span class="bf-dbar"><i style="width:${p.client ? Math.min(100, Math.round(factSum('client') / p.client * 100)) : 0}%"></i></span><small>по плану воронки</small></div></div>
+    ${bfFunnelHtml(c, p, factSum, hasFact)}
+    <h3 class="bf-h">Этапы и конверсии</h3>
     <div class="bf-wrap"><table class="bf-t"><thead><tr><th>Этап воронки</th><th>Конверсия</th><th>План на срок</th><th>В неделю</th><th>В день</th><th>Факт</th><th>Прошлый запуск</th></tr></thead><tbody>${rows}</tbody></table></div>
     <h3 class="bf-h">Сценарии <small class="hint">одно число рилс, меняются охват и доля кодового слова ±10%</small></h3>
     <div class="bf-sc">${sc.map(([n, q]) => `<div class="bf-scc${n === 'Реалистичный' ? ' on' : ''}"><b>${n}</b><span>${bfN(q.subs)} <small>подписчиков · ${Math.round(q.subs / c.goal * 100)}% цели</small></span><span>${bfN(q.client)} <small>клиентов</small></span><span>${bfN(q.reach)} <small>охват</small></span></div>`).join('')}</div>
