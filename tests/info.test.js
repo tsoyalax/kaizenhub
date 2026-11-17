@@ -263,6 +263,14 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   D.querySelector('[data-itinto]').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
   assert.ok(E(`itAll().some(t => t.title === 'Согласовать бюджет с клиентом' && t.project_id === '${ap}' && t.dept === '${smmId}')`)); ok('«В задачи» — внутренняя задача этого проекта в отделе SMM');
   E(`_sample = window.__smp0`);
+  // внутренняя задача: срок «с … до …» и напоминание, как у задач площадки
+  { const id = E(`itAll().find(t => t.title === 'Согласовать бюджет с клиентом').id`); E(`openItask('${id}')`); await wait(20);
+    D.getElementById('itStart').value = E('today()'); D.getElementById('itDue').value = E('addDays(today(), 3)');
+    D.querySelector('[data-itremq="before"]').click(); assert.equal(D.getElementById('itRem').value, E('addDays(today(), 2)') + 'T10:00');
+    D.getElementById('itForm').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
+    const t = JSON.parse(E(`JSON.stringify(itAll().find(t => t.id === '${id}'))`)); assert.ok(t.start_date === E('today()') && t.due_date === E('addDays(today(), 3)') && t.remind?.at === E('addDays(today(), 2)') + 'T10:00'); ok('внутренняя задача: срок «с … до …» и напоминание «За день, 10:00»');
+    E(`(() => { const t = itAll().find(x => x.id === '${id}'); t.remind.at = new Date(Date.now() - 60000).toISOString().slice(0, 16); })()`); E('checkReminders()');
+    assert.ok(D.getElementById('remPop') && /Согласовать бюджет/.test(D.getElementById('remPop').textContent)); ok('напоминание внутренней задачи срабатывает'); D.querySelector('[data-remok]').click(); }
   const op = E(`db.projects.find(p => p.state === 'active' && p.id !== '${ap}').id`);
   E(`ui.prodProject = '${op}'; render()`);
   assert.ok(!/Контент-план на декабрь/.test(D.getElementById('app').textContent)); ok('у другого проекта — свои внутренние задачи');

@@ -2538,6 +2538,8 @@ svg.clip{width:14px;height:14px;flex:none}
 .td-add{display:flex;gap:6px;margin-bottom:8px}.td-add input{height:34px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;padding:0 10px;font:inherit;font-size:13.5px}.td-add input:first-child{flex:1;min-width:0}.td-add input:focus{border-style:solid;outline:0;background:var(--surface)}
 .it-kb{margin-top:4px}.kb-dept.nod{--kh:220}.kb-dbtn{position:relative}.it-dact{position:absolute;top:4px;right:6px;display:none;gap:2px}.kb-dbtn:hover .it-dact{display:flex}.it-dact i{display:grid;place-items:center;width:20px;height:20px;border-radius:5px;background:var(--surface);cursor:pointer}.it-dact svg{width:12px;height:12px}
 .kb-dnew{border-style:dashed}.it-add-row{grid-template-columns:1fr auto}[data-itcol].drop{border-color:var(--brand)}.it-kc.dragging{opacity:.4}
+.it-range{display:flex;gap:8px;flex-wrap:wrap}.it-range label{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}.it-range input{width:auto}
+.it-rem{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.it-rem input{width:auto}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -9108,8 +9110,10 @@ function openItask(id, preset = {}){
       <div class="field"><label for="itDesc">Описание</label><textarea id="itDesc" rows="3" maxlength="4000" ${ro}>${esc(v.description || '')}</textarea></div>
       <div class="two">
         <div class="field"><label for="itWho">Исполнитель</label><select id="itWho" ${ro}>${GUEST ? `<option>${esc(ui.meAcc?.name || 'Вы')}</option>` : peopleOpts(v.assignee_id)}</select></div>
-        <div class="field"><label for="itDue">Дедлайн</label><input id="itDue" type="date" value="${esc(v.due_date || '')}" ${ro}></div>
+        <div class="field"><label>Срок</label><div class="it-range"><label>с<input id="itStart" type="date" value="${esc(v.start_date || '')}" ${v.due_date ? `max="${esc(v.due_date)}"` : ''} ${ro}></label><label>до<input id="itDue" type="date" value="${esc(v.due_date || '')}" ${ro}></label></div></div>
       </div>
+      <div class="field"><label for="itRem">${BELL_ICO} Напоминание</label><div class="it-rem"><input id="itRem" type="datetime-local" value="${esc(v.remind?.at || '')}" ${ro}>
+        ${manage ? `<button type="button" class="tkp-q" data-itremq="day">В день срока, 10:00</button><button type="button" class="tkp-q" data-itremq="before">За день, 10:00</button><button type="button" class="tkp-q x" data-itremq="" title="Убрать">✕</button>` : ''}</div></div>
       <div class="two">
         <div class="field"><label for="itPri">Приоритет</label><select id="itPri" ${ro}>${Object.entries(IT_PRI).map(([k, x]) => `<option value="${k}" ${k === v.priority ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
         <div class="field"><label for="itCat">Категория</label><select id="itCat" ${ro}>${Object.entries(IT_CAT).map(([k, x]) => `<option value="${k}" ${k === v.category ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
@@ -9123,6 +9127,8 @@ function openItask(id, preset = {}){
     </form></div>`;
   (t ? $('#itStatus') : $('#itTitle')).focus();
 }
+document.addEventListener('click', e => { const b = e.target.closest?.('[data-itremq]'); if (!b) return; const due = $('#itDue')?.value; const r = $('#itRem'); if (!r) return;
+  if (!b.dataset.itremq){ r.value = ''; return; } if (!due){ toast('Сначала поставьте срок'); return; } r.value = `${b.dataset.itremq === 'before' ? addDays(due, -1) : due}T10:00`; });
 document.addEventListener('submit', e => {
   if (e.target.id !== 'itForm') return; e.preventDefault();
   const id = e.target.dataset.itid; const old = id ? itAll().find(x => x.id === id) : null;
@@ -9131,7 +9137,7 @@ document.addEventListener('submit', e => {
   const who = $('#itWho').value; if (!who){ $('#itErr').textContent = 'Выберите исполнителя'; return; }
   const now = new Date().toISOString();
   const t = { ...(old || { id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Руководитель', created_at:now }),
-    title, description:$('#itDesc').value.trim(), assignee_id:who, priority:$('#itPri').value, category:$('#itCat').value, status:$('#itStatus').value, due_date:$('#itDue').value || '', dept:$('#itDept')?.value ?? (old?.dept || ''), project_id:$('#itProj')?.value ?? (old?.project_id || '') };
+    title, description:$('#itDesc').value.trim(), assignee_id:who, priority:$('#itPri').value, category:$('#itCat').value, status:$('#itStatus').value, due_date:$('#itDue').value || $('#itStart')?.value || '', start_date:$('#itStart')?.value && $('#itDue').value && $('#itStart').value < $('#itDue').value ? $('#itStart').value : '', remind:$('#itRem')?.value ? { at:$('#itRem').value, by:meKey(), byName:actorName() } : null, dept:$('#itDept')?.value ?? (old?.dept || ''), project_id:$('#itProj')?.value ?? (old?.project_id || '') };
   if (old && old.assignee_id !== who) delete t._members;                    // сменили исполнителя — пересобираем доступ
   itSave(t); layer.innerHTML = ''; render();
   const u = userById(who);
@@ -9186,7 +9192,7 @@ function internalBoardHtml(p){
     return `<div class="pf-card kb-card it-kc${t.status === 'done' ? ' done' : ''}" data-itopen="${t.id}" ${can ? `draggable="true" data-itdrag="${t.id}"` : ''}>
       <span class="kb-tags">${t.dept && dname(t.dept) ? `<span class="kb-dept" style="--kh:${kbHue(dname(t.dept))}">${deptIco(dname(t.dept))}${esc(dname(t.dept))}</span>` : '<span class="kb-dept nod">Без отдела</span>'}${t.status === 'review' ? '<span class="kb-type">На проверке</span>' : ''}</span>
       <b>${esc(t.title)}</b>
-      <small>${whoChip(t.assignee_id)}${t.due_date ? ` · <span class="pf-due${late ? ' late' : ''}">срок ${fmt(t.due_date)}</span>` : t.status !== 'done' ? ' · <span class="pf-due nodue">без срока</span>' : ''}</small></div>`; };
+      <small>${whoChip(t.assignee_id)}${t.due_date ? ` · <span class="pf-due${late ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : 'срок ' + fmt(t.due_date)}</span>` : t.status !== 'done' ? ' · <span class="pf-due nodue">без срока</span>' : ''}${t.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remShort(t.remind.at)}</span>` : ''}</small></div>`; };
   const projSel = (cur, attr = 'data-itaddp') => `<select ${attr} aria-label="Проект">${itProjects().map(x => `<option value="${x.id}" ${x.id === cur ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>`;
   const deptSel = (cur, attr = 'data-itaddd') => `<select ${attr} aria-label="Отдел"><option value="">Без отдела</option>${deps.map(d => `<option value="${d.id}" ${d.id === cur ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}</select>`;
   const addForm = can ? `<form class="kb-add it-addf" data-itadd><input placeholder="Новая задача" maxlength="200" aria-label="Новая внутренняя задача">
@@ -10148,6 +10154,13 @@ function checkReminders(){
     fired = t; const p = projById(t.project_id);
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') try { new Notification('Напоминание', { body:`${t.title}${p ? ` — ${p.name}` : ''}${t.due_date ? `, срок ${fmt(t.due_date)}` : ''}`, tag:'kz-rem-' + t.id }); } catch(e) {}
   });
+  // внутренние задачи: напоминание ставит руководитель себе или исполнителю
+  itAll().forEach(t => {
+    if (!t.remind?.at || !(t.remind.by === meKey() || t.assignee_id === ME) || new Date(t.remind.at) > now) return;
+    const key = 'rem:' + t.id + ':' + t.remind.at; if (sent.has(key)) return;
+    sent.add(key); if (new Date(t.remind.at) < now - 864e5 || t.status === 'done') return;
+    fired = t; if (typeof Notification !== 'undefined' && Notification.permission === 'granted') try { new Notification('Напоминание', { body:`${t.title}${t.due_date ? `, срок ${fmt(t.due_date)}` : ''}` }); } catch(e) {}
+  });
   writeSet(NSENT_KEY(), sent);
   if (fired) showReminder(fired);
 }
@@ -10160,7 +10173,7 @@ function showReminder(t){
 }
 document.addEventListener('click', e => {
   if (e.target.closest?.('[data-remok]')){ $('#remPop')?.remove(); return; }
-  const o = e.target.closest?.('[data-remopen]'); if (o){ $('#remPop')?.remove(); openTask(o.dataset.remopen); }
+  const o = e.target.closest?.('[data-remopen]'); if (o){ $('#remPop')?.remove(); if (itAll().some(x => x.id === o.dataset.remopen)) openItask(o.dataset.remopen); else openTask(o.dataset.remopen); }
 });
 setInterval(() => { try { checkReminders(); } catch(e) {} }, 30000);
 setTimeout(() => { try { checkReminders(); } catch(e) {} }, 4000);
