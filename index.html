@@ -2536,6 +2536,8 @@ svg.clip{width:14px;height:14px;flex:none}
 .ar-new{display:flex;gap:6px;margin-bottom:14px}.ar-new input{flex:1;height:34px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;padding:0 10px}
 .td-sec{margin:14px 0 18px}.td-sec>h3{font-size:15px;margin:0 0 8px;display:flex;gap:8px;align-items:baseline}.td-strat>h3{color:var(--ink)}
 .td-add{display:flex;gap:6px;margin-bottom:8px}.td-add input{height:34px;border:1px dashed var(--line-strong);border-radius:8px;background:transparent;padding:0 10px;font:inherit;font-size:13.5px}.td-add input:first-child{flex:1;min-width:0}.td-add input:focus{border-style:solid;outline:0;background:var(--surface)}
+.it-kb{margin-top:4px}.kb-dept.nod{--kh:220}.kb-dbtn{position:relative}.it-dact{position:absolute;top:4px;right:6px;display:none;gap:2px}.kb-dbtn:hover .it-dact{display:flex}.it-dact i{display:grid;place-items:center;width:20px;height:20px;border-radius:5px;background:var(--surface);cursor:pointer}.it-dact svg{width:12px;height:12px}
+.kb-dnew{border-style:dashed}.it-add-row{grid-template-columns:1fr auto}[data-itcol].drop{border-color:var(--brand)}.it-kc.dragging{opacity:.4}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -9169,31 +9171,101 @@ const IT_ICO = { todo:'gray', in_progress:'green', review:'blue', done:'done' };
 // доска внутренних задач проекта p (вкладка «Внутренние задачи» в «Производстве»):
 // первая колонка — «Регулярные» = регулярные задачи этапа «Ведение» (есть, только если в проекте включено «Ведение»),
 // дальше — отделы с внутренними задачами этого проекта (t.project_id), «+ Задача» ставит задачу сразу в проект и отдел
+// «Внутренние задачи» проекта — как канбан площадки: отделы кнопками-плитками, колонки «Входящие → К выполнению → В работе → Готово»,
+// «Регулярные» (ведение) — последней колонкой. Задачу можно поставить на любой проект (выбор в форме и во «Входящих»).
+const IT_KB = [['todo', 'К выполнению'], ['in_progress', 'В работе'], ['done', 'Готово']];
+const itCol = t => t.status === 'done' ? 'done' : t.status === 'in_progress' || t.status === 'review' ? 'in_progress' : 'todo';
+const itProjects = () => (db.projects || []).filter(p => p.state !== 'archived' && p.state !== 'completed');
 function internalBoardHtml(p){
-  const deps = itDepts(); const t0 = today();
-  const all = itAll().filter(t => t.project_id === p.id && (!ui.itMine || t.assignee_id === ME));
-  const cols = [...deps, ...(all.some(t => !t.dept || !deps.some(d => d.id === t.dept)) ? [{ id:'', name:'Без отдела' }] : [])];
-  const ms = p.stages.find(isMaint);
+  const deps = itDepts(); const t0 = today(); const can = !GUEST;
+  const base = itAll().filter(t => t.project_id === p.id && (!ui.itMine || t.assignee_id === ME));
+  if (ui.itDept && !deps.some(d => d.id === ui.itDept) && ui.itDept !== '-') ui.itDept = '';
+  const all = base.filter(t => !ui.itDept || (ui.itDept === '-' ? !t.dept || !deps.some(d => d.id === t.dept) : t.dept === ui.itDept));
+  const dname = id => deps.find(d => d.id === id)?.name || '';
   const card = t => { const late = t.due_date && t.due_date < t0 && t.status !== 'done';
-    return `<div class="it-card${t.status === 'done' ? ' done' : ''}" data-itopen="${t.id}">
+    return `<div class="pf-card kb-card it-kc${t.status === 'done' ? ' done' : ''}" data-itopen="${t.id}" ${can ? `draggable="true" data-itdrag="${t.id}"` : ''}>
+      <span class="kb-tags">${t.dept && dname(t.dept) ? `<span class="kb-dept" style="--kh:${kbHue(dname(t.dept))}">${deptIco(dname(t.dept))}${esc(dname(t.dept))}</span>` : '<span class="kb-dept nod">Без отдела</span>'}${t.status === 'review' ? '<span class="kb-type">На проверке</span>' : ''}</span>
       <b>${esc(t.title)}</b>
-      <div class="it-meta">${whoChip(t.assignee_id)}${t.due_date ? `<span class="pf-due${late ? ' late' : ''}">${FLAG}${fmt(t.due_date)}</span>` : ''}${t.priority === 'urgent' || t.priority === 'high' ? `<span class="dt-pri pri-${t.priority}">${IT_PRI[t.priority]}</span>` : ''}</div>
-      <select class="pf-status it-st s-${IT_ICO[t.status] || 'gray'}" data-itstatus="${t.id}" aria-label="Статус «${esc(t.title)}»">${Object.entries(IT_STATUS).map(([k, x]) => `<option value="${k}" ${k === t.status ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`; };
+      <small>${whoChip(t.assignee_id)}${t.due_date ? ` · <span class="pf-due${late ? ' late' : ''}">срок ${fmt(t.due_date)}</span>` : t.status !== 'done' ? ' · <span class="pf-due nodue">без срока</span>' : ''}</small></div>`; };
+  const projSel = (cur, attr = 'data-itaddp') => `<select ${attr} aria-label="Проект">${itProjects().map(x => `<option value="${x.id}" ${x.id === cur ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>`;
+  const deptSel = (cur, attr = 'data-itaddd') => `<select ${attr} aria-label="Отдел"><option value="">Без отдела</option>${deps.map(d => `<option value="${d.id}" ${d.id === cur ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}</select>`;
+  const addForm = can ? `<form class="kb-add it-addf" data-itadd><input placeholder="Новая задача" maxlength="200" aria-label="Новая внутренняя задача">
+      <div class="kb-add-row it-add-row">${deptSel(ui.itDept && ui.itDept !== '-' ? ui.itDept : '')}<button class="ghost" aria-label="Добавить">+</button></div></form>` : '';
+  const ms = p.stages.find(isMaint);
   const repCol = `<section class="pf-col it-col it-repcol"><header><div>${RT_ICO}<b>Регулярные</b></div><small>Ведение: отчёты, планёрки, сверки</small></header>
     ${p.is_maintenance && ms ? rtaskBlock(p, ms) : `<p class="hint">Регулярные задачи появляются, когда у проекта включено «Ведение».</p>${canEditProject(p) && !p._ext ? `<button class="ghost it-add" data-mainton="${p.id}">Включить ведение</button>` : ''}`}</section>`;
-  return `<div class="it-wrap"><div class="it-top">
+  // «Входящие» внутренних задач: выжимка созвона → Claude находит задачи (отдел, проект, срок) → «В задачи»
+  const inbox = (db.prefs?.itInbox || []).filter(x => x.pid === p.id);   // у каждого проекта — свои входящие
+  const inCard = x => `<div class="in-card"><b>${esc(x.text)}</b>${x.who || x.due ? `<small>${[x.who ? esc(x.who) : '', x.due ? 'срок ' + fmt(x.due) : ''].filter(Boolean).join(' · ')}</small>` : ''}
+      <form class="in-to" data-itinto="${x.id}">${deptSel(deps.find(d => norm(d.name) === norm(x.dept || ''))?.id || '', 'data-itind')}
+        <input type="date" data-itindue value="${x.due || ''}" aria-label="Срок"><span class="in-act"><button class="primary">В задачи</button><button type="button" class="icon-btn" data-itindel="${x.id}" aria-label="Удалить">${ICON_X}</button></span></form></div>`;
+  const inCol = can ? `<section class="pf-col kb-in" aria-label="Входящие"><header><div><b>${INBOX_ICO}Входящие</b><span class="kb-n">${inbox.length}</span></div><small>После планёрок, созвонов — потом разносим по отделам и проектам</small></header>
+    <form class="in-add" id="itInAdd"><textarea id="itInText" rows="${ui.inBig ? 6 : 2}" placeholder="Вставьте выжимку созвона или планёрки — Claude найдёт задачи" aria-label="Выжимка"></textarea>
+      <button class="primary in-go" ${ui.itInBusy ? 'disabled' : ''}>${ui.itInBusy ? 'Ищу задачи…' : '✦ Найти задачи'}</button>${ui.itInErr ? `<small class="in-err">${esc(ui.itInErr)}</small>` : ''}</form>
+    <div class="pf-cards">${inbox.map(inCard).join('') || '<p class="hint">Пусто — всё разобрано</p>'}</div></section>` : '';
+  const nOpen = id => base.filter(t => t.status !== 'done' && (id === '-' ? !t.dept || !deps.some(d => d.id === t.dept) : t.dept === id)).length;
+  const deptBtns = `<div class="kb-depts"><button type="button" class="kb-dbtn${!ui.itDept ? ' on' : ''}" data-itdeptf=""><span class="dept-tile kb-all" aria-hidden="true">${DEPT_SVG('<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>')}</span><b>Все отделы</b><small>${base.filter(t => t.status !== 'done').length} в работе</small></button>
+    ${deps.map(d => `<button type="button" class="kb-dbtn${ui.itDept === d.id ? ' on' : ''}" data-itdeptf="${d.id}" style="--kh:${kbHue(d.name)}">${deptIco(d.name)}<b>${esc(d.name)}</b><small>${nOpen(d.id)} в работе</small>${can ? `<span class="it-dact"><i data-itdeptren="${d.id}" title="Переименовать">${PEN_ICO}</i><i data-itdeptdel="${d.id}" title="Удалить отдел">${ICON_X}</i></span>` : ''}</button>`).join('')}
+    ${can ? '<button type="button" class="kb-dbtn kb-dnew" data-itdeptadd><span class="dept-tile kb-all" aria-hidden="true">+</span><b>Отдел</b><small>добавить</small></button>' : ''}</div>`;
+  const curD = deps.find(d => d.id === ui.itDept);
+  return `<div class="it-wrap" data-itproj="${p.id}"><div class="it-top">
       <label class="it-f"><input type="checkbox" id="itMine" ${ui.itMine ? 'checked' : ''}> Мои задачи</label>
-      <label class="it-f"><input type="checkbox" id="itDone" ${ui.itDoneShow ? 'checked' : ''}> Показать готовые</label></div>
-    <div class="pf-board it-board">${repCol}${cols.map(d => { const list = all.filter(t => d.id ? t.dept === d.id : (!t.dept || !deps.some(x => x.id === t.dept)));
-      const open = list.filter(t => t.status !== 'done').sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999')); const done = list.filter(t => t.status === 'done');
-      return `<section class="pf-col it-col">
-        <header><div><b>${esc(d.name)}</b>${d.id && !GUEST ? `<button class="icon-btn ct-ren" data-itdeptren="${d.id}" title="Переименовать отдел" aria-label="Переименовать отдел «${esc(d.name)}»">${PEN_ICO}</button><button class="icon-btn ct-ren it-del" data-itdeptdel="${d.id}" title="Удалить отдел" aria-label="Удалить отдел «${esc(d.name)}»">×</button>` : ''}</div>
-          <small>${open.length} в работе${done.length ? ` · готово ${done.length}` : ''}</small>
-          ${d.id && !GUEST ? `<select class="pf-status" data-itdeptwho="${p.id}|${d.id}" aria-label="Ответственный за отдел «${esc(d.name)}» в проекте">${peopleOpts((p.itDeptWho || {})[d.id] || '', p.worker_id ? `Как у проекта: ${short(p.worker_id)}` : 'Как у проекта: не назначен')}</select>` : ''}</header>
-        <div class="pf-cards">${open.map(card).join('') || '<p class="hint">Задач нет</p>'}${ui.itDoneShow ? done.map(card).join('') : ''}</div>
-        ${GUEST ? '' : `<button class="ghost it-add" data-itnewdept="${d.id}" data-itproj="${p.id}">+ Задача</button>`}</section>`; }).join('')}
-      ${GUEST ? '' : `<button class="pf-col it-newcol" data-itdeptadd><span>+</span>Отдел</button>`}</div></div>`;
+      ${curD && can ? `<label class="it-f">Ответственный за «${esc(curD.name)}» <select class="pf-status" data-itdeptwho="${p.id}|${curD.id}" aria-label="Ответственный за отдел «${esc(curD.name)}» в проекте">${peopleOpts((p.itDeptWho || {})[curD.id] || '', p.worker_id ? `Как у проекта: ${short(p.worker_id)}` : 'Как у проекта: не назначен')}</select></label>` : ''}</div>
+    ${deptBtns}
+    <div class="pf-board kb-board it-kb">${inCol}${IT_KB.map(([k, label]) => { const list = all.filter(t => itCol(t) === k).sort((a, b) => (a.due_date ? 0 : 1) - (b.due_date ? 0 : 1) || (a.due_date || '').localeCompare(b.due_date || ''));
+      return `<section class="pf-col kb-col kb-${k}" data-itcol="${k}"><header><div><b>${label}</b><span class="kb-n">${list.length}</span></div></header>
+        <div class="pf-cards">${k === 'todo' ? addForm : ''}${list.map(card).join('') || '<p class="hint">Задач нет</p>'}</div></section>`; }).join('')}${repCol}</div></div>`;
 }
+document.addEventListener('click', e => { const f = e.target.closest?.('[data-itdeptf]'); if (!f || e.target.closest('[data-itdeptren],[data-itdeptdel]')) return; ui.itDept = f.dataset.itdeptf; render(); });
+document.addEventListener('submit', e => {
+  const f = e.target.closest?.('[data-itadd]'); if (!f) return; e.preventDefault();
+  const title = f.querySelector('input').value.trim(); if (!title) return;
+  const dept = f.querySelector('[data-itaddd]').value; const pid = f.closest('[data-itproj]')?.dataset.itproj || ui.prodProject; const pr = projById(pid);
+  itSave({ id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Руководитель', created_at:new Date().toISOString(), title, description:'', assignee_id:itDeptWho(pr, dept) || ME, priority:'', category:'other', status:'todo', due_date:'', dept, project_id:pid });
+  render(); toast('Задача добавлена'); setTimeout(() => app.querySelector('[data-itadd] input')?.focus(), 0);
+});
+let itDrag = null;
+document.addEventListener('dragstart', e => { const c = e.target.closest?.('[data-itdrag]'); if (!c) return; itDrag = c.dataset.itdrag; c.classList.add('dragging'); try { e.dataTransfer.setData('text/plain', itDrag); } catch(_) {} });
+document.addEventListener('dragover', e => { if (!itDrag) return; const col = e.target.closest?.('[data-itcol]'); if (col){ e.preventDefault(); col.classList.add('drop'); } });
+document.addEventListener('dragleave', e => { const col = e.target.closest?.('[data-itcol]'); if (col && !col.contains(e.relatedTarget)) col.classList.remove('drop'); });
+document.addEventListener('drop', e => { if (!itDrag) return; const col = e.target.closest?.('[data-itcol]'); if (!col) return; e.preventDefault(); const t = itAll().find(x => x.id === itDrag); itDrag = null;
+  if (t && itCol(t) !== col.dataset.itcol){ itSave({ ...t, status:col.dataset.itcol }); render(); } });
+document.addEventListener('dragend', () => { itDrag = null; app.querySelectorAll('.it-kc.dragging,[data-itcol].drop').forEach(x => x.classList.remove('dragging', 'drop')); });
+// «Входящие» внутренних задач
+const IT_INBOX_PROMPT = (text, depts, people) => `Ты помогаешь руководителю агентства разобрать выжимку созвона или планёрки.
+Сегодня ${today()}. Отделы: ${depts.join(', ') || 'нет'}. Люди: ${people.join(', ') || 'нет данных'}.
+Выдели только РЕАЛЬНЫЕ задачи — конкретные действия. Не включай обсуждения, мнения, факты, уже сделанное. Формулируй коротко, с глагола, до 90 символов.
+Для каждой: отдел — один из списка или null; срок YYYY-MM-DD, только если назван, иначе null; кто — имя или null.
+Ответь только JSON: {"tasks":[{"title":"…","dept":null,"due":null,"who":null}]}
+
+Текст:
+${text.slice(0, 12000)}`;
+async function itInboxAi(){
+  const text = ($('#itInText')?.value || '').trim(); if (!text){ toast('Вставьте выжимку созвона или планёрки'); return; }
+  const smp = await getSample(); if (!smp?.json){ toast('Разбор доступен после входа в аккаунт'); return; }
+  ui.itInBusy = true; ui.itInErr = ''; const keep = text; render(); const p0 = projById(ui.prodProject);
+  try {
+    const res = await smp.json(IT_INBOX_PROMPT(text, itDepts().map(d => d.name), (db.users || []).map(u => u.name)), { modelTier:'default' });
+    const tasks = (Array.isArray(res?.tasks) ? res.tasks : []).filter(t => t && String(t.title || '').trim()).slice(0, 40);
+    if (!tasks.length) throw new Error('Задач в тексте не нашлось');
+    db.prefs = db.prefs || {};
+    db.prefs.itInbox = [...(db.prefs.itInbox || []), ...tasks.map(t => ({ id:uid(), text:String(t.title).trim().slice(0, 300), at:new Date().toISOString(), by:actorName(), dept:String(t.dept || ''),
+      pid:p0?.id || '', due:/^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : '', who:t.who ? String(t.who).slice(0, 60) : '' }))];
+    commit(); toast(`Найдено задач: ${tasks.length} — они во «Входящих»`); ui.itInBusy = false; render(); return;
+  } catch(e) { ui.itInErr = sampleErr(e); }
+  ui.itInBusy = false; render(); const t = $('#itInText'); if (t) t.value = keep;
+}
+document.addEventListener('submit', e => {
+  if (e.target.id === 'itInAdd'){ e.preventDefault(); itInboxAi(); return; }
+  const f = e.target.closest?.('[data-itinto]'); if (!f) return; e.preventDefault();
+  const x = (db.prefs?.itInbox || []).find(y => y.id === f.dataset.itinto); if (!x) return;
+  const dept = f.querySelector('[data-itind]').value, pid = x.pid, due = f.querySelector('[data-itindue]').value; const pr = projById(pid);
+  const who = (db.users || []).find(u => x.who && norm(u.name).startsWith(norm(x.who).split(' ')[0]))?.id;
+  itSave({ id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Руководитель', created_at:new Date().toISOString(), title:x.text, description:'', assignee_id:who || itDeptWho(pr, dept) || ME, priority:'', category:'other', status:'todo', due_date:due || '', dept, project_id:pid });
+  db.prefs.itInbox = db.prefs.itInbox.filter(y => y.id !== x.id); commit(); toast('Задача добавлена');
+});
+document.addEventListener('click', e => { const d = e.target.closest?.('[data-itindel]'); if (!d) return; db.prefs.itInbox = (db.prefs.itInbox || []).filter(y => y.id !== d.dataset.itindel); commit(); });
+document.addEventListener('focusin', e => { if (e.target.id === 'itInText' && !ui.inBig){ ui.inBig = true; e.target.rows = 6; } });
 // ответственный за отдел в проекте: p.itDeptWho = { отдел: человек }; не выбран — исполнитель проекта (p.worker_id)
 const itDeptWho = (p, dept) => (p?.itDeptWho || {})[dept] || p?.worker_id || null;
 document.addEventListener('change', e => {

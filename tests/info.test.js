@@ -236,31 +236,33 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   const ap = E(`db.projects.find(p => p.state === 'active' && !p.is_maintenance).id`);
   E(`ui.view = 'production'; ui.prodProject = '${ap}'; ui.prodTab = 'board'; render()`);
   D.querySelector('[data-prodtab="internal"]').click(); await wait(20);
-  assert.deepEqual([...D.querySelectorAll('.it-col header b')].map(b => b.textContent), ['Регулярные']); ok('по умолчанию — только «Регулярные» и «+ Отдел»');
+  assert.deepEqual([...D.querySelectorAll('.it-kb > .pf-col header b')].map(b => b.textContent.trim()), ['Входящие', 'К выполнению', 'В работе', 'Готово', 'Регулярные']); ok('внутренние задачи — канбан: Входящие, К выполнению, В работе, Готово (+ Регулярные)');
   for (const nm of ['Маркетинг', 'SMM']){ D.querySelector('[data-itdeptadd]').click(); await wait(10); D.getElementById('npName').value = nm; D.getElementById('npForm').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(20); }
-  assert.deepEqual([...D.querySelectorAll('.it-col header b')].map(b => b.textContent), ['Регулярные', 'Маркетинг', 'SMM']); ok('отделы добавляются плюсиком');
+  assert.ok(['Маркетинг', 'SMM'].every(n => [...D.querySelectorAll('.kb-dbtn b')].some(b => b.textContent === n))); ok('отделы — кнопками-плитками, добавляются плюсиком');
   const smmId = E(`itDepts().find(d => d.name === 'SMM').id`);
   assert.ok(D.querySelector('[data-mainton]')); ok('без «Ведения» — подсказка и «Включить ведение»');
   D.querySelector('[data-mainton]').click(); await wait(20);
   assert.ok(E(`projById('${ap}').is_maintenance`) && D.querySelector('.it-repcol .rt-block')); ok('«Включить ведение» — в «Регулярных» появляются регулярные задачи проекта');
-  // ответственный за отдел: по умолчанию — исполнитель проекта, можно выбрать своего; новая задача назначается ему
   E(`projById('${ap}').worker_id = 'me'; render()`);
+  D.querySelector(`[data-itdeptf="${smmId}"]`).click(); await wait(20);
   assert.ok(/Как у проекта/.test(D.querySelector(`[data-itdeptwho="${ap}|${smmId}"]`).selectedOptions[0].textContent)); ok('отдел: по умолчанию — исполнитель проекта');
   E(`if (!db.users.some(u => u.id === 'uyu')) db.users.push({ id:'uyu', name:'Юля Ан', role:'specialist', status:'active' })`);
   const dw = D.querySelector(`[data-itdeptwho="${ap}|${smmId}"]`); dw.value = 'uyu'; dw.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
   assert.equal(E(`projById('${ap}').itDeptWho['${smmId}']`), 'uyu'); ok('у отдела в проекте — свой ответственный');
-  D.querySelector(`[data-itnewdept="${smmId}"]`).click(); await wait(20);
-  assert.equal(D.getElementById('itWho').value, 'uyu'); ok('новая задача отдела — сразу на ответственного отдела');
-  assert.equal(D.getElementById('itDept').value, smmId); assert.equal(D.getElementById('itProj').value, ap); ok('«+ Задача» в SMM — отдел и проект уже выбраны');
-  D.getElementById('itTitle').value = 'Контент-план на декабрь'; D.getElementById('itForm').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
-  const smmCol = [...D.querySelectorAll('.it-col')].find(c => /SMM/.test(c.querySelector('header b').textContent));
-  assert.ok(/Контент-план на декабрь/.test(smmCol.textContent) && smmCol.querySelector('.who-chip')); ok('задача — в колонке SMM этого проекта');
+  { const f = D.querySelector('[data-itadd]'); f.querySelector('input').value = 'Контент-план на декабрь'; assert.equal(f.querySelector('[data-itaddd]').value, smmId); f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30); }
+  { const t = E(`JSON.stringify(itAll().find(t => t.title === 'Контент-план на декабрь'))`); const o = JSON.parse(t); assert.ok(o.dept === smmId && o.project_id === E(`'${ap}'`) && o.assignee_id === 'uyu' && o.status === 'todo'); ok('задача — в «К выполнению» этого проекта, отдел SMM, на ответственного отдела'); }
   const itId = E(`itAll().find(t => t.title === 'Контент-план на декабрь').id`);
-  const sts = D.querySelector(`[data-itstatus="${itId}"]`); sts.value = 'done'; sts.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20);
-  assert.equal(E(`itAll().find(t => t.id === '${itId}').status`), 'done'); ok('статус меняется прямо на карточке');
-  assert.ok(!/Контент-план на декабрь/.test([...D.querySelectorAll('.it-col')].find(c => /SMM/.test(c.querySelector('header b').textContent)).querySelector('.pf-cards').textContent)); ok('готовые скрыты, пока не включить «Показать готовые»');
+  { const dt = { setData(){}, getData(){ return ''; } }; const ev = (type, el) => { const e = new w.Event(type, { bubbles:true, cancelable:true }); Object.defineProperty(e, 'dataTransfer', { value:dt }); el.dispatchEvent(e); };
+    ev('dragstart', D.querySelector(`[data-itdrag="${itId}"]`)); const col = D.querySelector('[data-itcol="done"]'); ev('dragover', col); ev('drop', col); await wait(30); }
+  assert.equal(E(`itAll().find(t => t.id === '${itId}').status`), 'done'); ok('перетащили в «Готово» — задача готова');
   const mk = E(`itDepts().find(d => d.name === 'Маркетинг').id`); D.querySelector(`[data-itdeptdel="${mk}"]`).click(); await wait(20);
   assert.deepEqual(E('itDepts().map(d => d.name)'), ['SMM']); ok('пустой отдел удаляется крестиком');
+  E(`window.__smp0 = _sample; _sample = { json: async () => ({ tasks:[{ title:'Согласовать бюджет с клиентом', dept:'SMM', due:null, who:null }] }) }`);
+  D.getElementById('itInText').value = 'Созвон: надо согласовать бюджет с клиентом'; D.getElementById('itInAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(80);
+  assert.ok(/Согласовать бюджет/.test(D.querySelector('.it-kb .kb-in').textContent)); ok('«Входящие» внутренних задач: Claude находит задачи из выжимки');
+  D.querySelector('[data-itinto]').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
+  assert.ok(E(`itAll().some(t => t.title === 'Согласовать бюджет с клиентом' && t.project_id === '${ap}' && t.dept === '${smmId}')`)); ok('«В задачи» — внутренняя задача этого проекта в отделе SMM');
+  E(`_sample = window.__smp0`);
   const op = E(`db.projects.find(p => p.state === 'active' && p.id !== '${ap}').id`);
   E(`ui.prodProject = '${op}'; render()`);
   assert.ok(!/Контент-план на декабрь/.test(D.getElementById('app').textContent)); ok('у другого проекта — свои внутренние задачи');
