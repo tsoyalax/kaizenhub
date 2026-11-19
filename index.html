@@ -2552,6 +2552,9 @@ svg.clip{width:14px;height:14px;flex:none}
 .w12-hl{flex:1;min-width:0}.w12-big{width:100%;font-size:24px;font-weight:700;margin:6px 0 10px;border:0;border-bottom:1px dashed transparent;background:transparent;color:inherit;padding:2px 0;font-family:inherit}.w12-big:hover,.w12-big:focus{border-bottom-color:var(--line-strong,#777);outline:0}
 .w12-stats{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13.5px;opacity:.85;margin-bottom:12px}.w12-stats b{font-size:16px}
 .w12-bar{height:6px;border-radius:4px;background:var(--line,rgba(127,127,127,.22));overflow:hidden}.w12-bar i{display:block;height:100%;background:var(--accent,#2e9d5b)}
+.w12-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:14px}.w12-kpi{border:1px solid var(--line,rgba(127,127,127,.22));border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;background:var(--surface,transparent)}.w12-kh{display:flex;align-items:center;gap:6px}.w12-kh b{flex:1;font-size:13px;opacity:.85}.w12-mdel{width:20px;height:20px;opacity:.4}.w12-kv{display:flex;align-items:baseline;gap:6px}.w12-kv b{font-size:26px;line-height:1}.w12-kv span{opacity:.65;font-size:13px}.w12-kb{height:6px;border-radius:4px;background:var(--line,rgba(127,127,127,.22));overflow:hidden;display:block}.w12-kb b{display:block;height:100%;background:#2e9d5b}.w12-kpi small{font-size:12px;opacity:.75}
+.w12-kadd{border-style:dashed;justify-content:center}.w12-kadd input{height:30px;font-size:12.5px;border:1px solid var(--line,rgba(127,127,127,.25));border-radius:8px;background:transparent;color:inherit;padding:0 8px}.w12-kadd button{height:30px;font-size:12.5px}
+.w12-ms{display:flex;flex-direction:column;gap:5px}.w12-now .w12-ms{margin-top:8px;max-width:560px}.w12-m{display:grid;grid-template-columns:1fr 78px 78px 40px;gap:6px;align-items:center;font-size:12.5px}.w12-mn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.85}.w12-m label{display:flex;align-items:center;gap:4px;font-size:10.5px;opacity:.8}.w12-m input{width:100%;min-width:0;height:26px;border:1px solid var(--line,rgba(127,127,127,.25));border-radius:7px;background:transparent;color:inherit;padding:0 6px;font:inherit;font-size:12.5px;text-align:right}.w12-m.big{font-size:13.5px}.w12-m.big input{height:30px}.w12-mp{font-weight:700;text-align:right;font-size:12px}.w12-mp.ok{color:#3fb56f}
 .w12-ring{--p:0;width:128px;height:128px;flex:none;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--accent,#2e9d5b) calc(var(--p)*1%),var(--line,rgba(127,127,127,.22)) 0)}.w12-ring>div{width:104px;height:104px;border-radius:50%;background:var(--bg,var(--surface,#111));display:flex;flex-direction:column;align-items:center;justify-content:center}.w12-ring b{font-size:36px;line-height:1}.w12-ring small{font-size:11.5px;opacity:.7}
 .w12-warn{margin:10px 0 0;padding:8px 12px;border-radius:10px;background:rgba(220,60,60,.12);color:#e66;font-size:13px}
 .w12-now{display:flex;gap:16px;align-items:center;margin:14px 0;padding:16px 20px;border-radius:14px;border:1px solid var(--accent,#2e9d5b);background:color-mix(in srgb,var(--accent,#2e9d5b) 8%,transparent)}.w12-now-l{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.w12-now-l small{font-size:12px;opacity:.7}.w12-now-l b{font-size:19px}.w12-now-r{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -5932,6 +5935,18 @@ function w12GoalBanner(p){
   return `<div class="w12-banner${c.closed(n) ? ' closed' : ''}"><span class="w12-bn">Неделя ${n} из 12</span><div><small>Цель недели</small><b>${g ? esc(g) : '<span class="hint">не задана — впишите в «Дорожной карте»</span>'}</b></div>
     <div class="w12-bprog"><span>${d} из ${a}</span><i><b style="width:${a ? Math.round(d / a * 100) : 0}%"></b></i></div><button class="ghost" data-view-go="w12">Дорожная карта</button></div>`;
 }
+// показатели 12 недель: w.metrics = [{ id, name, target }], по неделям w.weeks[n].vals[id] = { plan, fact }; итог — сумма фактов
+const w12Num = v => { const n = parseFloat(String(v ?? '').replace(',', '.').replace(/\s/g, '')); return isFinite(n) ? n : null; };
+const w12Fmt = n => n == null ? '—' : Number(n).toLocaleString('ru-RU', { maximumFractionDigits:1 });
+const w12Val = (w, n, id) => (w.weeks[n - 1].vals || {})[id] || {};
+const w12Total = (w, id) => w.weeks.reduce((a, wk) => a + (w12Num(wk.vals?.[id]?.fact) || 0), 0);
+function w12MetricRows(w, n, big){
+  return (w.metrics || []).map(m => { const v = w12Val(w, n, m.id); const pl = w12Num(v.plan), fa = w12Num(v.fact); const pc = pl ? Math.min(100, Math.round((fa || 0) / pl * 100)) : null;
+    return `<div class="w12-m${big ? ' big' : ''}"><span class="w12-mn" title="${esc(m.name)}">${esc(m.name)}</span>
+      <label>план<input inputmode="decimal" data-w12v="${n}|${m.id}|plan" value="${pl ?? ''}" placeholder="0"></label>
+      <label>факт<input inputmode="decimal" data-w12v="${n}|${m.id}|fact" value="${fa ?? ''}" placeholder="0"></label>
+      <span class="w12-mp${pc != null && pc >= 100 ? ' ok' : ''}">${pc == null ? '' : pc + '%'}</span></div>`; }).join('');
+}
 function renderW12(){
   const { w, items, brd, of, doneOf, closed, open } = w12Calc(); const t0 = today();
   if (!w.start){
@@ -5954,6 +5969,7 @@ function renderW12(){
       <header><span class="w12-num">${closed(n) ? '✓' : n}</span><div><b>Неделя ${n}</b><small>${fmt(ws)} – ${fmt(we)}</small></div>
         <span class="w12-tag">${closed(n) ? 'закрыта' : cur ? 'сейчас' : lock ? '🔒' : ''}</span></header>
       <textarea class="w12-goal" data-w12goal="${n}" rows="2" maxlength="200" placeholder="Цель недели…" aria-label="Цель недели ${n}">${esc(w.weeks[n - 1].goal || '')}</textarea>
+      ${(w.metrics || []).length ? `<div class="w12-ms">${w12MetricRows(w, n)}</div>` : ''}
       <div class="w12-prog"><i><b style="width:${r || 0}%"></b></i><span>${a.length ? `${doneOf(n)}/${a.length}` : 'нет задач'}</span></div>
       ${lst.length ? `<ul>${lst.map(i => `<li class="${i.st === 'done' ? 'done' : ''}"><span class="w12-chk ${i.st}">${i.st === 'done' ? '✓' : ''}</span><button class="link" data-tgsub="${i.p.id}|${i.s.id}|${i.x.id}">${esc(i.x.name)}</button>${+i.x.w12 === n ? `<button class="icon-btn w12-un" data-w12un="${i.p.id}|${i.s.id}|${i.x.id}" title="Отвязать от недели" aria-label="Отвязать">${ICON_X}</button>` : ''}</li>`).join('')}${a.length > lst.length ? `<li class="hint">и ещё ${a.length - lst.length}</li>` : ''}</ul>` : ''}
       <footer>${b ? `<button class="w12-open" data-w12open="${b.id}">Доска «${esc(b.name)}» →</button>` : ''}
@@ -5962,10 +5978,16 @@ function renderW12(){
     <div class="w12-hero"><div class="w12-hl"><small class="w12-kick">Дорожная карта · 12 недель · ${fmt(w.start)} – ${fmt(end)}</small>
         <input class="w12-big" id="w12GoalEd" maxlength="200" placeholder="Главная цель на 12 недель" value="${esc(w.goal)}" aria-label="Главная цель на 12 недель">
         <div class="w12-stats"><span><b>${day}</b> ${plural(day, 'день прошёл', 'дня прошло', 'дней прошло')}</span><span><b>${left}</b> ${plural(left, 'день остался', 'дня осталось', 'дней осталось')}</span><span><b>${nClosed}</b> из 12 недель закрыто</span><span>по календарю — неделя <b>${wk < 1 ? 0 : Math.min(wk, 12)}</b></span></div>
-        <div class="w12-bar" title="${pct}% срока"><i style="width:${pct}%"></i></div></div>
+        <div class="w12-bar" title="${pct}% срока"><i style="width:${pct}%"></i></div>
+        <div class="w12-kpis">${(w.metrics || []).map(m => { const tot = w12Total(w, m.id); const tg = w12Num(m.target); const pc = tg ? Math.min(100, Math.round(tot / tg * 100)) : 0;
+          const wl = Math.max(1, 12 - Math.max(0, Math.min(12, wk)) + (wk >= 1 && wk <= 12 ? 1 : 0)); const need = tg && tot < tg ? Math.ceil((tg - tot) / wl) : 0;
+          return `<div class="w12-kpi"><div class="w12-kh"><b>${esc(m.name)}</b><button class="icon-btn w12-mdel" data-w12mdel="${m.id}" title="Убрать показатель" aria-label="Убрать показатель ${esc(m.name)}">${ICON_X}</button></div>
+            <div class="w12-kv"><b>${w12Fmt(tot)}</b><span>из ${w12Fmt(tg)}</span></div><i class="w12-kb"><b style="width:${pc}%"></b></i>
+            <small>${tg ? (tot >= tg ? 'Цель достигнута 🎉' : `${pc}% · нужно ~${w12Fmt(need)} в неделю`) : 'цель не задана'}</small></div>`; }).join('')}
+          <form class="w12-kpi w12-kadd" id="w12MAdd"><input id="w12MName" maxlength="60" placeholder="Показатель: напр. Пользователи VPN" aria-label="Название показателя"><input id="w12MTarget" inputmode="decimal" placeholder="Цель за 12 недель" aria-label="Цель за 12 недель"><button class="ghost">+ Показатель</button></form></div></div>
       <div class="w12-ring" style="--p:${Math.round(nClosed / 12 * 100)}"><div><b>${open > 12 ? '🎉' : cw}</b><small>${open > 12 ? 'всё закрыто' : 'неделя из 12'}</small></div></div></div>
     ${behind ? `<p class="w12-warn">Отставание от календаря: ${wk - open} ${plural(wk - open, 'неделя', 'недели', 'недель')}. Закройте задачи недели ${open}, чтобы догнать.</p>` : ''}
-    ${open <= 12 ? `<div class="w12-now"><div class="w12-now-l"><small>Цель этой недели · неделя ${cw}</small><b>${w.weeks[cw - 1].goal ? esc(w.weeks[cw - 1].goal) : '<span class="hint">Впишите цель недели в карточке ниже</span>'}</b></div>
+    ${open <= 12 ? `<div class="w12-now"><div class="w12-now-l"><small>Цель этой недели · неделя ${cw}</small><b>${w.weeks[cw - 1].goal ? esc(w.weeks[cw - 1].goal) : '<span class="hint">Впишите цель недели в карточке ниже</span>'}</b>${(w.metrics || []).length ? `<div class="w12-ms">${w12MetricRows(w, cw, true)}</div>` : ''}</div>
       <div class="w12-now-r"><div class="w12-prog big"><i><b style="width:${ca ? Math.round(cd / ca * 100) : 0}%"></b></i><span>${ca ? `${cd} из ${ca} задач` : 'нет задач'}</span></div>${cb ? `<button class="primary" data-w12open="${cb.id}">Открыть доску недели</button>` : '<span class="hint">Привяжите доску к неделе ↓</span>'}</div></div>` : ''}
     <div class="w12-strip">${strip}</div>
     <div class="w12-grid">${Array.from({ length:12 }, (_, i) => card(i + 1)).join('')}</div>
@@ -5973,11 +5995,15 @@ function renderW12(){
 }
 document.addEventListener('click', e => { const g = e.target.closest?.('[data-view-go]'); if (g){ ui.view = g.dataset.viewGo; render(); scrollTo(0, 0); } });
 const w12Find = k => { const [pid, sid, xid] = k.split('|'); const p = projById(pid); const s = p?.stages.find(y => y.id === sid); return { p, x:s?.subs?.find(y => y.id === xid) }; };
+document.addEventListener('submit', e => { if (e.target.id !== 'w12MAdd') return; e.preventDefault(); const name = $('#w12MName').value.trim(); if (!name){ $('#w12MName').focus(); return; }
+  const w = w12(); w.metrics = [...(w.metrics || []), { id:'m' + uid(), name, target:w12Num($('#w12MTarget').value) }]; commit(); render(); toast('Показатель добавлен — вписывайте план и факт по неделям'); });
 document.addEventListener('submit', e => { if (e.target.id !== 'w12Start') return; e.preventDefault(); const w = w12();
   w.goal = $('#w12Goal').value.trim(); w.start = $('#w12Date').value || today(); commit(); render(); toast('12 недель начались'); });
 document.addEventListener('change', e => {
   const g = e.target.dataset?.w12goal; if (g){ w12().weeks[+g - 1].goal = e.target.value.trim(); commit(); render(); return; }
   if (e.target.id === 'w12GoalEd'){ w12().goal = e.target.value.trim(); commit(); return; }
+  const v = e.target.dataset?.w12v; if (v){ const [n, id, k] = v.split('|'); const wk = w12().weeks[+n - 1]; wk.vals = wk.vals || {}; wk.vals[id] = wk.vals[id] || {};
+    const num = w12Num(e.target.value); if (num == null) delete wk.vals[id][k]; else wk.vals[id][k] = num; commit(); render(); return; }
   const bw = e.target.dataset?.w12board; if (bw){ const wk = w12().weeks[+bw - 1];
     if (e.target.value === 'new'){ const p = createInfoBoard(`Неделя ${bw}`, addDays(w12().start || today(), (+bw - 1) * 7)); wk.board = p.id; toast(`Доска «Неделя ${bw}» создана`); }
     else wk.board = e.target.value; commit(); render(); return; }
@@ -5985,6 +6011,8 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('click', e => {
   const op = e.target.closest?.('[data-w12open]'); if (op){ ui.view = 'production'; ui.infoAll = false; ui.prodProject = op.dataset.w12open; ui.infoMode = 'board'; render(); return; }
+  const md = e.target.closest?.('[data-w12mdel]'); if (md){ const w = w12(); const m = (w.metrics || []).find(x => x.id === md.dataset.w12mdel); if (!m) return;
+    askConfirm({ title:`Убрать показатель «${m.name}»?`, text:'План и факт по неделям для него удалятся.', ok:'Убрать' }).then(y => { if (!y) return; w.metrics = w.metrics.filter(x => x !== m); w.weeks.forEach(k => { if (k.vals) delete k.vals[m.id]; }); commit(); render(); }); return; }
   const u = e.target.closest?.('[data-w12un]'); if (u){ const { x } = w12Find(u.dataset.w12un); if (x){ delete x.w12; commit(); render(); } return; }
   if (e.target.closest?.('[data-w12reset]')) askConfirm({ title:'Начать новые 12 недель?', text:'Цели недель очистятся, задачи отвяжутся от недель. Сами задачи останутся на доске.', ok:'Начать заново' })
     .then(y => { if (!y) return; db.prefs.w12 = null; w12Items().forEach(i => delete i.x.w12); commit(); render(); });

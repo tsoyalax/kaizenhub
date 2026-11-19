@@ -353,6 +353,10 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
       assert.ok(D.querySelectorAll('.w12-wk')[0].classList.contains('cur') && D.querySelectorAll('.w12-wk')[1].classList.contains('lock')); ok('дорожная карта: пока задачи доски не закрыты — неделя 2 закрыта замком');
       E(`(() => { const p = projById('${pid}'); const s = p.stages.find(y => (y.subs || []).some(x => x.id === 'w1t')); kbMove(p.id + '|' + s.id + '|w1t', 'done'); render(); })()`); await wait(30);
       assert.ok(D.querySelectorAll('.w12-wk')[0].classList.contains('closed') && D.querySelectorAll('.w12-wk')[1].classList.contains('cur')); ok('дорожная карта: все задачи доски в «Готово» — неделя 1 закрыта, открылась неделя 2');
+      { D.getElementById('w12MName').value = 'Пользователи VPN'; D.getElementById('w12MTarget').value = '1000'; D.getElementById('w12MAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
+        const fa = D.querySelector('.w12-grid [data-w12v$="|fact"]'); fa.value = '62'; fa.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
+        const f2 = D.querySelectorAll('.w12-grid .w12-wk')[1].querySelector('[data-w12v$="|fact"]'); f2.value = '38'; f2.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
+        assert.ok(/100\s*из 1\s*000/.test(D.querySelector('.w12-kpi .w12-kv').textContent.replace(/\u00a0/g, ' '))); ok('дорожная карта: показатель — факт по неделям складывается в итог к цели (100 из 1000)'); }
       E(`db.prefs.w12.weeks[1].goal = 'Цель второй'; ui.view = 'production'; ui.infoAll = false; ui.prodProject = '${pid}'; render()`); await wait(30);
       assert.ok(/Неделя 1 из 12/.test(D.querySelector('.w12-banner')?.textContent || '')); ok('дорожная карта: на доске недели — плашка с целью недели');
       E(`ui.view = 'w12'; render()`); assert.ok(/Цель второй/.test(D.querySelector('.w12-now').textContent)); ok('дорожная карта: цель текущей недели — крупно наверху'); }
