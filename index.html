@@ -2020,6 +2020,24 @@ table.cx{border-collapse:collapse}
   --pl-r-bg:initial; --pl-r:initial; --pl-b-bg:initial; --pl-b:initial; --pl-g-bg:initial; --pl-g:initial; --pl-m-bg:initial; --pl-m:initial;
   --pl-n-bg:initial; --pl-n:initial; --pl-y-bg:initial; --pl-y:initial; --pl-d-bg:initial; --pl-d:initial}
 
+/* тёмная тема в стиле «Кабинета»: почти чёрный фон с мягким синим свечением сверху, полупрозрачная шапка, мягкие границы */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0A0A0C; --surface:#131316; --surface-2:#1A1A1E; --row:#131316; --line:rgba(255,255,255,.075); --line-strong:rgba(255,255,255,.15); --fbg:#131316; --fbg-h:#1A1A1E; --n-bg:#1A1A1E; --d-bg:#141417;
+  --app-glow:radial-gradient(1000px 560px at 82% 0%,rgba(56,112,240,.30),transparent 65%),radial-gradient(900px 460px at 35% -10%,rgba(110,120,180,.14),transparent 62%);
+  --panel-bg:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));}}
+:root[data-theme="dark"]{--bg:#0A0A0C; --surface:#131316; --surface-2:#1A1A1E; --row:#131316; --line:rgba(255,255,255,.075); --line-strong:rgba(255,255,255,.15); --fbg:#131316; --fbg-h:#1A1A1E; --n-bg:#1A1A1E; --d-bg:#141417;
+  --app-glow:radial-gradient(1000px 560px at 82% 0%,rgba(56,112,240,.30),transparent 65%),radial-gradient(900px 460px at 35% -10%,rgba(110,120,180,.14),transparent 62%);
+  --panel-bg:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));}
+body{background:var(--app-glow,none),var(--bg);background-attachment:fixed}
+.modal{background:var(--panel-bg,none),var(--surface);border-radius:18px}
+:root[data-theme="dark"] .modal{box-shadow:0 30px 80px rgba(0,0,0,.55)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .modal{box-shadow:0 30px 80px rgba(0,0,0,.55)}}
+.pf-col,.w12-ex,.w12-wk,.w12-kpi,.kb-dbtn{background-image:var(--panel-bg,none)}
+.top{border-bottom-color:var(--line)}
+@media (min-width:641px){:root[data-theme="dark"] .top{background:rgba(10,10,12,.62)}}
+@media (min-width:641px) and (prefers-color-scheme: dark){:root:not([data-theme="light"]) .top{background:rgba(10,10,12,.62)}}
+:root[data-theme="dark"] .side{background:linear-gradient(180deg,color-mix(in srgb,var(--space,var(--brand)) 10%,#101013),#0D0D10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .side{background:linear-gradient(180deg,color-mix(in srgb,var(--space,var(--brand)) 10%,#101013),#0D0D10)}}
+
 /* ---------- Производство (компьютер): список проектов с тонкой прокруткой, «Поделиться» иконкой справа ---------- */
 .pf-row .pf-item{padding-right:10px}
 .pf-items{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent;padding-right:6px}
