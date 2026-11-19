@@ -339,6 +339,17 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     const k = brd.querySelector('.kb-todo [data-kbdrag], .kb-col [data-kbdrag]').dataset.kbdrag;
     E(`kbMove('${k}', 'doing')`); assert.equal(E(`(() => { const [a, b, c] = '${k}'.split('|'); const p = projById(a); const s = p.stages.find(y => y.id === b); return kbStatus(p, s, s.subs.find(y => y.id === c)); })()`), 'doing'); ok('исполнитель по ссылке: перенос в «В работе» сохраняется');
     E(`ext.projects = ext.projects.filter(p => p.id !== 'xshared1'); ui.view = window.__v; render()`); }
+  { // дорожная карта 12 недель: старт, цель недели, привязка задачи, таймер
+    E(`window.__kw = db.prefs.kind; db.prefs.kind = 'info'; ui.view = 'w12'; render()`); await wait(30);
+    assert.ok(!D.querySelector('.tabs [data-view="w12"]').hidden && D.getElementById('w12Start')); ok('дорожная карта: пункт меню и форма старта');
+    D.getElementById('w12Goal').value = '1000 подписчиков'; D.getElementById('w12Date').value = E('addDays(today(), -8)');
+    D.getElementById('w12Start').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
+    assert.equal(D.querySelectorAll('.w12-wk').length, 12); assert.ok(D.querySelector('.w12-wk.cur') === D.querySelectorAll('.w12-wk')[1] && /9/.test(D.querySelectorAll('.w12-big-n b')[1].textContent)); ok('дорожная карта: 12 недель, идёт 2-я неделя, 9-й день');
+    const sel = D.querySelector('[data-w12add="2"]'); sel.value = sel.options[1].value; sel.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
+    assert.equal(D.querySelectorAll('.w12-wk.cur li').length, 1); ok('дорожная карта: задача привязана к неделе');
+    const g = D.querySelector('[data-w12goal="2"]'); g.value = 'Запустить рекламу'; g.dispatchEvent(new w.Event('change', { bubbles:true }));
+    assert.equal(E('db.prefs.w12.weeks[1].goal'), 'Запустить рекламу'); ok('дорожная карта: цель недели сохраняется');
+    E(`db.prefs.kind = window.__kw; ui.view = 'production'; render()`); }
   { // корзина: карточку бросили в корзину → подтверждение → задача удалена с доски
     const k = E(`(() => { const p = infoBoards()[0]; const s = p.stages.find(y => !isMaint(y) && (y.subs || []).length); return p.id + '|' + s.id + '|' + s.subs[0].id; })()`);
     const name = E(`(() => { const [a, b, c] = ${JSON.stringify(k)}.split('|'); return projById(a).stages.find(y => y.id === b).subs.find(y => y.id === c).name; })()`);
