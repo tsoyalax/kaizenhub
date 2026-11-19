@@ -5630,7 +5630,8 @@ async function tgTake(d){
   } catch(e) {
     // Claude не ответил — кладём текст во «Входящие» как есть, чтобы ничего не потерять
     const t = String(x.text || '').trim().slice(0, 300);
-    if (t && !/повтор|не нашлось/i.test(e?.message || '')){ db.prefs = db.prefs || {};
+    toast(`Telegram${x.chat ? ' · ' + x.chat : ''}: ${sampleErr(e)} — текст положил во «Входящие»`);
+    if (t){ db.prefs = db.prefs || {};
       if (x.kind === 'it') db.prefs.itInbox = [...(db.prefs.itInbox || []), { id:uid(), text:t, raw:String(x.text).slice(0, 20000), at:new Date().toISOString(), by:'Telegram', pid:x.pid, dept:'', due:'', who:'' }];
       else db.prefs.inbox = [...inboxAll(), { id:uid(), text:t, raw:String(x.text).slice(0, 20000), src:'tg', at:new Date().toISOString(), by:'Telegram' }];
       commit(); render(); }
