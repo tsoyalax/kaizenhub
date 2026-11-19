@@ -125,7 +125,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   E(`ui.tdIp = ''; SHOW_TODAY = false; INFO_HIDDEN.push('today'); ui.view = 'production'; render();`);
   // «Входящие»: колонка слева на канбане «Производства»; выжимка созвона → Claude находит задачи → разнести по отделам
   assert.ok(!D.querySelector('.tabs [data-view="inbox"]')); E(`ui.view = 'production'; ui.infoAll = false; ui.prodProject = ig.id; ui.infoMode = 'board'; ui.kbView = 'status'; ui.pfEdit = false; render()`);
-  assert.ok($('.kb-board > .kb-in:first-child')); ok('«Входящие» — первой колонкой в «Производстве», не отдельным пунктом меню');
+  assert.ok($('.kb-board > .kb-side:first-child > .kb-in')); ok('«Входящие» — первой колонкой в «Производстве», не отдельным пунктом меню');
   assert.ok(!D.getElementById('inSrc') && D.getElementById('inText') && D.querySelector('.kb-in .tg-feed')); ok('во «Входящих» — поле для текста и лента голосовых и текстов из Telegram');
   E(`_sample = { json: async p => { window.__inP = p; return { tasks:[{ title:'Запустить рекламу VSL', dept:'${E('ig.stages.find(s => !isCtStage(ig, s) && !isMaint(s)).name')}', type:'strat', due:'2026-12-01', who:'Эм' }, { title:'', dept:'x' }] }; } }`);
   w.eval('inboxAi(' + JSON.stringify('Обсудили запуск. Решили: запустить рекламу VSL до 1 декабря, отвечает Эм.') + ')'); await wait(80);

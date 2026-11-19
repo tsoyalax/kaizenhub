@@ -2498,8 +2498,9 @@ svg.clip{width:14px;height:14px;flex:none}
 :root[data-theme="dark"] .tl-dn{background:hsl(var(--kh) 40% 22%);color:hsl(var(--kh) 80% 78%)!important}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tl-dn{background:hsl(var(--kh) 40% 22%);color:hsl(var(--kh) 80% 78%)!important}}
 .pf-board.ab-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));overflow:visible;align-items:start}.ab-board>.pf-col{min-width:0;flex:none}
-.kb-board .kb-col{flex:1 0 300px;min-width:290px}.kb-board .kb-in{flex:0 0 290px;min-width:280px}.kb-board .kb-rep{flex:0 0 270px;min-width:260px}
-.kb-board .kb-card .kb-tags{flex-wrap:nowrap;overflow:hidden}.kb-board .kb-card .kb-tags>*{flex:none}
+.kb-board .kb-col{flex:1 1 0;min-width:200px}.kb-side{flex:0 0 280px;min-width:0;display:flex;flex-direction:column;gap:12px;align-self:flex-start}.kb-side>.pf-col{flex:none;width:auto;min-width:0;align-self:stretch}
+@media (max-width:1400px){.kb-side{flex-basis:250px}}
+.kb-board .kb-card .kb-tags{flex-wrap:wrap;row-gap:4px}
 .tgp-b{font-style:normal;font-size:10.5px;font-weight:700;color:#fff;background:var(--bc);border-radius:5px;padding:2px 6px;line-height:1.2;letter-spacing:.01em}
 .tg-legend{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px;color:var(--muted);margin:2px 0 8px}.tg-legend span{display:inline-flex;align-items:center;gap:6px}
 .tg-tl .tl-task.tl-dk .tlp-t{border-left:3px solid var(--bc);padding-left:12px}
@@ -2608,7 +2609,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .kb-board .kb-card>small{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:12px;color:var(--muted);line-height:1.4}
 .kb-board .kb-card .kb-tags{gap:6px}
 .kb-board .pf-cards{gap:10px}
-.kb-board{padding-right:20px;scroll-padding-right:20px}.kb-board::after{content:"";flex:0 0 1px}
+.kb-board{padding-right:2px}
 .kb-board>.pf-col>header{padding-bottom:4px}
 .kb-add input,.kb-add select{height:34px;padding:0 10px;font-size:13px;text-overflow:ellipsis}
 .kb-add select{padding-right:24px}
@@ -6296,10 +6297,12 @@ function kanbanHtml(boards, all = false){
       <select data-kbaddtype aria-label="Тип задачи">${Object.entries(KB_TYPES).map(([k, l]) => `<option value="${k}" ${(ui.kbType || 'oper') === k ? 'selected' : ''} title="${KB_TYPE_HINT[k]}">${l}</option>`).join('')}</select>
       <button class="ghost" aria-label="Добавить">+</button></div></form>` : '';
   const LIM = 40;
-  return filters + `<div class="pf-board kb-board">${inboxColHtml(boards.filter(p => canEditProject(p)))}${KB_COLS.map(([k, label]) => { const list = shown.filter(i => i.st === k);
+  // слева одной колонкой — «Входящие» и под ними «Регулярные»; три рабочие колонки делят остальную ширину и не уезжают за край
+  const sideHtml = inboxColHtml(boards.filter(p => canEditProject(p))) + (p0 && !GUEST && (canEditProject(p0) || p0.is_maintenance) ? repColHtml(p0) : '');
+  return filters + `<div class="pf-board kb-board">${sideHtml ? `<div class="kb-side">${sideHtml}</div>` : ''}${KB_COLS.map(([k, label]) => { const list = shown.filter(i => i.st === k);
     const open = ui.kbOpen === k; const vis = k === 'done' && !open ? list.slice(0, LIM) : list;
     return `<section class="pf-col kb-col kb-${k}" data-kbcol="${k}" aria-label="${label}"><header><div><b>${label}</b>${(() => { const sub = list.reduce((m, i) => m + (taskFor(i.p.id, i.s.id, i.x.id)?.checklist || []).filter(c => k === 'done' || !c.done).length, 0); return `<span class="kb-n" title="Задач: ${list.length}, подзадач: ${sub}">${list.length + sub}</span>`; })()}</div></header>
-      <div class="pf-cards">${k === 'todo' ? addForm : ''}${vis.map(card).join('') || '<p class="hint">Задач нет</p>'}${vis.length < list.length ? `<button type="button" class="ghost ct-more" data-kbmore="${k}">Показать все (${list.length})</button>` : ''}</div></section>`; }).join('')}${p0 && !GUEST && (canEditProject(p0) || p0.is_maintenance) ? repColHtml(p0) : ''}</div>`;
+      <div class="pf-cards">${k === 'todo' ? addForm : ''}${vis.map(card).join('') || '<p class="hint">Задач нет</p>'}${vis.length < list.length ? `<button type="button" class="ghost ct-more" data-kbmore="${k}">Показать все (${list.length})</button>` : ''}</div></section>`; }).join('')}</div>`;
 }
 function kbMove(key, st){
   const [pid, sid, xid] = key.split('|'); const p = projById(pid); const s = p?.stages.find(y => y.id === sid); const x = s?.subs?.find(y => y.id === xid);
