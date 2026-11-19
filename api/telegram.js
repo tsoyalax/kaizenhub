@@ -53,6 +53,11 @@ module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
       const q = req.query || {};
+      if (q.check) {   // самопроверка настроек: только да/нет, сами значения не показываем
+        let dbs = 'нет переменной TG_DB_SECRET';
+        if (env('TG_DB_SECRET')) dbs = await db('tg_drop', { p_chat: 0, p_text: 'check' }).then(() => 'ok', e => /401|403/.test(e.message) ? 'не совпадает с базой' : 'ошибка базы: ' + e.message);
+        return res.status(200).json({ bot: !!env('TG_BOT_TOKEN'), db_secret: dbs, openai: !!env('OPENAI_API_KEY'), supabase: !!(env('SUPABASE_URL') && env('SUPABASE_PUBLISHABLE_KEY')) });
+      }
       if (q.me) { const m = await tg('getMe'); return res.status(200).json({ bot: (m.result && m.result.username) || '' }); }
       if (q.setup && whSecret()) {   // адрес всегда наш, секрет — наш: ставить вебхук безопасно
         const host = req.headers['x-forwarded-host'] || req.headers.host;
