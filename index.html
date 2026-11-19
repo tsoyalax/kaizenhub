@@ -5591,9 +5591,10 @@ document.addEventListener('click', e => { if (e.target.closest?.('[data-inall]')
 // и кладёт текст в data/users/<я>/tgdrops/<id>; здесь Claude находит задачи (без повторов) и документ удаляется.
 let TG_BOT = '';   // имя бота спрашиваем у сервера (api/telegram?me=1)
 const tgState = { links:null, busy:new Set() };
+const tgSpace = () => 'space:' + (ORG ? 'org:' + ORG : SPACE || 'main');   // канал «инфо» привязан к пространству, где его подключили
 function tgBtn(kind, pid){
   if (GUEST || !cloud.store?.rpc) return '';
-  const on = (tgState.links || []).filter(l => l.chat_id && l.kind === kind && (kind !== 'it' || l.pid === pid));
+  const on = (tgState.links || []).filter(l => l.chat_id && l.kind === kind && (kind === 'it' ? l.pid === pid : !l.pid || l.pid === tgSpace()));
   return `<button type="button" class="ghost tg-btn" data-tgcon="${kind}|${esc(pid || '')}" title="Голосовые из Telegram-канала попадут сюда — Claude найдёт в них задачи">${TG_ICO.replace("<svg ", "<svg width=\"14\" height=\"14\" ")} ${on.length ? 'Telegram: ' + esc(on.map(l => l.chat_title || 'канал').join(', ')) : 'Подключить Telegram'}</button>${on.length ? `<button type="button" class="ghost tg-btn" data-tgcheck title="Забрать новые голосовые и посты из канала">↻ Проверить</button>` : ''}`;
 }
 async function tgLoad(){ try { tgState.links = await cloud.store.rpc('tg_links_mine', {}) || []; } catch(e) { tgState.links = []; } }
@@ -5602,7 +5603,7 @@ document.addEventListener('click', async e => {
   const [kind, pid] = b.dataset.tgcon.split('|');
   let code = '';
   if (!TG_BOT) TG_BOT = await fetch('/api/telegram?me=1').then(r => r.json()).then(j => j.bot || '', () => '').catch(() => '');
-  try { code = await cloud.store.rpc('tg_link_new', { p_kind:kind, p_pid:pid || null }); } catch(err) { toast('Не получилось: ' + (err?.message || 'нет связи')); return; }
+  try { code = await cloud.store.rpc('tg_link_new', { p_kind:kind, p_pid:kind === 'info' ? tgSpace() : pid || null }); } catch(err) { toast('Не получилось: ' + (err?.message || 'нет связи')); return; }
   layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal" role="dialog" aria-modal="true" aria-labelledby="tgT">
     <h2 id="tgT">Подключить Telegram-канал</h2>
     <ol class="tg-steps"><li>Добавьте бота <b>${TG_BOT ? '@' + esc(TG_BOT) : '(бот ещё не настроен на сервере)'}</b> в канал администратором (право «Публикация сообщений»).</li>
@@ -5620,7 +5621,7 @@ async function tgWait(){ const n0 = (tgState.links || []).filter(l => l.chat_id)
 // новый текст из канала: берём документ себе (удаляем), разбираем Claude'ом. Ждём, пока открыто нужное пространство
 async function tgTake(d){
   const x = d.data() || {}; const id = d.id; if (tgState.busy.has(id)) return;
-  if (x.kind === 'it' ? !projById(x.pid) : !infoBoards().length) return;      // не то пространство — разберём, когда откроют нужное
+  if (x.kind === 'it' ? !projById(x.pid) : !infoBoards().length || (x.pid && x.pid !== tgSpace())) return;      // не то пространство — разберём, когда откроют нужное
   tgState.busy.add(id);
   try {
     await cloud.store.doc(`data/users/${cloud.uid}/tgdrops/${id}`).delete();
