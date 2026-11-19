@@ -64,8 +64,8 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     $('[data-kbview="status"]').click(); await wait(50); assert.ok($('.kb-board')); ok('вид «Канбан» возвращается'); }
   E(`ui.infoAll = true; render();`); $('[data-infomode="timeline"]').click(); await wait(100);
   assert.ok($('.fl-viewbar [data-kbview]') && !$('.fl-p') && !$('.flp-list')); ok('«Все»: только переключатель вида, без плашки');
-  E(`INFO_HIDDEN.splice(INFO_HIDDEN.indexOf('today'), 1); ui.view = 'today'; ui.tdIp = ''; render();`); { const due = $('.tdy-due'); assert.ok(due && /Оффер/.test(due.textContent) && /Анонс челленджа/.test(due.textContent)); ok('«Сегодня»: «Ближайшие» — задачи всех площадок'); }
-  E(`INFO_HIDDEN.push('today'); ui.view = 'production'; render();`);
+  E(`SHOW_TODAY = true; INFO_HIDDEN.splice(INFO_HIDDEN.indexOf('today'), 1); ui.view = 'today'; ui.tdIp = ''; render();`); { const due = $('.tdy-due'); assert.ok(due && /Оффер/.test(due.textContent) && /Анонс челленджа/.test(due.textContent)); ok('«Сегодня»: «Ближайшие» — задачи всех площадок'); }
+  E(`SHOW_TODAY = false; INFO_HIDDEN.push('today'); ui.view = 'production'; render();`);
 
   assert.ok($('.tg-tl') && D.querySelectorAll('.tg-tl .tl-dlane').length >= 2 && D.querySelectorAll('.tg-tl .tgp-b').length === D.querySelectorAll('.tg-task').length && D.querySelectorAll('.tg-legend span').length === 2); ok('«Все» → таймлайн: строки — отделы обеих площадок, у задачи — метка площадки, сверху легенда');
   assert.equal(D.querySelectorAll('.tg-task').length, 3); assert.ok(![...D.querySelectorAll('.tg-task')].some(b => /Рилс|Анонс/.test(b.textContent))); ok('задачи обоих инфоповодов на таймлайне, без «Контента»');
@@ -114,7 +114,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   // «Сегодня» в инфобизнесе: выбор площадки, задачи обеих площадок, люди из обеих
   E(`{ db.users.push({ id:'uEmm', name:'Эм', role:'specialist', status:'active' }); const s = em.stages.find(x => !/контент/i.test(x.name) && !isMaint(x)); s.subs.push({ id:'tdE', name:'Сторис Эма', done:false, due_date:today() });
      tasksFromSubs(em, { ...s, subs:[s.subs.at(-1)] }); taskFor(em.id, s.id, 'tdE').assignee_id = 'uEmm'; taskFor(em.id, s.id, 'tdE').due_date = today();
-     const g = ig.stages.find(x => !/контент/i.test(x.name) && !isMaint(x)); g.subs.push({ id:'tdI', name:'Пост Игоря', done:false, due_date:today() }); INFO_HIDDEN.splice(INFO_HIDDEN.indexOf('today'), 1); ui.view = 'today'; ui.tdIp = ''; commit(); }`); await wait(80);
+     const g = ig.stages.find(x => !/контент/i.test(x.name) && !isMaint(x)); g.subs.push({ id:'tdI', name:'Пост Игоря', done:false, due_date:today() }); SHOW_TODAY = true; INFO_HIDDEN.splice(INFO_HIDDEN.indexOf('today'), 1); ui.view = 'today'; ui.tdIp = ''; commit(); }`); await wait(80);
   const tdTxt = () => D.getElementById('app').textContent;
   assert.ok(D.querySelectorAll('[data-tdip]').length === 3 && /Сторис Эма/.test(tdTxt()) && /Пост Игоря/.test(tdTxt())); ok('«Сегодня»: «Все» — задачи обеих площадок');
   [...D.querySelectorAll('[data-tdip]')].find(b => b.dataset.tdip === E('em.id')).click(); await wait(50);
@@ -122,7 +122,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   // задачи «Контента» в «Сегодня» — обычными строками с галочкой, без сворачивания
   E(`{ const s = em.stages.find(x => /контент/i.test(x.name)); s.subs.push({ id:'tdC', name:'Видео дня', done:false, due_date:today() }); ui.tdIp = ''; commit(); }`); await wait(50);
   { const li = [...D.querySelectorAll('.tdy-i')].find(x => /Видео дня/.test(x.textContent)); assert.ok(li && li.querySelector('input[data-tdyk]') && !D.querySelector('.tdy-ct')); ok('«Сегодня»: задача «Контента» — обычная строка с галочкой'); }
-  E(`ui.tdIp = ''; INFO_HIDDEN.push('today'); ui.view = 'production'; render();`);
+  E(`ui.tdIp = ''; SHOW_TODAY = false; INFO_HIDDEN.push('today'); ui.view = 'production'; render();`);
   // «Входящие»: колонка слева на канбане «Производства»; выжимка созвона → Claude находит задачи → разнести по отделам
   assert.ok(!D.querySelector('.tabs [data-view="inbox"]')); E(`ui.view = 'production'; ui.infoAll = false; ui.prodProject = ig.id; ui.infoMode = 'board'; ui.kbView = 'status'; ui.pfEdit = false; render()`);
   assert.ok($('.kb-board > .kb-in:first-child')); ok('«Входящие» — первой колонкой в «Производстве», не отдельным пунктом меню');

@@ -4265,6 +4265,7 @@ function render(){
   INFO_HIDDEN.forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = isInfo() && !GUEST; });
   ['content', 'funnel', 'priority', 'beta'].forEach(v => { const b = $(`.tabs [data-view="${v}"]`); if (b) b.hidden = !isInfo() || GUEST || INFO_HIDDEN.includes(v) || (v === 'funnel' && !SHOW_AI_FUNNEL) || (v === 'content' && !SHOW_CONTENT); });
   if (ui.view === 'content' && !SHOW_CONTENT) ui.view = 'production';
+  { const tb = $('.tabs [data-view="today"]'); if (tb && !SHOW_TODAY) tb.hidden = true; if (ui.view === 'today' && !SHOW_TODAY) ui.view = isInfo() ? 'production' : 'matrix'; }
   if (ui.view === 'inbox') ui.view = 'production';   // «Входящие» теперь колонка в «Производстве»
   if (['content', 'funnel', 'priority', 'beta'].includes(ui.view) && (!isInfo() || GUEST)) ui.view = GUEST ? 'mine' : 'matrix';
   if (ui.view === 'funnel' && !SHOW_AI_FUNNEL) ui.view = 'production';
@@ -7202,6 +7203,8 @@ const setPin = on => { try { localStorage.setItem(SIDE_PIN, on ? '1' : '0'); } c
 const SIDE_HIDE_IGOR = ['priority', 'assign', 'reports'];
 // раздел «Контент» в меню (SHOW_CONTENT); сам отдел «Контент» на канбане и в «По отделам» не показывается
 var SHOW_CONTENT = true;
+// раздел «Сегодня» убран из меню везде (по просьбе); вернуть — SHOW_TODAY = true
+var SHOW_TODAY = false;
 const isIgorArea = () => { try { return !ORG && AREA_SITES.igor.test(areaById(focusOn() ? focusId() : curArea())?.name || ''); } catch(e) { return false; } };
 function sideViews(){
   if (GUEST) return guestViews();

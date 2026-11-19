@@ -47,11 +47,11 @@ function openPage(backend, code){
   const o = openApp(be, A); await wait(4500);
   const w = o.w, D = w.document, $ = s => D.querySelector(s), E = x => w.eval(x);
   const fire = (el, t) => el.dispatchEvent(new w.Event(t, { bubbles: true, cancelable: true }));
-  D.getElementById('spPick')?.remove(); E(`layer.innerHTML = ''`);
+  D.getElementById('spPick')?.remove(); E('SHOW_TODAY = true'); E(`layer.innerHTML = ''`);
   // команда: Игорь и Эм, у текущих этапов — ответственные
   E(`db.users.push({ id:'uIg', name:'Игорь', role:'specialist', dept:'Монтаж и моушн', capacity:3, status:'active' }, { id:'uEm', name:'Эм', role:'specialist', dept:'Креатив', capacity:3, status:'active' });
      db.projects.filter(p => p.state === 'active').forEach((p, i) => { const c = currentStage(p); if (c && !isMaint(c)) c.assignee_id = i % 2 ? 'uIg' : 'uEm'; });
-     delete db.prefs.dayPlans; ui.view = 'today'; commit();`); await wait(50);
+     db.prefs = db.prefs || {}; delete db.prefs.dayPlans; ui.view = 'today'; commit();`); await wait(50);
   assert.ok($('.tabs [data-view="today"]') && E('ui.view') === 'today' && $('.tdy-pf-box')); ok('раздел «Сегодня» — первый в меню и открывается главным');
   const pl = E('JSON.parse(JSON.stringify(dayPlan()))');
   assert.ok(pl.items.length > 0 && pl.items.every(i => i.due <= E('today()'))); ok('утренний план: всё со сроком сегодня и раньше');
