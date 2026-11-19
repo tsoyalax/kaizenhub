@@ -126,9 +126,9 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   // «Входящие»: колонка слева на канбане «Производства»; выжимка созвона → Claude находит задачи → разнести по отделам
   assert.ok(!D.querySelector('.tabs [data-view="inbox"]')); E(`ui.view = 'production'; ui.infoAll = false; ui.prodProject = ig.id; ui.infoMode = 'board'; ui.kbView = 'status'; ui.pfEdit = false; render()`);
   assert.ok($('.kb-board > .kb-in:first-child')); ok('«Входящие» — первой колонкой в «Производстве», не отдельным пунктом меню');
-  assert.ok(!D.getElementById('inSrc') && D.querySelectorAll('#inAdd button').length === 1); ok('во «Входящих» — только поле и одна кнопка «Найти задачи»');
+  assert.ok(!D.getElementById('inSrc') && !D.getElementById('inText') && D.querySelector('.kb-in .tg-feed')); ok('во «Входящих» вместо поля — лента голосовых и текстов из Telegram');
   E(`_sample = { json: async p => { window.__inP = p; return { tasks:[{ title:'Запустить рекламу VSL', dept:'${E('ig.stages.find(s => !isCtStage(ig, s) && !isMaint(s)).name')}', type:'strat', due:'2026-12-01', who:'Эм' }, { title:'', dept:'x' }] }; } }`);
-  D.getElementById('inText').value = 'Обсудили запуск. Решили: запустить рекламу VSL до 1 декабря, отвечает Эм.'; D.getElementById('inAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(80);
+  w.eval('inboxAi(' + JSON.stringify('Обсудили запуск. Решили: запустить рекламу VSL до 1 декабря, отвечает Эм.') + ')'); await wait(80);
   assert.ok(/реальные|РЕАЛЬНЫЕ/.test(E('window.__inP')) && E('db.prefs.inbox.length') === 1 && E(`db.prefs.inbox.find(x => x.text === 'Запустить рекламу VSL').due`) === '2026-12-01'); ok('«Найти задачи»: Claude выделяет задачи из выжимки — отдел, тип, срок');
   { const f = [...D.querySelectorAll('[data-into]')].find(x => /рекламу VSL/.test(x.closest('.in-card').textContent)); assert.equal(f.querySelector('[data-intt]').value, 'strat'); f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30); }
   assert.equal(E('db.prefs.inbox.length'), 0); assert.ok(E(`infoBoards().some(p => p.stages.some(s => (s.subs || []).some(x => x.name === 'Запустить рекламу VSL' && x.ttype === 'strat' && x.due_date === '2026-12-01')))`)); ok('«В задачи» — задача в отделе с типом и сроком, из входящих убрана');
@@ -156,12 +156,12 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     assert.equal(E(`kbStatus(projById('${pid}'), projById('${pid}').stages.find(s => s.id === '${sid}'), projById('${pid}').stages.find(s => s.id === '${sid}').subs.find(x => x.id === '${xid}'))`), 'doing'); assert.ok(!E('ui.taskId')); ok('«В работу →» на карточке — следующий этап без перетаскивания'); }
   // Claude предлагает новый отдел по типу задачи, если ни один не подходит — он создаётся при «В задачи»
   E(`_sample = { json: async () => ({ tasks:[{ title:'Подписать договор с подрядчиком', dept:'Юридический', type:'oper', due:null, who:null }] }) }; ui.view = 'production'; ui.prodProject = ig.id; ui.infoAll = false; render()`);
-  D.getElementById('inText').value = 'Нужно подписать договор'; D.getElementById('inAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(80);
+  w.eval('inboxAi(' + JSON.stringify('Нужно подписать договор') + ')'); await wait(80);
   { const f = [...D.querySelectorAll('[data-into]')].find(x => /договор/.test(x.closest('.in-card').textContent)); assert.ok(/Новый отдел «Юридический»/.test(f.textContent)); f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30); }
   assert.ok(E(`infoBoards().some(p => p.stages.some(s => s.name === 'Юридический' && s.subs.some(x => x.name === 'Подписать договор с подрядчиком')))`)); ok('Claude назвал отдел по типу задачи — «Юридический» создан, задача в нём');
   // повторы: Claude видит существующие задачи; точный повтор отбрасывается и в приложении
   E(`_sample = { json: async p => { window.__dupP = p; return { tasks:[{ title:'Подписать договор с подрядчиком', dept:'Юридический' }, { title:'Позвонить юристу', dept:'Юридический' }], skipped:1 }; } }; render()`);
-  D.getElementById('inText').value = 'Договор с подрядчиком подписать, и юристу позвонить. Ещё раз — договор подписать.'; D.getElementById('inAdd').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(80);
+  w.eval('inboxAi(' + JSON.stringify('Договор с подрядчиком подписать, и юристу позвонить. Ещё раз — договор подписать.') + ')'); await wait(80);
   assert.ok(/Подписать договор с подрядчиком/.test(E('window.__dupP')) && /НЕ добавляй/.test(E('window.__dupP'))); ok('Claude получает список существующих задач и правило про повторы');
   assert.ok(E(`inboxAll().filter(x => x.text === 'Подписать договор с подрядчиком').length`) === 0 && E(`inboxAll().some(x => x.text === 'Позвонить юристу')`)); ok('повтор уже существующей задачи во «Входящие» не попал');
   E(`db.prefs.inbox = []; render()`);

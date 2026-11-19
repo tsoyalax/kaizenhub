@@ -88,7 +88,7 @@ module.exports = async (req, res) => {
     if (media && media.file_id) {
       if (media.file_size && media.file_size > MAX_AUDIO) return res.status(200).json({ ok: true });
       const said = await transcribe(media.file_id).catch(() => '');
-      body = [said, text].filter(Boolean).join('\n');
+      body = said || text ? '🎙 ' + [said, text].filter(Boolean).join('\n') : '';
     }
     if (body && !body.startsWith('/')) await db('tg_drop', { p_chat: chat, p_text: body }).catch(() => false);
     return res.status(200).json({ ok: true });

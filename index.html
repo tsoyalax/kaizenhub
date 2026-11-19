@@ -2546,7 +2546,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .kb-card:hover .kb-next,.it-kc:hover .kb-next,.kb-next:focus{opacity:1}.kb-next:hover{color:var(--ink);border-color:var(--line-strong)}
 @media (hover:none){.kb-next{opacity:1}}
 .in-all{width:100%;margin:0 0 8px;height:32px}
-.in-parse{display:block;margin:6px 0;height:28px;font-size:12px}.tg-btn{margin-top:6px;margin-right:4px;height:28px;font-size:12px;display:inline-flex;gap:6px;align-items:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tg-steps{padding-left:20px;line-height:1.6}.tg-steps li{margin:6px 0}.tg-code{font-size:14px;padding:2px 6px;border-radius:6px;background:var(--soft,rgba(0,0,0,.06))}
+.tg-feed{display:flex;flex-direction:column;gap:8px;margin:8px 0}.tg-msg{border:1px solid var(--line,rgba(127,127,127,.25));border-radius:10px;padding:8px 10px;font-size:13px}.tg-meta{display:flex;align-items:center;gap:6px;font-size:11px;opacity:.7}.tg-x{margin-left:auto;width:22px;height:22px}.tg-msg summary{cursor:pointer;line-height:1.4}.tg-msg p{white-space:pre-wrap;margin:6px 0 0;line-height:1.45}.tg-st{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}.tg-ok{color:var(--ok,#2e9d5b);font-size:12px}.tg-mini{height:26px;font-size:12px;padding:0 8px}.in-parse{display:block;margin:6px 0;height:28px;font-size:12px}.tg-btn{margin-top:6px;margin-right:4px;height:28px;font-size:12px;display:inline-flex;gap:6px;align-items:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tg-steps{padding-left:20px;line-height:1.6}.tg-steps li{margin:6px 0}.tg-code{font-size:14px;padding:2px 6px;border-radius:6px;background:var(--soft,rgba(0,0,0,.06))}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -5530,9 +5530,7 @@ function inboxColHtml(boards){
         <input type="date" data-indue value="${x.due || ''}" aria-label="Срок">
         <span class="in-act"><button class="primary" title="Утвердить — задача уйдёт в «К выполнению» с выбранным отделом, типом и сроком">Утвердить</button><button type="button" class="icon-btn" data-indel="${x.id}" title="Удалить" aria-label="Удалить «${esc(x.text)}»">${ICON_X}</button></span></form></div>`; };
   return `<section class="pf-col kb-in" aria-label="Входящие"><header><div><b>${INBOX_ICO}Входящие</b><span class="kb-n">${list.length}</span></div><small>После планёрок, созвонов, переговоров — потом разносим по отделам</small>${tgBtn('info', '')}</header>
-    <form class="in-add" id="inAdd"><textarea id="inText" rows="${ui.inBig ? 6 : 2}" placeholder="Вставьте выжимку созвона или планёрки — Claude найдёт задачи. Или впишите задачу" aria-label="Выжимка или задача"></textarea>
-      <button class="primary in-go" ${ui.inBusy ? 'disabled' : ''}>${ui.inBusy ? 'Ищу задачи…' : '✦ Найти задачи'}</button>
-      ${ui.inErr ? `<small class="in-err">${esc(ui.inErr)}</small>` : ''}</form>
+    ${tgLogHtml('info', '')}
     ${list.length > 1 ? `<button type="button" class="ghost in-all" data-inall>Утвердить все (${list.length})</button>` : ''}<div class="pf-cards">${list.map(item).join('') || '<p class="hint">Пусто — всё разобрано</p>'}</div></section>`;
 }
 const INBOX_ICO = '<svg class="in-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h4l1.5 3h5L16 13h4"/><path d="M5.5 5h13L21 13v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5z"/></svg>';
@@ -5566,8 +5564,8 @@ async function inboxExtract(text, src){
     commit(); return { n:tasks.length, dup };
   }
 }
-async function inboxAi(){
-  const text = ($('#inText')?.value || '').trim(); if (!text){ toast('Вставьте выжимку созвона или планёрки'); return; }
+async function inboxAi(t0){
+  const text = String(t0 ?? $('#inText')?.value ?? '').trim(); if (!text){ toast('Вставьте выжимку созвона или планёрки'); return; }
   ui.inDraft = text; ui.inBusy = true; ui.inErr = ''; render();
   try { const r = await inboxExtract(text, ui.inSrc || 'meet'); ui.inDraft = ''; toast(`Найдено задач: ${r.n}${r.dup ? ` · повторов отброшено: ${r.dup}` : ''} — они во «Входящих»`); }
   catch(e) { ui.inErr = sampleErr(e); }
@@ -5626,18 +5624,37 @@ async function tgTake(d){
   try {
     await cloud.store.doc(`data/users/${cloud.uid}/tgdrops/${id}`).delete();
     const text = String(x.text || '').trim(); if (!text) return;
-    const r = x.kind === 'it' ? await itInboxExtract(text, x.pid) : await inboxExtract(text, 'tg');
-    render(); toast(`Telegram${x.chat ? ' · ' + x.chat : ''}: задач ${r.n}${r.dup ? ` · повторов отброшено: ${r.dup}` : ''} — во «Входящих»`);
-  } catch(e) {
-    // Claude не ответил — кладём текст во «Входящие» как есть, чтобы ничего не потерять
-    const t = String(x.text || '').trim().slice(0, 300);
-    toast(`Telegram${x.chat ? ' · ' + x.chat : ''}: ${sampleErr(e)} — текст положил во «Входящие»`);
-    if (t){ db.prefs = db.prefs || {};
-      if (x.kind === 'it') db.prefs.itInbox = [...(db.prefs.itInbox || []), { id:uid(), text:t, raw:String(x.text).slice(0, 20000), at:new Date().toISOString(), by:'Telegram', pid:x.pid, dept:'', due:'', who:'' }];
-      else db.prefs.inbox = [...inboxAll(), { id:uid(), text:t, raw:String(x.text).slice(0, 20000), src:'tg', at:new Date().toISOString(), by:'Telegram' }];
-      commit(); render(); }
-  } finally { tgState.busy.delete(id); }
+    // сам текст (расшифровка голосового или пост) виден во «Входящих» — в ленте Telegram
+    const e = { id:uid(), text:text.slice(0, 20000), chat:x.chat || '', at:x.at || new Date().toISOString(), kind:x.kind === 'it' ? 'it' : 'info', pid:x.kind === 'it' ? x.pid : '', st:'wait' };
+    db.prefs = db.prefs || {}; db.prefs.tgLog = [e, ...(db.prefs.tgLog || [])].slice(0, 30); commit(); render();
+    await tgParse(e.id, true);
+  } catch(e) {} finally { tgState.busy.delete(id); }
 }
+// Claude разбирает текст из ленты на задачи (без повторов) → карточки «Входящих»
+async function tgParse(lid, auto){
+  const e = (db.prefs?.tgLog || []).find(y => y.id === lid); if (!e) return;
+  e.st = 'busy'; render();
+  try {
+    const r = e.kind === 'it' ? await itInboxExtract(e.text, e.pid) : await inboxExtract(e.text, 'tg');
+    e.st = 'ok'; e.n = r.n; e.err = ''; toast(`Telegram${e.chat ? ' · ' + e.chat : ''}: задач ${r.n}${r.dup ? ` · повторов отброшено: ${r.dup}` : ''}`);
+  } catch(err) { e.st = 'err'; e.err = sampleErr(err); if (!auto) toast(e.err); }
+  commit(); render();
+}
+function tgLogHtml(kind, pid){
+  const on = (tgState.links || []).some(l => l.chat_id && l.kind === kind && (kind === 'it' ? l.pid === pid : !l.pid || l.pid === tgSpace()));
+  const list = (db.prefs?.tgLog || []).filter(e => e.kind === kind && (kind !== 'it' || e.pid === pid));
+  const row = e => { const voice = /^🎙/.test(e.text); const body = e.text.replace(/^🎙\s*/, '');
+    const st = e.st === 'ok' ? `<span class="tg-ok">✓ задач: ${e.n || 0}</span><button type="button" class="ghost tg-mini" data-tgparse="${e.id}" title="Разобрать ещё раз">↻</button>`
+      : e.st === 'busy' ? '<span class="hint">Claude ищет задачи…</span>'
+      : `${e.err ? `<small class="in-err">${esc(e.err)}</small>` : ''}<button type="button" class="ghost tg-mini" data-tgparse="${e.id}">✦ Разобрать на задачи</button>`;
+    return `<div class="tg-msg"><div class="tg-meta">${voice ? '🎙 Голосовое' : '💬 Текст'} · ${esc(fmt(String(e.at).slice(0, 10)))} ${esc(String(e.at).slice(11, 16))}<button type="button" class="icon-btn tg-x" data-tgdel="${e.id}" aria-label="Убрать из ленты">${ICON_X}</button></div>
+      <details><summary>${esc(body.slice(0, 160))}${body.length > 160 ? '…' : ''}</summary><p>${esc(body)}</p></details><div class="tg-st">${st}</div></div>`; };
+  return `<div class="tg-feed">${list.map(row).join('') || `<p class="hint">${on ? 'Голосовые и тексты из канала появятся здесь — Claude сам разберёт их на задачи.' : 'Подключите Telegram-канал — голосовые и тексты из него будут появляться здесь.'}</p>`}</div>`;
+}
+document.addEventListener('click', e => {
+  const p = e.target.closest?.('[data-tgparse]'); if (p){ tgParse(p.dataset.tgparse); return; }
+  const d = e.target.closest?.('[data-tgdel]'); if (d){ db.prefs.tgLog = (db.prefs.tgLog || []).filter(y => y.id !== d.dataset.tgdel); commit(); render(); }
+});
 let tgDocs = [];
 function watchTg(){
   if (!cloud.store?.rpc || !cloud.uid || GUEST || shared.subs.has('__tg')) return;
@@ -9316,8 +9333,7 @@ function internalBoardHtml(p){
       <form class="in-to" data-itinto="${x.id}">${sel}
         <input type="date" data-itindue value="${x.due || ''}" aria-label="Срок"><span class="in-act"><button class="primary" title="Утвердить — задача уйдёт в «К выполнению» с выбранным отделом, типом и сроком">Утвердить</button><button type="button" class="icon-btn" data-itindel="${x.id}" aria-label="Удалить">${ICON_X}</button></span></form></div>`; };
   const inCol = can ? `<section class="pf-col kb-in" aria-label="Входящие"><header><div><b>${INBOX_ICO}Входящие</b><span class="kb-n">${inbox.length}</span></div><small>После планёрок, созвонов — потом разносим по отделам и проектам</small>${tgBtn('it', p.id)}</header>
-    <form class="in-add" id="itInAdd"><textarea id="itInText" rows="${ui.inBig ? 6 : 2}" placeholder="Вставьте выжимку созвона или планёрки — Claude найдёт задачи" aria-label="Выжимка"></textarea>
-      <button class="primary in-go" ${ui.itInBusy ? 'disabled' : ''}>${ui.itInBusy ? 'Ищу задачи…' : '✦ Найти задачи'}</button>${ui.itInErr ? `<small class="in-err">${esc(ui.itInErr)}</small>` : ''}</form>
+    ${tgLogHtml('it', p.id)}
     ${inbox.length > 1 ? `<button type="button" class="ghost in-all" data-itinall>Утвердить все (${inbox.length})</button>` : ''}<div class="pf-cards">${inbox.map(inCard).join('') || '<p class="hint">Пусто — всё разобрано</p>'}</div></section>` : '';
   const nOpen = id => base.filter(t => t.status !== 'done' && (id === '-' ? !t.dept || !deps.some(d => d.id === t.dept) : t.dept === id)).length;
   const deptBtns = `<div class="kb-depts"><button type="button" class="kb-dbtn${!ui.itDept ? ' on' : ''}" data-itdeptf=""><span class="dept-tile kb-all" aria-hidden="true">${DEPT_SVG('<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>')}</span><b>Все отделы</b><small>${base.filter(t => t.status !== 'done').length} в работе</small></button>
@@ -9375,8 +9391,8 @@ async function itInboxExtract(text, pid){
     commit(); return { n:tasks.length, dup };
   }
 }
-async function itInboxAi(){
-  const text = ($('#itInText')?.value || '').trim(); if (!text){ toast('Вставьте выжимку созвона или планёрки'); return; }
+async function itInboxAi(t0){
+  const text = String(t0 ?? $('#itInText')?.value ?? '').trim(); if (!text){ toast('Вставьте выжимку созвона или планёрки'); return; }
   ui.itInBusy = true; ui.itInErr = ''; const keep = text; render();
   try { const r = await itInboxExtract(text, ui.prodProject); toast(`Найдено задач: ${r.n}${r.dup ? ` · повторов отброшено: ${r.dup}` : ''} — они во «Входящих»`); ui.itInBusy = false; render(); return; }
   catch(e) { ui.itInErr = sampleErr(e); }
