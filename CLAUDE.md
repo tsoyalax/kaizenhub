@@ -366,6 +366,6 @@
 
 ## Telegram → «Входящие» (голосовые из канала)
 - Миграция `20261119000000_telegram_inbox.sql`: `tg_links` (код подключения, только свои строки), `tg_link_new`, `tg_links_mine` (от человека), `tg_link`, `tg_drop` (от сервера, проверяют секрет `app_private.tg_config` = `TG_DB_SECRET`). Текст ложится в `data/users/<владелец>/tgdrops/<id>`.
-- Сервер `api/telegram.js`: вебхук бота (заголовок `TG_WEBHOOK_SECRET`), `/connect КОД` привязывает канал, голосовое → Whisper (`OPENAI_API_KEY`) → `tg_drop`. `GET ?me=1` — имя бота, `GET ?setup=<TG_WEBHOOK_SECRET>` — ставит вебхук.
+- Сервер `api/telegram.js`: вебхук бота (заголовок `TG_WEBHOOK_SECRET`), `/connect КОД` привязывает канал, голосовое → Whisper (`OPENAI_API_KEY`) → `tg_drop`. `GET ?me=1` — имя бота, `GET ?setup=1` — ставит вебхук (секрет вебхука выводится из токена бота).
 - Клиент: кнопка «Подключить Telegram» во «Входящих» (инфо и внутренние задачи проекта), `watchTg` слушает `tgdrops`, `tgTake` удаляет документ и прогоняет текст через `inboxExtract` / `itInboxExtract` (те же промпты с отсевом повторов). Claude недоступен — текст кладётся во «Входящие» как есть.
 - `store.rpc` в shim открыт для этих функций.

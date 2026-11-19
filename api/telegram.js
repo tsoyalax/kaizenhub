@@ -4,14 +4,16 @@
 //   • обычный текстовый пост — сразу в базу.
 // Дальше приложение само забирает текст и Claude выделяет задачи без повторов.
 // Переменные окружения Vercel (в код и логи не попадают):
-//   TG_BOT_TOKEN — токен бота от @BotFather; TG_WEBHOOK_SECRET — любая длинная строка, проверяем заголовок Telegram;
+//   TG_BOT_TOKEN — токен бота от @BotFather (из него же выводится секрет вебхука);
 //   TG_DB_SECRET — секрет из app_private.tg_config (миграция 20261119); OPENAI_API_KEY — для Whisper;
 //   SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY — уже есть.
-// Настройка вебхука один раз: открыть /api/telegram?setup=<TG_WEBHOOK_SECRET>.
+// Настройка вебхука один раз: открыть /api/telegram?setup=1.
 
 const MAX_AUDIO = 20 * 1024 * 1024;   // Telegram Bot API отдаёт файлы до 20 МБ
 
 const env = k => process.env[k] || '';
+// секрет вебхука выводим из токена бота — отдельная переменная не нужна (TG_WEBHOOK_SECRET, если задан, важнее)
+const whSecret = () => env('TG_WEBHOOK_SECRET') || (env('TG_BOT_TOKEN') ? require('crypto').createHash('sha256').update('wh:' + env('TG_BOT_TOKEN')).digest('hex').slice(0, 48) : '');
 const tg = (method, body) => fetch(`https://api.telegram.org/bot${env('TG_BOT_TOKEN')}/${method}`, {
   method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {})
 }).then(r => r.json()).catch(() => ({}));
@@ -52,15 +54,15 @@ module.exports = async (req, res) => {
     if (req.method === 'GET') {
       const q = req.query || {};
       if (q.me) { const m = await tg('getMe'); return res.status(200).json({ bot: (m.result && m.result.username) || '' }); }
-      if (q.setup && env('TG_WEBHOOK_SECRET') && q.setup === env('TG_WEBHOOK_SECRET')) {
+      if (q.setup && whSecret()) {   // адрес всегда наш, секрет — наш: ставить вебхук безопасно
         const host = req.headers['x-forwarded-host'] || req.headers.host;
-        const r = await tg('setWebhook', { url: `https://${host}/api/telegram`, secret_token: env('TG_WEBHOOK_SECRET'), allowed_updates: ['channel_post', 'message'] });
+        const r = await tg('setWebhook', { url: `https://${host}/api/telegram`, secret_token: whSecret(), allowed_updates: ['channel_post', 'message'] });
         return res.status(200).json({ ok: !!r.ok, description: r.description || '' });
       }
       return res.status(404).json({ ok: false });
     }
     if (req.method !== 'POST') return res.status(405).end();
-    if (!env('TG_WEBHOOK_SECRET') || req.headers['x-telegram-bot-api-secret-token'] !== env('TG_WEBHOOK_SECRET')) return res.status(401).end();
+    if (!whSecret() || req.headers['x-telegram-bot-api-secret-token'] !== whSecret()) return res.status(401).end();
 
     const u = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const m = u.channel_post || u.message;
