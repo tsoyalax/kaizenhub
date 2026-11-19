@@ -4083,12 +4083,13 @@ const rWho = (p, id) => p._ext ? ((p._team || []).find(m => m.id === id)?.name |
 function rtaskBlock(p, s, compact = false, who = ''){
   const rt = (s.rtasks || []).filter(r => !who || r.assignee_id === who).slice().sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999'));
   const list = compact ? rt.slice(0, 4) : rt;
-  return `<div class="rt-block${compact ? ' compact' : ''}">${compact ? '' : '<h4>Регулярные задачи (абонентка)</h4>'}
+  const info = isInfoBoardP(p);
+  return `<div class="rt-block${compact ? ' compact' : ''}">${compact || info ? '' : '<h4>Регулярные задачи (абонентка)</h4>'}
     ${list.length ? `<ul class="rt-list">${list.map(r => `<li class="rt-row">
       <input type="checkbox" class="rt-chk" data-rdone="${p.id}|${r.id}" aria-label="Выполнено в этом цикле: ${esc(r.title)}">
       <button class="rt-main" data-redit="${p.id}|${r.id}"><b>${esc(r.title)}</b><small><span class="rt-freq">${RT_ICO}${FREQ[r.frequency]?.[0] || ''}</span>${compact ? ` · ${dueTxt(r.due_date)}` : ` · ${esc(rWho(p, r.assignee_id))}${r.last_done ? ` · последний раз ${fmt(r.last_done)}` : ''}`}</small></button>
       ${compact ? '' : dueTxt(r.due_date)}</li>`).join('')}</ul>${compact && rt.length > list.length ? `<p class="hint">и ещё ${rt.length - list.length}</p>` : ''}`
-    : `<p class="hint">${s.status === 'in_progress' ? 'Регулярных задач пока нет.' : 'Задачи начнутся после завершения воронки — их можно подготовить заранее.'}</p>`}
+    : `<p class="hint">${info ? 'Пока пусто — добавьте отчёт, KPI или планёрку с повтором.' : s.status === 'in_progress' ? 'Регулярных задач пока нет.' : 'Задачи начнутся после завершения воронки — их можно подготовить заранее.'}</p>`}
     ${canManageR(p) ? `<button class="link rt-add" data-radd="${p.id}">+ Добавить регулярную задачу</button>` : ''}</div>`;
 }
 const RT_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>';
@@ -6206,7 +6207,7 @@ function kanbanHtml(boards, all = false){
   return filters + `<div class="pf-board kb-board">${inboxColHtml(boards.filter(p => canEditProject(p)))}${KB_COLS.map(([k, label]) => { const list = shown.filter(i => i.st === k);
     const open = ui.kbOpen === k; const vis = k === 'done' && !open ? list.slice(0, LIM) : list;
     return `<section class="pf-col kb-col kb-${k}" data-kbcol="${k}" aria-label="${label}"><header><div><b>${label}</b>${(() => { const sub = list.reduce((m, i) => m + (taskFor(i.p.id, i.s.id, i.x.id)?.checklist || []).filter(c => k === 'done' || !c.done).length, 0); return `<span class="kb-n" title="Задач: ${list.length}, подзадач: ${sub}">${list.length + sub}</span>`; })()}</div></header>
-      <div class="pf-cards">${k === 'todo' ? addForm : ''}${vis.map(card).join('') || '<p class="hint">Задач нет</p>'}${vis.length < list.length ? `<button type="button" class="ghost ct-more" data-kbmore="${k}">Показать все (${list.length})</button>` : ''}</div></section>`; }).join('')}</div>`;
+      <div class="pf-cards">${k === 'todo' ? addForm : ''}${vis.map(card).join('') || '<p class="hint">Задач нет</p>'}${vis.length < list.length ? `<button type="button" class="ghost ct-more" data-kbmore="${k}">Показать все (${list.length})</button>` : ''}</div></section>`; }).join('')}${p0 && !GUEST && (canEditProject(p0) || p0.is_maintenance) ? repColHtml(p0) : ''}</div>`;
 }
 function kbMove(key, st){
   const [pid, sid, xid] = key.split('|'); const p = projById(pid); const s = p?.stages.find(y => y.id === sid); const x = s?.subs?.find(y => y.id === xid);
@@ -9483,8 +9484,7 @@ function internalBoardHtml(p){
   const addForm = can ? `<form class="kb-add it-addf" data-itadd><input placeholder="Новая задача" maxlength="200" aria-label="Новая внутренняя задача">
       <div class="kb-add-row it-add-row">${deptSel(ui.itDept && ui.itDept !== '-' ? ui.itDept : '')}<button class="ghost" aria-label="Добавить">+</button></div></form>` : '';
   const ms = p.stages.find(isMaint);
-  const repCol = `<section class="pf-col it-col it-repcol"><header><div>${RT_ICO}<b>Регулярные</b></div><small>Ведение: отчёты, планёрки, сверки</small></header>
-    ${p.is_maintenance && ms ? rtaskBlock(p, ms) : `<p class="hint">Регулярные задачи появляются, когда у проекта включено «Ведение».</p>${canEditProject(p) && !p._ext ? `<button class="ghost it-add" data-mainton="${p.id}">Включить ведение</button>` : ''}`}</section>`;
+  const repCol = repColHtml(p);
   // «Входящие» внутренних задач: выжимка созвона → Claude находит задачи (отдел, проект, срок) → «В задачи»
   const inbox = (db.prefs?.itInbox || []).filter(x => x.pid === p.id);   // у каждого проекта — свои входящие
   const inCard = x => { const hit = deps.find(d => norm(d.name) === norm(x.dept || '')); const sel = hit || !x.dept ? deptSel(hit?.id || '', 'data-itind') : deptSel('', 'data-itind').replace('<option value="">', `<option value="new:${esc(x.dept)}" selected>+ Новый отдел «${esc(x.dept)}»</option><option value="">`);
@@ -9580,11 +9580,15 @@ document.addEventListener('change', e => {
   const dn = itDepts().find(d => d.id === did)?.name || '';
   addLog(p, `Внутренние задачи, отдел «${dn}»: ответственный — ${e.target.value ? nameOf(e.target.value) : 'как у проекта'}`); commit();
 });
+// колонка «Регулярные»: задачи «Ведения» (отчёты, KPI, планёрки) — во «Внутренних задачах» агентства и на доске инфобизнеса
+function repColHtml(p){ const ms = p.stages.find(isMaint);
+  return `<section class="pf-col it-col it-repcol kb-rep"><header><div>${RT_ICO}<b>Регулярные</b></div><small>Отчёты, KPI, планёрки, сверки</small></header>
+    ${p.is_maintenance && ms ? rtaskBlock(p, ms) : `<p class="hint">Здесь будут регулярные задачи: отчёты, KPI, планёрки — с повтором раз в день, неделю или месяц.</p>${canEditProject(p) && !p._ext ? `<button class="ghost it-add" data-mainton="${p.id}">Включить регулярные задачи</button>` : ''}`}</section>`; }
 // включить «Ведение» прямо отсюда: появится этап «Ведение / Поддержка» с регулярными задачами
 document.addEventListener('click', e => {
   const m = e.target.closest?.('[data-mainton]'); if (!m) return;
   const p = projById(m.dataset.mainton); if (!p || !canEditProject(p)) return;
-  p.is_maintenance = true; syncState(p); addLog(p, 'Включено ведение: регулярные задачи — во «Внутренних задачах»'); commit(); toast('Ведение включено — добавьте регулярные задачи');
+  p.is_maintenance = true; syncState(p); addLog(p, 'Включены регулярные задачи (ведение)'); commit(); render(); toast('Готово — добавьте регулярные задачи');
 });
 document.addEventListener('change', e => {
   if (e.target.id === 'itMine'){ ui.itMine = e.target.checked; render(); }

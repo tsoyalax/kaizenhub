@@ -359,6 +359,10 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     const g = D.querySelector('[data-w12goal="2"]'); g.value = 'Запустить рекламу'; g.dispatchEvent(new w.Event('change', { bubbles:true }));
     assert.equal(E('db.prefs.w12.weeks[1].goal'), 'Запустить рекламу'); ok('дорожная карта: цель недели сохраняется');
     E(`db.prefs.kind = window.__kw; ui.view = 'production'; render()`); }
+  { // регулярные задачи на доске: колонка «Регулярные», включается кнопкой
+    E(`window.__kr = db.prefs.kind; db.prefs.kind = 'info'; ui.view = 'production'; ui.infoAll = false; ui.prodProject = infoBoards()[0].id; ui.infoMode = 'board'; ui.pfEdit = false; infoBoards()[0].is_maintenance = false; render()`); await wait(30);
+    assert.ok(D.querySelector('.kb-board .kb-rep [data-mainton]')); D.querySelector('.kb-rep [data-mainton]').click(); await wait(30);
+    assert.ok(D.querySelector('.kb-board .kb-rep [data-radd]')); ok('доска: колонка «Регулярные» — включается и даёт добавить отчёт/KPI'); E(`db.prefs.kind = window.__kr; render()`); }
   { // корзина: карточку бросили в корзину → подтверждение → задача удалена с доски
     const k = E(`(() => { const p = infoBoards()[0]; const s = p.stages.find(y => !isMaint(y) && (y.subs || []).length); return p.id + '|' + s.id + '|' + s.subs[0].id; })()`);
     const name = E(`(() => { const [a, b, c] = ${JSON.stringify(k)}.split('|'); return projById(a).stages.find(y => y.id === b).subs.find(y => y.id === c).name; })()`);
