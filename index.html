@@ -5824,7 +5824,8 @@ document.addEventListener('wheel', e => { if (!(e.ctrlKey || e.metaKey)) return;
   const now = Date.now(); if (now - (tlSetZoom.t || 0) < 180) return; tlSetZoom.t = now; tlSetZoom(tlZ() + (e.deltaY < 0 ? 1 : -1)); }, { passive:false });
 function timelineHtml(p){
   // рилсы и отдел «Контент» в таймлайн не попадают — они в разделе «Контент»
-  const st = flowState(p); const list = [...st.values()].filter(v => !isCtStage(p, v.s)).map(v => ({ ...v, items:v.items.filter(i => !i.x.cycle) })); const t0 = today();
+  const st = flowState(p); // строки — только отделы, что есть на канбане (с задачами); пустые и «Ведение» не показываем
+  const list = [...st.values()].filter(v => !isCtStage(p, v.s) && !isMaint(v.s)).map(v => ({ ...v, items:v.items.filter(i => !i.x.cycle) })).filter(v => v.items.length); const t0 = today();
   const dated = list.flatMap(v => v.items.filter(i => i.due).map(i => i.due));
   const starts = list.flatMap(v => v.items.filter(i => i.start).map(i => i.start));
   const kds = kdList(p).map(k => k.d);
@@ -5874,7 +5875,7 @@ function togetherHtml(everything){
   if (!everything) ui.tgSel = sel;
   const boards = sel.map(id => all.find(p => p.id === id)).filter(Boolean);
   // строки — отделы (одинаковые у площадок объединены, как на канбане «Все»); у задачи — точка цвета площадки. Без рилсов и «Контента»
-  const per = [...boards.flatMap(p => [...flowState(p).values()].filter(v => !isCtStage(p, v.s)).flatMap(v => v.items.filter(i => !i.x.cycle).map(i => ({ ...i, s:v.s, p })))).reduce((m, i) => { const k = norm(i.s.name); if (!m.has(k)) m.set(k, { name:i.s.name, items:[] }); m.get(k).items.push(i); return m; }, new Map()).values()];
+  const per = [...boards.flatMap(p => [...flowState(p).values()].filter(v => !isCtStage(p, v.s) && !isMaint(v.s)).flatMap(v => v.items.filter(i => !i.x.cycle).map(i => ({ ...i, s:v.s, p })))).reduce((m, i) => { const k = norm(i.s.name); if (!m.has(k)) m.set(k, { name:i.s.name, items:[] }); m.get(k).items.push(i); return m; }, new Map()).values()];
   const dated = per.flatMap(b => b.items.filter(i => i.due).map(i => i.due)), starts = per.flatMap(b => b.items.filter(i => i.start).map(i => i.start));
   const kds = boards.flatMap(p => kdList(p).map(k => ({ ...k, p })));
   const fins = boards.filter(p => p.deadline && (p.goalName || p.goalSet)).map(p => p.deadline);

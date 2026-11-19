@@ -169,7 +169,7 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   E(`ui.infoMode = 'timeline'; render()`);
   assert.ok(D.querySelector('.tl') && !D.querySelector('.pf-board')); ok('«Таймлайн» вместо доски');
   assert.equal(D.querySelectorAll('.tl-task').length, E(`[...flowState(infoBoard()).values()].filter(v => !isCtStage(infoBoard(), v.s)).reduce((n, v) => n + v.items.filter(i => i.due && !i.x.cycle).length, 0)`)); ok('на таймлайне все задачи со сроком, кроме «Контента»');
-  assert.equal(D.querySelectorAll('.tl-lbl').length, 5); assert.ok(![...D.querySelectorAll('.tl-lbl b')].some(b => /Контент/.test(b.textContent))); ok('строка на каждый отдел, «Контента» нет');
+  assert.equal(D.querySelectorAll('.tl-lbl').length, E(`new Set(kbItems([projById(ui.prodProject)]).map(i => i.s.id)).size`)); assert.ok(![...D.querySelectorAll('.tl-lbl b')].some(b => /Контент/.test(b.textContent))); ok('строки — только отделы с задачами (как на канбане), «Контента» нет');
   assert.ok(D.querySelector('.tl-task.k-red') && !D.querySelector('.tl-arr, .tl-svg')); ok('просроченное — красное, стрелок-связей в таймлайне нет');
   E(`(() => { const p = infoBoard(), s = p.stages.find(y => !isCtStage(p, y) && y.subs?.length), x = s.subs[0]; tasksFromSubs(p, { ...s, subs:[x] }); const t = taskFor(p.id, s.id, x.id); t.start_date = addDays(today(), 1); t.due_date = addDays(today(), 4); render(); })()`);
   assert.ok(D.querySelector('.tl-bar')); ok('срок от и до — полосой на таймлайне');
