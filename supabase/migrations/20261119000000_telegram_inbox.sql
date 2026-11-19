@@ -15,6 +15,7 @@ create table if not exists app_private.tg_config (
 insert into app_private.tg_config (key, value)
 values ('secret', replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', ''))
 on conflict (key) do nothing;
+alter table app_private.tg_config enable row level security;   -- без политик: читают только функции базы
 
 create table if not exists public.tg_links (
   token      text primary key default replace(gen_random_uuid()::text, '-', ''),
