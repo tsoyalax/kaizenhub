@@ -331,6 +331,19 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   if (D.querySelector('[data-ctplus]')){ D.querySelector('[data-ctplus]').click(); const top = D.getElementById('app').firstElementChild.nextElementSibling;
     assert.ok(top && top.id === 'ctAdd'); ok('«+» сверху открывает форму новых видео'); }
   E(`ui.ctAddOpen = false; ui.view = 'production'; db.prefs.kind = window.__k4; render()`);
+  { // Telegram: текст из канала → Claude → «Входящие» без повторов; документ забирается (удаляется)
+    E(`window.__cs = cloud.store; window.__cu = cloud.uid; window.__gs = getSample; window.__del = [];
+      cloud.store = { doc: p => ({ delete: async () => { window.__del.push(p); } }) }; cloud.uid = 'me';
+      db.prefs = db.prefs || {}; db.prefs.inbox = [{ id:'x1', text:'Позвонить подрядчику', at:'2026-11-19' }];
+      getSample = async () => ({ json: async () => ({ tasks:[{ title:'Позвонить подрядчику', dept:'' }, { title:'Снять сторис про запуск', dept:'', type:'oper' }], skipped:1 }) })`);
+    await E(`tgTake({ id:'d1', data: () => ({ text:'голосовое: снять сторис, позвонить подрядчику', kind:'info', chat:'Канал' }) })`);
+    const inb = E(`db.prefs.inbox.map(x => x.text + '|' + (x.src || ''))`);
+    assert.deepEqual(inb, ['Позвонить подрядчику|', 'Снять сторис про запуск|tg']); ok('telegram: задачи из голосового во «Входящих», повтор отброшен');
+    assert.deepEqual(E('window.__del'), ['data/users/me/tgdrops/d1']); ok('telegram: текст забран из базы');
+    E(`getSample = async () => ({ json: async () => { throw { code:'unavailable' }; } })`);
+    await E(`tgTake({ id:'d2', data: () => ({ text:'Купить микрофон', kind:'info' }) })`);
+    assert.ok(E(`db.prefs.inbox.some(x => x.text === 'Купить микрофон' && x.src === 'tg')`)); ok('telegram: Claude недоступен — текст всё равно во «Входящих»');
+    E(`cloud.store = window.__cs; cloud.uid = window.__cu; getSample = window.__gs; db.prefs.inbox = []; render()`); }
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e.message); process.exit(1); });

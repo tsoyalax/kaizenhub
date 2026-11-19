@@ -474,7 +474,8 @@
 
   var store = {
     collection: function (p) { return colRef(p); },
-    doc: function (p) { return docRef(p); }
+    doc: function (p) { return docRef(p); },
+    rpc: function (n, a) { return rpc(n, a || {}); }   // только функции, открытые базой (tg_link_new, tg_links_mine)
   };
 
   /* ---------------------------------------------------------------- sample */

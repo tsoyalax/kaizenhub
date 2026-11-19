@@ -230,6 +230,27 @@ select pg_temp.expect('сегодня: посторонний не закрыв�
 select pg_temp.expect('сегодня: владелец закрывает ссылку', pg_temp.try(:O, $q$select doc_delete('today/todaycode0000000000000001')$q$), true);
 select pg_temp.expect('сегодня: после закрытия список не открыть', pg_temp.rows_as('', $q$select 1 where today_get('todaycode0000000000000001') is not null$q$) = 0, true);
 select pg_temp.expect('сегодня: и не отметить', pg_temp.try('', $q$select today_tick('todaycode0000000000000001', 't|task1', true)$q$), false);
+-- Telegram → «Входящие»
+select pg_temp.expect('tg: без входа код не получить', pg_temp.try('', $q$select tg_link_new('info', null)$q$), false);
+select pg_temp.expect('tg: владелец получает код', pg_temp.try(:O, $q$select tg_link_new('info', null)$q$), true);
+select pg_temp.expect('tg: посторонний получает свой код', pg_temp.try(:S, $q$select tg_link_new('it', 'p1')$q$), true);
+select pg_temp.expect('tg: владелец видит только свой код', pg_temp.rows_as(:O, $q$select * from tg_links$q$) = 1, true);
+select pg_temp.expect('tg: и через tg_links_mine тоже', pg_temp.rows_as(:O, $q$select * from tg_links_mine()$q$) = 1, true);
+select pg_temp.expect('tg: чужой код не удалить (запрос проходит)', pg_temp.try(:S, $q$delete from tg_links where owner <> auth.uid()$q$), true);
+select pg_temp.expect('tg: …но коды на месте', (select count(*) from tg_links) = 2, true);
+select pg_temp.expect('tg: чужой канал себе не вписать', pg_temp.try(:S, $q$update tg_links set chat_id = 1$q$), false);
+select value as tgsec from app_private.tg_config where key = 'secret' \gset
+select token as tgtok from tg_links where owner = '00000000-0000-0000-0000-00000000000a' \gset
+select pg_temp.expect('tg: секрет из базы не читается', pg_temp.try(:S, $q$select * from app_private.tg_config$q$), false);
+select pg_temp.expect('tg: без секрета канал не привязать', pg_temp.try('', 'select tg_link(''wrong'', ' || quote_literal(:'tgtok') || ', 777, ''Канал'')'), false);
+select pg_temp.expect('tg: с секретом привязывается', pg_temp.rows_as('', 'select 1 where tg_link(' || quote_literal(:'tgsec') || ', ' || quote_literal(:'tgtok') || ', 777, ''Канал'')') = 1, true);
+select pg_temp.expect('tg: без секрета текст не положить', pg_temp.try('', 'select tg_drop(''wrong'', 777, ''Позвонить Ивану'')'), false);
+select pg_temp.expect('tg: текст из канала ложится владельцу', pg_temp.rows_as('', 'select 1 where tg_drop(' || quote_literal(:'tgsec') || ', 777, ''Позвонить Ивану'')') = 1, true);
+select pg_temp.expect('tg: из неподключённого канала не ложится', pg_temp.rows_as('', 'select 1 where tg_drop(' || quote_literal(:'tgsec') || ', 999, ''x'')') = 0, true);
+select pg_temp.expect('tg: владелец видит текст', pg_temp.rows_as(:O, $q$select * from docs where parent = 'data/users/00000000-0000-0000-0000-00000000000a/tgdrops' and data ->> 'text' = 'Позвонить Ивану'$q$) = 1, true);
+select pg_temp.expect('tg: посторонний не видит текст', pg_temp.rows_as(:S, $q$select * from docs where parent like '%/tgdrops'$q$) = 0, true);
+select pg_temp.expect('tg: владелец забирает (удаляет) текст', pg_temp.try(:O, $q$select doc_delete(path) from docs where parent = 'data/users/00000000-0000-0000-0000-00000000000a/tgdrops'$q$), true);
+select pg_temp.expect('tg: текст удалён', (select count(*) from docs where parent like '%/tgdrops') = 0, true);
 select pg_temp.expect('без входа ничего не читается', pg_temp.rows_as('', $q$select * from docs$q$) = 0, true);
 
 select (case when ok then 'PASS ' else 'FAIL ' end) || name from results;
