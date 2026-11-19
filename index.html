@@ -2546,7 +2546,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .kb-card:hover .kb-next,.it-kc:hover .kb-next,.kb-next:focus{opacity:1}.kb-next:hover{color:var(--ink);border-color:var(--line-strong)}
 @media (hover:none){.kb-next{opacity:1}}
 .in-all{width:100%;margin:0 0 8px;height:32px}
-.tg-feed{display:flex;flex-direction:column;gap:8px;margin:8px 0}.tg-msg{border:1px solid var(--line,rgba(127,127,127,.25));border-radius:10px;padding:8px 10px;font-size:13px}.tg-meta{display:flex;align-items:center;gap:6px;font-size:11px;opacity:.7}.tg-x{margin-left:auto;width:22px;height:22px}.tg-msg summary{cursor:pointer;line-height:1.4}.tg-msg p{white-space:pre-wrap;margin:6px 0 0;line-height:1.45}.tg-st{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}.tg-ok{color:var(--ok,#2e9d5b);font-size:12px}.tg-mini{height:26px;font-size:12px;padding:0 8px}.in-parse{display:block;margin:6px 0;height:28px;font-size:12px}.tg-btn{margin-top:6px;margin-right:4px;height:28px;font-size:12px;display:inline-flex;gap:6px;align-items:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tg-steps{padding-left:20px;line-height:1.6}.tg-steps li{margin:6px 0}.tg-code{font-size:14px;padding:2px 6px;border-radius:6px;background:var(--soft,rgba(0,0,0,.06))}
+.kb-trash{position:fixed;right:24px;bottom:24px;z-index:900;width:120px;height:120px;border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;color:#fff;background:rgba(200,50,50,.85);box-shadow:0 10px 30px rgba(0,0,0,.35);opacity:0;transform:translateY(30px) scale(.9);pointer-events:none;transition:opacity .15s,transform .15s}.kb-trash.on{opacity:1;transform:none;pointer-events:auto}.kb-trash.over{background:#d22;transform:scale(1.12)}.kb-trash *{pointer-events:none}.tg-feed{display:flex;flex-direction:column;gap:8px;margin:8px 0}.tg-msg{border:1px solid var(--line,rgba(127,127,127,.25));border-radius:10px;padding:8px 10px;font-size:13px}.tg-meta{display:flex;align-items:center;gap:6px;font-size:11px;opacity:.7}.tg-x{margin-left:auto;width:22px;height:22px}.tg-msg summary{cursor:pointer;line-height:1.4}.tg-msg p{white-space:pre-wrap;margin:6px 0 0;line-height:1.45}.tg-st{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}.tg-ok{color:var(--ok,#2e9d5b);font-size:12px}.tg-mini{height:26px;font-size:12px;padding:0 8px}.in-parse{display:block;margin:6px 0;height:28px;font-size:12px}.tg-btn{margin-top:6px;margin-right:4px;height:28px;font-size:12px;display:inline-flex;gap:6px;align-items:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tg-steps{padding-left:20px;line-height:1.6}.tg-steps li{margin:6px 0}.tg-code{font-size:14px;padding:2px 6px;border-radius:6px;background:var(--soft,rgba(0,0,0,.06))}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -6130,6 +6130,32 @@ document.addEventListener('dragover', e => { if (!kbDrag) return; const col = e.
   app.querySelectorAll('.kb-col.drop').forEach(x => x !== col && x.classList.remove('drop')); col.classList.add('drop'); });
 document.addEventListener('drop', e => { if (!kbDrag) return; const col = e.target.closest?.('[data-kbcol]'); if (!col) return; e.preventDefault(); const k = kbDrag; kbDrag = null; kbMove(k, col.dataset.kbcol); });
 document.addEventListener('dragend', () => { if (!kbDrag && !app.querySelector('.kb-card.dragging')) return; kbDrag = null; app.querySelectorAll('.kb-card.dragging,.kb-col.drop').forEach(x => x.classList.remove('dragging', 'drop')); });
+// ---------- Корзина: тащим карточку задачи (доска инфо или внутренние задачи) — справа внизу появляется корзина ----------
+let trashKey = null;
+function trashEl(){ let el = document.getElementById('kbTrash'); if (!el){ el = document.createElement('div'); el.id = 'kbTrash'; el.className = 'kb-trash'; el.innerHTML = TRASH_ICO.replace('<svg ', '<svg width="28" height="28" ') + '<span>Удалить</span>'; document.body.appendChild(el); } return el; }
+document.addEventListener('dragstart', e => {
+  const c = e.target.closest?.('[data-kbdrag],[data-itdrag]'); if (!c) return;
+  trashKey = c.dataset.kbdrag ? 'kb:' + c.dataset.kbdrag : 'it:' + c.dataset.itdrag;
+  const el = trashEl(); requestAnimationFrame(() => el.classList.add('on'));
+});
+document.addEventListener('dragend', () => { if (!trashKey) return; setTimeout(() => { trashKey = null; const el = document.getElementById('kbTrash'); el?.classList.remove('on', 'over'); }, 0); });
+document.addEventListener('dragover', e => { if (!trashKey || !e.target.closest?.('#kbTrash')) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; trashEl().classList.add('over'); });
+document.addEventListener('dragleave', e => { if (e.target.closest?.('#kbTrash') && !e.target.closest('#kbTrash').contains(e.relatedTarget)) trashEl().classList.remove('over'); });
+document.addEventListener('drop', e => { if (!trashKey || !e.target.closest?.('#kbTrash')) return; e.preventDefault(); const k = trashKey; trashKey = null; kbDrag = null; itDrag = null;
+  trashEl().classList.remove('on', 'over'); trashDelete(k); });
+function trashDelete(k){
+  if (k.startsWith('kb:')){
+    const [pid, sid, xid] = k.slice(3).split('|'); const p = projById(pid); const s = p?.stages.find(y => y.id === sid); const x = s?.subs?.find(y => y.id === xid);
+    if (!x || !canEditProject(p) || p._ext) return;
+    askConfirm({ title:`Удалить задачу «${x.name}»?`, text:'Задача с чек-листом удалится с доски. Восстановить её будет нельзя.', ok:'Удалить' }).then(y => { if (!y) return;
+      db.tasks = (db.tasks || []).filter(t => !(t.project_id === p.id && t.stage_id === s.id && t.substage_id === x.id));
+      s.subs = s.subs.filter(z => z !== x); if (x.tsub) p.subSkip = [...new Set([...(p.subSkip || []), x.tsub])];
+      addLog(p, `Удалена задача «${x.name}» (${s.name})`); commit(); render(); toast('Задача удалена'); });
+    return;
+  }
+  const t = itAll().find(x => x.id === k.slice(3)); if (!t || !itCanManage(t)) return;
+  askConfirm({ title:`Удалить задачу «${t.title}»?`, text:'Задача исчезнет у исполнителя. Восстановить её будет нельзя.', ok:'Удалить' }).then(y => { if (y){ itDelete(t); render(); toast('Задача удалена'); } });
+}
 // «Просрочено» и «Ближайшие» по площадкам (в «Сегодня»): у задачи — цветная точка и название площадки, отдел; клик — карточка ([data-tgsub])
 function dueListsHtml(boards){
   const t0 = today();

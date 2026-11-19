@@ -331,6 +331,11 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   if (D.querySelector('[data-ctplus]')){ D.querySelector('[data-ctplus]').click(); const top = D.getElementById('app').firstElementChild.nextElementSibling;
     assert.ok(top && top.id === 'ctAdd'); ok('«+» сверху открывает форму новых видео'); }
   E(`ui.ctAddOpen = false; ui.view = 'production'; db.prefs.kind = window.__k4; render()`);
+  { // корзина: карточку бросили в корзину → подтверждение → задача удалена с доски
+    const k = E(`(() => { const p = infoBoards()[0]; const s = p.stages.find(y => !isMaint(y) && (y.subs || []).length); return p.id + '|' + s.id + '|' + s.subs[0].id; })()`);
+    const name = E(`(() => { const [a, b, c] = ${JSON.stringify(k)}.split('|'); return projById(a).stages.find(y => y.id === b).subs.find(y => y.id === c).name; })()`);
+    E(`trashDelete('kb:${k}')`); await wait(30); D.getElementById('cfmOk').click(); await wait(60);
+    assert.ok(!E(`(() => { const [a, b, c] = ${JSON.stringify(k)}.split('|'); return !!projById(a).stages.find(y => y.id === b).subs.find(y => y.id === c); })()`), name); ok('корзина: задача удалена с доски после подтверждения'); }
   { // Telegram: текст из канала → Claude → «Входящие» без повторов; документ забирается (удаляется)
     E(`window.__cs = cloud.store; window.__cu = cloud.uid; window.__gs = getSample; window.__del = [];
       cloud.store = { doc: p => ({ delete: async () => { window.__del.push(p); } }) }; cloud.uid = 'me';
