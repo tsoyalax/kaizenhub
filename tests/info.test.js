@@ -344,15 +344,18 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     assert.ok(!D.querySelector('.tabs [data-view="w12"]').hidden && D.getElementById('w12Start')); ok('дорожная карта: пункт меню и форма старта');
     D.getElementById('w12Goal').value = '1000 подписчиков'; D.getElementById('w12Date').value = E('addDays(today(), -8)');
     D.getElementById('w12Start').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
-    assert.equal(D.querySelectorAll('.w12-wk').length, 12); assert.ok(D.querySelector('.w12-wk.cur') === D.querySelectorAll('.w12-wk')[0] && /^2$/.test(D.querySelectorAll('.w12-big-n b')[1].textContent) && /9/.test(D.querySelectorAll('.w12-big-n b')[2].textContent)); ok('дорожная карта: 12 недель; по календарю 2-я неделя, 9-й день; по задачам — 1-я');
-    const sel = D.querySelector('[data-w12add="2"]'); sel.value = sel.options[1].value; sel.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
+    assert.equal(D.querySelectorAll('.w12-wk').length, 12); assert.ok(D.querySelector('.w12-wk.cur') === D.querySelectorAll('.w12-wk')[0] && /неделя 2/.test(D.querySelector('.w12-stats').textContent) && /9 дней прошло/.test(D.querySelector('.w12-stats').textContent) && D.querySelector('.w12-ring b').textContent === '1'); ok('дорожная карта: 12 недель; по календарю 2-я неделя, 9-й день; по задачам — 1-я');
+    E(`w12Items()[0].x.w12 = 2; render()`); await wait(30);
     assert.equal(D.querySelectorAll('.w12-wk')[1].querySelectorAll('li').length, 1); ok('дорожная карта: задача привязана к неделе');
     { const bs = D.querySelector('[data-w12board="1"]'); bs.value = 'new'; bs.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
       const pid = E('db.prefs.w12.weeks[0].board'); assert.ok(E(`projById('${pid}').name`) === 'Неделя 1'); ok('дорожная карта: к неделе 1 создана и привязана доска «Неделя 1»');
       E(`(() => { const p = projById('${pid}'); const s = p.stages.find(y => !isMaint(y) && !isCtStage(p, y)); (s.subs = s.subs || []).push({ id:'w1t', name:'Задача недели 1', done:false }); commit(); render(); })()`); await wait(30);
       assert.ok(D.querySelectorAll('.w12-wk')[0].classList.contains('cur') && D.querySelectorAll('.w12-wk')[1].classList.contains('lock')); ok('дорожная карта: пока задачи доски не закрыты — неделя 2 закрыта замком');
       E(`(() => { const p = projById('${pid}'); const s = p.stages.find(y => (y.subs || []).some(x => x.id === 'w1t')); kbMove(p.id + '|' + s.id + '|w1t', 'done'); render(); })()`); await wait(30);
-      assert.ok(D.querySelectorAll('.w12-wk')[0].classList.contains('closed') && D.querySelectorAll('.w12-wk')[1].classList.contains('cur')); ok('дорожная карта: все задачи доски в «Готово» — неделя 1 закрыта, открылась неделя 2'); }
+      assert.ok(D.querySelectorAll('.w12-wk')[0].classList.contains('closed') && D.querySelectorAll('.w12-wk')[1].classList.contains('cur')); ok('дорожная карта: все задачи доски в «Готово» — неделя 1 закрыта, открылась неделя 2');
+      E(`db.prefs.w12.weeks[1].goal = 'Цель второй'; ui.view = 'production'; ui.infoAll = false; ui.prodProject = '${pid}'; render()`); await wait(30);
+      assert.ok(/Неделя 1 из 12/.test(D.querySelector('.w12-banner')?.textContent || '')); ok('дорожная карта: на доске недели — плашка с целью недели');
+      E(`ui.view = 'w12'; render()`); assert.ok(/Цель второй/.test(D.querySelector('.w12-now').textContent)); ok('дорожная карта: цель текущей недели — крупно наверху'); }
     const g = D.querySelector('[data-w12goal="2"]'); g.value = 'Запустить рекламу'; g.dispatchEvent(new w.Event('change', { bubbles:true }));
     assert.equal(E('db.prefs.w12.weeks[1].goal'), 'Запустить рекламу'); ok('дорожная карта: цель недели сохраняется');
     E(`db.prefs.kind = window.__kw; ui.view = 'production'; render()`); }
