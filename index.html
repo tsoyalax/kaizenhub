@@ -2541,6 +2541,10 @@ svg.clip{width:14px;height:14px;flex:none}
 .it-range{display:flex;gap:8px;flex-wrap:wrap}.it-range label{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}.it-range input{width:auto}
 .it-rem{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.it-rem input{width:auto}
 .it-modal label svg,.it-modal .field>label svg{width:14px;height:14px;vertical-align:-2px;margin-right:4px}.tkp-l svg,.tk-props svg.ico{width:14px;height:14px}
+.kb-board{align-items:stretch}.kb-board>.pf-col{display:flex;flex-direction:column}.kb-board>.pf-col>.pf-cards{flex:1}
+.kb-next{justify-self:start;margin-top:2px;font-size:11.5px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:7px;padding:2px 8px;opacity:0;transition:opacity .15s;cursor:pointer}
+.kb-card:hover .kb-next,.it-kc:hover .kb-next,.kb-next:focus{opacity:1}.kb-next:hover{color:var(--ink);border-color:var(--line-strong)}
+@media (hover:none){.kb-next{opacity:1}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -5950,7 +5954,7 @@ function kanbanHtml(boards, all = false){
       <span class="kb-tags"><span class="kb-dept" style="--kh:${kbHue(s.name)}">${deptIco(s.name)}${esc(s.name)}</span><span class="kb-type t-${kbTT(x)}"${can ? ` data-kbtt="${p.id}|${s.id}|${x.id}" role="button" tabindex="0"` : ''} title="${KB_TYPE_HINT[kbTT(x)]}${can ? '. Нажмите, чтобы сменить' : ''}">${kbTT(x) === 'strat' ? 'Стратегическая' : 'Операционная'}</span>${all ? `<span class="ab-ip"><i style="--bc:${tgColor(p)}"></i>${esc(p.name)}</span>` : ''}</span>
       <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span>` : ''}${esc(x.name)}</b>
       <small>${whoChip(x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t))}${due ? ` · <span class="pf-due${due < t0 && !done ? ' late' : ''}">${t?.start_date ? rangeTxt(t.start_date, due) : 'срок ' + fmt(due)}</span>` : !done ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}</small>
-      ${pr && pr.total && !done ? `${progTiles(pr)}<small class="pg-n">${pr.n} из ${pr.total}</small>` : ''}</button>`; };
+      ${pr && pr.total && !done ? `${progTiles(pr)}<small class="pg-n">${pr.n} из ${pr.total}</small>` : ''}${can && st !== 'done' ? `<span class="kb-next" role="button" tabindex="0" data-kbnext="${p.id}|${s.id}|${x.id}|${st === 'todo' ? 'doing' : 'done'}" title="${st === 'todo' ? 'В работу' : 'Готово'}">${st === 'todo' ? 'В работу →' : 'Готово ✓'}</span>` : ''}</button>`; };
   const p0 = boards.length === 1 ? boards[0] : null; const canAdd = p0 && canEditProject(p0) && !GUEST;
   const addDepts = p0 ? p0.stages.filter(s => !isMaint(s) && !isCtStage(p0, s)) : [];   // «Контента» в выборе отдела нет
   const defDept = addDepts.find(s => norm(s.name) === ui.kbDept)?.id || ui.kbAddDept || addDepts[0]?.id;
@@ -6003,6 +6007,11 @@ document.addEventListener('click', e => { const b = e.target.closest?.('[data-kb
   const [pid, sid, xid] = b.dataset.kbtt.split('|'); const p = projById(pid); const x = p?.stages.find(y => y.id === sid)?.subs?.find(y => y.id === xid);
   if (!x || !canEditProject(p)) return; if (kbTT(x) === 'strat') delete x.ttype; else x.ttype = 'strat';
   addLog(p, `Задача «${x.name}»: ${KB_TYPES[kbTT(x)].toLowerCase()}`); commit(); }, true);
+// кнопка «В работу → / Готово ✓» на карточке — следующий этап без перетаскивания (удобно для карточек внизу длинной колонки)
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-kbnext]'); if (b){ e.preventDefault(); e.stopPropagation(); const v = b.dataset.kbnext.split('|'); kbMove(v.slice(0, 3).join('|'), v[3]); return; }
+  const i = e.target.closest?.('[data-itnext]'); if (i){ e.preventDefault(); e.stopPropagation(); const [id, st] = i.dataset.itnext.split('|'); const t = itAll().find(x => x.id === id); if (t){ itSave({ ...t, status:st }); render(); } }
+}, true);
 let kbDrag = null;
 document.addEventListener('dragstart', e => { const c = e.target.closest?.('[data-kbdrag]'); if (!c) return; kbDrag = c.dataset.kbdrag; c.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', kbDrag); } catch(_) {} });
 document.addEventListener('dragover', e => { if (!kbDrag) return; const col = e.target.closest?.('[data-kbcol]'); if (!col) return; e.preventDefault();
@@ -9196,7 +9205,7 @@ function internalBoardHtml(p){
     return `<div class="pf-card kb-card it-kc${t.status === 'done' ? ' done' : ''}" data-itopen="${t.id}" ${can ? `draggable="true" data-itdrag="${t.id}"` : ''}>
       <span class="kb-tags">${t.dept && dname(t.dept) ? `<span class="kb-dept" style="--kh:${kbHue(dname(t.dept))}">${deptIco(dname(t.dept))}${esc(dname(t.dept))}</span>` : '<span class="kb-dept nod">Без отдела</span>'}${t.status === 'review' ? '<span class="kb-type">На проверке</span>' : ''}</span>
       <b>${esc(t.title)}</b>
-      <small>${whoChip(t.assignee_id)}${t.due_date ? ` · <span class="pf-due${late ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : 'срок ' + fmt(t.due_date)}</span>` : t.status !== 'done' ? ' · <span class="pf-due nodue">без срока</span>' : ''}${t.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remShort(t.remind.at)}</span>` : ''}</small></div>`; };
+      <small>${whoChip(t.assignee_id)}${t.due_date ? ` · <span class="pf-due${late ? ' late' : ''}">${t.start_date ? rangeTxt(t.start_date, t.due_date) : 'срок ' + fmt(t.due_date)}</span>` : t.status !== 'done' ? ' · <span class="pf-due nodue">без срока</span>' : ''}${t.remind?.at ? ` · <span class="pf-due" title="Напоминание ${remTxt(t.remind.at)}">${BELL_ICO}${remShort(t.remind.at)}</span>` : ''}</small>${can && itCol(t) !== 'done' ? `<span class="kb-next" role="button" tabindex="0" data-itnext="${t.id}|${itCol(t) === 'todo' ? 'in_progress' : 'done'}">${itCol(t) === 'todo' ? 'В работу →' : 'Готово ✓'}</span>` : ''}</div>`; };
   const projSel = (cur, attr = 'data-itaddp') => `<select ${attr} aria-label="Проект">${itProjects().map(x => `<option value="${x.id}" ${x.id === cur ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>`;
   const deptSel = (cur, attr = 'data-itaddd') => `<select ${attr} aria-label="Отдел"><option value="">Без отдела</option>${deps.map(d => `<option value="${d.id}" ${d.id === cur ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}</select>`;
   const addForm = can ? `<form class="kb-add it-addf" data-itadd><input placeholder="Новая задача" maxlength="200" aria-label="Новая внутренняя задача">

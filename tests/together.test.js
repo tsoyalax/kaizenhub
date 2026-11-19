@@ -151,6 +151,9 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   assert.ok($('.td-oper') && $('.td-strat')); ok('«Мои задачи»: блоки «Операционные» и «Стратегические»');
   { const f = $('[data-tdadd="strat"]'); f.querySelector('input').value = 'Стратегия на квартал'; f.dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30); }
   assert.ok(/Стратегия на квартал/.test($('.td-strat').textContent) && !/Стратегия на квартал/.test($('.td-oper').textContent)); ok('задача, написанная в «Стратегических», — там и стоит');
+  E(`ui.view = 'production'; ui.infoAll = false; ui.prodProject = ig.id; ui.infoMode = 'board'; ui.kbView = 'status'; ui.kbDept = ''; ui.kbType = ''; ui.kbDue = ''; ui.pfEdit = false; render()`);
+  { const b = D.querySelector('.kb-todo [data-kbnext]'); const [pid, sid, xid] = b.dataset.kbnext.split('|'); b.click(); await wait(30);
+    assert.equal(E(`kbStatus(projById('${pid}'), projById('${pid}').stages.find(s => s.id === '${sid}'), projById('${pid}').stages.find(s => s.id === '${sid}').subs.find(x => x.id === '${xid}'))`), 'doing'); assert.ok(!E('ui.taskId')); ok('«В работу →» на карточке — следующий этап без перетаскивания'); }
   // «Тестовое · бета»: воронка +10к Telegram — как в таблице «Декомпозиция»
   assert.ok(!D.querySelector('.tabs [data-view="beta"]').hidden); E(`ui.view = 'beta'; render()`);
   { const p = E('JSON.stringify(bfPlan(bfCfg()))'); const q = JSON.parse(p); assert.ok(Math.round(q.code) === 21984 && Math.round(q.pub * 10) === 366 && Math.round(q.client) === 45); ok('бета-воронка: план как в таблице (21 984 кодовых слова, 36,6 рилс, 45 клиентов)'); }
