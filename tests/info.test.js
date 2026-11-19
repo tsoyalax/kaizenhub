@@ -374,6 +374,10 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     E(`window.__kr = db.prefs.kind; db.prefs.kind = 'info'; ui.view = 'production'; ui.infoAll = false; ui.prodProject = infoBoards()[0].id; ui.infoMode = 'board'; ui.pfEdit = false; infoBoards()[0].is_maintenance = false; render()`); await wait(30);
     assert.ok(D.querySelector('.kb-board .kb-rep [data-mainton]')); D.querySelector('.kb-rep [data-mainton]').click(); await wait(30);
     assert.ok(D.querySelector('.kb-board .kb-rep [data-radd]')); ok('доска: колонка «Регулярные» — включается и даёт добавить отчёт/KPI'); E(`db.prefs.kind = window.__kr; render()`); }
+  { // 12 недель: взвешенный счёт, перегруз недели, действия против результата
+    assert.equal(E(`(() => { const items = [{ x:{ ttype:'strat' }, st:'todo' }, ...Array.from({ length:3 }, () => ({ x:{}, st:'done' }))]; const tot = items.reduce((m, i) => m + (kbTT(i.x) === 'strat' ? W12_STRAT_W : 1), 0); return Math.round(items.filter(i => i.st === 'done').reduce((m, i) => m + 1, 0) / tot * 100); })()`), 50); ok('12 недель: стратегическая задача весит ×3 (3 мелкие из 4 — это 50%, а не 75%)');
+    assert.equal(E('w12Load(15)'), ''); assert.equal(E('w12Load(25)'), 'mid'); assert.equal(E('w12Load(35)'), 'bad'); ok('12 недель: перегруз — больше 20 задач жёлтый, больше 30 красный');
+    assert.ok(/меняйте связку/.test(E(`w12Diag({ metrics:[{ id:'a', kind:'lead' }, { id:'b', kind:'lag' }], weeks:[{ vals:{ a:{ plan:30, fact:30 }, b:{ plan:20, fact:12 } } }] }, 1)`))); ok('12 недель: действия 100%, результат ниже — подсказка «меняйте связку»'); }
   { // регулярные: «Каждый день» и «По будням»
     assert.ok(E(`FREQ.daily && FREQ.workdays`)); assert.equal(E(`nextCycle('2099-01-01', 'daily')`), '2099-01-02');
     assert.equal(E(`nextCycle('2099-01-02', 'workdays')`), '2099-01-05'); ok('регулярные: есть «Каждый день» и «По будням» (после пятницы — понедельник)'); }

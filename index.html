@@ -2604,6 +2604,10 @@ svg.clip{width:14px;height:14px;flex:none}
 @media (max-width:700px){.w12-hero{flex-direction:column-reverse;align-items:flex-start}.w12-now{flex-direction:column;align-items:stretch}.w12-strip{grid-template-columns:repeat(6,1fr)}.w12-banner{flex-wrap:wrap}}
 .tg-feed{display:flex;flex-direction:column;gap:8px;margin:8px 0}.tg-msg{border:1px solid var(--line,rgba(127,127,127,.25));border-radius:10px;padding:8px 10px;font-size:13px}.tg-meta{display:flex;align-items:center;gap:6px;font-size:11px;opacity:.7}.tg-x{margin-left:auto;width:22px;height:22px}.tg-msg summary{cursor:pointer;line-height:1.4}.tg-msg p{white-space:pre-wrap;margin:6px 0 0;line-height:1.45}.tg-st{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}.tg-ok{color:var(--ok,#2e9d5b);font-size:12px}.tg-mini{height:26px;font-size:12px;padding:0 8px}.in-parse{display:block;margin:6px 0;height:28px;font-size:12px}.tg-btn{margin-top:6px;margin-right:4px;height:28px;font-size:12px;display:inline-flex;gap:6px;align-items:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tg-steps{padding-left:20px;line-height:1.6}.tg-steps li{margin:6px 0}.tg-code{font-size:14px;padding:2px 6px;border-radius:6px;background:var(--soft,rgba(0,0,0,.06))}
 .w12-close{border-color:var(--line-strong);color:var(--ink)}.w12-rv{font-size:12px;opacity:.8;margin:0;line-height:1.45}.w12-rvm{width:min(640px,calc(100% - 24px))}.w12-rvall{display:flex;gap:6px;margin:4px 0 8px}.w12-rvl{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:6px}.w12-rvl li{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.w12-rvl li>div{flex:1;min-width:0;display:flex;flex-direction:column}.w12-rvl li small{font-size:12px;opacity:.65}.w12-rvl select{height:32px;font-size:12.5px;max-width:210px;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:8px;padding:0 8px;color:var(--ink)}
+.w12-kt{font-style:normal;font-size:10px;font-weight:700;padding:1px 5px;border-radius:5px;margin-right:5px;letter-spacing:.02em}.w12-kt.lag{background:color-mix(in srgb,#38BDF8 22%,transparent);color:#7DD3FC}.w12-kt.lead{background:color-mix(in srgb,#F59E0B 22%,transparent);color:#FCD34D}.w12-kh .w12-kt{flex:none}
+.w12-kadd select{height:30px;font-size:12.5px;border:1px solid var(--line,rgba(127,127,127,.25));border-radius:8px;background:var(--surface-2);color:inherit;padding:0 6px}
+.w12-diag,.w12-wip{margin:8px 0 0;padding:7px 10px;border-radius:9px;font-size:12.5px;line-height:1.4}.w12-diag.ok{background:rgba(46,157,91,.14);color:#4ADE80}.w12-diag.mid,.w12-wip.mid{background:rgba(224,165,48,.14);color:#FBBF24}.w12-diag.bad,.w12-wip.bad{background:rgba(220,60,60,.14);color:#F87171}
+.w12-note{width:100%;resize:vertical;border:1px dashed var(--line-strong);border-radius:9px;background:transparent;padding:7px 9px;color:inherit;font:inherit;font-size:12.5px;line-height:1.4}.w12-note:focus{outline:0;border-style:solid;border-color:var(--accent)}
 /* полировка канбана: воздух в карточках, лёгкие «Входящие», ровные края и селекторы */
 .kb-board .kb-card{padding:13px 14px 12px;gap:8px;border-radius:12px}
 .kb-board .kb-card>b{font-size:14px;line-height:1.35;font-weight:600}
@@ -5967,6 +5971,9 @@ function timelineHtml(p){
 // ---------- Дорожная карта: «12 недель» — цель на 12 недель, цель каждой недели, задачи доски привязаны к неделям ----------
 // db.prefs.w12 = { start:'YYYY-MM-DD', goal:'', weeks:[{ goal:'' } ×12] }; у задачи доски x.w12 = номер недели (1–12).
 const W12_DAYS = 84;
+const W12_STRAT_W = 3;               // вес стратегической задачи в Execution Score
+const W12_WIP = [20, 30];            // задач на неделю: больше 20 — «перегруз» (жёлтый), больше 30 — красный
+const w12Load = k => k > W12_WIP[1] ? 'bad' : k > W12_WIP[0] ? 'mid' : '';
 const w12 = () => { db.prefs = db.prefs || {}; const w = db.prefs.w12 = db.prefs.w12 || { start:'', goal:'', weeks:[] };
   while (w.weeks.length < 12) w.weeks.push({ goal:'' }); return w; };
 const w12Week = (w, d = today()) => w.start ? Math.floor(diffDays(d, w.start) / 7) + 1 : 0;   // 1..12; <1 — ещё не начали; >12 — закончили
@@ -5977,9 +5984,12 @@ function w12Calc(){
   const brd = n => { const id = w.weeks[n - 1]?.board; return id ? infoBoards().find(p => p.id === id) : null; };
   const of = n => { const b = brd(n); return items.filter(i => (b && i.p === b) || +i.x.w12 === n).filter((i, k, a) => a.indexOf(i) === k); };
   const doneOf = n => of(n).filter(i => i.st === 'done').length;
+  // взвешенно: стратегическая задача весит ×3, операционная ×1 — 2 проваленные главные задачи не спрячутся за 15 мелкими
+  const wt = i => kbTT(i.x) === 'strat' ? W12_STRAT_W : 1;
+  const wRate = n => { const a = of(n); const tot = a.reduce((m, i) => m + wt(i), 0); return tot ? Math.round(a.filter(i => i.st === 'done').reduce((m, i) => m + wt(i), 0) / tot * 100) : null; };
   const closed = n => !!w.weeks[n - 1]?.review || (of(n).length > 0 && doneOf(n) === of(n).length);   // закрыта ревью или все задачи в «Готово»
   let open = 1; while (open <= 12 && closed(open)) open++;                       // неделя, на которой вы сейчас (по задачам)
-  return { w, items, brd, of, doneOf, closed, open };
+  return { w, items, brd, of, doneOf, closed, open, wRate, wt };
 }
 // неделя, к которой привязана доска (для плашки «Цель недели» на самой доске)
 const w12WeekOfBoard = pid => { const w = db.prefs?.w12; if (!w?.start || !pid) return 0; const i = (w.weeks || []).findIndex(x => x?.board === pid); return i + 1; };
@@ -5994,15 +6004,29 @@ const w12Num = v => { const n = parseFloat(String(v ?? '').replace(',', '.').rep
 const w12Fmt = n => n == null ? '—' : Number(n).toLocaleString('ru-RU', { maximumFractionDigits:1 });
 const w12Val = (w, n, id) => (w.weeks[n - 1].vals || {})[id] || {};
 const w12Total = (w, id) => w.weeks.reduce((a, wk) => a + (w12Num(wk.vals?.[id]?.fact) || 0), 0);
+// показатели: lag — результат (люди в VPN), lead — действие, которое к нему ведёт (ролики, созвоны)
+const w12Kind = m => m.kind === 'lead' ? 'lead' : 'lag';
+function w12Pc(w, n, m){ const v = w12Val(w, n, m.id); const pl = w12Num(v.plan), fa = w12Num(v.fact); return pl ? Math.round((fa || 0) / pl * 100) : null; }
+// подсказка недели: действия против результата
+function w12Diag(w, n){
+  const ms = w.metrics || []; const lead = ms.filter(m => w12Kind(m) === 'lead').map(m => w12Pc(w, n, m)).filter(x => x != null); const lag = ms.filter(m => w12Kind(m) === 'lag').map(m => w12Pc(w, n, m)).filter(x => x != null);
+  if (!lead.length || !lag.length) return '';
+  const L = Math.min(...lead), R = Math.min(...lag);
+  if (L >= 100 && R < 100) return '<p class="w12-diag mid">Действия выполнены на 100%, а результат ниже плана — дело не в дисциплине: меняйте связку (оффер, канал, скрипт).</p>';
+  if (L < 85 && R < 100) return `<p class="w12-diag bad">Действий сделано ${L}% — результат и не мог прийти. Сначала добейте действия до 85%+.</p>`;
+  if (R >= 100) return '<p class="w12-diag ok">Результат недели достигнут 🎉</p>';
+  return '';
+}
 function w12MetricRows(w, n, big){
-  return (w.metrics || []).map(m => { const v = w12Val(w, n, m.id); const pl = w12Num(v.plan), fa = w12Num(v.fact); const pc = pl ? Math.min(100, Math.round((fa || 0) / pl * 100)) : null;
-    return `<div class="w12-m${big ? ' big' : ''}"><span class="w12-mn" title="${esc(m.name)}">${esc(m.name)}</span>
+  const ms = (w.metrics || []).slice().sort((a, b) => (w12Kind(a) === 'lag' ? 0 : 1) - (w12Kind(b) === 'lag' ? 0 : 1));
+  return ms.map(m => { const v = w12Val(w, n, m.id); const pl = w12Num(v.plan), fa = w12Num(v.fact); const pc = pl ? Math.min(100, Math.round((fa || 0) / pl * 100)) : null;
+    return `<div class="w12-m${big ? ' big' : ''}"><span class="w12-mn" title="${w12Kind(m) === 'lead' ? 'Действие (опережающий показатель)' : 'Результат (запаздывающий показатель)'}: ${esc(m.name)}"><i class="w12-kt ${w12Kind(m)}">${w12Kind(m) === 'lead' ? 'Д' : 'Р'}</i>${esc(m.name)}</span>
       <label>план<input inputmode="decimal" data-w12v="${n}|${m.id}|plan" value="${pl ?? ''}" placeholder="0"></label>
       <label>факт<input inputmode="decimal" data-w12v="${n}|${m.id}|fact" value="${fa ?? ''}" placeholder="0"></label>
       <span class="w12-mp${pc != null && pc >= 100 ? ' ok' : ''}">${pc == null ? '' : pc + '%'}</span></div>`; }).join('');
 }
 function renderW12(){
-  const { w, items, brd, of, doneOf, closed, open } = w12Calc(); const t0 = today();
+  const { w, items, brd, of, doneOf, closed, open, wRate } = w12Calc(); const t0 = today();
   if (!w.start){
     app.innerHTML = `<div class="w12"><div class="w12-hero w12-new"><small class="w12-kick">Дорожная карта · 12 недель</small>
       <h2>Год за 12 недель</h2><p class="lead">Одна большая цель, на каждую неделю — своя цель и своя доска. Закрыли все задачи доски — неделя закрыта, открывается следующая.</p>
@@ -6011,7 +6035,7 @@ function renderW12(){
   }
   const end = addDays(w.start, W12_DAYS - 1); const day = Math.min(W12_DAYS, Math.max(0, diffDays(t0, w.start) + 1)); const wk = w12Week(w);
   const left = Math.max(0, diffDays(end, t0)); const pct = Math.round(day / W12_DAYS * 100);
-  const rate = n => { const rv = w.weeks[n - 1].review; if (rv) return rv.score; const a = of(n).length; return a ? Math.round(doneOf(n) / a * 100) : null; };
+  const rate = n => { const rv = w.weeks[n - 1].review; if (rv) return rv.score; return wRate(n); };   // Execution Score недели — взвешенный
   const nClosed = Array.from({ length:12 }, (_, i) => closed(i + 1)).filter(Boolean).length;
   // Execution Score: % выполненных задач недели. Завершённая неделя — закрытая или та, чей календарный срок прошёл
   const ended = n => n < wk || closed(n);
@@ -6032,8 +6056,10 @@ function renderW12(){
       <textarea class="w12-goal" data-w12goal="${n}" rows="2" maxlength="200" placeholder="Цель недели…" aria-label="Цель недели ${n}">${esc(w.weeks[n - 1].goal || '')}</textarea>
       ${(w.metrics || []).length ? `<div class="w12-ms">${w12MetricRows(w, n)}</div>` : ''}
       <div class="w12-prog"><i><b style="width:${r || 0}%"></b></i><span>${a.length ? `${doneOf(n)}/${a.length}` : 'нет задач'}</span></div>
+      ${w12Load(a.length) && !closed(n) ? `<p class="w12-wip ${w12Load(a.length)}">⚠ Перегруз недели: ${a.length} ${plural(a.length, 'задача', 'задачи', 'задач')} (норма до ${W12_WIP[0]}). Часть лучше перекинуть в бэклог.</p>` : ''}
       ${lst.length ? `<ul>${lst.map(i => `<li class="${i.st === 'done' ? 'done' : ''}"><span class="w12-chk ${i.st}">${i.st === 'done' ? '✓' : ''}</span><button class="link" data-tgsub="${i.p.id}|${i.s.id}|${i.x.id}">${esc(i.x.name)}</button>${+i.x.w12 === n ? `<button class="icon-btn w12-un" data-w12un="${i.p.id}|${i.s.id}|${i.x.id}" title="Отвязать от недели" aria-label="Отвязать">${ICON_X}</button>` : ''}</li>`).join('')}${a.length > lst.length ? `<li class="hint">и ещё ${a.length - lst.length}</li>` : ''}</ul>` : ''}
-      ${w.weeks[n - 1].review ? `<p class="w12-rv">Ревью ${fmt(w.weeks[n - 1].review.at.slice(0, 10))}: сделано ${w.weeks[n - 1].review.done}, перенесено ${w.weeks[n - 1].review.moved}, в бэклог ${w.weeks[n - 1].review.backlog}${w.weeks[n - 1].review.note ? `<br><i>${esc(w.weeks[n - 1].review.note)}</i>` : ''}</p>` : ''}
+      ${w.weeks[n - 1].review ? `<p class="w12-rv">Ревью ${fmt(w.weeks[n - 1].review.at.slice(0, 10))}: сделано ${w.weeks[n - 1].review.done}, перенесено ${w.weeks[n - 1].review.moved}, в бэклог ${w.weeks[n - 1].review.backlog}</p>` : ''}
+      ${n <= open || w.weeks[n - 1].note ? `<textarea class="w12-note" data-w12note="${n}" rows="2" maxlength="1000" placeholder="Итог недели / причина отклонения" aria-label="Итог недели ${n}">${esc(w.weeks[n - 1].note || '')}</textarea>` : ''}
       <footer>${b ? `<button class="w12-open" data-w12open="${b.id}">Доска «${esc(b.name)}» →</button>` : ''}${cur ? `<button class="w12-open w12-close" data-w12review="${n}">Закрыть неделю</button>` : ''}
         <select class="w12-sel" data-w12board="${n}" aria-label="Доска недели ${n}"><option value="">${b ? 'Сменить доску…' : 'Привязать доску…'}</option>${infoBoards().filter(p => p !== b).map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}<option value="new">+ Новая доска «Неделя ${n}»</option></select></footer></section>`; };
   app.innerHTML = `<div class="w12">
@@ -6043,19 +6069,19 @@ function renderW12(){
         <div class="w12-bar" title="${pct}% срока"><i style="width:${pct}%"></i></div>
         <div class="w12-kpis">${(w.metrics || []).map(m => { const tot = w12Total(w, m.id); const tg = w12Num(m.target); const pc = tg ? Math.min(100, Math.round(tot / tg * 100)) : 0;
           const wl = Math.max(1, 12 - Math.max(0, Math.min(12, wk)) + (wk >= 1 && wk <= 12 ? 1 : 0)); const need = tg && tot < tg ? Math.ceil((tg - tot) / wl) : 0;
-          return `<div class="w12-kpi"><div class="w12-kh"><b>${esc(m.name)}</b><button class="icon-btn w12-mdel" data-w12mdel="${m.id}" title="Убрать показатель" aria-label="Убрать показатель ${esc(m.name)}">${ICON_X}</button></div>
+          return `<div class="w12-kpi ${w12Kind(m)}"><div class="w12-kh"><i class="w12-kt ${w12Kind(m)}">${w12Kind(m) === 'lead' ? 'Действие' : 'Результат'}</i><b>${esc(m.name)}</b><button class="icon-btn w12-mdel" data-w12mdel="${m.id}" title="Убрать показатель" aria-label="Убрать показатель ${esc(m.name)}">${ICON_X}</button></div>
             <div class="w12-kv"><b>${w12Fmt(tot)}</b><span>из ${w12Fmt(tg)}</span></div><i class="w12-kb"><b style="width:${pc}%"></b></i>
             <small>${tg ? (tot >= tg ? 'Цель достигнута 🎉' : `${pc}% · нужно ~${w12Fmt(need)} в неделю`) : 'цель не задана'}</small></div>`; }).join('')}
-          <form class="w12-kpi w12-kadd" id="w12MAdd"><input id="w12MName" maxlength="60" placeholder="Показатель: напр. Пользователи VPN" aria-label="Название показателя"><input id="w12MTarget" inputmode="decimal" placeholder="Цель за 12 недель" aria-label="Цель за 12 недель"><button class="ghost">+ Показатель</button></form></div></div>
+          <form class="w12-kpi w12-kadd" id="w12MAdd"><input id="w12MName" maxlength="60" placeholder="Показатель: напр. Люди в VPN или Ролики" aria-label="Название показателя"><input id="w12MTarget" inputmode="decimal" placeholder="Цель за 12 недель" aria-label="Цель за 12 недель"><select id="w12MKind" aria-label="Тип показателя"><option value="lag">Результат (люди, продажи)</option><option value="lead">Действие (ролики, созвоны)</option></select><button class="ghost">+ Показатель</button></form></div></div>
       <div class="w12-side"><div class="w12-ring" style="--p:${Math.round(nClosed / 12 * 100)}"><div><b>${open > 12 ? '🎉' : cw}</b><small>${open > 12 ? 'всё закрыто' : 'неделя из 12'}</small></div></div></div></div>
     <div class="w12-dash">
-      <div class="w12-ex ${exCls(exAvg)}"><small>Execution Score · среднее по завершённым неделям</small><div><b>${exAvg == null ? '—' : exAvg + '%'}</b><span>цель 85%+</span></div>
+      <div class="w12-ex ${exCls(exAvg)}"><small>Execution Score · среднее по завершённым неделям · стратегические ×${W12_STRAT_W}</small><div><b>${exAvg == null ? '—' : exAvg + '%'}</b><span>цель 85%+</span></div>
         <i class="w12-exb"><b style="width:${exAvg || 0}%"></b><em style="left:85%"></em></i>
         <small>${fin.length ? `${good} из ${fin.length} ${plural(fin.length, 'недели', 'недель', 'недель')} на 85%+${exAvg != null && exAvg < 85 ? ' · держите дисциплину: закрывайте задачи недели в её срок' : ''}` : 'Появится после первой завершённой недели'}</small></div>
       <div class="w12-ex"><small>Прогресс цикла · задачи всех 12 недель</small><div><b>${cyc}%</b><span>${totD} из ${totT} задач</span></div><i class="w12-exb"><b style="width:${cyc}%"></b></i><small>${nClosed} из 12 недель закрыто · прошло ${pct}% срока</small></div>
       <div class="w12-ex"><small>Недели по выполнению</small><div class="w12-bars">${scores.map((x, i) => `<span title="Неделя ${i + 1}${x != null ? ': ' + x + '%' : ''}" class="${exCls(x)}${i + 1 === wk ? ' cal' : ''}"><i style="height:${x == null ? 4 : Math.max(6, x)}%"></i></span>`).join('')}<em style="bottom:85%"></em></div><small>линия — 85%</small></div></div>
     ${behind ? `<p class="w12-warn">Отставание от календаря: ${wk - open} ${plural(wk - open, 'неделя', 'недели', 'недель')}. Закройте задачи недели ${open}, чтобы догнать.</p>` : ''}
-    ${open <= 12 ? `<div class="w12-now"><div class="w12-now-l"><small>Цель этой недели · неделя ${cw}</small><b>${w.weeks[cw - 1].goal ? esc(w.weeks[cw - 1].goal) : '<span class="hint">Впишите цель недели в карточке ниже</span>'}</b>${(w.metrics || []).length ? `<div class="w12-ms">${w12MetricRows(w, cw, true)}</div>` : ''}</div>
+    ${open <= 12 ? `<div class="w12-now"><div class="w12-now-l"><small>Цель этой недели · неделя ${cw}</small><b>${w.weeks[cw - 1].goal ? esc(w.weeks[cw - 1].goal) : '<span class="hint">Впишите цель недели в карточке ниже</span>'}</b>${(w.metrics || []).length ? `<div class="w12-ms">${w12MetricRows(w, cw, true)}</div>${w12Diag(w, cw)}` : ''}${w12Load(ca) ? `<p class="w12-wip ${w12Load(ca)}">⚠ Перегруз недели: ${ca} задач (норма до ${W12_WIP[0]}). Перекиньте часть в бэклог — иначе к пятнице закроется половина.</p>` : ''}</div>
       <div class="w12-now-r"><div class="w12-prog big"><i><b style="width:${ca ? Math.round(cd / ca * 100) : 0}%"></b></i><span>${ca ? `${cd} из ${ca} задач` : 'нет задач'}</span></div>${cb ? `<button class="ghost" data-w12open="${cb.id}">Открыть доску</button>` : '<span class="hint">Привяжите доску к неделе ↓</span>'}<button class="primary" data-w12review="${cw}" title="Weekly Review: итоги и перенос незавершённого">Закрыть неделю ${cw}</button></div></div>` : ''}
     <div class="w12-strip">${strip}</div>
     <div class="w12-grid">${Array.from({ length:12 }, (_, i) => card(i + 1)).join('')}</div>
@@ -6081,13 +6107,13 @@ function openW12Review(n){
   const key = i => `${i.p.id}|${i.s.id}|${i.x.id}`;
   layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal w12-rvm" role="dialog" aria-modal="true" aria-labelledby="rvT">
     <h2 id="rvT">Закрыть неделю ${n} · Weekly Review</h2>
-    <p class="lead">${c.w.weeks[n - 1].goal ? `Цель недели: <b>${esc(c.w.weeks[n - 1].goal)}</b><br>` : ''}Сделано ${done} из ${c.of(n).length} · выполнение ${c.of(n).length ? Math.round(done / c.of(n).length * 100) : 0}%</p>
+    <p class="lead">${c.w.weeks[n - 1].goal ? `Цель недели: <b>${esc(c.w.weeks[n - 1].goal)}</b><br>` : ''}Сделано ${done} из ${c.of(n).length} · Execution Score ${c.wRate(n) ?? 0}% <small class="hint">(стратегические ×${W12_STRAT_W})</small>${c.wRate(n) != null && c.wRate(n) < 85 ? ' — ниже 85%: запишите причину ниже' : ''}</p>
     ${open.length ? `<h3 class="sh-h">Не завершено — ${open.length}</h3>
       <div class="w12-rvall">${nx ? `<button type="button" class="ghost" data-rvall="next">Все → на неделю ${nx}</button>` : ''}<button type="button" class="ghost" data-rvall="back">Все → в бэклог</button></div>
       <ul class="w12-rvl">${open.map(i => `<li><span class="w12-chk ${i.st}"></span><div><b>${esc(i.x.name)}</b><small>${esc(i.s.name)}${i.st === 'doing' ? ' · в работе' : ''}</small></div>
         <select data-rvact="${key(i)}" aria-label="Что сделать с «${esc(i.x.name)}»">${nx ? `<option value="next">→ На неделю ${nx}</option>` : ''}<option value="back">→ В бэклог</option><option value="keep">Оставить на этой доске</option></select></li>`).join('')}</ul>`
       : '<p class="hint">Все задачи недели выполнены 🎉</p>'}
-    <div class="field"><label for="rvNote">Итоги недели (что сработало, что мешало)</label><textarea id="rvNote" rows="3" maxlength="1000" placeholder="Необязательно"></textarea></div>
+    <div class="field"><label for="rvNote">Итог недели / причина отклонения</label><textarea id="rvNote" rows="3" maxlength="1000" placeholder="Например: просели по трафику, потому что поздно наняли ассистентов">${esc(c.w.weeks[n - 1].note || '')}</textarea></div>
     <div class="actions"><button class="ghost" data-close>Отмена</button><button class="primary" data-rvdo="${n}">Закрыть неделю${open.length ? ' и разнести задачи' : ''}</button></div></div>`;
 }
 document.addEventListener('click', e => {
@@ -6099,17 +6125,20 @@ document.addEventListener('click', e => {
   layer.querySelectorAll('[data-rvact]').forEach(sel => { const i = all.find(i => `${i.p.id}|${i.s.id}|${i.x.id}` === sel.dataset.rvact); if (!i) return;
     if (sel.value === 'next'){ w12MoveSub(i.p, i.s, i.x, w12NextBoard(n + 1)); moved++; }
     else if (sel.value === 'back'){ w12MoveSub(i.p, i.s, i.x, w12Backlog()); back++; } });
-  const wk = w12().weeks[n - 1]; wk.review = { at:new Date().toISOString(), done, moved, backlog:back, total:all.length, score:all.length ? Math.round(done / all.length * 100) : 0, note:($('#rvNote')?.value || '').trim() };
+  const tw = all.reduce((m, i) => m + c.wt(i), 0), dw = all.filter(i => i.st === 'done').reduce((m, i) => m + c.wt(i), 0);
+  const wk = w12().weeks[n - 1]; const note = ($('#rvNote')?.value || '').trim();
+  wk.review = { at:new Date().toISOString(), done, moved, backlog:back, total:all.length, score:tw ? Math.round(dw / tw * 100) : 0, note }; if (note) wk.note = note;
   layer.innerHTML = ''; commit(); render(); toast(`Неделя ${n} закрыта · сделано ${done}${moved ? `, перенесено ${moved}` : ''}${back ? `, в бэклог ${back}` : ''}`);
 });
 const w12Find = k => { const [pid, sid, xid] = k.split('|'); const p = projById(pid); const s = p?.stages.find(y => y.id === sid); return { p, x:s?.subs?.find(y => y.id === xid) }; };
 document.addEventListener('submit', e => { if (e.target.id !== 'w12MAdd') return; e.preventDefault(); const name = $('#w12MName').value.trim(); if (!name){ $('#w12MName').focus(); return; }
-  const w = w12(); w.metrics = [...(w.metrics || []), { id:'m' + uid(), name, target:w12Num($('#w12MTarget').value) }]; commit(); render(); toast('Показатель добавлен — вписывайте план и факт по неделям'); });
+  const w = w12(); w.metrics = [...(w.metrics || []), { id:'m' + uid(), name, target:w12Num($('#w12MTarget').value), kind:$('#w12MKind')?.value === 'lead' ? 'lead' : 'lag' }]; commit(); render(); toast('Показатель добавлен — вписывайте план и факт по неделям'); });
 document.addEventListener('submit', e => { if (e.target.id !== 'w12Start') return; e.preventDefault(); const w = w12();
   w.goal = $('#w12Goal').value.trim(); w.start = $('#w12Date').value || today(); commit(); render(); toast('12 недель начались'); });
 document.addEventListener('change', e => {
   const g = e.target.dataset?.w12goal; if (g){ w12().weeks[+g - 1].goal = e.target.value.trim(); commit(); render(); return; }
   if (e.target.id === 'w12GoalEd'){ w12().goal = e.target.value.trim(); commit(); return; }
+  const nt = e.target.dataset?.w12note; if (nt){ w12().weeks[+nt - 1].note = e.target.value.trim(); commit(); return; }
   const v = e.target.dataset?.w12v; if (v){ const [n, id, k] = v.split('|'); const wk = w12().weeks[+n - 1]; wk.vals = wk.vals || {}; wk.vals[id] = wk.vals[id] || {};
     const num = w12Num(e.target.value); if (num == null) delete wk.vals[id][k]; else wk.vals[id][k] = num; commit(); render(); return; }
   const bw = e.target.dataset?.w12board; if (bw){ const wk = w12().weeks[+bw - 1];
