@@ -3496,12 +3496,13 @@ document.addEventListener('submit', e => {
 });
 const plannedEnd = p => p.stages.reduce((m,s) => !isMaint(s) && s.due_date > m ? s.due_date : m, '');
 const isMaint = s => s?.system === 'maint';
-const FREQ = { weekly:['Раз в неделю', 7], biweekly:['Раз в 2 недели', 14], monthly:['Раз в месяц', 0] };
+const FREQ = { daily:['Каждый день', 1], workdays:['По будням', 1], weekly:['Раз в неделю', 7], biweekly:['Раз в 2 недели', 14], monthly:['Раз в месяц', 0] };
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 // следующий цикл: от срока (если выполнили вовремя) или от сегодня (если с опозданием)
 function nextCycle(due, freq){
   const base = !due || due < today() ? today() : due;
   if (freq === 'monthly'){ const d = parse(base); const day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + 1); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); return ymd(d); }
+  if (freq === 'workdays'){ let d = addDays(base, 1); while ([0, 6].includes(parse(d).getDay())) d = addDays(d, 1); return d; }   // пн–пт
   return addDays(base, FREQ[freq]?.[1] || 7);
 }
 

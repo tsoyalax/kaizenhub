@@ -368,6 +368,9 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     E(`window.__kr = db.prefs.kind; db.prefs.kind = 'info'; ui.view = 'production'; ui.infoAll = false; ui.prodProject = infoBoards()[0].id; ui.infoMode = 'board'; ui.pfEdit = false; infoBoards()[0].is_maintenance = false; render()`); await wait(30);
     assert.ok(D.querySelector('.kb-board .kb-rep [data-mainton]')); D.querySelector('.kb-rep [data-mainton]').click(); await wait(30);
     assert.ok(D.querySelector('.kb-board .kb-rep [data-radd]')); ok('доска: колонка «Регулярные» — включается и даёт добавить отчёт/KPI'); E(`db.prefs.kind = window.__kr; render()`); }
+  { // регулярные: «Каждый день» и «По будням»
+    assert.ok(E(`FREQ.daily && FREQ.workdays`)); assert.equal(E(`nextCycle('2099-01-01', 'daily')`), '2099-01-02');
+    assert.equal(E(`nextCycle('2099-01-02', 'workdays')`), '2099-01-05'); ok('регулярные: есть «Каждый день» и «По будням» (после пятницы — понедельник)'); }
   { // корзина: карточку бросили в корзину → подтверждение → задача удалена с доски
     const k = E(`(() => { const p = infoBoards()[0]; const s = p.stages.find(y => !isMaint(y) && (y.subs || []).length); return p.id + '|' + s.id + '|' + s.subs[0].id; })()`);
     const name = E(`(() => { const [a, b, c] = ${JSON.stringify(k)}.split('|'); return projById(a).stages.find(y => y.id === b).subs.find(y => y.id === c).name; })()`);
