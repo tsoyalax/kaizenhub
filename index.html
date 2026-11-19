@@ -5824,8 +5824,9 @@ document.addEventListener('wheel', e => { if (!(e.ctrlKey || e.metaKey)) return;
   const now = Date.now(); if (now - (tlSetZoom.t || 0) < 180) return; tlSetZoom.t = now; tlSetZoom(tlZ() + (e.deltaY < 0 ? 1 : -1)); }, { passive:false });
 function timelineHtml(p){
   // рилсы и отдел «Контент» в таймлайн не попадают — они в разделе «Контент»
-  const st = flowState(p); // строки — только отделы, что есть на канбане (с задачами); пустые и «Ведение» не показываем
-  const list = [...st.values()].filter(v => !isCtStage(p, v.s) && !isMaint(v.s)).map(v => ({ ...v, items:v.items.filter(i => !i.x.cycle) })).filter(v => v.items.length); const t0 = today();
+  const st = flowState(p); // строки — только отделы, у которых есть задачи со сроком; пустые и «Ведение» не показываем
+  const list = [...st.values()].filter(v => !isCtStage(p, v.s) && !isMaint(v.s)).map(v => ({ ...v, items:v.items.filter(i => !i.x.cycle) })).filter(v => v.items.some(i => i.due)); const t0 = today();
+  if (!list.length) return `<p class="hint tl-empty">На таймлайне пока пусто — у задач нет сроков. Поставьте срок в карточке задачи, и отдел появится здесь.</p>`;
   const dated = list.flatMap(v => v.items.filter(i => i.due).map(i => i.due));
   const starts = list.flatMap(v => v.items.filter(i => i.start).map(i => i.start));
   const kds = kdList(p).map(k => k.d);
@@ -6139,7 +6140,11 @@ document.addEventListener('dragstart', e => {
   trashKey = c.dataset.kbdrag ? 'kb:' + c.dataset.kbdrag : 'it:' + c.dataset.itdrag;
   const el = trashEl(); requestAnimationFrame(() => el.classList.add('on'));
 });
-document.addEventListener('dragend', () => { if (!trashKey) return; setTimeout(() => { trashKey = null; const el = document.getElementById('kbTrash'); el?.classList.remove('on', 'over'); }, 0); });
+const trashHide = () => { setTimeout(() => { trashKey = null; document.getElementById('kbTrash')?.classList.remove('on', 'over'); }, 0); };
+// карточка после переноса перерисовывается и dragend до документа не доходит — прячем корзину и по drop, и при первом движении мыши после перетаскивания
+document.addEventListener('dragend', trashHide, true);
+document.addEventListener('drop', () => { if (trashKey) setTimeout(trashHide, 50); }, true);
+['mousemove', 'pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (document.getElementById('kbTrash')?.classList.contains('on')) trashHide(); }, true));
 document.addEventListener('dragover', e => { if (!trashKey || !e.target.closest?.('#kbTrash')) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; trashEl().classList.add('over'); });
 document.addEventListener('dragleave', e => { if (e.target.closest?.('#kbTrash') && !e.target.closest('#kbTrash').contains(e.relatedTarget)) trashEl().classList.remove('over'); });
 document.addEventListener('drop', e => { if (!trashKey || !e.target.closest?.('#kbTrash')) return; e.preventDefault(); const k = trashKey; trashKey = null; kbDrag = null; itDrag = null;
