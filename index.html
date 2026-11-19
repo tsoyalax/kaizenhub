@@ -2545,6 +2545,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .kb-next{justify-self:start;margin-top:2px;font-size:11.5px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:7px;padding:2px 8px;opacity:0;transition:opacity .15s;cursor:pointer}
 .kb-card:hover .kb-next,.it-kc:hover .kb-next,.kb-next:focus{opacity:1}.kb-next:hover{color:var(--ink);border-color:var(--line-strong)}
 @media (hover:none){.kb-next{opacity:1}}
+.in-all{width:100%;margin:0 0 8px;height:32px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -5526,21 +5527,25 @@ function inboxColHtml(boards){
         <select data-ind aria-label="Отдел">${deptSel(p, x.dept)}</select>
         <select data-intt aria-label="Тип задачи">${Object.entries(KB_TYPES).map(([k, l]) => `<option value="${k}" ${(x.ttype || 'oper') === k ? 'selected' : ''} title="${KB_TYPE_HINT[k]}">${l}</option>`).join('')}</select>
         <input type="date" data-indue value="${x.due || ''}" aria-label="Срок">
-        <span class="in-act"><button class="primary">В задачи</button><button type="button" class="icon-btn" data-indel="${x.id}" title="Удалить" aria-label="Удалить «${esc(x.text)}»">${ICON_X}</button></span></form></div>`; };
+        <span class="in-act"><button class="primary" title="Утвердить — задача уйдёт в «К выполнению» с выбранным отделом, типом и сроком">Утвердить</button><button type="button" class="icon-btn" data-indel="${x.id}" title="Удалить" aria-label="Удалить «${esc(x.text)}»">${ICON_X}</button></span></form></div>`; };
   return `<section class="pf-col kb-in" aria-label="Входящие"><header><div><b>${INBOX_ICO}Входящие</b><span class="kb-n">${list.length}</span></div><small>После планёрок, созвонов, переговоров — потом разносим по отделам</small></header>
     <form class="in-add" id="inAdd"><textarea id="inText" rows="${ui.inBig ? 6 : 2}" placeholder="Вставьте выжимку созвона или планёрки — Claude найдёт задачи. Или впишите задачу" aria-label="Выжимка или задача"></textarea>
       <button class="primary in-go" ${ui.inBusy ? 'disabled' : ''}>${ui.inBusy ? 'Ищу задачи…' : '✦ Найти задачи'}</button>
       ${ui.inErr ? `<small class="in-err">${esc(ui.inErr)}</small>` : ''}</form>
-    <div class="pf-cards">${list.map(item).join('') || '<p class="hint">Пусто — всё разобрано</p>'}</div></section>`;
+    ${list.length > 1 ? `<button type="button" class="ghost in-all" data-inall>Утвердить все (${list.length})</button>` : ''}<div class="pf-cards">${list.map(item).join('') || '<p class="hint">Пусто — всё разобрано</p>'}</div></section>`;
 }
 const INBOX_ICO = '<svg class="in-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h4l1.5 3h5L16 13h4"/><path d="M5.5 5h13L21 13v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5z"/></svg>';
-const INBOX_AI_PROMPT = (text, depts, people) => `Ты помогаешь руководителю инфобизнеса разобрать выжимку созвона или планёрки.
+const INBOX_AI_PROMPT = (text, depts, people, existing = []) => `Ты помогаешь руководителю инфобизнеса разобрать выжимку созвона или планёрки.
 Сегодня ${today()}. Отделы: ${depts.join(', ')}. Люди в команде: ${people.join(', ') || 'нет данных'}.
 Выдели только РЕАЛЬНЫЕ задачи — конкретные действия, которые кто-то должен сделать. Не включай обсуждения, мнения, факты, уже сделанное.
 Каждую задачу сформулируй коротко, с глагола («Отправить КП партнёру»), до 90 символов.
 Для каждой: отдел — один из списка, если подходит по смыслу; если ни один не подходит — придумай короткое понятное название нового отдела по типу задачи (1–2 слова: «HR», «Трафик», «Юридический», «Финансы»), одинаковое для похожих задач; тип — "strat" (связана со стратегией и ростом) или "oper" (текущая работа),
 срок — дата YYYY-MM-DD, только если он назван или однозначно следует из текста, иначе null; кто — имя из текста или null.
-Ответь только JSON: {"tasks":[{"title":"…","dept":"…","type":"oper","due":null,"who":null}]}
+Задачи, которые УЖЕ есть (на доске и во входящих):
+${existing.length ? existing.map(t => '- ' + t).join('\n') : '- нет'}
+ВАЖНО про повторы: люди часто говорят одно и то же разными словами. Если задача по смыслу совпадает с уже существующей — НЕ добавляй её.
+Если в тексте одна задача прозвучала несколько раз разными словами — оставь одну, самую точную формулировку. Сколько отбросил — укажи в "skipped".
+Ответь только JSON: {"tasks":[{"title":"…","dept":"…","type":"oper","due":null,"who":null}],"skipped":0}
 
 Текст:
 ${text.slice(0, 12000)}`;
@@ -5550,13 +5555,15 @@ async function inboxAi(){
   ui.inDraft = text; ui.inBusy = true; ui.inErr = ''; render();
   try {
     const boards = infoBoards().filter(p => p.state !== 'completed');
-    const res = await smp.json(INBOX_AI_PROMPT(text, inboxDepts(boards), (db.users || []).map(u => u.name)), { modelTier:'default' });
-    const tasks = (Array.isArray(res?.tasks) ? res.tasks : []).filter(t => t && String(t.title || '').trim()).slice(0, 40);
-    if (!tasks.length) throw new Error('Задач в тексте не нашлось');
+    const existing = [...boards.flatMap(p => p.stages.filter(s => !isMaint(s)).flatMap(s => (s.subs || []).filter(x => !x.done && !x.cycle).map(x => x.name))), ...inboxAll().map(x => x.text)].slice(-250);
+    const res = await smp.json(INBOX_AI_PROMPT(text, inboxDepts(boards), (db.users || []).map(u => u.name), existing), { modelTier:'default' });
+    const seen = new Set(existing.map(norm)); let dup = +res?.skipped || 0;
+    const tasks = (Array.isArray(res?.tasks) ? res.tasks : []).filter(t => t && String(t.title || '').trim()).filter(t => { const k = norm(String(t.title)); if (seen.has(k)){ dup++; return false; } seen.add(k); return true; }).slice(0, 40);
+    if (!tasks.length) throw new Error(dup ? `Новых задач нет — всё это уже есть (повторов: ${dup})` : 'Задач в тексте не нашлось');
     db.prefs = db.prefs || {};
     db.prefs.inbox = [...inboxAll(), ...tasks.map(t => ({ id:uid(), text:String(t.title).trim().slice(0, 300), src:ui.inSrc || 'meet', at:new Date().toISOString(), by:actorName(),
       dept:String(t.dept || ''), ttype:t.type === 'strat' ? 'strat' : 'oper', due:/^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : '', who:t.who ? String(t.who).slice(0, 60) : '' }))];
-    ui.inDraft = ''; commit(); toast(`Найдено задач: ${tasks.length} — они во «Входящих»`);
+    ui.inDraft = ''; commit(); toast(`Найдено задач: ${tasks.length}${dup ? ` · повторов отброшено: ${dup}` : ''} — они во «Входящих»`);
   } catch(e) { ui.inErr = sampleErr(e); }
   ui.inBusy = false; render(); const t = $('#inText'); if (t && ui.inDraft) t.value = ui.inDraft;
 }
@@ -5571,6 +5578,9 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('change', e => { const b = e.target.closest?.('[data-inb]'); if (!b) return; const p = projById(b.value); const sel = b.form.querySelector('[data-ind]');
   if (p && sel) sel.innerHTML = p.stages.filter(s => !isMaint(s) && !isCtStage(p, s)).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join(''); ui.inBoard = b.value; });
+// «Утвердить все» — каждая входящая задача уходит в «К выполнению» с тем отделом, типом и сроком, что стоят в её карточке
+function inboxApproveAll(sel){ let n = 0; for (let k = 0; k < 60; k++){ const f = app.querySelector(sel); if (!f) break; f.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true })); n++; } if (n) toast(`Утверждено задач: ${n} — они в «К выполнению»`); }
+document.addEventListener('click', e => { if (e.target.closest?.('[data-inall]')) inboxApproveAll('[data-into]'); else if (e.target.closest?.('[data-itinall]')) inboxApproveAll('[data-itinto]'); });
 document.addEventListener('focusin', e => { if (e.target.id === 'inText' && !ui.inBig){ ui.inBig = true; e.target.rows = 6; } });
 document.addEventListener('submit', e => {
   if (e.target.id === 'inAdd'){ e.preventDefault(); inboxAi(); return; }   // одна кнопка: вставили текст → «Найти задачи»
@@ -9222,11 +9232,11 @@ function internalBoardHtml(p){
   const inCard = x => { const hit = deps.find(d => norm(d.name) === norm(x.dept || '')); const sel = hit || !x.dept ? deptSel(hit?.id || '', 'data-itind') : deptSel('', 'data-itind').replace('<option value="">', `<option value="new:${esc(x.dept)}" selected>+ Новый отдел «${esc(x.dept)}»</option><option value="">`);
     return `<div class="in-card"><b>${esc(x.text)}</b>${x.who || x.due ? `<small>${[x.who ? esc(x.who) : '', x.due ? 'срок ' + fmt(x.due) : ''].filter(Boolean).join(' · ')}</small>` : ''}
       <form class="in-to" data-itinto="${x.id}">${sel}
-        <input type="date" data-itindue value="${x.due || ''}" aria-label="Срок"><span class="in-act"><button class="primary">В задачи</button><button type="button" class="icon-btn" data-itindel="${x.id}" aria-label="Удалить">${ICON_X}</button></span></form></div>`; };
+        <input type="date" data-itindue value="${x.due || ''}" aria-label="Срок"><span class="in-act"><button class="primary" title="Утвердить — задача уйдёт в «К выполнению» с выбранным отделом, типом и сроком">Утвердить</button><button type="button" class="icon-btn" data-itindel="${x.id}" aria-label="Удалить">${ICON_X}</button></span></form></div>`; };
   const inCol = can ? `<section class="pf-col kb-in" aria-label="Входящие"><header><div><b>${INBOX_ICO}Входящие</b><span class="kb-n">${inbox.length}</span></div><small>После планёрок, созвонов — потом разносим по отделам и проектам</small></header>
     <form class="in-add" id="itInAdd"><textarea id="itInText" rows="${ui.inBig ? 6 : 2}" placeholder="Вставьте выжимку созвона или планёрки — Claude найдёт задачи" aria-label="Выжимка"></textarea>
       <button class="primary in-go" ${ui.itInBusy ? 'disabled' : ''}>${ui.itInBusy ? 'Ищу задачи…' : '✦ Найти задачи'}</button>${ui.itInErr ? `<small class="in-err">${esc(ui.itInErr)}</small>` : ''}</form>
-    <div class="pf-cards">${inbox.map(inCard).join('') || '<p class="hint">Пусто — всё разобрано</p>'}</div></section>` : '';
+    ${inbox.length > 1 ? `<button type="button" class="ghost in-all" data-itinall>Утвердить все (${inbox.length})</button>` : ''}<div class="pf-cards">${inbox.map(inCard).join('') || '<p class="hint">Пусто — всё разобрано</p>'}</div></section>` : '';
   const nOpen = id => base.filter(t => t.status !== 'done' && (id === '-' ? !t.dept || !deps.some(d => d.id === t.dept) : t.dept === id)).length;
   const deptBtns = `<div class="kb-depts"><button type="button" class="kb-dbtn${!ui.itDept ? ' on' : ''}" data-itdeptf=""><span class="dept-tile kb-all" aria-hidden="true">${DEPT_SVG('<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>')}</span><b>Все отделы</b><small>${base.filter(t => t.status !== 'done').length} в работе</small></button>
     ${deps.map(d => `<button type="button" class="kb-dbtn${ui.itDept === d.id ? ' on' : ''}" data-itdeptf="${d.id}" style="--kh:${kbHue(d.name)}">${deptIco(d.name)}<b>${esc(d.name)}</b><small>${nOpen(d.id)} в работе</small>${can ? `<span class="it-dact"><i data-itdeptren="${d.id}" title="Переименовать">${PEN_ICO}</i><i data-itdeptdel="${d.id}" title="Удалить отдел">${ICON_X}</i></span>` : ''}</button>`).join('')}
@@ -9256,11 +9266,15 @@ document.addEventListener('drop', e => { if (!itDrag) return; const col = e.targ
   if (t && itCol(t) !== col.dataset.itcol){ itSave({ ...t, status:col.dataset.itcol }); render(); } });
 document.addEventListener('dragend', () => { itDrag = null; app.querySelectorAll('.it-kc.dragging,[data-itcol].drop').forEach(x => x.classList.remove('dragging', 'drop')); });
 // «Входящие» внутренних задач
-const IT_INBOX_PROMPT = (text, depts, people) => `Ты помогаешь руководителю агентства разобрать выжимку созвона или планёрки.
+const IT_INBOX_PROMPT = (text, depts, people, existing = []) => `Ты помогаешь руководителю агентства разобрать выжимку созвона или планёрки.
 Сегодня ${today()}. Отделы: ${depts.join(', ') || 'нет'}. Люди: ${people.join(', ') || 'нет данных'}.
 Выдели только РЕАЛЬНЫЕ задачи — конкретные действия. Не включай обсуждения, мнения, факты, уже сделанное. Формулируй коротко, с глагола, до 90 символов.
 Для каждой: отдел — один из списка, если подходит; если ни один не подходит — короткое название нового отдела по типу задачи (1–2 слова: «HR», «Бухгалтерия», «Продажи»), одинаковое для похожих задач; срок YYYY-MM-DD, только если назван, иначе null; кто — имя или null.
-Ответь только JSON: {"tasks":[{"title":"…","dept":null,"due":null,"who":null}]}
+Задачи, которые УЖЕ есть (на доске и во входящих):
+${existing.length ? existing.map(t => '- ' + t).join('\n') : '- нет'}
+ВАЖНО про повторы: люди часто говорят одно и то же разными словами. Если задача по смыслу совпадает с уже существующей — НЕ добавляй её.
+Если в тексте одна задача прозвучала несколько раз разными словами — оставь одну, самую точную формулировку. Сколько отбросил — укажи в "skipped".
+Ответь только JSON: {"tasks":[{"title":"…","dept":null,"due":null,"who":null}],"skipped":0}
 
 Текст:
 ${text.slice(0, 12000)}`;
@@ -9269,13 +9283,15 @@ async function itInboxAi(){
   const smp = await getSample(); if (!smp?.json){ toast('Разбор доступен после входа в аккаунт'); return; }
   ui.itInBusy = true; ui.itInErr = ''; const keep = text; render(); const p0 = projById(ui.prodProject);
   try {
-    const res = await smp.json(IT_INBOX_PROMPT(text, itDepts().map(d => d.name), (db.users || []).map(u => u.name)), { modelTier:'default' });
-    const tasks = (Array.isArray(res?.tasks) ? res.tasks : []).filter(t => t && String(t.title || '').trim()).slice(0, 40);
-    if (!tasks.length) throw new Error('Задач в тексте не нашлось');
+    const existing = [...itAll().filter(t => t.project_id === p0?.id && t.status !== 'done').map(t => t.title), ...(db.prefs?.itInbox || []).filter(x => x.pid === p0?.id).map(x => x.text)].slice(-250);
+    const res = await smp.json(IT_INBOX_PROMPT(text, itDepts().map(d => d.name), (db.users || []).map(u => u.name), existing), { modelTier:'default' });
+    const seen = new Set(existing.map(norm)); let dup = +res?.skipped || 0;
+    const tasks = (Array.isArray(res?.tasks) ? res.tasks : []).filter(t => t && String(t.title || '').trim()).filter(t => { const k = norm(String(t.title)); if (seen.has(k)){ dup++; return false; } seen.add(k); return true; }).slice(0, 40);
+    if (!tasks.length) throw new Error(dup ? `Новых задач нет — всё это уже есть (повторов: ${dup})` : 'Задач в тексте не нашлось');
     db.prefs = db.prefs || {};
     db.prefs.itInbox = [...(db.prefs.itInbox || []), ...tasks.map(t => ({ id:uid(), text:String(t.title).trim().slice(0, 300), at:new Date().toISOString(), by:actorName(), dept:String(t.dept || ''),
       pid:p0?.id || '', due:/^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : '', who:t.who ? String(t.who).slice(0, 60) : '' }))];
-    commit(); toast(`Найдено задач: ${tasks.length} — они во «Входящих»`); ui.itInBusy = false; render(); return;
+    commit(); toast(`Найдено задач: ${tasks.length}${dup ? ` · повторов отброшено: ${dup}` : ''} — они во «Входящих»`); ui.itInBusy = false; render(); return;
   } catch(e) { ui.itInErr = sampleErr(e); }
   ui.itInBusy = false; render(); const t = $('#itInText'); if (t) t.value = keep;
 }
