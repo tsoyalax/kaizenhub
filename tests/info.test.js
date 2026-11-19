@@ -331,6 +331,14 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
   if (D.querySelector('[data-ctplus]')){ D.querySelector('[data-ctplus]').click(); const top = D.getElementById('app').firstElementChild.nextElementSibling;
     assert.ok(top && top.id === 'ctAdd'); ok('«+» сверху открывает форму новых видео'); }
   E(`ui.ctAddOpen = false; ui.view = 'production'; db.prefs.kind = window.__k4; render()`);
+  { // исполнитель по ссылке: доска канбаном, перетаскивать можно, создавать и править — нет
+    E(`window.__xp = JSON.parse(JSON.stringify(infoBoards()[0])); __xp.id = 'xshared1'; __xp._ext = { role:'worker', ownerId:'o1', members:[] }; ext.projects.push(__xp);
+      window.__v = ui.view; ui.view = 'mine'; ui.myProject = 'xshared1'; render()`); await wait(50);
+    const brd = D.querySelector('.kb-board');
+    assert.ok(brd && brd.querySelector('[data-kbdrag]') && !brd.querySelector('.kb-add') && !brd.querySelector('.kb-in') && !brd.querySelector('[data-kbtt]')); ok('исполнитель по ссылке: канбан, карточки перетаскиваются, нет добавления, «Входящих» и смены типа');
+    const k = brd.querySelector('.kb-todo [data-kbdrag], .kb-col [data-kbdrag]').dataset.kbdrag;
+    E(`kbMove('${k}', 'doing')`); assert.equal(E(`(() => { const [a, b, c] = '${k}'.split('|'); const p = projById(a); const s = p.stages.find(y => y.id === b); return kbStatus(p, s, s.subs.find(y => y.id === c)); })()`), 'doing'); ok('исполнитель по ссылке: перенос в «В работе» сохраняется');
+    E(`ext.projects = ext.projects.filter(p => p.id !== 'xshared1'); ui.view = window.__v; render()`); }
   { // корзина: карточку бросили в корзину → подтверждение → задача удалена с доски
     const k = E(`(() => { const p = infoBoards()[0]; const s = p.stages.find(y => !isMaint(y) && (y.subs || []).length); return p.id + '|' + s.id + '|' + s.subs[0].id; })()`);
     const name = E(`(() => { const [a, b, c] = ${JSON.stringify(k)}.split('|'); return projById(a).stages.find(y => y.id === b).subs.find(y => y.id === c).name; })()`);

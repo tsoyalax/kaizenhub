@@ -5512,7 +5512,7 @@ const inboxAll = () => (db.prefs?.inbox || []);
 // Вставили выжимку созвона/планёрки → «Найти задачи»: Claude выделяет реальные задачи (отдел, тип, срок, кто) → карточки входящих.
 const inboxDepts = boards => [...new Map(boards.flatMap(p => p.stages.filter(s => !isMaint(s) && !isCtStage(p, s)).map(s => [norm(s.name), s.name]))).values()];
 function inboxColHtml(boards){
-  if (GUEST) return '';
+  if (GUEST || !boards.length) return '';
   const list = inboxAll().slice().sort((a, b) => String(b.at).localeCompare(String(a.at)));
   const src = ui.inSrc || 'meet'; const srcName = k => (INBOX_SRC.find(x => x[0] === k) || INBOX_SRC.at(-1))[1];
   const one = boards.length === 1;
@@ -6063,12 +6063,12 @@ function kanbanHtml(boards, all = false){
     <div class="kb-frow" role="group" aria-label="Тип задачи">${chip('data-kbtype', '', 'Все задачи', !ui.kbType)}${chip('data-kbtype', 'strat', 'Стратегические', ui.kbType === 'strat', cntT('strat'))}${chip('data-kbtype', 'oper', 'Операционные', ui.kbType === 'oper', cntT('oper'))}</div>
     <div class="kb-frow" role="group" aria-label="Сроки">${chip('data-kbdue', '', 'Все сроки', !ui.kbDue)}${chip('data-kbdue', 'late', 'Просрочено', ui.kbDue === 'late', cntD('late'))}${chip('data-kbdue', 'today', 'На сегодня', ui.kbDue === 'today', cntD('today'))}${chip('data-kbdue', 'week', 'На неделю', ui.kbDue === 'week', cntD('week'))}${chip('data-kbdue', 'none', 'Без срока', ui.kbDue === 'none', cntD('none'))}</div></div>` : ''}</div>`;
   const card = ({ p, s, x, st }) => { const t = taskFor(p.id, s.id, x.id); const pr = t ? taskProgress(t) : null; const due = t?.due_date || x.due_date || ''; const done = st === 'done';
-    const can = canEditProject(p) && !GUEST;
-    return `<button class="pf-card kb-card${done ? ' done' : ''}" data-tgsub="${p.id}|${s.id}|${x.id}" ${can ? `draggable="true" data-kbdrag="${p.id}|${s.id}|${x.id}"` : ''} aria-label="${esc(s.name)}: ${esc(x.name)}">
+    const can = canEditProject(p) && !GUEST; const mv = canMoveKb(p);
+    return `<button class="pf-card kb-card${done ? ' done' : ''}" data-tgsub="${p.id}|${s.id}|${x.id}" ${mv ? `draggable="true" data-kbdrag="${p.id}|${s.id}|${x.id}"` : ''} aria-label="${esc(s.name)}: ${esc(x.name)}">
       <span class="kb-tags"><span class="kb-dept" style="--kh:${kbHue(s.name)}">${deptIco(s.name)}${esc(s.name)}</span><span class="kb-type t-${kbTT(x)}"${can ? ` data-kbtt="${p.id}|${s.id}|${x.id}" role="button" tabindex="0"` : ''} title="${KB_TYPE_HINT[kbTT(x)]}${can ? '. Нажмите, чтобы сменить' : ''}">${kbTT(x) === 'strat' ? 'Стратегическая' : 'Операционная'}</span>${all ? `<span class="ab-ip"><i style="--bc:${tgColor(p)}"></i>${esc(p.name)}</span>` : ''}</span>
       <b>${priIco(t?.priority)}${x.cycle ? `<span class="ct-ico${x.extra ? ' x' : ''}${isStories(x) ? ' st' : ''}">${ctIco(x)}</span>` : ''}${esc(x.name)}</b>
       <small>${whoChip(x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t))}${due ? ` · <span class="pf-due${due < t0 && !done ? ' late' : ''}">${t?.start_date ? rangeTxt(t.start_date, due) : 'срок ' + fmt(due)}</span>` : !done ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}</small>
-      ${pr && pr.total && !done ? `${progTiles(pr)}<small class="pg-n">${pr.n} из ${pr.total}</small>` : ''}${can && st !== 'done' ? `<span class="kb-next" role="button" tabindex="0" data-kbnext="${p.id}|${s.id}|${x.id}|${st === 'todo' ? 'doing' : 'done'}" title="${st === 'todo' ? 'В работу' : 'Готово'}">${st === 'todo' ? 'В работу →' : 'Готово ✓'}</span>` : ''}</button>`; };
+      ${pr && pr.total && !done ? `${progTiles(pr)}<small class="pg-n">${pr.n} из ${pr.total}</small>` : ''}${mv && st !== 'done' ? `<span class="kb-next" role="button" tabindex="0" data-kbnext="${p.id}|${s.id}|${x.id}|${st === 'todo' ? 'doing' : 'done'}" title="${st === 'todo' ? 'В работу' : 'Готово'}">${st === 'todo' ? 'В работу →' : 'Готово ✓'}</span>` : ''}</button>`; };
   const p0 = boards.length === 1 ? boards[0] : null; const canAdd = p0 && canEditProject(p0) && !GUEST;
   const addDepts = p0 ? p0.stages.filter(s => !isMaint(s) && !isCtStage(p0, s)) : [];   // «Контента» в выборе отдела нет
   const defDept = addDepts.find(s => norm(s.name) === ui.kbDept)?.id || ui.kbAddDept || addDepts[0]?.id;
@@ -6084,7 +6084,7 @@ function kanbanHtml(boards, all = false){
 }
 function kbMove(key, st){
   const [pid, sid, xid] = key.split('|'); const p = projById(pid); const s = p?.stages.find(y => y.id === sid); const x = s?.subs?.find(y => y.id === xid);
-  if (!x || !canEditProject(p)) return; const was = kbStatus(p, s, x); if (was === st) return;
+  if (!x || !canMoveKb(p)) return; const was = kbStatus(p, s, x); if (was === st) return;
   if (st === 'done'){ x.kst = ''; toggleSub(p, s, x, true); return; }
   x.kst = st === 'doing' ? 'doing' : '';
   if (x.cycle && st === 'todo' && vidCols()[0]) x.vst = vidCols()[0].id;
@@ -6137,6 +6137,7 @@ let trashKey = null;
 function trashEl(){ let el = document.getElementById('kbTrash'); if (!el){ el = document.createElement('div'); el.id = 'kbTrash'; el.className = 'kb-trash'; el.innerHTML = TRASH_ICO.replace('<svg ', '<svg width="28" height="28" ') + '<span>Удалить</span>'; document.body.appendChild(el); } return el; }
 document.addEventListener('dragstart', e => {
   const c = e.target.closest?.('[data-kbdrag],[data-itdrag]'); if (!c) return;
+  if (c.dataset.kbdrag){ const p = projById(c.dataset.kbdrag.split('|')[0]); if (!canEditProject(p) || p?._ext) return; }   // исполнитель удалять не может — корзины нет
   trashKey = c.dataset.kbdrag ? 'kb:' + c.dataset.kbdrag : 'it:' + c.dataset.itdrag;
   const el = trashEl(); requestAnimationFrame(() => el.classList.add('on'));
 });
@@ -9475,7 +9476,12 @@ document.addEventListener('click', e => {
     askText('Название отдела', d.name, v => { db.prefs = db.prefs || {}; db.prefs.itDepts = itDepts().map(x => x.id === d.id ? { ...x, name:v } : x); commit(); }); }
 }, true);
 // экран исполнителя: «Проекты | Задачи»
-function renderMine(){ renderProjectFocus(true); }
+function renderMine(){
+  renderProjectFocus(true);
+  // доска инфобизнеса, которой поделились: канбан, как у владельца (без «Входящих» и добавления задач)
+  const all = ext.projects.filter(p => p.state !== 'archived'); const p = projById(ui.myProject) || all.find(x => x.state === 'active') || all[0];
+  const b = app.querySelector('.pf-main .pf-board, .pm-board'); if (p && isInfoBoardP(p) && b) b.outerHTML = kanbanHtml([p]);
+}
 
 // ---------- модальное окно задачи: режим просмотра и режим редактирования ----------
 const taskLayer = () => document.getElementById('taskLayer');
@@ -9483,6 +9489,8 @@ const ROLE_RU = { owner:'Владелец', lead:'Руководитель', wor
 // Роль в проекте: свои проекты — владелец; проекты, которыми поделились, — из списка участников
 const roleOf = p => p?._ext ? p._ext.role : 'owner';
 const canEditProject = p => ['owner', 'lead'].includes(roleOf(p));
+// канбан доски инфобизнеса: исполнитель по ссылке не создаёт и не правит задачи, но перетаскивает их по колонкам
+const canMoveKb = p => (canEditProject(p) && !GUEST) || (!!p?._ext && isInfoBoardP(p));
 function openTask(id){ ui.taskId = id; ui.taskDraft = null; ui.vplay = null; renderTaskModal(); }
 // закрыть окно подэтапа в режиме правки: без изменений — сразу, с изменениями — после подтверждения
 function askCloseTaskEdit(){
@@ -11239,7 +11247,7 @@ async function openShare(pid){
       <select id="shRole" aria-label="Роль">${ROLES_SHARE.map(([k,v]) => `<option value="${k}" ${k===ui.shareRole?'selected':''}>${v}</option>`).join('')}</select></div>
     <ul class="sh-res" id="shRes" aria-live="polite"></ul>
     <h3 class="sh-h">Доступ есть</h3><ul class="sh-mem" id="shMem"></ul>
-    <p class="hint">Исполнитель отмечает чек-листы и сдаёт результат, руководитель ещё и редактирует подэтапы. Человеку достаточно открыть ссылку и создать аккаунт или войти.</p>
+    <p class="hint">${isInfoBoardP(p) ? 'Исполнитель видит доску и перетаскивает задачи по колонкам, но не создаёт и не правит их; руководитель ещё и редактирует.' : 'Исполнитель отмечает чек-листы и сдаёт результат, руководитель ещё и редактирует подэтапы.'} Человеку достаточно открыть ссылку и создать аккаунт или войти.</p>
     <div class="actions"><button class="primary" data-close>Готово</button></div>
   </div>`;
   renderShareLinks(); renderShareMembers(); shareSearch('');
