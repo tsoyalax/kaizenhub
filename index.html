@@ -2603,6 +2603,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .w12-banner{display:flex;align-items:center;gap:16px;margin:0 0 12px;padding:12px 16px;border-radius:12px;border:1px solid var(--accent,#2e9d5b);background:color-mix(in srgb,var(--accent,#2e9d5b) 8%,transparent)}.w12-banner>div{flex:1;min-width:0;display:flex;flex-direction:column}.w12-banner small{font-size:11.5px;opacity:.7}.w12-banner b{font-size:16px}.w12-bn{padding:4px 10px;border-radius:8px;background:var(--accent,#2e9d5b);color:var(--accent-ink,#fff);font-size:12.5px;font-weight:600;white-space:nowrap}.w12-bprog{display:flex;flex-direction:column;gap:4px;font-size:12px;min-width:120px}.w12-bprog i{height:6px;border-radius:4px;background:var(--line,rgba(127,127,127,.22));overflow:hidden}.w12-bprog i b{display:block;height:100%;background:var(--accent,#2e9d5b)}
 @media (max-width:700px){.w12-hero{flex-direction:column-reverse;align-items:flex-start}.w12-now{flex-direction:column;align-items:stretch}.w12-strip{grid-template-columns:repeat(6,1fr)}.w12-banner{flex-wrap:wrap}}
 .tg-feed{display:flex;flex-direction:column;gap:8px;margin:8px 0}.tg-msg{border:1px solid var(--line,rgba(127,127,127,.25));border-radius:10px;padding:8px 10px;font-size:13px}.tg-meta{display:flex;align-items:center;gap:6px;font-size:11px;opacity:.7}.tg-x{margin-left:auto;width:22px;height:22px}.tg-msg summary{cursor:pointer;line-height:1.4}.tg-msg p{white-space:pre-wrap;margin:6px 0 0;line-height:1.45}.tg-st{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}.tg-ok{color:var(--ok,#2e9d5b);font-size:12px}.tg-mini{height:26px;font-size:12px;padding:0 8px}.in-parse{display:block;margin:6px 0;height:28px;font-size:12px}.tg-btn{margin-top:6px;margin-right:4px;height:28px;font-size:12px;display:inline-flex;gap:6px;align-items:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tg-steps{padding-left:20px;line-height:1.6}.tg-steps li{margin:6px 0}.tg-code{font-size:14px;padding:2px 6px;border-radius:6px;background:var(--soft,rgba(0,0,0,.06))}
+.w12-close{border-color:var(--line-strong);color:var(--ink)}.w12-rv{font-size:12px;opacity:.8;margin:0;line-height:1.45}.w12-rvm{width:min(640px,calc(100% - 24px))}.w12-rvall{display:flex;gap:6px;margin:4px 0 8px}.w12-rvl{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:6px}.w12-rvl li{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.w12-rvl li>div{flex:1;min-width:0;display:flex;flex-direction:column}.w12-rvl li small{font-size:12px;opacity:.65}.w12-rvl select{height:32px;font-size:12.5px;max-width:210px;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:8px;padding:0 8px;color:var(--ink)}
 /* полировка канбана: воздух в карточках, лёгкие «Входящие», ровные края и селекторы */
 .kb-board .kb-card{padding:13px 14px 12px;gap:8px;border-radius:12px}
 .kb-board .kb-card>b{font-size:14px;line-height:1.35;font-weight:600}
@@ -5976,7 +5977,7 @@ function w12Calc(){
   const brd = n => { const id = w.weeks[n - 1]?.board; return id ? infoBoards().find(p => p.id === id) : null; };
   const of = n => { const b = brd(n); return items.filter(i => (b && i.p === b) || +i.x.w12 === n).filter((i, k, a) => a.indexOf(i) === k); };
   const doneOf = n => of(n).filter(i => i.st === 'done').length;
-  const closed = n => of(n).length > 0 && doneOf(n) === of(n).length;          // все задачи недели в «Готово» — неделя закрыта
+  const closed = n => !!w.weeks[n - 1]?.review || (of(n).length > 0 && doneOf(n) === of(n).length);   // закрыта ревью или все задачи в «Готово»
   let open = 1; while (open <= 12 && closed(open)) open++;                       // неделя, на которой вы сейчас (по задачам)
   return { w, items, brd, of, doneOf, closed, open };
 }
@@ -5986,7 +5987,7 @@ function w12GoalBanner(p){
   const n = w12WeekOfBoard(p?.id); if (!n) return '';
   const c = w12Calc(); const g = c.w.weeks[n - 1].goal; const a = c.of(n).length, d = c.doneOf(n);
   return `<div class="w12-banner${c.closed(n) ? ' closed' : ''}"><span class="w12-bn">Неделя ${n} из 12</span><div><small>Цель недели</small><b>${g ? esc(g) : '<span class="hint">не задана — впишите в «Дорожной карте»</span>'}</b></div>
-    <div class="w12-bprog"><span>${d} из ${a}</span><i><b style="width:${a ? Math.round(d / a * 100) : 0}%"></b></i></div><button class="ghost" data-view-go="w12">Дорожная карта</button></div>`;
+    <div class="w12-bprog"><span>${d} из ${a}</span><i><b style="width:${a ? Math.round(d / a * 100) : 0}%"></b></i></div>${!c.closed(n) && n === c.open ? `<button class="primary" data-w12review="${n}">Закрыть неделю</button>` : ''}<button class="ghost" data-view-go="w12">Дорожная карта</button></div>`;
 }
 // показатели 12 недель: w.metrics = [{ id, name, target }], по неделям w.weeks[n].vals[id] = { plan, fact }; итог — сумма фактов
 const w12Num = v => { const n = parseFloat(String(v ?? '').replace(',', '.').replace(/\s/g, '')); return isFinite(n) ? n : null; };
@@ -6010,7 +6011,7 @@ function renderW12(){
   }
   const end = addDays(w.start, W12_DAYS - 1); const day = Math.min(W12_DAYS, Math.max(0, diffDays(t0, w.start) + 1)); const wk = w12Week(w);
   const left = Math.max(0, diffDays(end, t0)); const pct = Math.round(day / W12_DAYS * 100);
-  const rate = n => { const a = of(n).length; return a ? Math.round(doneOf(n) / a * 100) : null; };
+  const rate = n => { const rv = w.weeks[n - 1].review; if (rv) return rv.score; const a = of(n).length; return a ? Math.round(doneOf(n) / a * 100) : null; };
   const nClosed = Array.from({ length:12 }, (_, i) => closed(i + 1)).filter(Boolean).length;
   // Execution Score: % выполненных задач недели. Завершённая неделя — закрытая или та, чей календарный срок прошёл
   const ended = n => n < wk || closed(n);
@@ -6032,7 +6033,8 @@ function renderW12(){
       ${(w.metrics || []).length ? `<div class="w12-ms">${w12MetricRows(w, n)}</div>` : ''}
       <div class="w12-prog"><i><b style="width:${r || 0}%"></b></i><span>${a.length ? `${doneOf(n)}/${a.length}` : 'нет задач'}</span></div>
       ${lst.length ? `<ul>${lst.map(i => `<li class="${i.st === 'done' ? 'done' : ''}"><span class="w12-chk ${i.st}">${i.st === 'done' ? '✓' : ''}</span><button class="link" data-tgsub="${i.p.id}|${i.s.id}|${i.x.id}">${esc(i.x.name)}</button>${+i.x.w12 === n ? `<button class="icon-btn w12-un" data-w12un="${i.p.id}|${i.s.id}|${i.x.id}" title="Отвязать от недели" aria-label="Отвязать">${ICON_X}</button>` : ''}</li>`).join('')}${a.length > lst.length ? `<li class="hint">и ещё ${a.length - lst.length}</li>` : ''}</ul>` : ''}
-      <footer>${b ? `<button class="w12-open" data-w12open="${b.id}">Доска «${esc(b.name)}» →</button>` : ''}
+      ${w.weeks[n - 1].review ? `<p class="w12-rv">Ревью ${fmt(w.weeks[n - 1].review.at.slice(0, 10))}: сделано ${w.weeks[n - 1].review.done}, перенесено ${w.weeks[n - 1].review.moved}, в бэклог ${w.weeks[n - 1].review.backlog}${w.weeks[n - 1].review.note ? `<br><i>${esc(w.weeks[n - 1].review.note)}</i>` : ''}</p>` : ''}
+      <footer>${b ? `<button class="w12-open" data-w12open="${b.id}">Доска «${esc(b.name)}» →</button>` : ''}${cur ? `<button class="w12-open w12-close" data-w12review="${n}">Закрыть неделю</button>` : ''}
         <select class="w12-sel" data-w12board="${n}" aria-label="Доска недели ${n}"><option value="">${b ? 'Сменить доску…' : 'Привязать доску…'}</option>${infoBoards().filter(p => p !== b).map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}<option value="new">+ Новая доска «Неделя ${n}»</option></select></footer></section>`; };
   app.innerHTML = `<div class="w12">
     <div class="w12-hero"><div class="w12-hl"><small class="w12-kick">Дорожная карта · 12 недель · ${fmt(w.start)} – ${fmt(end)}</small>
@@ -6054,12 +6056,52 @@ function renderW12(){
       <div class="w12-ex"><small>Недели по выполнению</small><div class="w12-bars">${scores.map((x, i) => `<span title="Неделя ${i + 1}${x != null ? ': ' + x + '%' : ''}" class="${exCls(x)}${i + 1 === wk ? ' cal' : ''}"><i style="height:${x == null ? 4 : Math.max(6, x)}%"></i></span>`).join('')}<em style="bottom:85%"></em></div><small>линия — 85%</small></div></div>
     ${behind ? `<p class="w12-warn">Отставание от календаря: ${wk - open} ${plural(wk - open, 'неделя', 'недели', 'недель')}. Закройте задачи недели ${open}, чтобы догнать.</p>` : ''}
     ${open <= 12 ? `<div class="w12-now"><div class="w12-now-l"><small>Цель этой недели · неделя ${cw}</small><b>${w.weeks[cw - 1].goal ? esc(w.weeks[cw - 1].goal) : '<span class="hint">Впишите цель недели в карточке ниже</span>'}</b>${(w.metrics || []).length ? `<div class="w12-ms">${w12MetricRows(w, cw, true)}</div>` : ''}</div>
-      <div class="w12-now-r"><div class="w12-prog big"><i><b style="width:${ca ? Math.round(cd / ca * 100) : 0}%"></b></i><span>${ca ? `${cd} из ${ca} задач` : 'нет задач'}</span></div>${cb ? `<button class="primary" data-w12open="${cb.id}">Открыть доску недели</button>` : '<span class="hint">Привяжите доску к неделе ↓</span>'}</div></div>` : ''}
+      <div class="w12-now-r"><div class="w12-prog big"><i><b style="width:${ca ? Math.round(cd / ca * 100) : 0}%"></b></i><span>${ca ? `${cd} из ${ca} задач` : 'нет задач'}</span></div>${cb ? `<button class="ghost" data-w12open="${cb.id}">Открыть доску</button>` : '<span class="hint">Привяжите доску к неделе ↓</span>'}<button class="primary" data-w12review="${cw}" title="Weekly Review: итоги и перенос незавершённого">Закрыть неделю ${cw}</button></div></div>` : ''}
     <div class="w12-strip">${strip}</div>
     <div class="w12-grid">${Array.from({ length:12 }, (_, i) => card(i + 1)).join('')}</div>
     <div class="w12-foot"><button class="ghost" data-w12reset>Начать новые 12 недель</button></div></div>`;
 }
 document.addEventListener('click', e => { const g = e.target.closest?.('[data-view-go]'); if (g){ ui.view = g.dataset.viewGo; render(); scrollTo(0, 0); } });
+
+// ---------- Weekly Review: закрыть неделю — незавершённые задачи «на следующую неделю» или «в бэклог» ----------
+// перенос задачи доски (подэтапа) на другую доску: в отдел с тем же названием (нет — создаётся), карточка задачи едет следом
+function w12MoveSub(p, s, x, to){
+  if (!to || to === p) return;
+  let ts = to.stages.find(y => !isMaint(y) && !isCtStage(to, y) && norm(y.name) === norm(s.name));
+  if (!ts){ ts = addStage(to); ts.name = s.name; }
+  s.subs = (s.subs || []).filter(y => y !== x); delete x.w12; (ts.subs = ts.subs || []).push(x);
+  (db.tasks || []).filter(t => t.project_id === p.id && t.stage_id === s.id && t.substage_id === x.id).forEach(t => { t.project_id = to.id; t.stage_id = ts.id; });
+  addLog(p, `«${x.name}» перенесена на доску «${to.name}»`); addLog(to, `«${x.name}» перенесена с доски «${p.name}»`);
+}
+const w12Backlog = () => infoBoards().find(p => p.w12backlog) || (() => { const p = createInfoBoard('Бэклог', today()); p.w12backlog = true; return p; })();
+const w12NextBoard = n => { const w = w12(); const k = w.weeks[n - 1]; let b = k?.board && infoBoards().find(p => p.id === k.board);
+  if (!b && k){ b = createInfoBoard(`Неделя ${n}`, addDays(w.start || today(), (n - 1) * 7)); k.board = b.id; } return b; };
+function openW12Review(n){
+  const c = w12Calc(); const open = c.of(n).filter(i => i.st !== 'done'); const done = c.of(n).length - open.length; const nx = n < 12 ? n + 1 : 0;
+  const key = i => `${i.p.id}|${i.s.id}|${i.x.id}`;
+  layer.innerHTML = `<div class="backdrop" data-close></div><div class="modal w12-rvm" role="dialog" aria-modal="true" aria-labelledby="rvT">
+    <h2 id="rvT">Закрыть неделю ${n} · Weekly Review</h2>
+    <p class="lead">${c.w.weeks[n - 1].goal ? `Цель недели: <b>${esc(c.w.weeks[n - 1].goal)}</b><br>` : ''}Сделано ${done} из ${c.of(n).length} · выполнение ${c.of(n).length ? Math.round(done / c.of(n).length * 100) : 0}%</p>
+    ${open.length ? `<h3 class="sh-h">Не завершено — ${open.length}</h3>
+      <div class="w12-rvall">${nx ? `<button type="button" class="ghost" data-rvall="next">Все → на неделю ${nx}</button>` : ''}<button type="button" class="ghost" data-rvall="back">Все → в бэклог</button></div>
+      <ul class="w12-rvl">${open.map(i => `<li><span class="w12-chk ${i.st}"></span><div><b>${esc(i.x.name)}</b><small>${esc(i.s.name)}${i.st === 'doing' ? ' · в работе' : ''}</small></div>
+        <select data-rvact="${key(i)}" aria-label="Что сделать с «${esc(i.x.name)}»">${nx ? `<option value="next">→ На неделю ${nx}</option>` : ''}<option value="back">→ В бэклог</option><option value="keep">Оставить на этой доске</option></select></li>`).join('')}</ul>`
+      : '<p class="hint">Все задачи недели выполнены 🎉</p>'}
+    <div class="field"><label for="rvNote">Итоги недели (что сработало, что мешало)</label><textarea id="rvNote" rows="3" maxlength="1000" placeholder="Необязательно"></textarea></div>
+    <div class="actions"><button class="ghost" data-close>Отмена</button><button class="primary" data-rvdo="${n}">Закрыть неделю${open.length ? ' и разнести задачи' : ''}</button></div></div>`;
+}
+document.addEventListener('click', e => {
+  const r = e.target.closest?.('[data-w12review]'); if (r){ openW12Review(+r.dataset.w12review); return; }
+  const a = e.target.closest?.('[data-rvall]'); if (a){ layer.querySelectorAll('[data-rvact]').forEach(s => { s.value = a.dataset.rvall; }); return; }
+  const d = e.target.closest?.('[data-rvdo]'); if (!d) return;
+  const n = +d.dataset.rvdo; const c = w12Calc(); const all = c.of(n); let moved = 0, back = 0;
+  const done = all.filter(i => i.st === 'done').length;
+  layer.querySelectorAll('[data-rvact]').forEach(sel => { const i = all.find(i => `${i.p.id}|${i.s.id}|${i.x.id}` === sel.dataset.rvact); if (!i) return;
+    if (sel.value === 'next'){ w12MoveSub(i.p, i.s, i.x, w12NextBoard(n + 1)); moved++; }
+    else if (sel.value === 'back'){ w12MoveSub(i.p, i.s, i.x, w12Backlog()); back++; } });
+  const wk = w12().weeks[n - 1]; wk.review = { at:new Date().toISOString(), done, moved, backlog:back, total:all.length, score:all.length ? Math.round(done / all.length * 100) : 0, note:($('#rvNote')?.value || '').trim() };
+  layer.innerHTML = ''; commit(); render(); toast(`Неделя ${n} закрыта · сделано ${done}${moved ? `, перенесено ${moved}` : ''}${back ? `, в бэклог ${back}` : ''}`);
+});
 const w12Find = k => { const [pid, sid, xid] = k.split('|'); const p = projById(pid); const s = p?.stages.find(y => y.id === sid); return { p, x:s?.subs?.find(y => y.id === xid) }; };
 document.addEventListener('submit', e => { if (e.target.id !== 'w12MAdd') return; e.preventDefault(); const name = $('#w12MName').value.trim(); if (!name){ $('#w12MName').focus(); return; }
   const w = w12(); w.metrics = [...(w.metrics || []), { id:'m' + uid(), name, target:w12Num($('#w12MTarget').value) }]; commit(); render(); toast('Показатель добавлен — вписывайте план и факт по неделям'); });
