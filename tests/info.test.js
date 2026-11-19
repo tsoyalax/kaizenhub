@@ -360,6 +360,9 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
       assert.ok(/100%/.test(D.querySelector('.w12-ex').textContent) && D.querySelector('.w12-ex').classList.contains('ok')); ok('дорожная карта: Execution Score — среднее по завершённым неделям (неделя 1 закрыта на 100%), зелёный при 85%+');
       { // Weekly Review: закрыть неделю 2 — незавершённая задача уезжает на доску недели 3
         const nm = E(`w12Calc().of(2).find(i => i.st !== 'done')?.x.name`);
+        { E(`window.__st0 = db.prefs.w12.start; db.prefs.w12.start = addDays(today(), 3)`); const sun = E('w12SunOf(1)');
+          assert.ok(E(`parse('${sun}').getDay()`) === 0 && !E('w12CanClose(1)')); E(`db.prefs.w12.start = window.__st0`); ok('закрыть неделю: только с её воскресенья, раньше кнопка неактивна'); }
+        E(`window.__st = db.prefs.w12.start; db.prefs.w12.start = addDays(today(), -60); render()`); await wait(20);   // воскресенье недели 2 уже прошло
         D.querySelector('[data-w12review="2"]').click(); await wait(20);
         assert.ok(D.querySelector('.w12-rvm [data-rvact]')); D.querySelector('[data-rvdo="2"]').click(); await wait(30);
         assert.ok(E('!!db.prefs.w12.weeks[1].review') && E(`w12Calc().of(3).some(i => i.x.name === ${JSON.stringify(nm)})`) && E(`projById(db.prefs.w12.weeks[2].board).name`) === 'Неделя 3'); ok('Weekly Review: неделя закрыта, незавершённое перенесено на доску «Неделя 3»');
