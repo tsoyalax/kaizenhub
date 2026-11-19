@@ -2545,7 +2545,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .kb-next{justify-self:start;margin-top:2px;font-size:11.5px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:7px;padding:2px 8px;opacity:0;transition:opacity .15s;cursor:pointer}
 .kb-card:hover .kb-next,.it-kc:hover .kb-next,.kb-next:focus{opacity:1}.kb-next:hover{color:var(--ink);border-color:var(--line-strong)}
 @media (hover:none){.kb-next{opacity:1}}
-.in-all{width:100%;margin:0 0 8px;height:32px}
+.in-all{width:100%;margin:0 0 8px;height:32px}.in-bar{display:flex;flex-direction:column;gap:0}.in-card{position:relative}.in-pick{position:absolute;top:8px;right:8px}.in-pick input{width:18px;height:18px;accent-color:var(--accent,#2e9d5b);cursor:pointer}.in-card>b{padding-right:26px;display:block}
 .kb-trash{position:fixed;right:24px;bottom:24px;z-index:900;width:120px;height:120px;border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;color:#fff;background:rgba(200,50,50,.85);box-shadow:0 10px 30px rgba(0,0,0,.35);opacity:0;transform:translateY(30px) scale(.9);pointer-events:none;transition:opacity .15s,transform .15s}.kb-trash.on{opacity:1;transform:none;pointer-events:auto}.kb-trash.over{background:#d22;transform:scale(1.12)}.kb-trash *{pointer-events:none}.tg-feed{display:flex;flex-direction:column;gap:8px;margin:8px 0}.tg-msg{border:1px solid var(--line,rgba(127,127,127,.25));border-radius:10px;padding:8px 10px;font-size:13px}.tg-meta{display:flex;align-items:center;gap:6px;font-size:11px;opacity:.7}.tg-x{margin-left:auto;width:22px;height:22px}.tg-msg summary{cursor:pointer;line-height:1.4}.tg-msg p{white-space:pre-wrap;margin:6px 0 0;line-height:1.45}.tg-st{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}.tg-ok{color:var(--ok,#2e9d5b);font-size:12px}.tg-mini{height:26px;font-size:12px;padding:0 8px}.in-parse{display:block;margin:6px 0;height:28px;font-size:12px}.tg-btn{margin-top:6px;margin-right:4px;height:28px;font-size:12px;display:inline-flex;gap:6px;align-items:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tg-steps{padding-left:20px;line-height:1.6}.tg-steps li{margin:6px 0}.tg-code{font-size:14px;padding:2px 6px;border-radius:6px;background:var(--soft,rgba(0,0,0,.06))}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -5484,20 +5484,16 @@ function renderProduction(){
   renderProjectFocus();
   const cur = projById(ui.prodProject);
   const board = app.querySelector('.pf-main .pf-board, .pm-board');
-  const itab = ui.prodTab === 'internal' && cur && !GUEST && !cur._ext;
-  if (cur && !GUEST && !cur._ext && board && !(isInfo() && infoAllOn())){
+  const itab = ui.prodTab === 'internal' && cur && !GUEST && !cur._ext && !isInfo();   // в инфобизнесе вкладки «Внутренние задачи» нет
+  if (cur && !GUEST && !cur._ext && board && !isInfo()){
     board.insertAdjacentHTML('beforebegin', `<div class="prod-tabs kind-seg" role="tablist" aria-label="Вид"><button type="button" data-prodtab="board" aria-pressed="${!itab}">Доска</button><button type="button" data-prodtab="internal" aria-pressed="${!!itab}">Внутренние задачи${(() => { const n = itAll().filter(t => t.project_id === cur.id && t.status !== 'done').length; return n ? ` <span class="pt-n">${n}</span>` : ''; })()}</button></div>`);
     if (itab){ board.outerHTML = internalBoardHtml(cur); return; }
   }
   const p = infoBoard();
   if (!isInfo() || GUEST || !p || projById(ui.prodProject) !== p) return;
-  if (infoAllOn()){ const live = infoBoards().filter(p => p.state !== 'completed'); const itab = ui.prodTab === 'internal';
-    // «Все»: тоже «Доска | Внутренние задачи»; внутренние и регулярные (из «Ведения») — по каждой площадке
-    const n = itAll().filter(t => live.some(p => p.id === t.project_id) && t.status !== 'done').length;
-    const tabs = `<div class="prod-tabs kind-seg" role="tablist" aria-label="Вид"><button type="button" data-prodtab="board" aria-pressed="${!itab}">Доска</button><button type="button" data-prodtab="internal" aria-pressed="${itab}">Внутренние задачи${n ? ` <span class="pt-n">${n}</span>` : ''}</button></div>`;
-    if (itab){ app.innerHTML = infoTabsHtml() + flowAllHtml() + tabs + live.map(p => `<section class="it-allp"><h3>${esc(p.name)}</h3>${internalBoardHtml(p)}</section>`).join(''); return; }
+  if (infoAllOn()){ const live = infoBoards().filter(p => p.state !== 'completed');
     const tl = ui.infoMode === 'timeline' || ui.infoMode === 'together'; const boards = tl ? '' : kbDeptView() ? allBoardsHtml() : kanbanHtml(live, true);
-    app.innerHTML = infoTabsHtml() + flowAllHtml() + tabs + (tl ? togetherHtml(true) : boards); return; }
+    app.innerHTML = infoTabsHtml() + flowAllHtml() + (tl ? togetherHtml(true) : boards); return; }
   app.insertAdjacentHTML('afterbegin', infoTabsHtml() + flowPanelHtml(p, 'prod'));
   const b = app.querySelector('.pf-main .pf-board, .pm-board');
   if (ui.infoMode === 'timeline' || ui.infoMode === 'together'){ if (b) b.outerHTML = timelineHtml(p); }
@@ -5521,17 +5517,20 @@ function inboxColHtml(boards){
     const neu = want && !hit ? `<option value="new:${esc(want)}" selected>+ Новый отдел «${esc(want)}»</option>` : '';
     return neu + ss.map(s => `<option value="${s.id}" ${s === hit ? 'selected' : ''}>${esc(s.name)}</option>`).join(''); };
   const item = x => { const p = boards.find(b => b.id === x.pid) || boards[0]; if (!p) return '';
-    return `<div class="in-card"><b>${esc(x.text)}</b>${x.raw ? `<button type="button" class="ghost in-parse" data-inparse="${x.id}" title="Claude найдёт задачи в этом тексте">✦ Разобрать на задачи</button>` : ''}
+    return `<div class="in-card">${inPick(x)}<b>${esc(x.text)}</b>${x.raw ? `<button type="button" class="ghost in-parse" data-inparse="${x.id}" title="Claude найдёт задачи в этом тексте">✦ Разобрать на задачи</button>` : ''}
       ${x.who || x.due ? `<small>${[x.who ? esc(x.who) : '', x.due ? 'срок ' + fmt(x.due) : ''].filter(Boolean).join(' · ')}</small>` : ''}
       <form class="in-to" data-into="${x.id}">
-        ${one ? '' : `<select data-inb aria-label="Площадка">${boards.map(b => `<option value="${b.id}" ${b.id === p.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select>`}
+        ${one ? `<input type="hidden" data-inb value="${p.id}">` : `<select data-inb aria-label="Площадка">${boards.map(b => `<option value="${b.id}" ${b.id === p.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select>`}
         <select data-ind aria-label="Отдел">${deptSel(p, x.dept)}</select>
         <select data-intt aria-label="Тип задачи">${Object.entries(KB_TYPES).map(([k, l]) => `<option value="${k}" ${(x.ttype || 'oper') === k ? 'selected' : ''} title="${KB_TYPE_HINT[k]}">${l}</option>`).join('')}</select>
         <input type="date" data-indue value="${x.due || ''}" aria-label="Срок">
         <span class="in-act"><button class="primary" title="Утвердить — задача уйдёт в «К выполнению» с выбранным отделом, типом и сроком">Утвердить</button><button type="button" class="icon-btn" data-indel="${x.id}" title="Удалить" aria-label="Удалить «${esc(x.text)}»">${ICON_X}</button></span></form></div>`; };
   return `<section class="pf-col kb-in" aria-label="Входящие"><header><div><b>${INBOX_ICO}Входящие</b><span class="kb-n">${list.length}</span></div><small>После планёрок, созвонов, переговоров — потом разносим по отделам</small>${tgBtn('info', '')}</header>
+    <form class="in-add" id="inAdd"><textarea id="inText" rows="${ui.inBig ? 6 : 2}" placeholder="Вставьте выжимку созвона или планёрки — Claude найдёт задачи. Или впишите задачу" aria-label="Выжимка или задача"></textarea>
+      <button class="primary in-go" ${ui.inBusy ? 'disabled' : ''}>${ui.inBusy ? 'Ищу задачи…' : '✦ Найти задачи'}</button>
+      ${ui.inErr ? `<small class="in-err">${esc(ui.inErr)}</small>` : ''}</form>
     ${tgLogHtml('info', '')}
-    ${list.length > 1 ? `<button type="button" class="ghost in-all" data-inall>Утвердить все (${list.length})</button>` : ''}<div class="pf-cards">${list.map(item).join('') || '<p class="hint">Пусто — всё разобрано</p>'}</div></section>`;
+    ${inApproveBar(list, 'in')}<div class="pf-cards">${list.map(item).join('') || '<p class="hint">Пусто — всё разобрано</p>'}</div></section>`;
 }
 const INBOX_ICO = '<svg class="in-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h4l1.5 3h5L16 13h4"/><path d="M5.5 5h13L21 13v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5z"/></svg>';
 const INBOX_AI_PROMPT = (text, depts, people, existing = []) => `Ты помогаешь руководителю инфобизнеса разобрать выжимку созвона или планёрки.
@@ -5584,7 +5583,24 @@ document.addEventListener('change', e => { const b = e.target.closest?.('[data-i
   if (p && sel) sel.innerHTML = p.stages.filter(s => !isMaint(s) && !isCtStage(p, s)).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join(''); ui.inBoard = b.value; });
 // «Утвердить все» — каждая входящая задача уходит в «К выполнению» с тем отделом, типом и сроком, что стоят в её карточке
 function inboxApproveAll(sel){ let n = 0; for (let k = 0; k < 60; k++){ const f = app.querySelector(sel); if (!f) break; f.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true })); n++; } if (n) toast(`Утверждено задач: ${n} — они в «К выполнению»`); }
-document.addEventListener('click', e => { if (e.target.closest?.('[data-inall]')) inboxApproveAll('[data-into]'); else if (e.target.closest?.('[data-itinall]')) inboxApproveAll('[data-itinto]'); });
+// галочки на карточках «Входящих»: по умолчанию стоят у всех; сняли — задача не утверждается («Утвердить выбранные»)
+const inOff = new Set();
+const inPick = x => `<label class="in-pick" title="Утвердить эту задачу"><input type="checkbox" data-inpick="${x.id}" ${inOff.has(x.id) ? '' : 'checked'} aria-label="Выбрать «${esc(x.text)}»"></label>`;
+function inApproveBar(list, k){
+  if (!list.length) return '';
+  const on = list.filter(x => !inOff.has(x.id)).length;
+  return `<div class="in-bar"><button type="button" class="primary in-all" data-${k}sel ${on ? '' : 'disabled'}>Утвердить выбранные (${on})</button>${list.length > 1 ? `<button type="button" class="ghost in-all" data-${k}all>Утвердить все (${list.length})</button>` : ''}</div>`;
+}
+function inboxApproveSel(attr){ let n = 0;
+  for (let k = 0; k < 60; k++){ const f = [...app.querySelectorAll(`[${attr}]`)].find(f => !inOff.has(f.getAttribute(attr))); if (!f) break; f.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true })); n++; }
+  if (n) toast(`Утверждено задач: ${n} — они в «К выполнению»`); }
+document.addEventListener('change', e => { const c = e.target.closest?.('[data-inpick]'); if (!c) return; c.checked ? inOff.delete(c.dataset.inpick) : inOff.add(c.dataset.inpick); render(); });
+document.addEventListener('click', e => {
+  if (e.target.closest?.('[data-inall]')){ inOff.clear(); inboxApproveAll('[data-into]'); }
+  else if (e.target.closest?.('[data-itinall]')){ inOff.clear(); inboxApproveAll('[data-itinto]'); }
+  else if (e.target.closest?.('[data-insel]')) inboxApproveSel('data-into');
+  else if (e.target.closest?.('[data-itinsel]')) inboxApproveSel('data-itinto');
+});
 // Telegram → «Входящие»: голосовые и посты подключённого канала. Сервер (api/telegram.js) расшифровывает голос (Whisper)
 // и кладёт текст в data/users/<я>/tgdrops/<id>; здесь Claude находит задачи (без повторов) и документ удаляется.
 let TG_BOT = '';   // имя бота спрашиваем у сервера (api/telegram?me=1)
@@ -9362,12 +9378,13 @@ function internalBoardHtml(p){
   // «Входящие» внутренних задач: выжимка созвона → Claude находит задачи (отдел, проект, срок) → «В задачи»
   const inbox = (db.prefs?.itInbox || []).filter(x => x.pid === p.id);   // у каждого проекта — свои входящие
   const inCard = x => { const hit = deps.find(d => norm(d.name) === norm(x.dept || '')); const sel = hit || !x.dept ? deptSel(hit?.id || '', 'data-itind') : deptSel('', 'data-itind').replace('<option value="">', `<option value="new:${esc(x.dept)}" selected>+ Новый отдел «${esc(x.dept)}»</option><option value="">`);
-    return `<div class="in-card"><b>${esc(x.text)}</b>${x.raw ? `<button type="button" class="ghost in-parse" data-itinparse="${x.id}" title="Claude найдёт задачи в этом тексте">✦ Разобрать на задачи</button>` : ''}${x.who || x.due ? `<small>${[x.who ? esc(x.who) : '', x.due ? 'срок ' + fmt(x.due) : ''].filter(Boolean).join(' · ')}</small>` : ''}
+    return `<div class="in-card">${inPick(x)}<b>${esc(x.text)}</b>${x.raw ? `<button type="button" class="ghost in-parse" data-itinparse="${x.id}" title="Claude найдёт задачи в этом тексте">✦ Разобрать на задачи</button>` : ''}${x.who || x.due ? `<small>${[x.who ? esc(x.who) : '', x.due ? 'срок ' + fmt(x.due) : ''].filter(Boolean).join(' · ')}</small>` : ''}
       <form class="in-to" data-itinto="${x.id}">${sel}
         <input type="date" data-itindue value="${x.due || ''}" aria-label="Срок"><span class="in-act"><button class="primary" title="Утвердить — задача уйдёт в «К выполнению» с выбранным отделом, типом и сроком">Утвердить</button><button type="button" class="icon-btn" data-itindel="${x.id}" aria-label="Удалить">${ICON_X}</button></span></form></div>`; };
-  const inCol = can ? `<section class="pf-col kb-in" aria-label="Входящие"><header><div><b>${INBOX_ICO}Входящие</b><span class="kb-n">${inbox.length}</span></div><small>После планёрок, созвонов — потом разносим по отделам и проектам</small>${tgBtn('it', p.id)}</header>
-    ${tgLogHtml('it', p.id)}
-    ${inbox.length > 1 ? `<button type="button" class="ghost in-all" data-itinall>Утвердить все (${inbox.length})</button>` : ''}<div class="pf-cards">${inbox.map(inCard).join('') || '<p class="hint">Пусто — всё разобрано</p>'}</div></section>` : '';
+  const inCol = can ? `<section class="pf-col kb-in" aria-label="Входящие"><header><div><b>${INBOX_ICO}Входящие</b><span class="kb-n">${inbox.length}</span></div><small>После планёрок, созвонов — потом разносим по отделам и проектам</small></header>
+    <form class="in-add" id="itInAdd"><textarea id="itInText" rows="${ui.inBig ? 6 : 2}" placeholder="Вставьте выжимку созвона или планёрки — Claude найдёт задачи" aria-label="Выжимка"></textarea>
+      <button class="primary in-go" ${ui.itInBusy ? 'disabled' : ''}>${ui.itInBusy ? 'Ищу задачи…' : '✦ Найти задачи'}</button>${ui.itInErr ? `<small class="in-err">${esc(ui.itInErr)}</small>` : ''}</form>
+    ${inApproveBar(inbox, 'itin')}<div class="pf-cards">${inbox.map(inCard).join('') || '<p class="hint">Пусто — всё разобрано</p>'}</div></section>` : '';
   const nOpen = id => base.filter(t => t.status !== 'done' && (id === '-' ? !t.dept || !deps.some(d => d.id === t.dept) : t.dept === id)).length;
   const deptBtns = `<div class="kb-depts"><button type="button" class="kb-dbtn${!ui.itDept ? ' on' : ''}" data-itdeptf=""><span class="dept-tile kb-all" aria-hidden="true">${DEPT_SVG('<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>')}</span><b>Все отделы</b><small>${base.filter(t => t.status !== 'done').length} в работе</small></button>
     ${deps.map(d => `<button type="button" class="kb-dbtn${ui.itDept === d.id ? ' on' : ''}" data-itdeptf="${d.id}" style="--kh:${kbHue(d.name)}">${deptIco(d.name)}<b>${esc(d.name)}</b><small>${nOpen(d.id)} в работе</small>${can ? `<span class="it-dact"><i data-itdeptren="${d.id}" title="Переименовать">${PEN_ICO}</i><i data-itdeptdel="${d.id}" title="Удалить отдел">${ICON_X}</i></span>` : ''}</button>`).join('')}

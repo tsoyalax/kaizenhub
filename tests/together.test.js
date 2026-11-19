@@ -43,7 +43,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
      ui.view = 'production'; ui.prodProject = ig.id; ui.infoMode = 'board'; commit();`); await wait(100);
   assert.ok(!$('[data-infomode="together"]') && !$('[data-tlscope]')); ok('отдельной кнопки «Вместе» и выпадающего списка нет');
   assert.ok($('[data-ipall]')); ok('в строке инфоповодов — «Все»');
-  E(`ui.infoAll = true; ui.prodTab = 'internal'; render()`); assert.ok($('[data-prodtab="internal"][aria-pressed="true"]') && D.querySelectorAll('.it-allp').length === 2); ok('во «Все» — «Внутренние задачи» всех площадок');
+  E(`ui.infoAll = true; ui.prodTab = 'internal'; render()`); assert.ok(!$('[data-prodtab]') && !D.querySelector('.it-allp')); E(`ui.infoAll = false; render()`); assert.ok(!$('[data-prodtab]')); ok('в инфобизнесе вкладки «Внутренние задачи» нет — ни во «Все», ни на площадке');
   E(`ui.prodTab = 'board'; ui.infoAll = false; render()`);
   $('[data-ipall]').click(); await wait(100);
   { const cols = [...D.querySelectorAll('.kb-board .kb-col')].map(c => c.querySelector('header b').textContent);
@@ -126,7 +126,7 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   // «Входящие»: колонка слева на канбане «Производства»; выжимка созвона → Claude находит задачи → разнести по отделам
   assert.ok(!D.querySelector('.tabs [data-view="inbox"]')); E(`ui.view = 'production'; ui.infoAll = false; ui.prodProject = ig.id; ui.infoMode = 'board'; ui.kbView = 'status'; ui.pfEdit = false; render()`);
   assert.ok($('.kb-board > .kb-in:first-child')); ok('«Входящие» — первой колонкой в «Производстве», не отдельным пунктом меню');
-  assert.ok(!D.getElementById('inSrc') && !D.getElementById('inText') && D.querySelector('.kb-in .tg-feed')); ok('во «Входящих» вместо поля — лента голосовых и текстов из Telegram');
+  assert.ok(!D.getElementById('inSrc') && D.getElementById('inText') && D.querySelector('.kb-in .tg-feed')); ok('во «Входящих» — поле для текста и лента голосовых и текстов из Telegram');
   E(`_sample = { json: async p => { window.__inP = p; return { tasks:[{ title:'Запустить рекламу VSL', dept:'${E('ig.stages.find(s => !isCtStage(ig, s) && !isMaint(s)).name')}', type:'strat', due:'2026-12-01', who:'Эм' }, { title:'', dept:'x' }] }; } }`);
   w.eval('inboxAi(' + JSON.stringify('Обсудили запуск. Решили: запустить рекламу VSL до 1 декабря, отвечает Эм.') + ')'); await wait(80);
   assert.ok(/реальные|РЕАЛЬНЫЕ/.test(E('window.__inP')) && E('db.prefs.inbox.length') === 1 && E(`db.prefs.inbox.find(x => x.text === 'Запустить рекламу VSL').due`) === '2026-12-01'); ok('«Найти задачи»: Claude выделяет задачи из выжимки — отдел, тип, срок');
@@ -170,6 +170,12 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
   { const p = E('JSON.stringify(bfPlan(bfCfg()))'); const q = JSON.parse(p); assert.ok(Math.round(q.code) === 21984 && Math.round(q.pub * 10) === 366 && Math.round(q.client) === 45); ok('бета-воронка: план как в таблице (21 984 кодовых слова, 36,6 рилс, 45 клиентов)'); }
   { const i = D.querySelector('[data-bffact$="|subs"]'); i.value = '500'; i.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(20); assert.ok(/500/.test($('.bf-t').textContent)); ok('факт по дню — в итог «Факт»'); }
   assert.ok($('.bfv') && !/Рилс/.test($('.bfv').textContent) && ![...D.querySelectorAll('.bf-t:not(.bf-d) td b')].some(b => /Рилс/.test(b.textContent)) && /Рилс снято/.test($('.bf-dash').textContent)); ok('рилсы — сверху в дашборде, не в воронке');
+  { // галочки во «Входящих»: стоят у всех, сняли одну — «Утвердить выбранные» оставляет её во входящих
+    E(`ui.view = 'production'; ui.infoAll = false; ui.prodProject = ig.id; ui.infoMode = 'board'; ui.kbDept = ''; db.prefs.inbox = [{ id:'a1', text:'Задача А', at:'2026-11-20' }, { id:'a2', text:'Задача Б', at:'2026-11-20' }, { id:'a3', text:'Задача В', at:'2026-11-20' }]; render()`); await wait(50);
+    assert.equal(D.querySelectorAll('.kb-in [data-inpick]:checked').length, 3); ok('входящие: галочки по умолчанию стоят у всех');
+    const c = D.querySelector('[data-inpick="a2"]'); c.checked = false; c.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
+    assert.ok(/выбранные \(2\)/.test(D.querySelector('[data-insel]').textContent)); D.querySelector('[data-insel]').click(); await wait(100);
+    assert.deepEqual(E('db.prefs.inbox.map(x => x.id)'), ['a2']); ok('входящие: «Утвердить выбранные» — неотмеченная задача осталась во входящих'); }
   assert.deepEqual(o.errors.filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });
