@@ -2546,7 +2546,7 @@ svg.clip{width:14px;height:14px;flex:none}
 .kb-card:hover .kb-next,.it-kc:hover .kb-next,.kb-next:focus{opacity:1}.kb-next:hover{color:var(--ink);border-color:var(--line-strong)}
 @media (hover:none){.kb-next{opacity:1}}
 .in-all{width:100%;margin:0 0 8px;height:32px}
-.tg-btn{margin-top:6px;height:28px;font-size:12px;display:inline-flex;gap:6px;align-items:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tg-steps{padding-left:20px;line-height:1.6}.tg-steps li{margin:6px 0}.tg-code{font-size:14px;padding:2px 6px;border-radius:6px;background:var(--soft,rgba(0,0,0,.06))}
+.in-parse{display:block;margin:6px 0;height:28px;font-size:12px}.tg-btn{margin-top:6px;margin-right:4px;height:28px;font-size:12px;display:inline-flex;gap:6px;align-items:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tg-steps{padding-left:20px;line-height:1.6}.tg-steps li{margin:6px 0}.tg-code{font-size:14px;padding:2px 6px;border-radius:6px;background:var(--soft,rgba(0,0,0,.06))}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
@@ -5521,7 +5521,7 @@ function inboxColHtml(boards){
     const neu = want && !hit ? `<option value="new:${esc(want)}" selected>+ Новый отдел «${esc(want)}»</option>` : '';
     return neu + ss.map(s => `<option value="${s.id}" ${s === hit ? 'selected' : ''}>${esc(s.name)}</option>`).join(''); };
   const item = x => { const p = boards.find(b => b.id === x.pid) || boards[0]; if (!p) return '';
-    return `<div class="in-card"><b>${esc(x.text)}</b>
+    return `<div class="in-card"><b>${esc(x.text)}</b>${x.raw ? `<button type="button" class="ghost in-parse" data-inparse="${x.id}" title="Claude найдёт задачи в этом тексте">✦ Разобрать на задачи</button>` : ''}
       ${x.who || x.due ? `<small>${[x.who ? esc(x.who) : '', x.due ? 'срок ' + fmt(x.due) : ''].filter(Boolean).join(' · ')}</small>` : ''}
       <form class="in-to" data-into="${x.id}">
         ${one ? '' : `<select data-inb aria-label="Площадка">${boards.map(b => `<option value="${b.id}" ${b.id === p.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select>`}
@@ -5594,7 +5594,7 @@ const tgState = { links:null, busy:new Set() };
 function tgBtn(kind, pid){
   if (GUEST || !cloud.store?.rpc) return '';
   const on = (tgState.links || []).filter(l => l.chat_id && l.kind === kind && (kind !== 'it' || l.pid === pid));
-  return `<button type="button" class="ghost tg-btn" data-tgcon="${kind}|${esc(pid || '')}" title="Голосовые из Telegram-канала попадут сюда — Claude найдёт в них задачи">${TG_ICO.replace("<svg ", "<svg width=\"14\" height=\"14\" ")} ${on.length ? 'Telegram: ' + esc(on.map(l => l.chat_title || 'канал').join(', ')) : 'Подключить Telegram'}</button>`;
+  return `<button type="button" class="ghost tg-btn" data-tgcon="${kind}|${esc(pid || '')}" title="Голосовые из Telegram-канала попадут сюда — Claude найдёт в них задачи">${TG_ICO.replace("<svg ", "<svg width=\"14\" height=\"14\" ")} ${on.length ? 'Telegram: ' + esc(on.map(l => l.chat_title || 'канал').join(', ')) : 'Подключить Telegram'}</button>${on.length ? `<button type="button" class="ghost tg-btn" data-tgcheck title="Забрать новые голосовые и посты из канала">↻ Проверить</button>` : ''}`;
 }
 async function tgLoad(){ try { tgState.links = await cloud.store.rpc('tg_links_mine', {}) || []; } catch(e) { tgState.links = []; } }
 document.addEventListener('click', async e => {
@@ -5631,8 +5631,8 @@ async function tgTake(d){
     // Claude не ответил — кладём текст во «Входящие» как есть, чтобы ничего не потерять
     const t = String(x.text || '').trim().slice(0, 300);
     if (t && !/повтор|не нашлось/i.test(e?.message || '')){ db.prefs = db.prefs || {};
-      if (x.kind === 'it') db.prefs.itInbox = [...(db.prefs.itInbox || []), { id:uid(), text:t, at:new Date().toISOString(), by:'Telegram', pid:x.pid, dept:'', due:'', who:'' }];
-      else db.prefs.inbox = [...inboxAll(), { id:uid(), text:t, src:'tg', at:new Date().toISOString(), by:'Telegram' }];
+      if (x.kind === 'it') db.prefs.itInbox = [...(db.prefs.itInbox || []), { id:uid(), text:t, raw:String(x.text).slice(0, 20000), at:new Date().toISOString(), by:'Telegram', pid:x.pid, dept:'', due:'', who:'' }];
+      else db.prefs.inbox = [...inboxAll(), { id:uid(), text:t, raw:String(x.text).slice(0, 20000), src:'tg', at:new Date().toISOString(), by:'Telegram' }];
       commit(); render(); }
   } finally { tgState.busy.delete(id); }
 }
@@ -5643,6 +5643,22 @@ function watchTg(){
   shared.subs.set('__tg', [cloud.store.collection(`data/users/${cloud.uid}/tgdrops`).onSnapshot(snap => { tgDocs = snap.docs; tgDocs.forEach(tgTake); }, () => {})]);
 }
 function tgRetry(){ tgDocs.forEach(tgTake); }
+document.addEventListener('click', async e => {
+  if (e.target.closest?.('[data-tgcheck]')){
+    try { const snap = await cloud.store.collection(`data/users/${cloud.uid}/tgdrops`).get(); tgDocs = snap.docs;
+      if (!snap.docs.length) toast('Новых сообщений из Telegram нет'); else { toast(`Из Telegram: ${snap.docs.length} — разбираю…`); snap.docs.forEach(tgTake); } } catch(err) { toast('Нет связи'); }
+    return; }
+  // текст из Telegram, который не удалось разобрать сразу, — разобрать сейчас
+  const b = e.target.closest?.('[data-inparse],[data-itinparse]'); if (!b) return;
+  const it = !!b.dataset.itinparse; const id = b.dataset.inparse || b.dataset.itinparse;
+  const list = it ? (db.prefs.itInbox || []) : inboxAll(); const x = list.find(y => y.id === id); if (!x) return;
+  b.disabled = true; b.textContent = 'Ищу задачи…';
+  try {
+    const r = it ? await itInboxExtract(x.raw, x.pid) : await inboxExtract(x.raw, 'tg');
+    if (it) db.prefs.itInbox = (db.prefs.itInbox || []).filter(y => y.id !== id); else db.prefs.inbox = inboxAll().filter(y => y.id !== id);
+    commit(); render(); toast(`Найдено задач: ${r.n}${r.dup ? ` · повторов отброшено: ${r.dup}` : ''}`);
+  } catch(err) { toast(sampleErr(err)); b.disabled = false; b.textContent = '✦ Разобрать на задачи'; }
+});
 setInterval(tgRetry, 30000);   // открыли нужное пространство — подбираем ожидающие тексты
 document.addEventListener('focusin', e => { if (e.target.id === 'inText' && !ui.inBig){ ui.inBig = true; e.target.rows = 6; } });
 document.addEventListener('submit', e => {
@@ -9294,7 +9310,7 @@ function internalBoardHtml(p){
   // «Входящие» внутренних задач: выжимка созвона → Claude находит задачи (отдел, проект, срок) → «В задачи»
   const inbox = (db.prefs?.itInbox || []).filter(x => x.pid === p.id);   // у каждого проекта — свои входящие
   const inCard = x => { const hit = deps.find(d => norm(d.name) === norm(x.dept || '')); const sel = hit || !x.dept ? deptSel(hit?.id || '', 'data-itind') : deptSel('', 'data-itind').replace('<option value="">', `<option value="new:${esc(x.dept)}" selected>+ Новый отдел «${esc(x.dept)}»</option><option value="">`);
-    return `<div class="in-card"><b>${esc(x.text)}</b>${x.who || x.due ? `<small>${[x.who ? esc(x.who) : '', x.due ? 'срок ' + fmt(x.due) : ''].filter(Boolean).join(' · ')}</small>` : ''}
+    return `<div class="in-card"><b>${esc(x.text)}</b>${x.raw ? `<button type="button" class="ghost in-parse" data-itinparse="${x.id}" title="Claude найдёт задачи в этом тексте">✦ Разобрать на задачи</button>` : ''}${x.who || x.due ? `<small>${[x.who ? esc(x.who) : '', x.due ? 'срок ' + fmt(x.due) : ''].filter(Boolean).join(' · ')}</small>` : ''}
       <form class="in-to" data-itinto="${x.id}">${sel}
         <input type="date" data-itindue value="${x.due || ''}" aria-label="Срок"><span class="in-act"><button class="primary" title="Утвердить — задача уйдёт в «К выполнению» с выбранным отделом, типом и сроком">Утвердить</button><button type="button" class="icon-btn" data-itindel="${x.id}" aria-label="Удалить">${ICON_X}</button></span></form></div>`; };
   const inCol = can ? `<section class="pf-col kb-in" aria-label="Входящие"><header><div><b>${INBOX_ICO}Входящие</b><span class="kb-n">${inbox.length}</span></div><small>После планёрок, созвонов — потом разносим по отделам и проектам</small>${tgBtn('it', p.id)}</header>
