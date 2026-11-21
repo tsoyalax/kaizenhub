@@ -176,6 +176,13 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     const c = D.querySelector('[data-inpick="a2"]'); c.checked = false; c.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
     assert.ok(/выбранные \(2\)/.test(D.querySelector('[data-insel]').textContent)); D.querySelector('[data-insel]').click(); await wait(100);
     assert.deepEqual(E('db.prefs.inbox.map(x => x.id)'), ['a2']); ok('входящие: «Утвердить выбранные» — неотмеченная задача осталась во входящих'); }
+  { // отделы: «+ Отдел» на доске; отделы шаблона без задач не показываются; внутренние задачи — только своего пространства
+    E(`ui.view = 'production'; ui.infoAll = false; ui.prodProject = ig.id; ui.infoMode = 'board'; ui.kbDept = ''; render()`); await wait(30);
+    D.querySelector('[data-kbdeptadd]').click(); await wait(20);
+    D.getElementById('npName').value = 'Ассистенты'; D.getElementById('npForm').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(40);
+    assert.ok([...D.querySelectorAll('.kb-dbtn b')].some(b => b.textContent === 'Ассистенты')); ok('отделы: «+ Отдел» создаёт отдел, он сразу виден плиткой');
+    assert.ok(!E(`kbDeptStages(ig).some(s => !s.custom && !(s.subs || []).some(x => !x.cycle))`)); ok('отделы: пустые отделы из шаблона в выбор не попадают');
+    assert.ok(!E(`itHere({ id:'z', space:'sOther123' })`) && E(`itHere({ id:'z', space:itSpace() })`)); ok('внутренние задачи: из другого пространства не подтягиваются'); }
   { // ответственный во «Входящих»: по имени или по роли из голосового; при «Утвердить» задача получает ответственного
     E(`db.users.push({ id:'uAnya', name:'Аня Петрова', dept:'Ассистент', role:'specialist', status:'active' }, { id:'uMont', name:'Игорь', dept:'Монтаж и моушн', role:'specialist', status:'active' })`);
     assert.equal(E(`inboxWho('ассистентам')`), 'uAnya'); assert.equal(E(`inboxWho('Ане')`), 'uAnya'); assert.equal(E(`inboxWho('монтажёру')`), 'uMont'); assert.equal(E(`inboxWho('')`), ''); ok('входящие: «ассистентам», «Ане», «монтажёру» → нужный человек');

@@ -5596,7 +5596,10 @@ const INBOX_SRC = [['meet', 'Планёрка'], ['talk', 'Переговоры'
 const inboxAll = () => (db.prefs?.inbox || []);
 // колонка «Входящие» — слева на канбане «Производства», отличается оформлением (пунктир, свой цвет).
 // Вставили выжимку созвона/планёрки → «Найти задачи»: Claude выделяет реальные задачи (отдел, тип, срок, кто) → карточки входящих.
-const inboxDepts = boards => [...new Map(boards.flatMap(p => p.stages.filter(s => !isMaint(s) && !isCtStage(p, s)).map(s => [norm(s.name), s.name]))).values()];
+// отделы доски, которые реально есть в этом пространстве: с задачами или созданные здесь вручную (s.custom).
+// Отделы из шаблона без единой задачи («Американский рынок», «Эфиры»…) не показываем — они пришли не из этого пространства
+const kbDeptStages = p => { const all = p.stages.filter(s => !isMaint(s) && !isCtStage(p, s)); const live = all.filter(s => s.custom || (s.subs || []).some(x => !x.cycle)); return live.length ? live : all; };
+const inboxDepts = boards => [...new Map(boards.flatMap(p => kbDeptStages(p).map(s => [norm(s.name), s.name]))).values()];
 // ответственный по словам из голосового: имя («Аня», «Анне») или роль/отдел («ассистентам», «монтажёру»)
 const whoStem = v => norm(v).replace(/[^a-zа-яё ]/g, '').split(' ').filter(Boolean).map(w => w.slice(0, Math.max(3, w.length - 2)));
 function inboxWho(who){
@@ -5621,7 +5624,7 @@ function inboxColHtml(boards){
   const src = ui.inSrc || 'meet'; const srcName = k => (INBOX_SRC.find(x => x[0] === k) || INBOX_SRC.at(-1))[1];
   const one = boards.length === 1;
   // отдел, который предложил Claude и которого ещё нет, — первой строкой «+ Новый отдел «…»» (создастся при «В задачи»)
-  const deptSel = (p, want) => { const ss = p.stages.filter(s => !isMaint(s) && !isCtStage(p, s)); const hit = ss.find(s => norm(s.name) === norm(want || ''));
+  const deptSel = (p, want) => { const ss = kbDeptStages(p); const hit = ss.find(s => norm(s.name) === norm(want || ''));
     const neu = want && !hit ? `<option value="new:${esc(want)}" selected>+ Новый отдел «${esc(want)}»</option>` : '';
     return neu + ss.map(s => `<option value="${s.id}" ${s === hit ? 'selected' : ''}>${esc(s.name)}</option>`).join(''); };
   const item = x => { const p = boards.find(b => b.id === x.pid) || boards[0]; if (!p) return '';
@@ -5811,7 +5814,7 @@ document.addEventListener('submit', e => {
   const x = inboxAll().find(y => y.id === f.dataset.into); if (!x) return;
   const p = projById(f.querySelector('[data-inb]')?.value) || infoBoards().find(b => b.state !== 'completed'); const dv = f.querySelector('[data-ind]').value;
   let s = p?.stages.find(y => y.id === dv);
-  if (!s && p && dv.startsWith('new:') && canEditProject(p)){ const nm = dv.slice(4).trim().slice(0, 40); s = p.stages.find(y => norm(y.name) === norm(nm)); if (!s){ s = addStage(p); s.name = nm; addLog(p, `Добавлен отдел «${nm}» (предложил Claude по задачам из входящих)`); } }
+  if (!s && p && dv.startsWith('new:') && canEditProject(p)){ const nm = dv.slice(4).trim().slice(0, 40); s = p.stages.find(y => norm(y.name) === norm(nm)); if (!s){ s = addStage(p); s.name = nm; s.custom = true; addLog(p, `Добавлен отдел «${nm}» (предложил Claude по задачам из входящих)`); } }
   if (!p || !s || !canEditProject(p)) return;
   const nx = { id:uid(), name:x.text, done:false, at:new Date().toISOString(), src:x.src }; if (f.querySelector('[data-intt]').value === 'strat') nx.ttype = 'strat';
   const due = f.querySelector('[data-indue]').value; if (due) nx.due_date = due;
@@ -6360,7 +6363,7 @@ function kbItems(boards){
 }
 function kanbanHtml(boards, all = false){
   const t0 = today(); const items = kbItems(boards);
-  const depts = [...new Map(items.map(i => [norm(i.s.name), i.s.name])).values()];
+  const depts = [...new Map([...items.map(i => [norm(i.s.name), i.s.name]), ...boards.flatMap(p => p.stages.filter(s => s.custom && !isMaint(s)).map(s => [norm(s.name), s.name]))]).values()];
   if (ui.kbDept && !depts.some(d => norm(d) === ui.kbDept)) ui.kbDept = '';
   const dueOf = i => { const t = taskFor(i.p.id, i.s.id, i.x.id); return t?.due_date || i.x.due_date || ''; };
   const wk = addDays(t0, 7);
@@ -6377,6 +6380,7 @@ function kanbanHtml(boards, all = false){
   // отделы — большими кнопками-плитками; тип задачи и сроки — за иконкой «Фильтры»
   const filters = `<div class="kb-filters">
     <div class="kb-depts" role="group" aria-label="Отдел"><button type="button" class="kb-dbtn${!ui.kbDept ? ' on' : ''}" data-kbdept="" aria-pressed="${!ui.kbDept}"><span class="dept-tile kb-all" aria-hidden="true">${DEPT_SVG('<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>')}</span><b>Все отделы</b><small>${items.filter(i => i.st !== 'done').length} в работе</small></button>${depts.map(d => `<button type="button" class="kb-dbtn${ui.kbDept === norm(d) ? ' on' : ''}" data-kbdept="${esc(norm(d))}" aria-pressed="${ui.kbDept === norm(d)}" style="--kh:${kbHue(d)}">${deptIco(d)}<b>${esc(d)}</b><small>${cntDept(norm(d))} в работе</small></button>`).join('')}
+      ${boards.length === 1 && canEditProject(boards[0]) && !GUEST ? `<button type="button" class="kb-dbtn kb-dnew" data-kbdeptadd="${boards[0].id}"><span class="dept-tile kb-all" aria-hidden="true">+</span><b>Отдел</b><small>добавить</small></button>` : ''}
       <button type="button" class="kb-fbtn${ui.kbFOpen ? ' on' : ''}${nF ? ' act' : ''}" data-kbfopen aria-expanded="${!!ui.kbFOpen}" title="Фильтры: тип задачи и сроки" aria-label="Фильтры"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4 1.5v-8z"/></svg>${nF ? `<span>${nF}</span>` : ''}</button></div>
     ${ui.kbFOpen ? `<div class="kb-fpanel">
     <div class="kb-frow" role="group" aria-label="Тип задачи">${chip('data-kbtype', '', 'Все задачи', !ui.kbType)}${chip('data-kbtype', 'strat', 'Стратегические', ui.kbType === 'strat', cntT('strat'))}${chip('data-kbtype', 'oper', 'Операционные', ui.kbType === 'oper', cntT('oper'))}</div>
@@ -6389,7 +6393,7 @@ function kanbanHtml(boards, all = false){
       <small>${whoChip(x.cycle ? contentWho(p, s, x, t) : whoId(p, s, t))}${due ? ` · <span class="pf-due${due < t0 && !done ? ' late' : ''}">${t?.start_date ? rangeTxt(t.start_date, due) : 'срок ' + fmt(due)}</span>` : !done ? ' · <span class="pf-due nodue" title="У задачи нет срока — поставьте его в карточке">без срока</span>' : ''}</small>
       ${pr && pr.total && !done ? `${progTiles(pr)}<small class="pg-n">${pr.n} из ${pr.total}</small>` : ''}${mv && st !== 'done' ? `<span class="kb-next" role="button" tabindex="0" data-kbnext="${p.id}|${s.id}|${x.id}|${st === 'todo' ? 'doing' : 'done'}" title="${st === 'todo' ? 'В работу' : 'Готово'}">${st === 'todo' ? 'В работу →' : 'Готово ✓'}</span>` : ''}</button>`; };
   const p0 = boards.length === 1 ? boards[0] : null; const canAdd = p0 && canEditProject(p0) && !GUEST;
-  const addDepts = p0 ? p0.stages.filter(s => !isMaint(s) && !isCtStage(p0, s)) : [];   // «Контента» в выборе отдела нет
+  const addDepts = p0 ? kbDeptStages(p0) : [];   // «Контента» в выборе отдела нет
   const defDept = addDepts.find(s => norm(s.name) === ui.kbDept)?.id || ui.kbAddDept || addDepts[0]?.id;
   const addForm = canAdd && addDepts.length ? `<form class="kb-add" data-kbadd="${p0.id}"><input placeholder="Новая задача" aria-label="Новая задача" maxlength="200">
       <div class="kb-add-row"><select data-kbadddept aria-label="Отдел">${addDepts.map(s => `<option value="${s.id}" ${s.id === defDept ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>
@@ -6403,6 +6407,9 @@ function kanbanHtml(boards, all = false){
     return `<section class="pf-col kb-col kb-${k}" data-kbcol="${k}" aria-label="${label}"><header><div><b>${label}</b>${(() => { const sub = list.reduce((m, i) => m + (taskFor(i.p.id, i.s.id, i.x.id)?.checklist || []).filter(c => k === 'done' || !c.done).length, 0); return `<span class="kb-n" title="Задач: ${list.length}, подзадач: ${sub}">${list.length + sub}</span>`; })()}</div></header>
       <div class="pf-cards">${k === 'todo' ? addForm : ''}${vis.map(card).join('') || '<p class="hint">Задач нет</p>'}${vis.length < list.length ? `<button type="button" class="ghost ct-more" data-kbmore="${k}">Показать все (${list.length})</button>` : ''}</div></section>`; }).join('')}</div>`;
 }
+document.addEventListener('click', e => { const a = e.target.closest?.('[data-kbdeptadd]'); if (!a) return; const p = projById(a.dataset.kbdeptadd); if (!p || !canEditProject(p)) return;
+  askText('Новый отдел', '', v => { const nm = v.trim().slice(0, 40); if (!nm) return; let s = p.stages.find(y => !isMaint(y) && norm(y.name) === norm(nm));
+    if (!s){ s = addStage(p); s.name = nm; } s.custom = true; addLog(p, `Добавлен отдел «${nm}»`); ui.kbDept = norm(nm); ui.kbAddDept = s.id; commit(); render(); toast(`Отдел «${nm}» добавлен`); }); });
 function kbMove(key, st){
   const [pid, sid, xid] = key.split('|'); const p = projById(pid); const s = p?.stages.find(y => y.id === sid); const x = s?.subs?.find(y => y.id === xid);
   if (!x || !canMoveKb(p)) return; const was = kbStatus(p, s, x); if (was === st) return;
@@ -9292,9 +9299,13 @@ function watchIT(){
   IT.subs.push(cloud.store.collection('it').where('memberIds', 'array-contains', GUEST ? cloud.uid : OWNER()).onSnapshot(on, () => {}));
 }
 const itLocal = () => !cloud.store || !cloud.uid;
-const itAll = () => itLocal() ? (db.itasks || []) : IT.list;
+// внутренние задачи хранятся общим списком (it/<id>) — показываем только задачи этого пространства (t.space);
+// старые без метки: с проектом — по тому, есть ли проект здесь; без проекта (личные) — везде, как раньше
+const itSpace = () => ORG ? 'org:' + ORG : SPACE || 'main';
+const itHere = t => GUEST ? true : t.space ? t.space === itSpace() : t.project_id ? !!db?.projects?.some(p => p.id === t.project_id) : true;
+const itAll = () => (itLocal() ? (db.itasks || []) : IT.list).filter(itHere);
 async function itSave(t){
-  t.updated_at = new Date().toISOString();
+  t.updated_at = new Date().toISOString(); if (!t.space) t.space = itSpace();
   if (itLocal()){ db.itasks = db.itasks || []; const i = db.itasks.findIndex(x => x.id === t.id); if (i >= 0) db.itasks[i] = t; else db.itasks.push(t); commit(); return; }
   const owner = t._owner || OWNER(); const acc = accOf(userById(t.assignee_id));
   const members = [...new Set([owner, ...(t._members || []).filter(x => x !== owner), ...(acc && !t._members ? [acc] : [])])];
