@@ -251,6 +251,20 @@ select pg_temp.expect('tg: владелец видит текст', pg_temp.rows
 select pg_temp.expect('tg: посторонний не видит текст', pg_temp.rows_as(:S, $q$select * from docs where parent like '%/tgdrops'$q$) = 0, true);
 select pg_temp.expect('tg: владелец забирает (удаляет) текст', pg_temp.try(:O, $q$select doc_delete(path) from docs where parent = 'data/users/00000000-0000-0000-0000-00000000000a/tgdrops'$q$), true);
 select pg_temp.expect('tg: текст удалён', (select count(*) from docs where parent like '%/tgdrops') = 0, true);
+-- Telegram: диалог (черновик, контекст, подтверждённые задачи)
+select pg_temp.expect('tg2: владелец пишет контекст своего канала', pg_temp.try(:O, $q$select tg_link_ctx('info', null, '{"depts":["Контент"]}')$q$), true);
+select pg_temp.expect('tg2: контекст записался', (select ctx -> 'depts' ->> 0 = 'Контент' from tg_links where chat_id = 777), true);
+select pg_temp.expect('tg2: посторонний не трогает чужой контекст', pg_temp.try(:S, $q$select tg_link_ctx('info', null, '{"depts":["x"]}')$q$) and (select ctx -> 'depts' ->> 0 = 'Контент' from tg_links where chat_id = 777), true);
+select pg_temp.expect('tg2: без секрета контекст не прочитать', pg_temp.try('', 'select tg_ctx(''wrong'', 777)'), false);
+select pg_temp.expect('tg2: сервер читает контекст', pg_temp.rows_as('', 'select 1 where tg_ctx(' || quote_literal(:'tgsec') || ', 777) -> ''ctx'' -> ''depts'' ->> 0 = ''Контент''') = 1, true);
+select pg_temp.expect('tg2: черновик без секрета не записать', pg_temp.try('', 'select tg_draft_set(''wrong'', 777, ''[{"title":"a"}]'', 1)'), false);
+select pg_temp.expect('tg2: сервер пишет черновик', pg_temp.rows_as('', 'select 1 where tg_draft_set(' || quote_literal(:'tgsec') || ', 777, ''[{"title":"Снять ролик"}]'', 5)') = 1, true);
+select pg_temp.expect('tg2: сервер читает черновик', pg_temp.rows_as('', 'select 1 where tg_draft_get(' || quote_literal(:'tgsec') || ', 777) -> ''tasks'' -> 0 ->> ''title'' = ''Снять ролик''') = 1, true);
+select pg_temp.expect('tg2: черновик не виден напрямую', pg_temp.try(:O, $q$select * from app_private.tg_drafts$q$), false);
+select pg_temp.expect('tg2: подтверждённые задачи ложатся владельцу', pg_temp.rows_as('', 'select 1 where tg_drop_tasks(' || quote_literal(:'tgsec') || ', 777, ''[{"title":"Снять ролик"}]'')') = 1, true);
+select pg_temp.expect('tg2: после подтверждения черновика нет', pg_temp.rows_as('', 'select 1 where tg_draft_get(' || quote_literal(:'tgsec') || ', 777) is null') = 1, true);
+select pg_temp.expect('tg2: владелец видит задачи', pg_temp.rows_as(:O, $q$select * from docs where parent = 'data/users/00000000-0000-0000-0000-00000000000a/tgdrops' and data -> 'tasks' -> 0 ->> 'title' = 'Снять ролик'$q$) = 1, true);
+select pg_temp.expect('tg2: из неподключённого канала задачи не ложатся', pg_temp.rows_as('', 'select 1 where tg_drop_tasks(' || quote_literal(:'tgsec') || ', 999, ''[{"title":"x"}]'')') = 0, true);
 select pg_temp.expect('без входа ничего не читается', pg_temp.rows_as('', $q$select * from docs$q$) = 0, true);
 
 select (case when ok then 'PASS ' else 'FAIL ' end) || name from results;

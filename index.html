@@ -5608,7 +5608,7 @@ function inboxWho(who){
   const users = (db.users || []).filter(u => u.status !== 'archived');
   // имена склоняются («Аня» — «Ане», «Игорь» — «Игорю»): совпадает начало слова, кроме последней буквы
   const pre = (a, b) => { let k = 0; while (k < a.length && k < b.length && a[k] === b[k]) k++; return k; };
-  const nameHit = (n, w) => n.length >= 2 && w.length >= 2 && Math.abs(n.length - w.length) <= 3 && pre(n, w) >= Math.max(2, Math.min(n.length, w.length) - 1);
+  const nameHit = (n, w) => n.length >= 3 && w.length >= 3 && Math.abs(n.length - w.length) <= 3 && pre(n, w) >= Math.max(2, Math.min(n.length, w.length) - 1);
   const words = v => norm(v).replace(/[^a-zа-яё ]/g, '').split(' ').filter(Boolean);
   const byName = users.find(u => words(u.name || '').some(n => words(who).some(w => nameHit(n, w))));
   if (byName) return byName.id;
@@ -5751,6 +5751,7 @@ async function tgTake(d){
   tgState.busy.add(id);
   try {
     await cloud.store.doc(`data/users/${cloud.uid}/tgdrops/${id}`).delete();
+    if (Array.isArray(x.tasks)){ tgApply(x); return; }       // подтверждено в боте — сразу на доску
     const text = String(x.text || '').trim(); if (!text) return;
     // сам текст (расшифровка голосового или пост) виден во «Входящих» — в ленте Telegram
     const e = { id:uid(), text:text.slice(0, 20000), chat:x.chat || '', at:x.at || new Date().toISOString(), kind:x.kind === 'it' ? 'it' : 'info', pid:x.kind === 'it' ? x.pid : '', st:'wait' };
@@ -5759,6 +5760,42 @@ async function tgTake(d){
   } catch(e) {} finally { tgState.busy.delete(id); }
 }
 // Claude разбирает текст из ленты на задачи (без повторов) → карточки «Входящих»
+// задачи, подтверждённые в боте («ок»), — сразу в «К выполнению» площадки этого пространства (без «Входящих»)
+function tgApply(x){
+  const tasks = x.tasks.filter(t => t && String(t.title || '').trim()); if (!tasks.length) return;
+  let n = 0;
+  if (x.kind === 'it'){
+    const pr = projById(x.pid);
+    tasks.forEach(t => { let d = itDepts().find(z => norm(z.name) === norm(t.dept || ''));
+      if (!d && t.dept){ d = { id:'d' + uid(), name:String(t.dept).slice(0, 40) }; db.prefs = db.prefs || {}; db.prefs.itDepts = [...itDepts(), d]; }
+      itSave({ id:'i' + uid(), creator_id:ME, creator_name:'Telegram', created_at:new Date().toISOString(), title:String(t.title).slice(0, 200), description:'', assignee_id:inboxWho(t.who) || itDeptWho(pr, d?.id || '') || ME, priority:'', category:'other', status:'todo', due_date:t.due || '', dept:d?.id || '', project_id:x.pid || '', ...(t.type === 'strat' ? { ttype:'strat' } : {}) }); n++; });
+  } else {
+    const p = infoBoard() || infoBoards()[0]; if (!p) return;
+    const have = new Set(kbItems([p]).map(i => norm(i.x.name)));
+    tasks.forEach(t => { if (have.has(norm(t.title))) return; have.add(norm(t.title));
+      if (/контент/i.test(t.dept || '')) t = { ...t, dept:'SMM' };   // отдел «Контент» на канбане не виден (это раздел видео)
+      let s = kbDeptStages(p).find(z => norm(z.name) === norm(t.dept || '')) || p.stages.find(z => !isMaint(z) && !isCtStage(p, z) && norm(z.name) === norm(t.dept || ''));
+      if (!s && t.dept){ s = addStage(p); s.name = String(t.dept).slice(0, 40); s.custom = true; }
+      if (!s) s = kbDeptStages(p)[0]; if (!s) return;
+      const nx = { id:uid(), name:String(t.title).slice(0, 200), done:false, at:new Date().toISOString(), src:'tg' }; if (t.type === 'strat') nx.ttype = 'strat'; if (t.due) nx.due_date = t.due;
+      (s.subs = s.subs || []).push(nx); const wid = inboxWho(t.who);
+      if (wid){ db.tasks = db.tasks || []; db.tasks.push(makeTask({ project_id:p.id, stage_id:s.id, substage_id:nx.id, title:nx.name, assignee_id:wid })); }
+      addLog(p, `Из Telegram${x.chat ? ' (' + x.chat + ')' : ''}: «${nx.name}» → «${s.name}»`); n++; });
+  }
+  if (n){ commit(); render(); toast(`Telegram${x.chat ? ' · ' + x.chat : ''}: ${n} ${plural(n, 'задача', 'задачи', 'задач')} в «К выполнению»`); }
+}
+// боту нужен контекст пространства: отделы, люди с ролями, открытые задачи (против повторов) — пишем в tg_links.ctx
+let tgCtxSig = '';
+async function tgCtxPush(){
+  if (!cloud.store?.rpc || GUEST || !isInfo()) return;
+  if (!(tgState.links || []).some(l => l.chat_id && l.kind === 'info' && (!l.pid || l.pid === tgSpace()))) return;
+  const boards = infoBoards().filter(p => p.state !== 'completed');
+  const ctx = { depts:inboxDepts(boards), people:(db.users || []).filter(u => u.status !== 'archived').map(u => ({ name:u.name || '', role:[u.dept, u.job].filter(Boolean).join(', ') })),
+    existing:kbItems(boards).filter(i => i.st !== 'done').map(i => i.x.name).slice(-200) };
+  const sig = JSON.stringify(ctx); if (sig === tgCtxSig) return;
+  try { await cloud.store.rpc('tg_link_ctx', { p_kind:'info', p_pid:tgSpace(), p_ctx:ctx }); tgCtxSig = sig; } catch(e) {}
+}
+setInterval(() => { tgCtxPush(); }, 60000);
 async function tgParse(lid, auto){
   const e = (db.prefs?.tgLog || []).find(y => y.id === lid); if (!e) return;
   e.st = 'busy'; render();
@@ -5786,7 +5823,7 @@ document.addEventListener('click', e => {
 let tgDocs = [];
 function watchTg(){
   if (!cloud.store?.rpc || !cloud.uid || GUEST || shared.subs.has('__tg')) return;
-  tgLoad().then(() => render());
+  tgLoad().then(() => { render(); tgCtxPush(); });
   shared.subs.set('__tg', [cloud.store.collection(`data/users/${cloud.uid}/tgdrops`).onSnapshot(snap => { tgDocs = snap.docs; tgDocs.forEach(tgTake); }, () => {})]);
 }
 function tgRetry(){ tgDocs.forEach(tgTake); }

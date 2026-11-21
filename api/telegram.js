@@ -3,6 +3,10 @@
 //   • голосовое / аудио / кружок — расшифровываем OpenAI Whisper и отдаём текст в базу (public.tg_drop);
 //   • обычный текстовый пост — сразу в базу.
 // Дальше приложение само забирает текст и Claude выделяет задачи без повторов.
+// Диалог (если на сервере есть ANTHROPIC_API_KEY): бот сам разбирает голосовое на задачи и присылает список с кнопками
+// «✅ Отправить» / «✖ Отмена». Правка — текстом или голосом в ответ («вторую убери, срок у первой пятница»): Claude
+// переделывает список. «ок» или ✅ — задачи уходят владельцу (public.tg_drop_tasks), приложение ставит их в «К выполнению».
+// Черновик хранится в базе (app_private.tg_drafts), контекст — отделы, люди, уже существующие задачи — пишет приложение (tg_links.ctx).
 // Переменные окружения Vercel (в код и логи не попадают):
 //   TG_BOT_TOKEN — токен бота от @BotFather (из него же выводится секрет вебхука);
 //   TG_DB_SECRET — секрет из app_private.tg_config (миграция 20261119); OPENAI_API_KEY — для Whisper;
@@ -26,6 +30,96 @@ async function db(fn, args) {
   });
   if (!r.ok) throw new Error('db ' + fn + ' ' + r.status);
   return r.json();
+}
+
+// ---------- Claude: разбор текста на задачи и правки списка ----------
+const OK_RX = /^(ок|окей|ok|okay|да|ага|го|отправ\S*|подтвер\S*|верно|всё верно|все верно|👍|✅)[\s.!]*$/i;
+const NO_RX = /^(\/cancel|отмена|отменить|отмени|cancel|не надо)[\s.!]*$/i;
+const todayKz = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Almaty' }).format(new Date());
+
+async function claude(prompt) {
+  const key = env('ANTHROPIC_API_KEY'); if (!key) return null;
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 40000);
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', signal: ctl.signal,
+      headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({ model: env('ANTHROPIC_MODEL') || 'claude-sonnet-5-5', max_tokens: 3000,
+        system: 'Отвечай только одним валидным JSON-объектом, без пояснений и без markdown.', messages: [{ role: 'user', content: prompt }] })
+    });
+    if (!r.ok) return null;
+    const j = await r.json(); const txt = (j.content || []).map(c => c.text || '').join('');
+    const a = txt.indexOf('{'), b = txt.lastIndexOf('}'); if (a < 0 || b <= a) return null;
+    return JSON.parse(txt.slice(a, b + 1));
+  } catch (e) { return null; } finally { clearTimeout(t); }
+}
+const ctxText = c => {
+  const depts = (c.depts || []).slice(0, 60), people = (c.people || []).slice(0, 80), have = (c.existing || []).slice(0, 200);
+  return `Сегодня ${todayKz()}. Отделы: ${depts.join(', ') || 'нет данных'}.
+Команда (имя и роль/отдел): ${people.map(p => p.role ? `${p.name} (${p.role})` : p.name).join('; ') || 'нет данных'}.
+Задачи, которые УЖЕ есть (не повторяй их, даже если сказано другими словами):
+${have.length ? have.map(t => '- ' + t).join('\n') : '- нет'}`;
+};
+const TASK_RULES = `Каждая задача: title — коротко, с глагола, до 90 символов; dept — отдел из списка, если подходит, иначе короткое название нового отдела (1–2 слова);
+не используй отдел со словом «Контент» (это отдельный раздел видео) — для задач про ролики и соцсети бери подходящий отдел из списка или «SMM»;
+type — "strat" (стратегия и рост) или "oper" (текущая работа); due — дата YYYY-MM-DD, только если срок назван или однозначно следует из текста, иначе null;
+who — ответственный: если назван человек или роль («ассистентам», «монтажёру», «Ане») — ИМЯ человека из команды с подходящим именем или ролью, если такого нет — слово из текста, иначе null.`;
+const extractPrompt = (text, c) => `Ты помогаешь руководителю разобрать голосовое или сообщение на задачи.
+${ctxText(c)}
+Выдели только РЕАЛЬНЫЕ задачи — конкретные действия. Не включай обсуждения, мнения, факты, уже сделанное. Одна задача, сказанная несколько раз разными словами, — одна.
+${TASK_RULES}
+Ответь JSON: {"tasks":[{"title":"…","dept":"…","type":"oper","due":null,"who":null}]}
+
+Текст:
+${String(text).slice(0, 12000)}`;
+const editPrompt = (tasks, fix, c) => `Есть список задач (JSON). Руководитель просит его поправить.
+${ctxText(c)}
+Текущий список:
+${JSON.stringify(tasks)}
+Правка руководителя: «${String(fix).slice(0, 4000)}»
+Примени правку: убери, добавь, переименуй, поменяй срок, ответственного, отдел или тип — как сказано. Остальное оставь как было.
+Если в правке новые задачи — добавь их по тем же правилам.
+${TASK_RULES}
+Ответь JSON: {"tasks":[…]}`;
+const cleanTasks = res => (Array.isArray(res && res.tasks) ? res.tasks : []).filter(t => t && String(t.title || '').trim()).slice(0, 40).map(t => ({
+  title: String(t.title).trim().slice(0, 200), dept: t.dept ? String(t.dept).slice(0, 40) : '', type: t.type === 'strat' ? 'strat' : 'oper',
+  due: /^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : null, who: t.who ? String(t.who).slice(0, 60) : null }));
+const fmtDate = d => d ? `${d.slice(8, 10)}.${d.slice(5, 7)}` : '';
+const listText = (tasks, head) => `${head}\n\n${tasks.map((t, i) => `${i + 1}. ${t.title}\n    ${[t.who ? '👤 ' + t.who : '👤 не назначен', t.dept ? '🏷 ' + t.dept : '', t.due ? '📅 до ' + fmtDate(t.due) : '', t.type === 'strat' ? '⭐ стратегическая' : ''].filter(Boolean).join(' · ')}`).join('\n')}
+
+Всё верно? Нажмите ✅ или напишите «ок» — задачи уйдут в «К выполнению».
+Поправить — напишите или наговорите, что изменить.`;
+const KB = { inline_keyboard: [[{ text: '✅ Отправить', callback_data: 'tg_ok' }, { text: '✖ Отмена', callback_data: 'tg_no' }]] };
+const say = (chat, text, extra) => tg('sendMessage', { chat_id: chat, text: text.slice(0, 4000), ...(extra || {}) });
+const unkb = (chat, msg) => msg ? tg('editMessageReplyMarkup', { chat_id: chat, message_id: msg, reply_markup: { inline_keyboard: [] } }) : null;
+
+async function approve(chat) {
+  const d = await db('tg_draft_get', { p_chat: chat }).catch(() => null);
+  if (!d || !Array.isArray(d.tasks) || !d.tasks.length) { await say(chat, 'Нечего отправлять — пришлите голосовое или текст с задачами.'); return; }
+  const ok = await db('tg_drop_tasks', { p_chat: chat, p_tasks: d.tasks }).catch(() => false);
+  await unkb(chat, d.msg_id);
+  await say(chat, ok ? `✅ Отправлено: ${d.tasks.length} — задачи в «К выполнению» KaizenHub.` : '⚠️ Не получилось отправить. Попробуйте ещё раз.');
+}
+async function cancel(chat) {
+  const d = await db('tg_draft_get', { p_chat: chat }).catch(() => null);
+  await db('tg_draft_set', { p_chat: chat, p_tasks: null, p_msg: null }).catch(() => false);
+  if (d) await unkb(chat, d.msg_id);
+  await say(chat, 'Отменено. Пришлите новое голосовое, когда будет нужно.');
+}
+// разбор нового текста или правка черновика; false — Claude недоступен (тогда текст уйдёт во «Входящие» как раньше)
+async function dialog(chat, text) {
+  const info = await db('tg_ctx', { p_chat: chat }).catch(() => null);
+  if (!info) return true;                                   // канал не подключён — молчим
+  const c = info.ctx || {};
+  const d = await db('tg_draft_get', { p_chat: chat }).catch(() => null);
+  const res = await claude(d && d.tasks && d.tasks.length ? editPrompt(d.tasks, text, c) : extractPrompt(text, c));
+  if (!res) return false;
+  const tasks = cleanTasks(res);
+  if (!tasks.length) { await say(chat, d ? 'После правки задач не осталось. Напишите «отмена» или пришлите новое голосовое.' : 'Задач в сообщении не нашёл 🤔 Попробуйте сказать конкретнее: что сделать, кому и к какому сроку.'); if (d) await db('tg_draft_set', { p_chat: chat, p_tasks: [], p_msg: null }).catch(() => false); return true; }
+  if (d) await unkb(chat, d.msg_id);
+  const m = await say(chat, listText(tasks, d ? `✏️ Поправил. Задачи (${tasks.length}):` : `📝 Нашёл задачи (${tasks.length}):`), { reply_markup: KB });
+  await db('tg_draft_set', { p_chat: chat, p_tasks: tasks, p_msg: (m.result && m.result.message_id) || null }).catch(() => false);
+  return true;
 }
 
 async function transcribe(fileId) {
@@ -57,12 +151,12 @@ module.exports = async (req, res) => {
         let dbs = 'нет переменной TG_DB_SECRET';
         if (env('TG_DB_SECRET')) dbs = await db('tg_drop', { p_chat: 0, p_text: 'check' }).then(() => 'ok', e => /401|403/.test(e.message) ? 'не совпадает с базой' : 'ошибка базы: ' + e.message);
         const wi = await tg('getWebhookInfo'); const w = wi.result || {};
-        return res.status(200).json({ webhook: { set: !!w.url, pending: w.pending_update_count || 0, last_error: w.last_error_message || '', last_error_at: w.last_error_date ? new Date(w.last_error_date * 1000).toISOString() : '', updates: w.allowed_updates || [] }, bot: !!env('TG_BOT_TOKEN'), db_secret: dbs, openai: !!env('OPENAI_API_KEY'), supabase: !!(env('SUPABASE_URL') && env('SUPABASE_PUBLISHABLE_KEY')) });
+        return res.status(200).json({ webhook: { set: !!w.url, pending: w.pending_update_count || 0, last_error: w.last_error_message || '', last_error_at: w.last_error_date ? new Date(w.last_error_date * 1000).toISOString() : '', updates: w.allowed_updates || [] }, bot: !!env('TG_BOT_TOKEN'), db_secret: dbs, openai: !!env('OPENAI_API_KEY'), supabase: !!(env('SUPABASE_URL') && env('SUPABASE_PUBLISHABLE_KEY')), claude: !!env('ANTHROPIC_API_KEY') });
       }
       if (q.me) { const m = await tg('getMe'); return res.status(200).json({ bot: (m.result && m.result.username) || '' }); }
       if (q.setup && whSecret()) {   // адрес всегда наш, секрет — наш: ставить вебхук безопасно
         const host = req.headers['x-forwarded-host'] || req.headers.host;
-        const r = await tg('setWebhook', { url: `https://${host}/api/telegram`, secret_token: whSecret(), allowed_updates: ['channel_post', 'message'] });
+        const r = await tg('setWebhook', { url: `https://${host}/api/telegram`, secret_token: whSecret(), allowed_updates: ['channel_post', 'message', 'callback_query'] });
         return res.status(200).json({ ok: !!r.ok, description: r.description || '' });
       }
       return res.status(404).json({ ok: false });
@@ -71,6 +165,12 @@ module.exports = async (req, res) => {
     if (!whSecret() || req.headers['x-telegram-bot-api-secret-token'] !== whSecret()) return res.status(401).end();
 
     const u = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    if (u.callback_query) {                                  // кнопки ✅ / ✖ под списком
+      const q = u.callback_query; const ch = q.message && q.message.chat && q.message.chat.id;
+      await tg('answerCallbackQuery', { callback_query_id: q.id });
+      if (ch && q.data === 'tg_ok') await approve(ch); else if (ch && q.data === 'tg_no') await cancel(ch);
+      return res.status(200).json({ ok: true });
+    }
     const m = u.channel_post || u.message;
     if (!m || !m.chat) return res.status(200).json({ ok: true });
     const chat = m.chat.id, title = m.chat.title || m.chat.username || [m.chat.first_name, m.chat.last_name].filter(Boolean).join(' ') || 'Telegram';
@@ -89,8 +189,15 @@ module.exports = async (req, res) => {
       if (media.file_size && media.file_size > MAX_AUDIO) return res.status(200).json({ ok: true });
       const said = await transcribe(media.file_id).catch(() => '');
       body = said || text ? '🎙 ' + [said, text].filter(Boolean).join('\n') : '';
+      if (!said) { await say(chat, '⚠️ Не удалось расшифровать голосовое. Проверьте баланс OpenAI или пришлите текстом.'); return res.status(200).json({ ok: true }); }
     }
-    if (body && !body.startsWith('/')) await db('tg_drop', { p_chat: chat, p_text: body }).catch(() => false);
+    if (!body) return res.status(200).json({ ok: true });
+    const plain = body.replace(/^🎙\s*/, '').trim();
+    if (NO_RX.test(plain)) { await cancel(chat); return res.status(200).json({ ok: true }); }
+    if (OK_RX.test(plain)) { await approve(chat); return res.status(200).json({ ok: true }); }
+    if (body.startsWith('/')) return res.status(200).json({ ok: true });
+    const done = env('ANTHROPIC_API_KEY') ? await dialog(chat, plain).catch(() => false) : false;
+    if (!done) await db('tg_drop', { p_chat: chat, p_text: body }).catch(() => false);   // без Claude — как раньше, во «Входящие»
     return res.status(200).json({ ok: true });
   } catch (e) {
     return res.status(200).json({ ok: true });   // Telegram не должен повторять запрос бесконечно

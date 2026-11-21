@@ -401,6 +401,12 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     E(`getSample = async () => ({ json: async () => { throw { code:'unavailable' }; } })`);
     await E(`tgTake({ id:'d2', data: () => ({ text:'Купить микрофон', kind:'info' }) })`);
     assert.ok(E(`db.prefs.tgLog.some(e => e.text === 'Купить микрофон' && e.st === 'err')`) && /Купить микрофон/.test(D.querySelector('.kb-in .tg-feed')?.textContent || E('tgLogHtml("info", "")'))); ok('telegram: Claude недоступен — текст виден в ленте «Входящих» с кнопкой «Разобрать»');
+    { // подтверждено в боте («ок») — задачи сразу в «К выполнению» площадки, с отделом, сроком и ответственным
+      E(`db.users.push({ id:'uAs', name:'Аня', dept:'Ассистент', status:'active' })`);
+      await E(`tgTake({ id:'d3', data: () => ({ kind:'info', chat:'Kaizen Voice', tasks:[{ title:'Снять 3 ролика для VPN', dept:'Трафик VPN', type:'oper', due:'2099-01-09', who:'Ане' }, { title:'Позвонить амбассадору', dept:'', type:'strat', due:null, who:null }] }) })`); await wait(30);
+      const it = E(`(() => { const i = kbItems([infoBoard()]).find(i => i.x.name === 'Снять 3 ролика для VPN'); return i && [i.st, i.s.name, i.x.due_date, taskFor(i.p.id, i.s.id, i.x.id)?.assignee_id].join('|'); })()`);
+      assert.equal(it, 'todo|Трафик VPN|2099-01-09|uAs'); assert.ok(E(`kbItems([infoBoard()]).some(i => i.x.name === 'Позвонить амбассадору' && i.st === 'todo' && i.x.ttype === 'strat')`));
+      ok('telegram: подтверждённые в боте задачи — сразу в «К выполнению» с отделом, сроком и ответственным'); }
     E(`cloud.store = window.__cs; cloud.uid = window.__cu; getSample = window.__gs; db.prefs.inbox = []; render()`); }
   assert.equal(errors.length, 0, errors.join('\n')); ok('ошибок нет');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
