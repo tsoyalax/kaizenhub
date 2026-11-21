@@ -27,10 +27,10 @@ const post = async upd => { const res = { code: 0, status(c){ this.code = c; ret
 const msg = text => ({ channel_post: { chat: { id: 5, title: 'Kaizen Voice' }, text } });
 
 (async () => {
-  claudeOut = { tasks: [{ title: 'Снять 3 ролика', dept: 'Трафик', type: 'oper', due: '2099-01-09', who: 'Аня' }, { title: 'Позвонить амбассадору', type: 'strat' }] };
+  claudeOut = { tasks: [{ title: 'Снять 3 ролика', dept: 'Трафик', type: 'oper', due: '2099-01-09', time: '15:00', who: 'Аня' }, { title: 'Позвонить амбассадору', type: 'strat', who: 'Ассистенты' }] };
   await post(msg('Надо снять три ролика до пятницы, это ассистентам. И позвонить амбассадору.'));
   const list = sent.find(s => s.m === 'sendMessage' && s.body.reply_markup);
-  assert.ok(list && /1\. Снять 3 ролика/.test(list.body.text) && /👤 Аня/.test(list.body.text) && /до 09\.01/.test(list.body.text)); ok('бот: прислал список задач с ответственным и сроком и кнопками ✅/✖');
+  assert.ok(list && /1\. Снять 3 ролика/.test(list.body.text) && /👤 Аня/.test(list.body.text) && /до 09\.01/.test(list.body.text)); assert.ok(/⏰ 09\.01 в 14:50/.test(list.body.text) && /Ассистенты \(нет в «Команде»\)/.test(list.body.text)); ok('бот: прислал список задач с ответственным и сроком и кнопками ✅/✖');
   assert.ok(/Аня \(Ассистент\)/.test(claudeIn)); ok('бот: Claude знает команду и роли пространства');
   assert.equal(db.draft.tasks.length, 2); ok('бот: черновик сохранён');
 

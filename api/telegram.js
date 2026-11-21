@@ -62,8 +62,9 @@ ${have.length ? have.map(t => '- ' + t).join('\n') : '- нет'}`;
 };
 const TASK_RULES = `Каждая задача: title — коротко, с глагола, до 90 символов; dept — отдел из списка, если подходит, иначе короткое название нового отдела (1–2 слова);
 не используй отдел со словом «Контент» (это отдельный раздел видео) — для задач про ролики и соцсети бери подходящий отдел из списка или «SMM»;
-type — "strat" (стратегия и рост) или "oper" (текущая работа); due — дата YYYY-MM-DD, только если срок назван или однозначно следует из текста, иначе null;
-who — ответственный: если назван человек или роль («ассистентам», «монтажёру», «Ане») — ИМЯ человека из команды с подходящим именем или ролью, если такого нет — слово из текста, иначе null.`;
+type — "strat" (стратегия и рост) или "oper" (текущая работа); due — дата YYYY-MM-DD, только если срок назван или однозначно следует из текста («до пятницы», «завтра»), иначе null;
+time — время HH:MM, если оно названо («в 15:00», «к трём часам дня»), иначе null;
+who — ответственный: если назван человек или роль («ассистентам», «монтажёру», «Ане») — ТОЧНОЕ ИМЯ человека из списка команды с подходящим именем или должностью (если подходят несколько — первый), если такого нет — слово из текста, иначе null.`;
 const extractPrompt = (text, c) => `Ты помогаешь руководителю разобрать голосовое или сообщение на задачи.
 ${ctxText(c)}
 Выдели только РЕАЛЬНЫЕ задачи — конкретные действия. Не включай обсуждения, мнения, факты, уже сделанное. Одна задача, сказанная несколько раз разными словами, — одна.
@@ -83,9 +84,12 @@ ${TASK_RULES}
 Ответь JSON: {"tasks":[…]}`;
 const cleanTasks = res => (Array.isArray(res && res.tasks) ? res.tasks : []).filter(t => t && String(t.title || '').trim()).slice(0, 40).map(t => ({
   title: String(t.title).trim().slice(0, 200), dept: t.dept ? String(t.dept).slice(0, 40) : '', type: t.type === 'strat' ? 'strat' : 'oper',
-  due: /^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : null, who: t.who ? String(t.who).slice(0, 60) : null }));
+  due: /^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : null, time: /^\d{1,2}:\d{2}$/.test(t.time || '') ? t.time : null, who: t.who ? String(t.who).slice(0, 60) : null }));
+// напоминание: назвали время — за 10 минут, только день — в 10:00 (так же считает приложение, tgRemind)
+const remTxt = t => { if (!t.due) return ''; if (!t.time) return '⏰ ' + fmtDate(t.due) + ' в 10:00'; const [h, m] = t.time.split(':').map(Number); const x = h * 60 + m - 10; return `⏰ ${fmtDate(t.due)} в ${String(Math.floor((x + 1440) % 1440 / 60)).padStart(2, '0')}:${String((x + 1440) % 60).padStart(2, '0')}`; };
+const inTeam = (who, c) => !who || (c.people || []).some(p => String(p.name || '').toLowerCase() === String(who).toLowerCase());
 const fmtDate = d => d ? `${d.slice(8, 10)}.${d.slice(5, 7)}` : '';
-const listText = (tasks, head) => `${head}\n\n${tasks.map((t, i) => `${i + 1}. ${t.title}\n    ${[t.who ? '👤 ' + t.who : '👤 не назначен', t.dept ? '🏷 ' + t.dept : '', t.due ? '📅 до ' + fmtDate(t.due) : '', t.type === 'strat' ? '⭐ стратегическая' : ''].filter(Boolean).join(' · ')}`).join('\n')}
+const listText = (tasks, head, c = {}) => `${head}\n\n${tasks.map((t, i) => `${i + 1}. ${t.title}\n    ${[t.who ? '👤 ' + t.who + (inTeam(t.who, c) ? '' : ' (нет в «Команде»)') : '👤 не назначен', t.dept ? '🏷 ' + t.dept : '', t.due ? '📅 до ' + fmtDate(t.due) + (t.time ? ' ' + t.time : '') : '', remTxt(t), t.type === 'strat' ? '⭐ стратегическая' : ''].filter(Boolean).join(' · ')}`).join('\n')}
 
 Всё верно? Нажмите ✅ или напишите «ок» — задачи уйдут в «К выполнению».
 Поправить — напишите или наговорите, что изменить.`;
@@ -117,7 +121,7 @@ async function dialog(chat, text) {
   const tasks = cleanTasks(res);
   if (!tasks.length) { await say(chat, d ? 'После правки задач не осталось. Напишите «отмена» или пришлите новое голосовое.' : 'Задач в сообщении не нашёл 🤔 Попробуйте сказать конкретнее: что сделать, кому и к какому сроку.'); if (d) await db('tg_draft_set', { p_chat: chat, p_tasks: [], p_msg: null }).catch(() => false); return true; }
   if (d) await unkb(chat, d.msg_id);
-  const m = await say(chat, listText(tasks, d ? `✏️ Поправил. Задачи (${tasks.length}):` : `📝 Нашёл задачи (${tasks.length}):`), { reply_markup: KB });
+  const m = await say(chat, listText(tasks, d ? `✏️ Поправил. Задачи (${tasks.length}):` : `📝 Нашёл задачи (${tasks.length}):`, c) + (tasks.some(t => t.who && !inTeam(t.who, c)) ? '\n\n💡 «нет в «Команде»» — в KaizenHub → «Команда» впишите людям должность (например, «Ассистент»), тогда бот найдёт ответственного сам.' : ''), { reply_markup: KB });
   await db('tg_draft_set', { p_chat: chat, p_tasks: tasks, p_msg: (m.result && m.result.message_id) || null }).catch(() => false);
   return true;
 }

@@ -338,7 +338,7 @@ table.heat{border-collapse:separate;border-spacing:3px;width:100%;min-width:560p
 .team-head h2{margin:0;font-size:17px;font-weight:600}
 .team-head h2 span{color:var(--muted);font-weight:400}
 .members{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
-.mrow{display:grid;grid-template-columns:minmax(200px,1.4fr) 150px 170px 90px 120px auto;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+.mrow{display:grid;grid-template-columns:minmax(200px,1.4fr) 150px 170px 150px 90px 120px auto;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
 .mrow:last-child{border-bottom:0}
 .mrow.headr{font-size:12.5px;color:var(--muted);padding-top:8px;padding-bottom:8px}
 .mrow select,.mrow input{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 8px;font-size:13px;width:100%;min-width:0}
@@ -5665,7 +5665,7 @@ async function inboxExtract(text, src){
   {
     const boards = infoBoards().filter(p => p.state !== 'completed');
     const existing = [...boards.flatMap(p => p.stages.filter(s => !isMaint(s)).flatMap(s => (s.subs || []).filter(x => !x.done && !x.cycle).map(x => x.name))), ...inboxAll().map(x => x.text)].slice(-250);
-    const res = await smp.json(INBOX_AI_PROMPT(text, inboxDepts(boards), (db.users || []).map(u => u.name + (u.dept || u.job ? ` (${[u.dept, u.job].filter(Boolean).join(', ')})` : '')), existing), { modelTier:'default' });
+    const res = await smp.json(INBOX_AI_PROMPT(text, inboxDepts(boards), (db.users || []).map(u => u.name + (u.dept || u.job || u.title ? ` (${[u.job || u.title, u.dept].filter(Boolean).join(', ')})` : '')), existing), { modelTier:'default' });
     const seen = new Set(existing.map(norm)); let dup = +res?.skipped || 0;
     const tasks = (Array.isArray(res?.tasks) ? res.tasks : []).filter(t => t && String(t.title || '').trim()).filter(t => { const k = norm(String(t.title)); if (seen.has(k)){ dup++; return false; } seen.add(k); return true; }).slice(0, 40);
     if (!tasks.length) throw new Error(dup ? `Новых задач нет — всё это уже есть (повторов: ${dup})` : 'Задач в тексте не нашлось');
@@ -5760,6 +5760,14 @@ async function tgTake(d){
   } catch(e) {} finally { tgState.busy.delete(id); }
 }
 // Claude разбирает текст из ленты на задачи (без повторов) → карточки «Входящих»
+// напоминание по сроку из голосового: назвали время — за 10 минут до него, только день — в 10:00 этого дня
+function tgRemind(t){
+  if (!t?.due || !/^\d{4}-\d{2}-\d{2}$/.test(t.due)) return null;
+  let at = t.due + 'T10:00';
+  if (/^\d{1,2}:\d{2}$/.test(t.time || '')){ const [h, m] = t.time.split(':').map(Number); const d = new Date(+t.due.slice(0, 4), +t.due.slice(5, 7) - 1, +t.due.slice(8, 10), h, m - 10);
+    at = `${ymd(d)}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+  return { at, by:meKey(), byName:'Telegram' };
+}
 // задачи, подтверждённые в боте («ок»), — сразу в «К выполнению» площадки этого пространства (без «Входящих»)
 function tgApply(x){
   const tasks = x.tasks.filter(t => t && String(t.title || '').trim()); if (!tasks.length) return;
@@ -5768,7 +5776,7 @@ function tgApply(x){
     const pr = projById(x.pid);
     tasks.forEach(t => { let d = itDepts().find(z => norm(z.name) === norm(t.dept || ''));
       if (!d && t.dept){ d = { id:'d' + uid(), name:String(t.dept).slice(0, 40) }; db.prefs = db.prefs || {}; db.prefs.itDepts = [...itDepts(), d]; }
-      itSave({ id:'i' + uid(), creator_id:ME, creator_name:'Telegram', created_at:new Date().toISOString(), title:String(t.title).slice(0, 200), description:'', assignee_id:inboxWho(t.who) || itDeptWho(pr, d?.id || '') || ME, priority:'', category:'other', status:'todo', due_date:t.due || '', dept:d?.id || '', project_id:x.pid || '', ...(t.type === 'strat' ? { ttype:'strat' } : {}) }); n++; });
+      itSave({ id:'i' + uid(), creator_id:ME, creator_name:'Telegram', created_at:new Date().toISOString(), title:String(t.title).slice(0, 200), description:'', assignee_id:inboxWho(t.who) || itDeptWho(pr, d?.id || '') || ME, priority:'', category:'other', status:'todo', due_date:t.due || '', dept:d?.id || '', project_id:x.pid || '', ...(t.type === 'strat' ? { ttype:'strat' } : {}), ...(tgRemind(t) ? { remind:tgRemind(t) } : {}) }); n++; });
   } else {
     const p = infoBoard() || infoBoards()[0]; if (!p) return;
     const have = new Set(kbItems([p]).map(i => norm(i.x.name)));
@@ -5778,8 +5786,9 @@ function tgApply(x){
       if (!s && t.dept){ s = addStage(p); s.name = String(t.dept).slice(0, 40); s.custom = true; }
       if (!s) s = kbDeptStages(p)[0]; if (!s) return;
       const nx = { id:uid(), name:String(t.title).slice(0, 200), done:false, at:new Date().toISOString(), src:'tg' }; if (t.type === 'strat') nx.ttype = 'strat'; if (t.due) nx.due_date = t.due;
-      (s.subs = s.subs || []).push(nx); const wid = inboxWho(t.who);
-      if (wid){ db.tasks = db.tasks || []; db.tasks.push(makeTask({ project_id:p.id, stage_id:s.id, substage_id:nx.id, title:nx.name, assignee_id:wid })); }
+      (s.subs = s.subs || []).push(nx); const wid = inboxWho(t.who); const rem = tgRemind(t);
+      if (wid || rem){ db.tasks = db.tasks || []; const tk = makeTask({ project_id:p.id, stage_id:s.id, substage_id:nx.id, title:nx.name, assignee_id:wid || null });
+        if (t.due) tk.due_date = t.due; if (rem) tk.remind = rem; db.tasks.push(tk); }
       addLog(p, `Из Telegram${x.chat ? ' (' + x.chat + ')' : ''}: «${nx.name}» → «${s.name}»`); n++; });
   }
   if (n){ commit(); render(); toast(`Telegram${x.chat ? ' · ' + x.chat : ''}: ${n} ${plural(n, 'задача', 'задачи', 'задач')} в «К выполнению»`); }
@@ -5790,7 +5799,7 @@ async function tgCtxPush(){
   if (!cloud.store?.rpc || GUEST || !isInfo()) return;
   if (!(tgState.links || []).some(l => l.chat_id && l.kind === 'info' && (!l.pid || l.pid === tgSpace()))) return;
   const boards = infoBoards().filter(p => p.state !== 'completed');
-  const ctx = { depts:inboxDepts(boards), people:(db.users || []).filter(u => u.status !== 'archived').map(u => ({ name:u.name || '', role:[u.dept, u.job].filter(Boolean).join(', ') })),
+  const ctx = { depts:inboxDepts(boards), people:(db.users || []).filter(u => u.status !== 'archived').map(u => ({ name:u.name || '', role:[u.job || u.title, u.dept].filter(Boolean).join(', ') })),
     existing:kbItems(boards).filter(i => i.st !== 'done').map(i => i.x.name).slice(-200) };
   const sig = JSON.stringify(ctx); if (sig === tgCtxSig) return;
   try { await cloud.store.rpc('tg_link_ctx', { p_kind:'info', p_pid:tgSpace(), p_ctx:ctx }); tgCtxSig = sig; } catch(e) {}
@@ -6849,6 +6858,7 @@ function renderTeam(){
         <b>${esc(u.name || 'Вы')}${isMe ? ' <span class="you">(вы)</span>' : ''}</b><small>${esc([u.title, u.email || 'email не указан'].filter(Boolean).join(' · '))}</small>${u.contact ? `<span class="contact">${esc(u.contact)}</span>` : ''}</div></div>
       <div><span class="mlabel">Роль</span><select data-uf="role" data-uid="${u.id}" ${isMe?'disabled':''} aria-label="Роль">${Object.entries(ROLES).map(([k,v]) => `<option value="${k}" ${u.role===k?'selected':''}>${v}</option>`).join('')}</select></div>
       <div><span class="mlabel">Отдел</span><select data-uf="dept" data-uid="${u.id}" aria-label="Отдел">${DEPTS.map(d => `<option ${u.dept===d?'selected':''}>${d}</option>`).join('')}</select></div>
+      <div><span class="mlabel">Должность</span><input data-uf="job" data-uid="${u.id}" value="${esc(u.job || u.title || '')}" maxlength="60" placeholder="Ассистент, монтажёр…" aria-label="Должность — по ней бот находит ответственного («ассистентам»)"></div>
       <div><span class="mlabel">Норма проектов</span><input type="number" min="1" max="20" data-uf="capacity" data-uid="${u.id}" value="${u.capacity}" aria-label="Норма проектов одновременно"></div>
       <div><span class="mlabel">Статус</span>${memberStatus(u, isMe)}<br><span class="hint">в ${r.cur} ${plural(r.cur,'проекте','проектах','проектах')} из ${u.capacity}</span></div>
       <div class="acts">
@@ -9783,7 +9793,7 @@ async function itInboxExtract(text, pid){
   const p0 = projById(pid);
   {
     const existing = [...itAll().filter(t => t.project_id === p0?.id && t.status !== 'done').map(t => t.title), ...(db.prefs?.itInbox || []).filter(x => x.pid === p0?.id).map(x => x.text)].slice(-250);
-    const res = await smp.json(IT_INBOX_PROMPT(text, itDepts().map(d => d.name), (db.users || []).map(u => u.name + (u.dept || u.job ? ` (${[u.dept, u.job].filter(Boolean).join(', ')})` : '')), existing), { modelTier:'default' });
+    const res = await smp.json(IT_INBOX_PROMPT(text, itDepts().map(d => d.name), (db.users || []).map(u => u.name + (u.dept || u.job || u.title ? ` (${[u.job || u.title, u.dept].filter(Boolean).join(', ')})` : '')), existing), { modelTier:'default' });
     const seen = new Set(existing.map(norm)); let dup = +res?.skipped || 0;
     const tasks = (Array.isArray(res?.tasks) ? res.tasks : []).filter(t => t && String(t.title || '').trim()).filter(t => { const k = norm(String(t.title)); if (seen.has(k)){ dup++; return false; } seen.add(k); return true; }).slice(0, 40);
     if (!tasks.length) throw new Error(dup ? `Новых задач нет — всё это уже есть (повторов: ${dup})` : 'Задач в тексте не нашлось');
