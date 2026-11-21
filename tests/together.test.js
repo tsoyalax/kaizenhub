@@ -176,6 +176,13 @@ function openApp(backend, userId, url = 'https://kz.test/', extra, keepStorage) 
     const c = D.querySelector('[data-inpick="a2"]'); c.checked = false; c.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
     assert.ok(/выбранные \(2\)/.test(D.querySelector('[data-insel]').textContent)); D.querySelector('[data-insel]').click(); await wait(100);
     assert.deepEqual(E('db.prefs.inbox.map(x => x.id)'), ['a2']); ok('входящие: «Утвердить выбранные» — неотмеченная задача осталась во входящих'); }
+  { // ответственный во «Входящих»: по имени или по роли из голосового; при «Утвердить» задача получает ответственного
+    E(`db.users.push({ id:'uAnya', name:'Аня Петрова', dept:'Ассистент', role:'specialist', status:'active' }, { id:'uMont', name:'Игорь', dept:'Монтаж и моушн', role:'specialist', status:'active' })`);
+    assert.equal(E(`inboxWho('ассистентам')`), 'uAnya'); assert.equal(E(`inboxWho('Ане')`), 'uAnya'); assert.equal(E(`inboxWho('монтажёру')`), 'uMont'); assert.equal(E(`inboxWho('')`), ''); ok('входящие: «ассистентам», «Ане», «монтажёру» → нужный человек');
+    E(`ui.view = 'production'; ui.infoAll = false; ui.prodProject = ig.id; ui.infoMode = 'board'; db.prefs.inbox = [{ id:'w1', text:'Снять 3 ролика', at:'2026-11-21', who:'ассистентам', whoId:inboxWho('ассистентам') }]; render()`); await wait(40);
+    assert.equal(D.querySelector('[data-inwho="w1"]').value, 'uAnya'); ok('входящие: в карточке сразу выбран ответственный');
+    D.querySelector('[data-into="w1"]').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(60);
+    assert.ok(E(`db.tasks.some(t => t.title === 'Снять 3 ролика' && t.assignee_id === 'uAnya')`)); ok('входящие: после «Утвердить» у задачи на доске — этот ответственный'); }
   assert.deepEqual(o.errors.filter(e => !/Not implemented/.test(e)), []); ok('без ошибок');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });

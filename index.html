@@ -5597,6 +5597,24 @@ const inboxAll = () => (db.prefs?.inbox || []);
 // колонка «Входящие» — слева на канбане «Производства», отличается оформлением (пунктир, свой цвет).
 // Вставили выжимку созвона/планёрки → «Найти задачи»: Claude выделяет реальные задачи (отдел, тип, срок, кто) → карточки входящих.
 const inboxDepts = boards => [...new Map(boards.flatMap(p => p.stages.filter(s => !isMaint(s) && !isCtStage(p, s)).map(s => [norm(s.name), s.name]))).values()];
+// ответственный по словам из голосового: имя («Аня», «Анне») или роль/отдел («ассистентам», «монтажёру»)
+const whoStem = v => norm(v).replace(/[^a-zа-яё ]/g, '').split(' ').filter(Boolean).map(w => w.slice(0, Math.max(3, w.length - 2)));
+function inboxWho(who){
+  if (!who) return '';
+  const ws = whoStem(who); if (!ws.length) return '';
+  const users = (db.users || []).filter(u => u.status !== 'archived');
+  // имена склоняются («Аня» — «Ане», «Игорь» — «Игорю»): совпадает начало слова, кроме последней буквы
+  const pre = (a, b) => { let k = 0; while (k < a.length && k < b.length && a[k] === b[k]) k++; return k; };
+  const nameHit = (n, w) => n.length >= 2 && w.length >= 2 && Math.abs(n.length - w.length) <= 3 && pre(n, w) >= Math.max(2, Math.min(n.length, w.length) - 1);
+  const words = v => norm(v).replace(/[^a-zа-яё ]/g, '').split(' ').filter(Boolean);
+  const byName = users.find(u => words(u.name || '').some(n => words(who).some(w => nameHit(n, w))));
+  if (byName) return byName.id;
+  const byRole = users.find(u => whoStem(`${u.dept || ''} ${u.job || ''} ${u.position || ''} ${u.title || ''}`).some(n => ws.some(w => n.startsWith(w) || w.startsWith(n))));
+  return byRole?.id || '';
+}
+const inWhoSel = (x, attr) => `<select ${attr}="${x.id}" class="in-who" aria-label="Ответственный">${peopleOpts(x.whoId ?? inboxWho(x.who), 'Ответственный: не назначен').replace(/<option value="[^"]*">\+ Добавить человека…<\/option>/, '')}</select>`;
+document.addEventListener('change', e => { const a = e.target.closest?.('[data-inwho],[data-itinwho]'); if (!a) return; const list = a.dataset.inwho ? inboxAll() : (db.prefs?.itInbox || []);
+  const x = list.find(y => y.id === (a.dataset.inwho || a.dataset.itinwho)); if (x){ x.whoId = a.value; commit(); } });
 function inboxColHtml(boards){
   if (GUEST || !boards.length) return '';
   const list = inboxAll().slice().sort((a, b) => String(b.at).localeCompare(String(a.at)));
@@ -5608,10 +5626,11 @@ function inboxColHtml(boards){
     return neu + ss.map(s => `<option value="${s.id}" ${s === hit ? 'selected' : ''}>${esc(s.name)}</option>`).join(''); };
   const item = x => { const p = boards.find(b => b.id === x.pid) || boards[0]; if (!p) return '';
     return `<div class="in-card">${inPick(x)}<b>${esc(x.text)}</b>${x.raw ? `<button type="button" class="ghost in-parse" data-inparse="${x.id}" title="Claude найдёт задачи в этом тексте">✦ Разобрать на задачи</button>` : ''}
-      ${x.who || x.due ? `<small>${[x.who ? esc(x.who) : '', x.due ? 'срок ' + fmt(x.due) : ''].filter(Boolean).join(' · ')}</small>` : ''}
+      ${x.who || x.due ? `<small>${[x.who ? '🗣 ' + esc(x.who) : '', x.due ? 'срок ' + fmt(x.due) : ''].filter(Boolean).join(' · ')}</small>` : ''}
       <form class="in-to" data-into="${x.id}">
         ${one ? `<input type="hidden" data-inb value="${p.id}">` : `<select data-inb aria-label="Площадка">${boards.map(b => `<option value="${b.id}" ${b.id === p.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select>`}
         <select data-ind aria-label="Отдел">${deptSel(p, x.dept)}</select>
+        ${inWhoSel(x, 'data-inwho')}
         <select data-intt aria-label="Тип задачи">${Object.entries(KB_TYPES).map(([k, l]) => `<option value="${k}" ${(x.ttype || 'oper') === k ? 'selected' : ''} title="${KB_TYPE_HINT[k]}">${l}</option>`).join('')}</select>
         <input type="date" data-indue value="${x.due || ''}" aria-label="Срок">
         <span class="in-act"><button class="primary" title="Утвердить — задача уйдёт в «К выполнению» с выбранным отделом, типом и сроком">Утвердить</button><button type="button" class="icon-btn" data-indel="${x.id}" title="Удалить" aria-label="Удалить «${esc(x.text)}»">${ICON_X}</button></span></form></div>`; };
@@ -5628,7 +5647,7 @@ const INBOX_AI_PROMPT = (text, depts, people, existing = []) => `Ты помог
 Выдели только РЕАЛЬНЫЕ задачи — конкретные действия, которые кто-то должен сделать. Не включай обсуждения, мнения, факты, уже сделанное.
 Каждую задачу сформулируй коротко, с глагола («Отправить КП партнёру»), до 90 символов.
 Для каждой: отдел — один из списка, если подходит по смыслу; если ни один не подходит — придумай короткое понятное название нового отдела по типу задачи (1–2 слова: «HR», «Трафик», «Юридический», «Финансы»), одинаковое для похожих задач; тип — "strat" (связана со стратегией и ростом) или "oper" (текущая работа),
-срок — дата YYYY-MM-DD, только если он назван или однозначно следует из текста, иначе null; кто — имя из текста или null.
+срок — дата YYYY-MM-DD, только если он назван или однозначно следует из текста, иначе null; кто — ответственный: если назван человек или роль («ассистентам», «монтажёру», «Ане») — верни ИМЯ человека из списка команды с подходящим именем или ролью (в скобках — отдел/роль); если такого нет в списке — верни слово из текста («Ассистенты»); если не сказано — null.
 Задачи, которые УЖЕ есть (на доске и во входящих):
 ${existing.length ? existing.map(t => '- ' + t).join('\n') : '- нет'}
 ВАЖНО про повторы: люди часто говорят одно и то же разными словами. Если задача по смыслу совпадает с уже существующей — НЕ добавляй её.
@@ -5643,13 +5662,13 @@ async function inboxExtract(text, src){
   {
     const boards = infoBoards().filter(p => p.state !== 'completed');
     const existing = [...boards.flatMap(p => p.stages.filter(s => !isMaint(s)).flatMap(s => (s.subs || []).filter(x => !x.done && !x.cycle).map(x => x.name))), ...inboxAll().map(x => x.text)].slice(-250);
-    const res = await smp.json(INBOX_AI_PROMPT(text, inboxDepts(boards), (db.users || []).map(u => u.name), existing), { modelTier:'default' });
+    const res = await smp.json(INBOX_AI_PROMPT(text, inboxDepts(boards), (db.users || []).map(u => u.name + (u.dept || u.job ? ` (${[u.dept, u.job].filter(Boolean).join(', ')})` : '')), existing), { modelTier:'default' });
     const seen = new Set(existing.map(norm)); let dup = +res?.skipped || 0;
     const tasks = (Array.isArray(res?.tasks) ? res.tasks : []).filter(t => t && String(t.title || '').trim()).filter(t => { const k = norm(String(t.title)); if (seen.has(k)){ dup++; return false; } seen.add(k); return true; }).slice(0, 40);
     if (!tasks.length) throw new Error(dup ? `Новых задач нет — всё это уже есть (повторов: ${dup})` : 'Задач в тексте не нашлось');
     db.prefs = db.prefs || {};
     db.prefs.inbox = [...inboxAll(), ...tasks.map(t => ({ id:uid(), text:String(t.title).trim().slice(0, 300), src:src || 'meet', at:new Date().toISOString(), by:actorName(),
-      dept:String(t.dept || ''), ttype:t.type === 'strat' ? 'strat' : 'oper', due:/^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : '', who:t.who ? String(t.who).slice(0, 60) : '' }))];
+      dept:String(t.dept || ''), ttype:t.type === 'strat' ? 'strat' : 'oper', due:/^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : '', who:t.who ? String(t.who).slice(0, 60) : '', whoId:inboxWho(t.who) }))];
     commit(); return { n:tasks.length, dup };
   }
 }
@@ -5797,7 +5816,9 @@ document.addEventListener('submit', e => {
   const nx = { id:uid(), name:x.text, done:false, at:new Date().toISOString(), src:x.src }; if (f.querySelector('[data-intt]').value === 'strat') nx.ttype = 'strat';
   const due = f.querySelector('[data-indue]').value; if (due) nx.due_date = due;
   (s.subs = s.subs || []).push(nx); db.prefs.inbox = inboxAll().filter(y => y.id !== x.id);
-  addLog(p, `Из входящих: задача «${x.text}» → отдел «${s.name}»`); commit(); toast(`Задача в «${s.name}»`);
+  const wid = f.querySelector('[data-inwho]')?.value || '';
+  if (wid){ db.tasks = db.tasks || []; db.tasks.push(makeTask({ project_id:p.id, stage_id:s.id, substage_id:nx.id, title:x.text, assignee_id:wid })); }
+  addLog(p, `Из входящих: задача «${x.text}» → отдел «${s.name}»${wid ? ` · ответственный ${userById(wid)?.name || ''}` : ''}`); commit(); toast(`Задача в «${s.name}»`);
 });
 // «Тестовое · бета» (инфобизнес, внизу меню): воронка «+10к Telegram» — декомпозиция цели, сценарии, план-факт по дням.
 // Из цели (подписчики Telegram) считаем назад: охват ← кодовое слово ← переходы, и вперёд: анкета → лид → звонки → оффер → клиент.
@@ -9662,7 +9683,7 @@ function internalBoardHtml(p){
   const inbox = (db.prefs?.itInbox || []).filter(x => x.pid === p.id);   // у каждого проекта — свои входящие
   const inCard = x => { const hit = deps.find(d => norm(d.name) === norm(x.dept || '')); const sel = hit || !x.dept ? deptSel(hit?.id || '', 'data-itind') : deptSel('', 'data-itind').replace('<option value="">', `<option value="new:${esc(x.dept)}" selected>+ Новый отдел «${esc(x.dept)}»</option><option value="">`);
     return `<div class="in-card">${inPick(x)}<b>${esc(x.text)}</b>${x.raw ? `<button type="button" class="ghost in-parse" data-itinparse="${x.id}" title="Claude найдёт задачи в этом тексте">✦ Разобрать на задачи</button>` : ''}${x.who || x.due ? `<small>${[x.who ? esc(x.who) : '', x.due ? 'срок ' + fmt(x.due) : ''].filter(Boolean).join(' · ')}</small>` : ''}
-      <form class="in-to" data-itinto="${x.id}">${sel}
+      <form class="in-to" data-itinto="${x.id}">${sel}${inWhoSel(x, 'data-itinwho')}
         <input type="date" data-itindue value="${x.due || ''}" aria-label="Срок"><span class="in-act"><button class="primary" title="Утвердить — задача уйдёт в «К выполнению» с выбранным отделом, типом и сроком">Утвердить</button><button type="button" class="icon-btn" data-itindel="${x.id}" aria-label="Удалить">${ICON_X}</button></span></form></div>`; };
   const inCol = can ? `<section class="pf-col kb-in" aria-label="Входящие"><header><div><b>${INBOX_ICO}Входящие</b><span class="kb-n">${inbox.length}</span></div><small>После планёрок, созвонов — потом разносим по отделам и проектам</small></header>
     <form class="in-add" id="itInAdd"><textarea id="itInText" rows="${ui.inBig ? 6 : 2}" placeholder="Вставьте выжимку созвона или планёрки — Claude найдёт задачи" aria-label="Выжимка"></textarea>
@@ -9700,7 +9721,7 @@ document.addEventListener('dragend', () => { itDrag = null; app.querySelectorAll
 const IT_INBOX_PROMPT = (text, depts, people, existing = []) => `Ты помогаешь руководителю агентства разобрать выжимку созвона или планёрки.
 Сегодня ${today()}. Отделы: ${depts.join(', ') || 'нет'}. Люди: ${people.join(', ') || 'нет данных'}.
 Выдели только РЕАЛЬНЫЕ задачи — конкретные действия. Не включай обсуждения, мнения, факты, уже сделанное. Формулируй коротко, с глагола, до 90 символов.
-Для каждой: отдел — один из списка, если подходит; если ни один не подходит — короткое название нового отдела по типу задачи (1–2 слова: «HR», «Бухгалтерия», «Продажи»), одинаковое для похожих задач; срок YYYY-MM-DD, только если назван, иначе null; кто — имя или null.
+Для каждой: отдел — один из списка, если подходит; если ни один не подходит — короткое название нового отдела по типу задачи (1–2 слова: «HR», «Бухгалтерия», «Продажи»), одинаковое для похожих задач; срок YYYY-MM-DD, только если назван, иначе null; кто — ответственный: если назван человек или роль («ассистентам», «бухгалтеру») — ИМЯ человека из списка с подходящим именем или ролью (в скобках — отдел/роль); нет такого — слово из текста; не сказано — null.
 Задачи, которые УЖЕ есть (на доске и во входящих):
 ${existing.length ? existing.map(t => '- ' + t).join('\n') : '- нет'}
 ВАЖНО про повторы: люди часто говорят одно и то же разными словами. Если задача по смыслу совпадает с уже существующей — НЕ добавляй её.
@@ -9714,13 +9735,13 @@ async function itInboxExtract(text, pid){
   const p0 = projById(pid);
   {
     const existing = [...itAll().filter(t => t.project_id === p0?.id && t.status !== 'done').map(t => t.title), ...(db.prefs?.itInbox || []).filter(x => x.pid === p0?.id).map(x => x.text)].slice(-250);
-    const res = await smp.json(IT_INBOX_PROMPT(text, itDepts().map(d => d.name), (db.users || []).map(u => u.name), existing), { modelTier:'default' });
+    const res = await smp.json(IT_INBOX_PROMPT(text, itDepts().map(d => d.name), (db.users || []).map(u => u.name + (u.dept || u.job ? ` (${[u.dept, u.job].filter(Boolean).join(', ')})` : '')), existing), { modelTier:'default' });
     const seen = new Set(existing.map(norm)); let dup = +res?.skipped || 0;
     const tasks = (Array.isArray(res?.tasks) ? res.tasks : []).filter(t => t && String(t.title || '').trim()).filter(t => { const k = norm(String(t.title)); if (seen.has(k)){ dup++; return false; } seen.add(k); return true; }).slice(0, 40);
     if (!tasks.length) throw new Error(dup ? `Новых задач нет — всё это уже есть (повторов: ${dup})` : 'Задач в тексте не нашлось');
     db.prefs = db.prefs || {};
     db.prefs.itInbox = [...(db.prefs.itInbox || []), ...tasks.map(t => ({ id:uid(), text:String(t.title).trim().slice(0, 300), at:new Date().toISOString(), by:actorName(), dept:String(t.dept || ''),
-      pid:p0?.id || '', due:/^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : '', who:t.who ? String(t.who).slice(0, 60) : '' }))];
+      pid:p0?.id || '', due:/^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : '', who:t.who ? String(t.who).slice(0, 60) : '', whoId:inboxWho(t.who) }))];
     commit(); return { n:tasks.length, dup };
   }
 }
@@ -9738,7 +9759,7 @@ document.addEventListener('submit', e => {
   let dept = f.querySelector('[data-itind]').value; const pid = x.pid, due = f.querySelector('[data-itindue]').value; const pr = projById(pid);
   if (dept.startsWith('new:')){ const nm = dept.slice(4).trim().slice(0, 40); const ex = itDepts().find(d => norm(d.name) === norm(nm));
     if (ex) dept = ex.id; else { const nd = { id:'d' + uid(), name:nm }; db.prefs = db.prefs || {}; db.prefs.itDepts = [...itDepts(), nd]; dept = nd.id; toast(`Добавлен отдел «${nm}»`); } }
-  const who = (db.users || []).find(u => x.who && norm(u.name).startsWith(norm(x.who).split(' ')[0]))?.id;
+  const who = f.querySelector('[data-itinwho]')?.value ?? inboxWho(x.who);
   itSave({ id:'i' + uid(), creator_id:ME, creator_name:userById(ME)?.name || 'Руководитель', created_at:new Date().toISOString(), title:x.text, description:'', assignee_id:who || itDeptWho(pr, dept) || ME, priority:'', category:'other', status:'todo', due_date:due || '', dept, project_id:pid });
   db.prefs.itInbox = db.prefs.itInbox.filter(y => y.id !== x.id); commit(); toast('Задача добавлена');
 });
