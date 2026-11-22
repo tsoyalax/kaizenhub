@@ -417,6 +417,13 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
       const it = E(`(() => { const i = kbItems([infoBoard()]).find(i => i.x.name === 'Снять 3 ролика для VPN'); return i && [i.st, i.s.name, i.x.due_date, taskFor(i.p.id, i.s.id, i.x.id)?.assignee_id].join('|'); })()`);
       assert.equal(it, 'todo|Трафик VPN|2099-01-09|uAs'); assert.ok(E(`kbItems([infoBoard()]).some(i => i.x.name === 'Позвонить амбассадору' && i.st === 'todo' && i.x.ttype === 'strat')`));
       ok('telegram: подтверждённые в боте задачи — сразу в «К выполнению» с отделом, сроком и ответственным');
+      { // правка уже отправленных из бота: op upd меняет задачу (ответственный, срок), op rm — удаляет
+        await E(`tgTake({ id:'d5', data: () => ({ kind:'info', tasks:[{ title:'Задача из бота', sid:'s77', dept:'Трафик VPN' }] }) })`); await wait(20);
+        await E(`tgTake({ id:'d6', data: () => ({ kind:'info', tasks:[{ op:'upd', sid:'s77', title:'Задача из бота (правка)', dept:'Трафик VPN', who:'Ане', due:'2099-02-01' }] }) })`); await wait(20);
+        const u = E(`(() => { const i = kbItems([infoBoard()]).find(i => i.x.tgid === 's77'); return i && [i.x.name, i.x.due_date, taskFor(i.p.id, i.s.id, i.x.id)?.assignee_id].join('|'); })()`);
+        assert.equal(u, 'Задача из бота (правка)|2099-02-01|uAs'); ok('telegram: правка отправленной задачи из бота меняет её на доске');
+        await E(`tgTake({ id:'d7', data: () => ({ kind:'info', tasks:[{ op:'rm', sid:'s77' }] }) })`); await wait(20);
+        assert.ok(!E(`kbItems(infoBoards()).some(i => i.x.tgid === 's77')`)); ok('telegram: «убери» после отправки удаляет задачу с доски'); }
       { const other = E(`infoBoards().find(p => p !== infoBoard())?.id`);
         await E(`tgTake({ id:'d4', data: () => ({ kind:'info', tasks:[{ title:'Задача на другую доску', board:'${other}' }] }) })`); await wait(20);
         assert.ok(E(`kbItems([projById('${other}')]).some(i => i.x.name === 'Задача на другую доску')`)); ok('telegram: задача уходит на доску, выбранную в боте'); }

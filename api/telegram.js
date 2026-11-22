@@ -124,19 +124,47 @@ ${JSON.stringify(tasks)}
 Сообщение руководителя: «${String(fix).slice(0, 4000)}»
 Если это вопрос («какие из них стратегические?», «кому что лучше отдать?», «что важнее?») — ответь коротко и по делу в "answer" (простым текстом, можно списком с номерами задач), список не меняй, "changed": false.
 Если это правка («операционные — ассистентам, стратегические — на меня», «вторую убери») — примени её к списку, "changed": true, в "answer" — одна короткая фраза, что сделано.
-Применяя правку: убери, добавь, переименуй, поменяй срок, ответственного, отдел или тип — как сказано. Остальное оставь как было.
+Применяя правку (у каждой задачи сохраняй её поле sid как есть): убери, добавь, переименуй, поменяй срок, ответственного, отдел или тип — как сказано. Остальное оставь как было.
 Если в правке новые задачи — добавь их по тем же правилам.
 ${TASK_RULES}
 Если правка про доску или неделю («отправь на неделю 5», «в бэклог») — верни "board": точное название доски из списка, задачи не меняй; иначе "board": null.
 Ответь JSON: {"answer":"…","changed":true,"tasks":[…],"board":null}`;
 const cleanTasks = res => (Array.isArray(res && res.tasks) ? res.tasks : []).filter(t => t && String(t.title || '').trim()).slice(0, 40).map(t => ({
   title: String(t.title).trim().slice(0, 200), dept: t.dept ? String(t.dept).slice(0, 40) : '', type: t.type === 'strat' ? 'strat' : 'oper',
-  due: /^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : null, time: /^\d{1,2}:\d{2}$/.test(t.time || '') ? t.time : null, who: t.who ? String(t.who).slice(0, 60) : null, ...(t.board ? { board: String(t.board).slice(0, 60) } : {}), ...(t.dup ? { dup: true } : {}) }));
+  due: /^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : null, time: /^\d{1,2}:\d{2}$/.test(t.time || '') ? t.time : null, who: t.who ? String(t.who).slice(0, 60) : null, ...(t.board ? { board: String(t.board).slice(0, 60) } : {}), ...(t.dup ? { dup: true } : {}), ...(t.sid ? { sid: String(t.sid).slice(0, 40) } : {}) }));
+const newSid = () => require('crypto').randomBytes(6).toString('hex');
+const FIELDS = ['title', 'dept', 'type', 'due', 'time', 'who', 'board'];
+const pub = t => { const o = {}; FIELDS.concat('sid').forEach(k => { if (t[k] != null && t[k] !== '') o[k] = t[k]; }); return o; };
+const sameTask = (a, b) => FIELDS.every(k => String(a[k] || '') === String(b[k] || ''));
+const SENT_TTL = 12 * 3600 * 1000;   // сколько помним отправленную пачку для правок
+const isMemory = d => d && Array.isArray(d.tasks) && d.tasks.length && d.tasks.every(t => t.sent && !t.orig && !t.rm) && Date.now() - (d.tasks[0].sentAt || 0) < SENT_TTL;
+const isUpdate = d => d && Array.isArray(d.tasks) && d.tasks.some(t => t.orig || t.rm || t.sent);
+// правка уже отправленных: новый список сравниваем с отправленным (orig) — изменено / удалено / новая
+function diffUpdate(sentList, next) {
+  const out = []; const seen = new Set();
+  next.forEach(t => { const o = t.sid && sentList.find(s => s.sid === t.sid);
+    if (o){ seen.add(o.sid); out.push({ ...pub(t), sid:o.sid, sent:true, orig:pub(o.orig || o) }); } else out.push({ ...pub(t), sid:newSid() }); });
+  sentList.forEach(o => { if (!seen.has(o.sid)) out.push({ ...pub(o.orig || o), sid:o.sid, sent:true, orig:pub(o.orig || o), rm:true }); });
+  return out;
+}
+const updMark = t => t.rm ? ' — удалить' : !t.sent ? ' — новая' : !sameTask(t, t.orig || {}) ? ' — изменена' : '';
+const afterSendPrompt = (sent, text, c) => `Руководитель недавно отправил в KaizenHub список задач (JSON, у каждой поле sid). Теперь он пишет новое сообщение.
+${ctxText(c)}
+Отправленные задачи:
+${JSON.stringify(sent.map(pub))}
+Сообщение руководителя: «${String(text).slice(0, 4000)}»
+Определи, что это:
+— "edit": правка ЭТИХ отправленных задач («сделай меня ответственным», «вторую убери», «срок у первой — суббота», «стратегические — на меня»). Верни весь список после правки; у существующих задач сохрани их sid без изменений; новых задач без sid можно добавить.
+— "question": вопрос про эти задачи — ответь в "answer", список не меняй.
+— "new": это НОВЫЕ задачи, не связанные с правкой отправленных, — верни "intent":"new" и пустой список.
+${TASK_RULES}
+Если правка про доску или направление — верни "board": точное название доски из списка, иначе null.
+Ответь JSON: {"intent":"edit","answer":"…","tasks":[…],"board":null}`;
 // напоминание: назвали время — за 10 минут, только день — в 10:00 (так же считает приложение, tgRemind)
 const remTxt = t => { if (!t.due) return ''; if (!t.time) return '⏰ ' + fmtDate(t.due) + ' в 10:00'; const [h, m] = t.time.split(':').map(Number); const x = h * 60 + m - 10; return `⏰ ${fmtDate(t.due)} в ${String(Math.floor((x + 1440) % 1440 / 60)).padStart(2, '0')}:${String((x + 1440) % 60).padStart(2, '0')}`; };
 const inTeam = (who, c) => !who || (c.people || []).some(p => String(p.name || '').toLowerCase() === String(who).toLowerCase());
 const fmtDate = d => d ? `${d.slice(8, 10)}.${d.slice(5, 7)}` : '';
-const listText = (tasks, head, c = {}) => `${head}\n${boardLine(tasks, c)}\n${tasks.map((t, i) => `${i + 1}. ${t.title}${t.dup ? '  ♻️ уже есть на доске' : ''}\n    ${[t.who ? '👤 ' + t.who + (inTeam(t.who, c) ? '' : ' (нет в «Команде»)') : '👤 не назначен', t.dept ? '🏷 ' + t.dept : '', t.due ? '📅 до ' + fmtDate(t.due) + (t.time ? ' ' + t.time : '') : '', remTxt(t), t.type === 'strat' ? '⭐ стратегическая' : ''].filter(Boolean).join(' · ')}`).join('\n')}
+const listText = (tasks, head, c = {}) => `${head}\n${boardLine(tasks, c)}\n${tasks.map((t, i) => `${i + 1}. ${t.title}${updMark(t)}${t.dup ? '  ♻️ уже есть на доске' : ''}\n    ${[t.who ? '👤 ' + t.who + (inTeam(t.who, c) ? '' : ' (нет в «Команде»)') : '👤 не назначен', t.dept ? '🏷 ' + t.dept : '', t.due ? '📅 до ' + fmtDate(t.due) + (t.time ? ' ' + t.time : '') : '', remTxt(t), t.type === 'strat' ? '⭐ стратегическая' : ''].filter(Boolean).join(' · ')}`).join('\n')}
 
 Всё верно? Нажмите ✅ или напишите «ок» — задачи уйдут в «К выполнению».
 Поправить — напишите или наговорите, что изменить.`;
@@ -161,13 +189,21 @@ const unkb = (chat, msg) => msg ? tg('editMessageReplyMarkup', { chat_id: chat, 
 
 async function approve(chat) {
   const d = await db('tg_draft_get', { p_chat: chat }).catch(() => null);
-  if (!d || !Array.isArray(d.tasks) || !d.tasks.length) { await say(chat, 'Нечего отправлять — пришлите голосовое или текст с задачами.'); return; }
-  if (!d.tasks.some(t => t.board)) { const info0 = await db('tg_ctx', { p_chat: chat }).catch(() => null); const c0 = (info0 && info0.ctx) || {};
+  if (!d || !Array.isArray(d.tasks) || !d.tasks.length || isMemory(d)) { await say(chat, 'Нечего отправлять — пришлите голосовое или текст с задачами.'); return; }
+  if (!isUpdate(d) && !d.tasks.some(t => t.board)) { const info0 = await db('tg_ctx', { p_chat: chat }).catch(() => null); const c0 = (info0 && info0.ctx) || {};
     if (boardsOf(c0).length > 1){ await say(chat, '👇 Сначала выберите доску — кнопкой под списком или словами «на неделю 4».'); return; } }
-  const ok = await db('tg_drop_tasks', { p_chat: chat, p_tasks: d.tasks }).catch(() => false);
+  const upd = isUpdate(d);
+  // правка отправленных: в KaizenHub уходят только изменения (op: upd / rm / add); обычный список — целиком
+  const ops = upd ? d.tasks.map(t => t.rm ? { op:'rm', sid:t.sid, title:t.title } : !t.sent ? { op:'add', ...pub(t) } : !sameTask(t, t.orig || {}) ? { op:'upd', ...pub(t) } : null).filter(Boolean)
+    : d.tasks.map(t => ({ ...pub(t), sid:t.sid || newSid() }));
+  if (!ops.length) { await say(chat, 'Изменений нет — в KaizenHub всё как было.'); return; }
+  const ok = await db('tg_drop_tasks', { p_chat: chat, p_tasks: ops }).catch(() => false);
   await unkb(chat, d.msg_id);
   const info = await db('tg_ctx', { p_chat: chat }).catch(() => null); const bn = boardName((info && info.ctx) || {}, curBoard(d.tasks, {}));
-  await say(chat, ok ? `✅ Отправлено: ${d.tasks.length} — задачи в «К выполнению»${bn ? ` доски «${bn}»` : ''} KaizenHub.` : '⚠️ Не получилось отправить. Попробуйте ещё раз.');
+  if (ok){   // запоминаем отправленное: следующую правку бот применит к этим задачам
+    const now = Date.now(); const keep = upd ? d.tasks.filter(t => !t.rm).map(t => ({ ...pub(t), sent:true, sentAt:now })) : ops.map(t => ({ ...t, sent:true, sentAt:now }));
+    if (keep.length) await db('tg_draft_set', { p_chat: chat, p_tasks: keep, p_msg: null }).catch(() => false); }
+  await say(chat, !ok ? 'Не получилось отправить. Попробуйте ещё раз.' : upd ? `Обновил в KaizenHub: ${ops.length} ${ops.length === 1 ? 'изменение' : 'изменений'}.` : `Отправлено: ${ops.length} — задачи в «К выполнению»${bn ? ` доски «${bn}»` : ''} KaizenHub.\nЕсли нужно что-то поправить в них — просто напишите или скажите.`);
 }
 // кнопка доски под списком: все задачи черновика — на эту доску, список перерисовывается
 async function pickBoard(chat, id) {
@@ -183,6 +219,7 @@ async function showList(chat) {
   const d = await db('tg_draft_get', { p_chat: chat }).catch(() => null);
   if (!d || !Array.isArray(d.tasks) || !d.tasks.length) { await say(chat, 'Сейчас списка нет. Наговорите или напишите задачи — я разберу их.'); return; }
   const info = await db('tg_ctx', { p_chat: chat }).catch(() => null); const c = (info && info.ctx) || {};
+  if (isMemory(d)){ await say(chat, listText(d.tasks, `Последние отправленные задачи (${d.tasks.length}):`, c) + '\n\nЧтобы что-то в них поменять — просто напишите или скажите.'); return; }
   await unkb(chat, d.msg_id);
   const m = await say(chat, listText(d.tasks, `📝 Текущий список (${d.tasks.length}):`, c), { reply_markup: kbFor(c, curBoard(d.tasks, c)) });
   await db('tg_draft_set', { p_chat: chat, p_tasks: d.tasks, p_msg: (m.result && m.result.message_id) || null }).catch(() => false);
@@ -198,12 +235,40 @@ async function dialog(chat, text) {
   const info = await db('tg_ctx', { p_chat: chat }).catch(() => null);
   if (!info) return true;                                   // канал не подключён — молчим
   const c = info.ctx || {};
-  const d = await db('tg_draft_get', { p_chat: chat }).catch(() => null);
+  let d = await db('tg_draft_get', { p_chat: chat }).catch(() => null);
+  if (d && Array.isArray(d.tasks) && d.tasks.length && d.tasks.every(t => t.sent && !t.orig && !t.rm) && !isMemory(d)) d = null;   // старая память — забываем
+  // после отправки: правка этих задач, вопрос о них или новые задачи
+  if (isMemory(d)){
+    const r0 = await claude(afterSendPrompt(d.tasks, text, c)); if (!r0) return false;
+    if (r0.intent === 'question' && r0.answer){ await say(chat, String(r0.answer).slice(0, 3500)); return true; }
+    if (r0.intent === 'edit'){
+      const next = cleanTasks(r0); const named = r0.board ? boardByName(c, r0.board) : null; if (named) next.forEach(t => { t.board = named.id; });
+      next.forEach(t => { const o = d.tasks.find(s => s.sid === t.sid); if (!t.board && o && o.board) t.board = o.board; if (!t.board && !o) t.board = d.tasks[0].board; });
+      const list = diffUpdate(d.tasks, next);
+      if (!list.some(t => updMark(t))){ await say(chat, 'Не понял, что поменять в отправленных задачах. Скажите конкретнее: «вторую — на меня», «срок у первой — суббота».'); return true; }
+      const m = await say(chat, (r0.answer ? String(r0.answer).slice(0, 600) + '\n\n' : '') + listText(list.filter(t => !t.rm || true), 'Правка уже отправленных задач:', c) + '\n\nПодтвердите — и изменения уйдут в KaizenHub.', { reply_markup: { inline_keyboard: [[{ text: '✅ Обновить в KaizenHub', callback_data: 'tg_ok' }, { text: '✖ Отмена', callback_data: 'tg_no' }]] } });
+      await db('tg_draft_set', { p_chat: chat, p_tasks: list, p_msg: (m.result && m.result.message_id) || null }).catch(() => false);
+      return true;
+    }
+    d = null;   // новые задачи — обычный разбор
+  }
+  // ещё раз правка уже подготовленного обновления
+  if (isUpdate(d)){
+    const live = d.tasks.filter(t => !t.rm);
+    const r1 = await claude(editPrompt(live.map(pub), text, c)); if (!r1) return false;
+    if (r1.changed === false && r1.answer && !r1.board){ await say(chat, String(r1.answer).slice(0, 3500)); return true; }
+    const sentList = d.tasks.filter(t => t.sent).map(t => ({ ...t.orig, sid:t.sid, sent:true }));
+    const next = cleanTasks(r1); next.forEach(t => { const o = d.tasks.find(s => s.sid === t.sid); if (!t.board && o) t.board = o.board; });
+    const list = diffUpdate(sentList, next); await unkb(chat, d.msg_id);
+    const m = await say(chat, listText(list, 'Правка уже отправленных задач:', c) + '\n\nПодтвердите — и изменения уйдут в KaizenHub.', { reply_markup: { inline_keyboard: [[{ text: '✅ Обновить в KaizenHub', callback_data: 'tg_ok' }, { text: '✖ Отмена', callback_data: 'tg_no' }]] } });
+    await db('tg_draft_set', { p_chat: chat, p_tasks: list, p_msg: (m.result && m.result.message_id) || null }).catch(() => false);
+    return true;
+  }
   const res = await claude(d && d.tasks && d.tasks.length ? editPrompt(d.tasks, text, c) : extractPrompt(text, c));
   if (!res) return false;
   // вопрос о задачах: отвечаем, список и кнопки не трогаем
   if (d && d.tasks && d.tasks.length && res.changed === false && !res.board && res.answer) { await say(chat, '💬 ' + String(res.answer).slice(0, 3500) + '\n\nПоправить — напишите что изменить; отправить — ✅ под списком или «ок».'); return true; }
-  const tasks = cleanTasks(res);
+  const tasks = cleanTasks(res); tasks.forEach(t => { if (!t.sid) t.sid = newSid(); });
   // доска: названа в голосовом/правке → её id; иначе — прежняя из черновика или доска текущей недели
   const named = res.board ? boardByName(c, res.board) : null; const prev = d && d.tasks ? curBoard(d.tasks, {}) : null;
   const bid = (named && named.id) || prev || curBoard([], c); tasks.forEach(t => { if (bid) t.board = bid; else delete t.board; });

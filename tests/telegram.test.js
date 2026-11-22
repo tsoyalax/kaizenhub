@@ -57,14 +57,22 @@ const msg = text => ({ channel_post: { chat: { id: 5, title: 'Kaizen Voice' }, t
   assert.ok(/Какие из этих задач стратегические/.test(claudeIn) && sent.some(s => /💬 Стратегическая: 2/.test(s.body.text || ''))); ok('бот: кнопка «⭐ Какие стратегические?» — задаёт вопрос и присылает ответ');
   sent.length = 0; await post(msg('ок'));
   assert.equal(db.dropped.length, 1); assert.equal(db.dropped[0][0].due, '2099-01-10'); assert.ok(sent.some(s => /Отправлено: 1/.test(s.body.text || ''))); ok('бот: «ок» — задачи уходят в KaizenHub');
+  assert.ok(db.draft && db.draft.tasks.every(x => x.sent && x.sid)); ok('бот: после отправки помнит, какие задачи ушли');
+  { const s0 = db.draft.tasks[0];
+    claudeOut = { intent: 'edit', answer: 'Назначил на вас', tasks: [{ ...s0, sent: undefined, sentAt: undefined, who: 'Александр' }] }; sent.length = 0; await post(msg('сделай меня ответственным'));
+    assert.ok(/Отправленные задачи/.test(claudeIn) && sent.some(s => /Правка уже отправленных задач/.test(s.body.text || '') && /— изменена/.test(s.body.text) && /Обновить в KaizenHub/.test(JSON.stringify(s.body.reply_markup)))); ok('бот: правка после отправки относится к отправленным задачам');
+    sent.length = 0; await post(msg('ок'));
+    const op = db.dropped[1][0]; assert.ok(op.op === 'upd' && op.sid === s0.sid && op.who === 'Александр' && sent.some(s => /Обновил в KaizenHub/.test(s.body.text || ''))); ok('бот: «ок» — в KaizenHub уходит только изменение (по sid)');
+    claudeOut = { intent: 'edit', tasks: [] }; sent.length = 0; await post(msg('убери её'));
+    assert.ok(sent.some(s => /— удалить/.test(s.body.text || ''))); await post(msg('ок')); assert.equal(db.dropped[2][0].op, 'rm'); ok('бот: «убери» после отправки — задача удаляется в KaizenHub'); }
 
   claudeOut = { tasks: [{ title: 'Запустить рекламу' }] }; await post(msg('запустить рекламу'));
   await post({ callback_query: { id: 'qb', data: 'tg_b:b3', message: { chat: { id: 5 } } } });
   sent.length = 0; await post({ callback_query: { id: 'q1', data: 'tg_ok', message: { chat: { id: 5 } } } });
-  assert.equal(db.dropped.length, 2); assert.ok(sent.some(s => s.m === 'answerCallbackQuery')); ok('бот: кнопка ✅ тоже отправляет');
+  assert.equal(db.dropped.length, 4); assert.ok(sent.some(s => s.m === 'answerCallbackQuery')); ok('бот: кнопка ✅ тоже отправляет');
 
   claudeOut = { tasks: [{ title: 'Что-то' }] }; await post(msg('что-то сделать'));
-  await post(msg('отмена')); assert.equal(db.draft, null); assert.equal(db.dropped.length, 2); ok('бот: «отмена» стирает черновик');
+  await post(msg('отмена')); assert.equal(db.draft, null); assert.equal(db.dropped.length, 4); ok('бот: «отмена» стирает черновик');
 
   process.env.ANTHROPIC_API_KEY = ''; await post(msg('купить микрофон')); assert.deepEqual(db.raw, ['купить микрофон']); ok('бот: без Claude текст уходит во «Входящие», как раньше');
 

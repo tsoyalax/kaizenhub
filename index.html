@@ -5771,7 +5771,7 @@ function tgRemind(t){
 }
 // задачи, подтверждённые в боте («ок»), — сразу в «К выполнению» площадки этого пространства (без «Входящих»)
 function tgApply(x){
-  const tasks = x.tasks.filter(t => t && String(t.title || '').trim()); if (!tasks.length) return;
+  const tasks = x.tasks.filter(t => t && (t.op === 'rm' || String(t.title || '').trim())); if (!tasks.length) return;
   let n = 0, last = null;
   if (x.kind === 'it'){
     const pr = projById(x.pid);
@@ -5781,18 +5781,36 @@ function tgApply(x){
   } else {
     const def = infoBoard() || infoBoards()[0]; if (!def) return;
     const haveOf = {}; const hv = p => haveOf[p.id] = haveOf[p.id] || new Set(kbItems([p]).map(i => norm(i.x.name)));
-    tasks.forEach(t => { const tb = t.board && infoBoards().find(b => b.id === t.board); const p = tb || def; const have = hv(p); if (have.has(norm(t.title))) return; have.add(norm(t.title));
+    // правки уже отправленных из бота: op 'upd' — поменять задачу (по x.tgid), 'rm' — удалить; 'add' и без op — новая
+    const loc = sid => { if (!sid) return null; for (const p of infoBoards()) for (const s of p.stages) { const x = (s.subs || []).find(y => y.tgid === sid); if (x) return { p, s, x }; } return null; };
+    tasks.filter(t => t.op === 'rm').forEach(t => { const f = loc(t.sid); if (!f) return;
+      f.s.subs = f.s.subs.filter(y => y !== f.x); db.tasks = (db.tasks || []).filter(k => !(k.project_id === f.p.id && k.stage_id === f.s.id && k.substage_id === f.x.id));
+      addLog(f.p, `Из Telegram: задача «${f.x.name}» удалена`); n++; last = f.p; });
+    tasks.filter(t => t.op === 'upd').forEach(t => { let f = loc(t.sid); if (!f) return; let { p, s, x } = f;
+      if (t.dept && norm(t.dept) !== norm(s.name) && !/контент/i.test(t.dept)){ let ts = kbDeptStages(p).find(z => norm(z.name) === norm(t.dept)) || p.stages.find(z => !isMaint(z) && !isCtStage(p, z) && norm(z.name) === norm(t.dept));
+        if (!ts){ ts = addStage(p); ts.name = String(t.dept).slice(0, 40); ts.custom = true; }
+        s.subs = s.subs.filter(y => y !== x); (ts.subs = ts.subs || []).push(x); (db.tasks || []).filter(k => k.project_id === p.id && k.stage_id === s.id && k.substage_id === x.id).forEach(k => { k.stage_id = ts.id; }); s = ts; }
+      const to = t.board && t.board !== p.id && infoBoards().find(b => b.id === t.board);
+      if (to){ w12MoveSub(p, s, x, to); f = loc(t.sid) || f; p = f.p; s = f.s; x = f.x; }
+      x.name = String(t.title || x.name).slice(0, 200); if (t.type === 'strat') x.ttype = 'strat'; else delete x.ttype;
+      if (t.due) x.due_date = t.due; else delete x.due_date;
+      let tk = taskFor(p.id, s.id, x.id); const wid = inboxWho(t.who); const rem = tgRemind(t);
+      if (!tk && (wid || rem || t.due)){ db.tasks = db.tasks || []; tk = makeTask({ project_id:p.id, stage_id:s.id, substage_id:x.id, title:x.name }); db.tasks.push(tk); }
+      if (tk){ tk.title = x.name; tk.assignee_id = wid || null; tk.due_date = t.due || ''; if (rem) tk.remind = rem; else delete tk.remind; }
+      addLog(p, `Из Telegram: задача «${x.name}» изменена`); n++; last = p; });
+    tasks.filter(t => !t.op || t.op === 'add').forEach(t => { const tb = t.board && infoBoards().find(b => b.id === t.board); const p = tb || def; const have = hv(p); if (have.has(norm(t.title))) return; have.add(norm(t.title));
       if (/контент/i.test(t.dept || '')) t = { ...t, dept:'SMM' };   // отдел «Контент» на канбане не виден (это раздел видео)
       let s = kbDeptStages(p).find(z => norm(z.name) === norm(t.dept || '')) || p.stages.find(z => !isMaint(z) && !isCtStage(p, z) && norm(z.name) === norm(t.dept || ''));
       if (!s && t.dept){ s = addStage(p); s.name = String(t.dept).slice(0, 40); s.custom = true; }
       if (!s) s = kbDeptStages(p)[0]; if (!s) return;
-      const nx = { id:uid(), name:String(t.title).slice(0, 200), done:false, at:new Date().toISOString(), src:'tg' }; if (t.type === 'strat') nx.ttype = 'strat'; if (t.due) nx.due_date = t.due;
+      const nx = { id:uid(), name:String(t.title).slice(0, 200), done:false, at:new Date().toISOString(), src:'tg', ...(t.sid ? { tgid:String(t.sid) } : {}) }; if (t.type === 'strat') nx.ttype = 'strat'; if (t.due) nx.due_date = t.due;
       (s.subs = s.subs || []).push(nx); const wid = inboxWho(t.who); const rem = tgRemind(t);
       if (wid || rem){ db.tasks = db.tasks || []; const tk = makeTask({ project_id:p.id, stage_id:s.id, substage_id:nx.id, title:nx.name, assignee_id:wid || null });
         if (t.due) tk.due_date = t.due; if (rem) tk.remind = rem; db.tasks.push(tk); }
       addLog(p, `Из Telegram${x.chat ? ' (' + x.chat + ')' : ''}: «${nx.name}» → «${s.name}»`); n++; last = p; });
   }
-  if (n){ commit(); render(); toast(`Telegram${x.chat ? ' · ' + x.chat : ''}: ${n} ${plural(n, 'задача', 'задачи', 'задач')} в «К выполнению»${last ? ` доски «${last.name}»` : ''}`); }
+  const isUpd = tasks.some(t => t.op === 'upd' || t.op === 'rm');
+  if (n){ commit(); render(); toast(isUpd ? `Telegram${x.chat ? ' · ' + x.chat : ''}: обновлено задач — ${n}` : `Telegram${x.chat ? ' · ' + x.chat : ''}: ${n} ${plural(n, 'задача', 'задачи', 'задач')} в «К выполнению»${last ? ` доски «${last.name}»` : ''}`); }
 }
 // боту нужен контекст пространства: отделы, люди с ролями, открытые задачи (против повторов) — пишем в tg_links.ctx
 let tgCtxSig = '';
