@@ -66,7 +66,7 @@ const msg = text => ({ channel_post: { chat: { id: 5, title: 'Kaizen Voice' }, t
   process.env.ANTHROPIC_API_KEY = ''; await post(msg('купить микрофон')); assert.deepEqual(db.raw, ['купить микрофон']); ok('бот: без Claude текст уходит во «Входящие», как раньше');
 
   sent.length = 0; await post({ message: { chat: { id: 77, type: 'private', first_name: 'А' }, text: '/start' } });
-  assert.ok(sent.some(s => /Подключить Telegram/.test(s.body.text || ''))); ok('бот в личке: /start объясняет, как подключить');
+  assert.ok(sent.some(s => /Подключить Telegram/.test(s.body.text || '')) && sent.some(s => s.m === 'sendPhoto' && /voice-welcome\.jpg$/.test(s.body.photo))); ok('бот в личке: /start — картинка и объяснение, как подключить');
   const r = await handler({ method: 'POST', headers: { 'x-telegram-bot-api-secret-token': 'wrong' }, body: msg('x') }, { status(c){ this.code = c; return this; }, end(){ return this; }, json(){ return this; } });
   assert.equal(r.code, 401); ok('бот: чужой вебхук без секрета не принимается');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);
