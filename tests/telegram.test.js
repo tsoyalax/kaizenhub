@@ -70,6 +70,10 @@ const msg = text => ({ channel_post: { chat: { id: 5, title: 'Kaizen Voice' }, t
 
   sent.length = 0; await post({ message: { chat: { id: 77, type: 'private', first_name: 'А' }, text: '/start' } });
   assert.ok(sent.some(s => /Подключить Telegram/.test(s.body.text || '')) && sent.some(s => s.m === 'sendPhoto' && /voice-welcome\.jpg$/.test(s.body.photo))); ok('бот в личке: /start — картинка и объяснение, как подключить');
+  assert.ok(sent.some(s => s.body.reply_markup && s.body.reply_markup.keyboard)); ok('бот в личке: внизу постоянные кнопки');
+  process.env.ANTHROPIC_API_KEY = 'sk-ant-test'; claudeOut = { tasks: [{ title: 'Позвонить' }] }; await post(msg('позвонить партнёру')); sent.length = 0;
+  await post(msg('📝 Текущий список')); assert.ok(sent.some(s => /Текущий список \(1\)/.test(s.body.text || '') && s.body.reply_markup)); ok('бот: «📝 Текущий список» присылает список ещё раз');
+  await post(msg('✖ Отменить список')); assert.equal(db.draft, null); ok('бот: «✖ Отменить список» стирает черновик');
   const r = await handler({ method: 'POST', headers: { 'x-telegram-bot-api-secret-token': 'wrong' }, body: msg('x') }, { status(c){ this.code = c; return this; }, end(){ return this; }, json(){ return this; } });
   assert.equal(r.code, 401); ok('бот: чужой вебхук без секрета не принимается');
   console.log(`\nИтого: ${n} проверок прошло`); process.exit(0);

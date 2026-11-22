@@ -49,6 +49,9 @@ const START_TEXT = `🎙 Kaizen AI — голосовой помощник Kaize
 
 ⏰ Если в голосовом есть срок — ставлю напоминание: за 10 минут до названного времени или в 10:00 в день срока.
 ♻️ Задачу, которая уже есть на доске, отмечу — решите сами, оставить её или убрать.`;
+// постоянные кнопки внизу чата (только в личке; в каналах Telegram такие кнопки не показывает)
+const MAIN_KB = { keyboard: [[{ text: '📝 Текущий список' }, { text: '❓ Как работать' }], [{ text: '✖ Отменить список' }]], resize_keyboard: true, is_persistent: true, input_field_placeholder: 'Наговорите или напишите задачи…' };
+const BTN_LIST = /^(📝\s*)?текущий список$|^\/list\b/i, BTN_HELP = /^(❓\s*)?как работать$/i, BTN_NO = /^(✖\s*)?отменить список$/i;
 const START_CONNECT = `
 
 Чтобы начать, подключите этот чат:
@@ -167,6 +170,15 @@ async function pickBoard(chat, id) {
   await db('tg_draft_set', { p_chat: chat, p_tasks: d.tasks, p_msg: d.msg_id || null }).catch(() => false);
   if (d.msg_id) await tg('editMessageText', { chat_id: chat, message_id: d.msg_id, text: listText(d.tasks, `📝 Задачи (${d.tasks.length}):`, c).slice(0, 4000), reply_markup: kbFor(c, id) });
 }
+// показать текущий список ещё раз (кнопка «📝 Текущий список» или /list)
+async function showList(chat) {
+  const d = await db('tg_draft_get', { p_chat: chat }).catch(() => null);
+  if (!d || !Array.isArray(d.tasks) || !d.tasks.length) { await say(chat, 'Сейчас списка нет. Наговорите или напишите задачи — я разберу их.'); return; }
+  const info = await db('tg_ctx', { p_chat: chat }).catch(() => null); const c = (info && info.ctx) || {};
+  await unkb(chat, d.msg_id);
+  const m = await say(chat, listText(d.tasks, `📝 Текущий список (${d.tasks.length}):`, c), { reply_markup: kbFor(c, curBoard(d.tasks, c)) });
+  await db('tg_draft_set', { p_chat: chat, p_tasks: d.tasks, p_msg: (m.result && m.result.message_id) || null }).catch(() => false);
+}
 async function cancel(chat) {
   const d = await db('tg_draft_get', { p_chat: chat }).catch(() => null);
   await db('tg_draft_set', { p_chat: chat, p_tasks: null, p_msg: null }).catch(() => false);
@@ -228,6 +240,7 @@ module.exports = async (req, res) => {
       if (q.me) { const m = await tg('getMe'); return res.status(200).json({ bot: (m.result && m.result.username) || '' }); }
       if (q.setup && whSecret()) {   // адрес всегда наш, секрет — наш: ставить вебхук безопасно
         const host = req.headers['x-forwarded-host'] || req.headers.host;
+        await tg('setMyCommands', { commands: [{ command: 'start', description: 'Как пользоваться' }, { command: 'list', description: 'Показать текущий список задач' }, { command: 'cancel', description: 'Отменить текущий список' }, { command: 'help', description: 'Что умеет бот' }] });
         const r = await tg('setWebhook', { url: `https://${host}/api/telegram`, secret_token: whSecret(), allowed_updates: ['channel_post', 'message', 'callback_query'] });
         return res.status(200).json({ ok: !!r.ok, description: r.description || '' });
       }
@@ -251,13 +264,15 @@ module.exports = async (req, res) => {
     const text = String(m.text || m.caption || '').trim();
 
     // личка с ботом: /start — приветствие и как подключиться; код можно прислать и без /connect
-    if (/^\/start\b/i.test(text) || /^\/help\b/i.test(text)) {
+    if (/^\/start\b/i.test(text) || /^\/help\b/i.test(text) || BTN_HELP.test(text)) {
       const linked = await db('tg_ctx', { p_chat: chat }).catch(() => null);
       const host = req.headers['x-forwarded-host'] || req.headers.host || 'kaizenhub-nu.vercel.app';
       await tg('sendPhoto', { chat_id: chat, photo: `https://${host}/icons/voice-welcome.jpg`, caption: 'Kaizen AI — скажи голосом, получи задачи' });
-      await say(chat, (linked ? '✅ Этот чат подключён к KaizenHub.\n\n' : '') + START_TEXT + (linked ? '' : START_CONNECT));
+      await say(chat, (linked ? '✅ Этот чат подключён к KaizenHub.\n\n' : '') + START_TEXT + (linked ? '' : START_CONNECT), m.chat.type === 'private' ? { reply_markup: MAIN_KB } : undefined);
       return res.status(200).json({ ok: true });
     }
+    if (BTN_LIST.test(text)) { await showList(chat); return res.status(200).json({ ok: true }); }
+    if (BTN_NO.test(text)) { await cancel(chat); return res.status(200).json({ ok: true }); }
     const con = text.match(/^(?:\/connect(?:@\w+)?\s+)?([a-f0-9]{32})$/i) || text.match(/^\/connect(?:@\w+)?\s+([a-f0-9]{16,64})\b/i);
     if (con) {
       const ok = await db('tg_link', { p_token: con[1].toLowerCase(), p_chat: chat, p_title: title }).catch(() => false);
