@@ -220,10 +220,17 @@ module.exports = async (req, res) => {
     const chat = m.chat.id, title = m.chat.title || m.chat.username || [m.chat.first_name, m.chat.last_name].filter(Boolean).join(' ') || 'Telegram';
     const text = String(m.text || m.caption || '').trim();
 
-    const con = text.match(/^\/connect(?:@\w+)?\s+([a-f0-9]{16,64})\b/i);
+    // личка с ботом: /start — приветствие и как подключиться; код можно прислать и без /connect
+    if (/^\/start\b/i.test(text) || /^\/help\b/i.test(text)) {
+      const linked = await db('tg_ctx', { p_chat: chat }).catch(() => null);
+      await say(chat, linked ? '🎙 Kaizen Voice на связи. Наговорите или напишите задачи — я разберу их, спрошу доску, и после ✅ они уйдут в KaizenHub.\nМожно спрашивать: «какие из них стратегические?», править: «вторую убери», «это в VPN».'
+        : '👋 Это Kaizen Voice — голосовой помощник KaizenHub.\nЧтобы подключить: KaizenHub → «Производство» → «Входящие» → «Подключить Telegram», скопируйте строку /connect … и пришлите её сюда.');
+      return res.status(200).json({ ok: true });
+    }
+    const con = text.match(/^(?:\/connect(?:@\w+)?\s+)?([a-f0-9]{32})$/i) || text.match(/^\/connect(?:@\w+)?\s+([a-f0-9]{16,64})\b/i);
     if (con) {
       const ok = await db('tg_link', { p_token: con[1].toLowerCase(), p_chat: chat, p_title: title }).catch(() => false);
-      await tg('sendMessage', { chat_id: chat, text: ok ? '✅ Канал подключён к «Входящим» KaizenHub. Голосовые и посты отсюда будут разбираться на задачи.' : '⚠️ Код не подошёл. Нажмите «Подключить Telegram» в приложении ещё раз и пришлите новый код.' });
+      await tg('sendMessage', { chat_id: chat, text: ok ? (m.chat.type === 'private' ? '✅ Готово — этот чат подключён к KaizenHub. Наговорите или напишите задачи, я разберу их и спрошу, на какую доску отправить.' : '✅ Канал подключён к «Входящим» KaizenHub. Голосовые и посты отсюда будут разбираться на задачи.') : '⚠️ Код не подошёл. Нажмите «Подключить Telegram» в приложении ещё раз и пришлите новый код.' });
       return res.status(200).json({ ok: true });
     }
 
