@@ -407,6 +407,9 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
       const it = E(`(() => { const i = kbItems([infoBoard()]).find(i => i.x.name === 'Снять 3 ролика для VPN'); return i && [i.st, i.s.name, i.x.due_date, taskFor(i.p.id, i.s.id, i.x.id)?.assignee_id].join('|'); })()`);
       assert.equal(it, 'todo|Трафик VPN|2099-01-09|uAs'); assert.ok(E(`kbItems([infoBoard()]).some(i => i.x.name === 'Позвонить амбассадору' && i.st === 'todo' && i.x.ttype === 'strat')`));
       ok('telegram: подтверждённые в боте задачи — сразу в «К выполнению» с отделом, сроком и ответственным');
+      { const other = E(`infoBoards().find(p => p !== infoBoard())?.id`);
+        await E(`tgTake({ id:'d4', data: () => ({ kind:'info', tasks:[{ title:'Задача на другую доску', board:'${other}' }] }) })`); await wait(20);
+        assert.ok(E(`kbItems([projById('${other}')]).some(i => i.x.name === 'Задача на другую доску')`)); ok('telegram: задача уходит на доску, выбранную в боте'); }
       assert.equal(E(`taskFor(...(() => { const i = kbItems([infoBoard()]).find(i => i.x.name === 'Снять 3 ролика для VPN'); return [i.p.id, i.s.id, i.x.id]; })())?.remind?.at`), '2099-01-09T10:00'); ok('telegram: срок без времени — напоминание в 10:00 этого дня');
       assert.equal(E(`tgRemind({ due:'2099-01-09', time:'15:00' }).at`), '2099-01-09T14:50'); assert.equal(E(`tgRemind({ due:'2099-01-09', time:'00:05' }).at`), '2099-01-08T23:55'); ok('telegram: названо время — напоминание за 10 минут'); }
     E(`cloud.store = window.__cs; cloud.uid = window.__cu; getSample = window.__gs; db.prefs.inbox = []; render()`); }

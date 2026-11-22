@@ -5771,16 +5771,16 @@ function tgRemind(t){
 // задачи, подтверждённые в боте («ок»), — сразу в «К выполнению» площадки этого пространства (без «Входящих»)
 function tgApply(x){
   const tasks = x.tasks.filter(t => t && String(t.title || '').trim()); if (!tasks.length) return;
-  let n = 0;
+  let n = 0, last = null;
   if (x.kind === 'it'){
     const pr = projById(x.pid);
     tasks.forEach(t => { let d = itDepts().find(z => norm(z.name) === norm(t.dept || ''));
       if (!d && t.dept){ d = { id:'d' + uid(), name:String(t.dept).slice(0, 40) }; db.prefs = db.prefs || {}; db.prefs.itDepts = [...itDepts(), d]; }
       itSave({ id:'i' + uid(), creator_id:ME, creator_name:'Telegram', created_at:new Date().toISOString(), title:String(t.title).slice(0, 200), description:'', assignee_id:inboxWho(t.who) || itDeptWho(pr, d?.id || '') || ME, priority:'', category:'other', status:'todo', due_date:t.due || '', dept:d?.id || '', project_id:x.pid || '', ...(t.type === 'strat' ? { ttype:'strat' } : {}), ...(tgRemind(t) ? { remind:tgRemind(t) } : {}) }); n++; });
   } else {
-    const p = infoBoard() || infoBoards()[0]; if (!p) return;
-    const have = new Set(kbItems([p]).map(i => norm(i.x.name)));
-    tasks.forEach(t => { if (have.has(norm(t.title))) return; have.add(norm(t.title));
+    const def = infoBoard() || infoBoards()[0]; if (!def) return;
+    const haveOf = {}; const hv = p => haveOf[p.id] = haveOf[p.id] || new Set(kbItems([p]).map(i => norm(i.x.name)));
+    tasks.forEach(t => { const tb = t.board && infoBoards().find(b => b.id === t.board); const p = tb || def; const have = hv(p); if (have.has(norm(t.title))) return; have.add(norm(t.title));
       if (/контент/i.test(t.dept || '')) t = { ...t, dept:'SMM' };   // отдел «Контент» на канбане не виден (это раздел видео)
       let s = kbDeptStages(p).find(z => norm(z.name) === norm(t.dept || '')) || p.stages.find(z => !isMaint(z) && !isCtStage(p, z) && norm(z.name) === norm(t.dept || ''));
       if (!s && t.dept){ s = addStage(p); s.name = String(t.dept).slice(0, 40); s.custom = true; }
@@ -5789,9 +5789,9 @@ function tgApply(x){
       (s.subs = s.subs || []).push(nx); const wid = inboxWho(t.who); const rem = tgRemind(t);
       if (wid || rem){ db.tasks = db.tasks || []; const tk = makeTask({ project_id:p.id, stage_id:s.id, substage_id:nx.id, title:nx.name, assignee_id:wid || null });
         if (t.due) tk.due_date = t.due; if (rem) tk.remind = rem; db.tasks.push(tk); }
-      addLog(p, `Из Telegram${x.chat ? ' (' + x.chat + ')' : ''}: «${nx.name}» → «${s.name}»`); n++; });
+      addLog(p, `Из Telegram${x.chat ? ' (' + x.chat + ')' : ''}: «${nx.name}» → «${s.name}»`); n++; last = p; });
   }
-  if (n){ commit(); render(); toast(`Telegram${x.chat ? ' · ' + x.chat : ''}: ${n} ${plural(n, 'задача', 'задачи', 'задач')} в «К выполнению»`); }
+  if (n){ commit(); render(); toast(`Telegram${x.chat ? ' · ' + x.chat : ''}: ${n} ${plural(n, 'задача', 'задачи', 'задач')} в «К выполнению»${last ? ` доски «${last.name}»` : ''}`); }
 }
 // боту нужен контекст пространства: отделы, люди с ролями, открытые задачи (против повторов) — пишем в tg_links.ctx
 let tgCtxSig = '';
@@ -5799,7 +5799,12 @@ async function tgCtxPush(){
   if (!cloud.store?.rpc || GUEST || !isInfo()) return;
   if (!(tgState.links || []).some(l => l.chat_id && l.kind === 'info' && (!l.pid || l.pid === tgSpace()))) return;
   const boards = infoBoards().filter(p => p.state !== 'completed');
-  const ctx = { depts:inboxDepts(boards), people:(db.users || []).filter(u => u.status !== 'archived').map(u => ({ name:u.name || '', role:[u.job || u.title, u.dept].filter(Boolean).join(', ') })),
+  // доски для бота: площадки и доски недель «12 недель»; по умолчанию — доска текущей недели, иначе открытая площадка
+  const w = db.prefs?.w12; let def = infoBoard()?.id || boards[0]?.id || ''; const wkOf = {};
+  if (w?.start){ (w.weeks || []).forEach((k, i) => { if (k?.board) wkOf[k.board] = i + 1; }); try { const c = w12Calc(); const cb = c.open <= 12 && c.brd(c.open); if (cb) def = cb.id; } catch(e) {} }
+  const blist = boards.map(p => ({ id:p.id, name:p.name, week:wkOf[p.id] || null, label:wkOf[p.id] && !new RegExp('недел[яи]\\s*' + wkOf[p.id] + '\\b', 'i').test(p.name) ? `Неделя ${wkOf[p.id]} · ${p.name}` : p.name }))
+    .sort((a, b) => (a.week || 99) - (b.week || 99));
+  const ctx = { boards:blist, defBoard:def, depts:inboxDepts(boards), people:(db.users || []).filter(u => u.status !== 'archived').map(u => ({ name:u.name || '', role:[u.job || u.title, u.dept].filter(Boolean).join(', ') })),
     existing:kbItems(boards).filter(i => i.st !== 'done').map(i => i.x.name).slice(-200) };
   const sig = JSON.stringify(ctx); if (sig === tgCtxSig) return;
   try { await cloud.store.rpc('tg_link_ctx', { p_kind:'info', p_pid:tgSpace(), p_ctx:ctx }); tgCtxSig = sig; } catch(e) {}

@@ -11,7 +11,7 @@ global.fetch = async (url, o = {}) => {
   const J = v => ({ ok: true, status: 200, json: async () => v });
   if (url.includes('/rest/v1/rpc/')) {
     const fn = url.split('/rpc/')[1]; assert.equal(body.p_secret, 'sec');
-    if (fn === 'tg_ctx') return J(body.p_chat === 5 ? { kind: 'info', ctx: { depts: ['Трафик'], people: [{ name: 'Аня', role: 'Ассистент' }], existing: [] } } : null);
+    if (fn === 'tg_ctx') return J(body.p_chat === 5 ? { kind: 'info', ctx: { depts: ['Трафик'], people: [{ name: 'Аня', role: 'Ассистент' }], existing: [], boards: [{ id: 'b3', name: 'Неделя 3', week: 3, label: 'Неделя 3' }, { id: 'b4', name: 'Неделя 4', week: 4, label: 'Неделя 4' }, { id: 'bl', name: 'Бэклог', label: 'Бэклог' }], defBoard: 'b3' } } : null);
     if (fn === 'tg_draft_get') return J(db.draft);
     if (fn === 'tg_draft_set') { db.draft = body.p_tasks ? { tasks: body.p_tasks, msg_id: body.p_msg } : null; return J(true); }
     if (fn === 'tg_drop_tasks') { db.dropped.push(body.p_tasks); db.draft = null; return J(true); }
@@ -33,6 +33,11 @@ const msg = text => ({ channel_post: { chat: { id: 5, title: 'Kaizen Voice' }, t
   assert.ok(list && /1\. Снять 3 ролика/.test(list.body.text) && /👤 Аня/.test(list.body.text) && /до 09\.01/.test(list.body.text)); assert.ok(/⏰ 09\.01 в 14:50/.test(list.body.text) && /Ассистенты \(нет в «Команде»\)/.test(list.body.text)); ok('бот: прислал список задач с ответственным и сроком и кнопками ✅/✖');
   assert.ok(/Аня \(Ассистент\)/.test(claudeIn)); ok('бот: Claude знает команду и роли пространства');
   assert.equal(db.draft.tasks.length, 2); ok('бот: черновик сохранён');
+  assert.ok(/📋 Доска: Неделя 3/.test(list.body.text) && list.body.reply_markup.inline_keyboard.flat().some(b => b.text === '● Неделя 3') && db.draft.tasks.every(x => x.board === 'b3')); ok('бот: по умолчанию — доска текущей недели, под списком кнопки досок');
+  sent.length = 0; await post({ callback_query: { id: 'q0', data: 'tg_b:b4', message: { chat: { id: 5 } } } });
+  assert.ok(db.draft.tasks.every(x => x.board === 'b4') && sent.some(s => s.m === 'editMessageText' && /Доска: Неделя 4/.test(s.body.text))); ok('бот: кнопка доски — задачи переезжают на «Неделя 4», список обновлён');
+  claudeOut = { tasks: db.draft.tasks, board: 'Бэклог' }; sent.length = 0; await post(msg('отправь в бэклог'));
+  assert.ok(db.draft.tasks.every(x => x.board === 'bl')); ok('бот: «отправь в бэклог» словами — доска меняется');
 
   claudeOut = { tasks: [{ title: 'Снять 3 ролика', dept: 'Трафик', type: 'oper', due: '2099-01-10', who: 'Аня' }] };
   sent.length = 0; await post(msg('вторую убери, срок у первой суббота'));
