@@ -5810,6 +5810,7 @@ async function tgCtxPush(){
   try { await cloud.store.rpc('tg_link_ctx', { p_kind:'info', p_pid:tgSpace(), p_ctx:ctx }); tgCtxSig = sig; } catch(e) {}
 }
 setInterval(() => { tgCtxPush(); }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) tgCtxPush(); });   // вернулись во вкладку — сразу обновить боту доски
 async function tgParse(lid, auto){
   const e = (db.prefs?.tgLog || []).find(y => y.id === lid); if (!e) return;
   e.st = 'busy'; render();

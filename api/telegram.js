@@ -109,6 +109,7 @@ const kbFor = (c, cur) => { const bs = boardsOf(c); const rows = [KB0];
   return { inline_keyboard: rows }; };
 const curBoard = (tasks, c) => (tasks.find(t => t.board) || {}).board || (boardsOf(c).length <= 1 ? c.defBoard || (boardsOf(c)[0] || {}).id || null : null);
 const boardLine = (tasks, c) => { const id = curBoard(tasks, c); const n = id ? boardName(c, id) : ''; if (n) return `📋 Доска: ${n}${boardsOf(c).length > 1 ? ' (сменить — кнопками ниже или словами «на неделю 4»)' : ''}\n`;
+  if (!boardsOf(c).length) return '📋 Доска: та, что открыта в KaizenHub. Чтобы выбирать доску здесь — откройте KaizenHub и обновите страницу.\n';
   return boardsOf(c).length > 1 ? '📋 В какую доску отправить? Выберите кнопкой ниже или скажите «на неделю 4».\n' : ''; };
 const say = (chat, text, extra) => tg('sendMessage', { chat_id: chat, text: text.slice(0, 4000), ...(extra || {}) });
 const unkb = (chat, msg) => msg ? tg('editMessageReplyMarkup', { chat_id: chat, message_id: msg, reply_markup: { inline_keyboard: [] } }) : null;
