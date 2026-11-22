@@ -57,6 +57,8 @@ async function claude(prompt) {
 const boardsOf = c => (Array.isArray(c.boards) ? c.boards : []).filter(b => b && b.id).slice(0, 16);
 const boardName = (c, id) => { const b = boardsOf(c).find(b => b.id === id) || boardsOf(c).find(b => b.id === c.defBoard); return b ? b.label || b.name : ''; };
 const boardByName = (c, name) => { const n = String(name || '').toLowerCase().trim(); if (!n) return null;
+  const dir = (c.dirs || []).find(d => String(d.name || '').toLowerCase() === n || n.includes(String(d.name || '').toLowerCase()) && String(d.name || '').length >= 3);
+  if (dir && dir.board && boardsOf(c).some(b => b.id === dir.board)) return boardsOf(c).find(b => b.id === dir.board);
   const wk = n.match(/(\d{1,2})/); const bs = boardsOf(c);
   return bs.find(b => String(b.label || b.name).toLowerCase() === n) || bs.find(b => String(b.name).toLowerCase() === n) || (wk && /нед/.test(n) ? bs.find(b => +b.week === +wk[1]) : null) || bs.find(b => String(b.label || b.name).toLowerCase().includes(n)) || null; };
 const ctxText = c => {
@@ -64,12 +66,13 @@ const ctxText = c => {
   return `Сегодня ${todayKz()}. Отделы: ${depts.join(', ') || 'нет данных'}.
 Команда (имя и роль/отдел): ${people.map(p => p.role ? `${p.name} (${p.role})` : p.name).join('; ') || 'нет данных'}.
 Доски, куда можно отправить задачи: ${boardsOf(c).map(b => b.label || b.name).join('; ') || 'одна'}.
+${(c.dirs || []).length ? `Направления (у каждого своя текущая доска): ${(c.dirs || []).map(d => `${d.name} → ${boardName(c, d.board) || 'нет доски'}`).join('; ')}. Если сказано «это в VPN», «для AntiSyllabus» и т.п. — board = текущая доска этого направления.\n` : ''}Руководитель (кто пишет боту): ${c.me || 'неизвестно'} — «на меня», «я сам», «мне» означает его.
 Задачи, которые УЖЕ есть на досках (если задача из текста совпадает с одной из них по смыслу — всё равно включи её, но поставь "dup": true):
 ${have.length ? have.map(t => '- ' + t).join('\n') : '- нет'}`;
 };
 const TASK_RULES = `Каждая задача: title — коротко, с глагола, до 90 символов; dept — отдел из списка, если подходит, иначе короткое название нового отдела (1–2 слова);
 не используй отдел со словом «Контент» (это отдельный раздел видео) — для задач про ролики и соцсети бери подходящий отдел из списка или «SMM»;
-type — "strat" (стратегия и рост) или "oper" (текущая работа); due — дата YYYY-MM-DD, только если срок назван или однозначно следует из текста («до пятницы», «завтра»), иначе null;
+type — "strat" или "oper". СТРАТЕГИЧЕСКАЯ (strat) — напрямую влияет на деньги и прибыль: переговоры, созвоны, продажи, партнёрства, сделки, цены и экономика, а также то, что может сделать только руководитель лично (ключевые решения, доработка продукта). ОПЕРАЦИОННАЯ (oper) — рутина, которую можно отдать ассистенту: создать или прогреть аккаунт, полайкать, выложить, опубликовать, собрать, оформить, проверить по инструкции; due — дата YYYY-MM-DD, только если срок назван или однозначно следует из текста («до пятницы», «завтра»), иначе null;
 time — время HH:MM, если оно названо («в 15:00», «к трём часам дня»), иначе null;
 who — ответственный: если назван человек или роль («ассистентам», «монтажёру», «Ане») — ТОЧНОЕ ИМЯ человека из списка команды с подходящим именем или должностью (если подходят несколько — первый), если такого нет — слово из текста, иначе null.`;
 const extractPrompt = (text, c) => `Ты помогаешь руководителю разобрать голосовое или сообщение на задачи.
@@ -81,16 +84,18 @@ ${TASK_RULES}
 
 Текст:
 ${String(text).slice(0, 12000)}`;
-const editPrompt = (tasks, fix, c) => `Есть список задач (JSON). Руководитель просит его поправить.
+const editPrompt = (tasks, fix, c) => `Есть список задач (JSON). Руководитель пишет сообщение: это может быть ВОПРОС о задачах или ПРАВКА списка.
 ${ctxText(c)}
 Текущий список:
 ${JSON.stringify(tasks)}
-Правка руководителя: «${String(fix).slice(0, 4000)}»
-Примени правку: убери, добавь, переименуй, поменяй срок, ответственного, отдел или тип — как сказано. Остальное оставь как было.
+Сообщение руководителя: «${String(fix).slice(0, 4000)}»
+Если это вопрос («какие из них стратегические?», «кому что лучше отдать?», «что важнее?») — ответь коротко и по делу в "answer" (простым текстом, можно списком с номерами задач), список не меняй, "changed": false.
+Если это правка («операционные — ассистентам, стратегические — на меня», «вторую убери») — примени её к списку, "changed": true, в "answer" — одна короткая фраза, что сделано.
+Применяя правку: убери, добавь, переименуй, поменяй срок, ответственного, отдел или тип — как сказано. Остальное оставь как было.
 Если в правке новые задачи — добавь их по тем же правилам.
 ${TASK_RULES}
 Если правка про доску или неделю («отправь на неделю 5», «в бэклог») — верни "board": точное название доски из списка, задачи не меняй; иначе "board": null.
-Ответь JSON: {"tasks":[…],"board":null}`;
+Ответь JSON: {"answer":"…","changed":true,"tasks":[…],"board":null}`;
 const cleanTasks = res => (Array.isArray(res && res.tasks) ? res.tasks : []).filter(t => t && String(t.title || '').trim()).slice(0, 40).map(t => ({
   title: String(t.title).trim().slice(0, 200), dept: t.dept ? String(t.dept).slice(0, 40) : '', type: t.type === 'strat' ? 'strat' : 'oper',
   due: /^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : null, time: /^\d{1,2}:\d{2}$/.test(t.time || '') ? t.time : null, who: t.who ? String(t.who).slice(0, 60) : null, ...(t.board ? { board: String(t.board).slice(0, 60) } : {}), ...(t.dup ? { dup: true } : {}) }));
@@ -147,13 +152,15 @@ async function dialog(chat, text) {
   const d = await db('tg_draft_get', { p_chat: chat }).catch(() => null);
   const res = await claude(d && d.tasks && d.tasks.length ? editPrompt(d.tasks, text, c) : extractPrompt(text, c));
   if (!res) return false;
+  // вопрос о задачах: отвечаем, список и кнопки не трогаем
+  if (d && d.tasks && d.tasks.length && res.changed === false && !res.board && res.answer) { await say(chat, '💬 ' + String(res.answer).slice(0, 3500) + '\n\nПоправить — напишите что изменить; отправить — ✅ под списком или «ок».'); return true; }
   const tasks = cleanTasks(res);
   // доска: названа в голосовом/правке → её id; иначе — прежняя из черновика или доска текущей недели
   const named = res.board ? boardByName(c, res.board) : null; const prev = d && d.tasks ? curBoard(d.tasks, {}) : null;
   const bid = (named && named.id) || prev || curBoard([], c); tasks.forEach(t => { if (bid) t.board = bid; else delete t.board; });
   if (!tasks.length) { await say(chat, d ? 'После правки задач не осталось. Напишите «отмена» или пришлите новое голосовое.' : 'Задач в сообщении не нашёл 🤔 Попробуйте сказать конкретнее: что сделать, кому и к какому сроку.'); if (d) await db('tg_draft_set', { p_chat: chat, p_tasks: [], p_msg: null }).catch(() => false); return true; }
   if (d) await unkb(chat, d.msg_id);
-  const m = await say(chat, listText(tasks, d ? `✏️ Поправил. Задачи (${tasks.length}):` : `📝 Нашёл задачи (${tasks.length}):`, c) + (tasks.some(t => t.who && !inTeam(t.who, c)) ? '\n\n💡 «нет в «Команде»» — в KaizenHub → «Команда» впишите людям должность (например, «Ассистент»), тогда бот найдёт ответственного сам.' : ''), { reply_markup: kbFor(c, bid) });
+  const m = await say(chat, (d && res.answer ? '💬 ' + String(res.answer).slice(0, 600) + '\n\n' : '') + listText(tasks, d ? `✏️ Поправил. Задачи (${tasks.length}):` : `📝 Нашёл задачи (${tasks.length}):`, c) + (tasks.some(t => t.who && !inTeam(t.who, c)) ? '\n\n💡 «нет в «Команде»» — в KaizenHub → «Команда» впишите людям должность (например, «Ассистент»), тогда бот найдёт ответственного сам.' : ''), { reply_markup: kbFor(c, bid) });
   await db('tg_draft_set', { p_chat: chat, p_tasks: tasks, p_msg: (m.result && m.result.message_id) || null }).catch(() => false);
   return true;
 }

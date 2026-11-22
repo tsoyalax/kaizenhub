@@ -11,7 +11,7 @@ global.fetch = async (url, o = {}) => {
   const J = v => ({ ok: true, status: 200, json: async () => v });
   if (url.includes('/rest/v1/rpc/')) {
     const fn = url.split('/rpc/')[1]; assert.equal(body.p_secret, 'sec');
-    if (fn === 'tg_ctx') return J(body.p_chat === 5 ? { kind: 'info', ctx: { depts: ['Трафик'], people: [{ name: 'Аня', role: 'Ассистент' }], existing: [], boards: [{ id: 'b3', name: 'Неделя 3', week: 3, label: 'Неделя 3' }, { id: 'b4', name: 'Неделя 4', week: 4, label: 'Неделя 4' }, { id: 'bl', name: 'Бэклог', label: 'Бэклог' }], defBoard: 'b3' } } : null);
+    if (fn === 'tg_ctx') return J(body.p_chat === 5 ? { kind: 'info', ctx: { me: 'Александр', dirs: [{ name: 'VPN', board: 'b3' }, { name: 'AntiSyllabus', board: 'b4' }], depts: ['Трафик'], people: [{ name: 'Аня', role: 'Ассистент' }], existing: [], boards: [{ id: 'b3', name: 'Неделя 3', week: 3, label: 'Неделя 3' }, { id: 'b4', name: 'Неделя 4', week: 4, label: 'Неделя 4' }, { id: 'bl', name: 'Бэклог', label: 'Бэклог' }], defBoard: 'b3' } } : null);
     if (fn === 'tg_draft_get') return J(db.draft);
     if (fn === 'tg_draft_set') { db.draft = body.p_tasks ? { tasks: body.p_tasks, msg_id: body.p_msg } : null; return J(true); }
     if (fn === 'tg_drop_tasks') { db.dropped.push(body.p_tasks); db.draft = null; return J(true); }
@@ -38,13 +38,20 @@ const msg = text => ({ channel_post: { chat: { id: 5, title: 'Kaizen Voice' }, t
   sent.length = 0; await post({ callback_query: { id: 'q0', data: 'tg_b:b4', message: { chat: { id: 5 } } } });
   assert.ok(db.draft.tasks.every(x => x.board === 'b4') && sent.some(s => s.m === 'editMessageText' && /Доска: Неделя 4/.test(s.body.text))); ok('бот: кнопка доски — задачи переезжают на «Неделя 4», список обновлён');
   claudeOut = { tasks: db.draft.tasks, board: 'Бэклог' }; sent.length = 0; await post(msg('отправь в бэклог'));
+  assert.ok(db.draft.tasks.every(x => x.board === 'bl'));
+  claudeOut = { tasks: db.draft.tasks, board: 'VPN', changed: true }; await post(msg('это в VPN'));
+  assert.ok(db.draft.tasks.every(x => x.board === 'b3') && /VPN → Неделя 3/.test(claudeIn) && /Руководитель \(кто пишет боту\): Александр/.test(claudeIn)); ok('бот: «это в VPN» — текущая доска направления VPN; «на меня» = руководитель');
+  claudeOut = { tasks: db.draft.tasks, board: 'Бэклог' }; await post(msg('нет, всё же в бэклог'));
   assert.ok(db.draft.tasks.every(x => x.board === 'bl')); ok('бот: «отправь в бэклог» словами — доска меняется');
 
   claudeOut = { tasks: [{ title: 'Снять 3 ролика', dept: 'Трафик', type: 'oper', due: '2099-01-10', who: 'Аня' }] };
   sent.length = 0; await post(msg('вторую убери, срок у первой суббота'));
-  assert.ok(/Правка руководителя: «вторую убери/.test(claudeIn) && /Позвонить амбассадору/.test(claudeIn)); ok('бот: правка уходит Claude вместе с текущим списком');
+  assert.ok(/Сообщение руководителя: «вторую убери/.test(claudeIn) && /Позвонить амбассадору/.test(claudeIn)); ok('бот: правка уходит Claude вместе с текущим списком');
   assert.ok(sent.some(s => s.m === 'editMessageReplyMarkup') && sent.some(s => /Поправил/.test(s.body.text || ''))); ok('бот: старые кнопки убраны, новый список прислан');
 
+  claudeOut = { answer: '1 — операционная, 2 — стратегическая', changed: false, tasks: db.draft.tasks };
+  const before = JSON.stringify(db.draft.tasks); sent.length = 0; await post(msg('какие из них стратегические?'));
+  assert.ok(sent.some(s => /💬 1 — операционная, 2 — стратегическая/.test(s.body.text || '')) && JSON.stringify(db.draft.tasks) === before && !sent.some(s => s.m === 'editMessageReplyMarkup')); ok('бот: на вопрос отвечает, список и кнопки не трогает');
   sent.length = 0; await post(msg('ок'));
   assert.equal(db.dropped.length, 1); assert.equal(db.dropped[0][0].due, '2099-01-10'); assert.ok(sent.some(s => /Отправлено: 1/.test(s.body.text || ''))); ok('бот: «ок» — задачи уходят в KaizenHub');
 

@@ -5650,7 +5650,7 @@ const INBOX_AI_PROMPT = (text, depts, people, existing = []) => `Ты помог
 Сегодня ${today()}. Отделы: ${depts.join(', ')}. Люди в команде: ${people.join(', ') || 'нет данных'}.
 Выдели только РЕАЛЬНЫЕ задачи — конкретные действия, которые кто-то должен сделать. Не включай обсуждения, мнения, факты, уже сделанное.
 Каждую задачу сформулируй коротко, с глагола («Отправить КП партнёру»), до 90 символов.
-Для каждой: отдел — один из списка, если подходит по смыслу; если ни один не подходит — придумай короткое понятное название нового отдела по типу задачи (1–2 слова: «HR», «Трафик», «Юридический», «Финансы»), одинаковое для похожих задач; тип — "strat" (связана со стратегией и ростом) или "oper" (текущая работа),
+Для каждой: отдел — один из списка, если подходит по смыслу; если ни один не подходит — придумай короткое понятное название нового отдела по типу задачи (1–2 слова: «HR», «Трафик», «Юридический», «Финансы»), одинаковое для похожих задач; тип — "strat" (напрямую влияет на деньги и прибыль: переговоры, созвоны, продажи, цены, продукт, то, что может сделать только руководитель лично) или "oper" (рутина, которую можно отдать ассистенту: создать/прогреть аккаунт, выложить, опубликовать, оформить),
 срок — дата YYYY-MM-DD, только если он назван или однозначно следует из текста, иначе null; кто — ответственный: если назван человек или роль («ассистентам», «монтажёру», «Ане») — верни ИМЯ человека из списка команды с подходящим именем или ролью (в скобках — отдел/роль); если такого нет в списке — верни слово из текста («Ассистенты»); если не сказано — null.
 Задачи, которые УЖЕ есть (на доске и во входящих):
 ${existing.length ? existing.map(t => '- ' + t).join('\n') : '- нет'}
@@ -5806,7 +5806,8 @@ async function tgCtxPush(){
     if (di === 0) try { const c = w12Calc(w); const cb = c.open <= 12 && c.brd(c.open); if (cb) def = cb.id; } catch(e) {} });
   const blist = boards.map(p => ({ id:p.id, name:p.name, week:wkOf[p.id] || null, label:(dirOf[p.id] && !p.name.includes(dirOf[p.id]) ? dirOf[p.id] + ' · ' : '') + (wkOf[p.id] && !new RegExp('недел[яи]\\s*' + wkOf[p.id] + '\\b', 'i').test(p.name) ? `Неделя ${wkOf[p.id]} · ${p.name}` : p.name) }))
     .sort((a, b) => (a.week || 99) - (b.week || 99));
-  const ctx = { boards:blist, defBoard:def, depts:inboxDepts(boards), people:(db.users || []).filter(u => u.status !== 'archived').map(u => ({ name:u.name || '', role:[u.job || u.title, u.dept].filter(Boolean).join(', ') })),
+  const dirs = w12Dirs().filter(w => w.start).map(w => { let b = ''; try { const c = w12Calc(w); b = (c.open <= 12 && c.brd(c.open)?.id) || ''; } catch(e) {} return { name:w12Name(w), board:b }; });
+  const ctx = { me:userById(ME)?.name || '', dirs, boards:blist, defBoard:def, depts:inboxDepts(boards), people:(db.users || []).filter(u => u.status !== 'archived').map(u => ({ name:u.name || '', role:[u.job || u.title, u.dept].filter(Boolean).join(', ') })),
     existing:kbItems(boards).filter(i => i.st !== 'done').map(i => i.x.name).slice(-200) };
   const sig = JSON.stringify(ctx); if (sig === tgCtxSig) return;
   try { await cloud.store.rpc('tg_link_ctx', { p_kind:'info', p_pid:tgSpace(), p_ctx:ctx }); tgCtxSig = sig; } catch(e) {}
@@ -6429,7 +6430,7 @@ const progTiles = pr => !pr?.total ? '' : pr.total > 24 ? `<span class="tk-bar">
   : `<span class="pg-tiles${pr.n === pr.total ? ' full' : ''}" role="img" aria-label="Выполнено ${pr.n} из ${pr.total}">${Array.from({ length:pr.total }, (_, i) => `<i class="${i < pr.n ? 'on' : ''}"></i>`).join('')}</span>`;
 const KB_COLS = [['todo', 'К выполнению'], ['doing', 'В работе'], ['done', 'Готово']];
 const KB_TYPES = { oper:'Операционная', strat:'Стратегическая' };
-const KB_TYPE_HINT = { oper:'Операционная — текущая работа, держит процесс', strat:'Стратегическая — связана со стратегией и ростом' };
+const KB_TYPE_HINT = { oper:'Операционная — рутина, которую можно отдать ассистенту: создать, прогреть, выложить, опубликовать', strat:'Стратегическая — напрямую влияет на деньги: переговоры, созвоны, продажи, цены, продукт — то, что делаете лично вы' };
 const kbTT = x => x?.ttype === 'strat' ? 'strat' : 'oper';   // тип по умолчанию — операционная
 const kbStatus = (p, s, x) => subDone(p, s, x) ? 'done' : x.kst === 'doing' || (x.cycle && x.vst && vidCols()[0]?.id !== x.vst) ? 'doing' : 'todo';
 const kbHue = name => { let h = 0; for (const ch of norm(name)) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
