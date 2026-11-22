@@ -381,6 +381,16 @@ let n = 0; const ok = m => { n++; console.log('PASS ' + m); };
     assert.equal(E(`(() => { const items = [{ x:{ ttype:'strat' }, st:'todo' }, ...Array.from({ length:3 }, () => ({ x:{}, st:'done' }))]; const tot = items.reduce((m, i) => m + (kbTT(i.x) === 'strat' ? W12_STRAT_W : 1), 0); return Math.round(items.filter(i => i.st === 'done').reduce((m, i) => m + 1, 0) / tot * 100); })()`), 50); ok('12 недель: стратегическая задача весит ×3 (3 мелкие из 4 — это 50%, а не 75%)');
     assert.equal(E('w12Load(15)'), ''); assert.equal(E('w12Load(25)'), 'mid'); assert.equal(E('w12Load(35)'), 'bad'); ok('12 недель: перегруз — больше 20 задач жёлтый, больше 30 красный');
     assert.ok(/меняйте связку/.test(E(`w12Diag({ metrics:[{ id:'a', kind:'lead' }, { id:'b', kind:'lag' }], weeks:[{ vals:{ a:{ plan:30, fact:30 }, b:{ plan:20, fact:12 } } }] }, 1)`))); ok('12 недель: действия 100%, результат ниже — подсказка «меняйте связку»'); }
+  { // направления «Дорожной карты»: у каждого свои 12 недель и доски
+    E(`window.__kd = db.prefs.kind; db.prefs.kind = 'info'; ui.view = 'w12'; ui.w12d = ''; render()`); await wait(20);
+    D.querySelector('[data-w12dirnew]').click(); await wait(10); D.getElementById('npName').value = 'AntiSyllabus'; D.getElementById('npForm').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
+    assert.ok(E(`w12() !== db.prefs.w12 && w12Name(w12()) === 'AntiSyllabus' && !w12().start`) && D.getElementById('w12Start')); ok('направления: «+ Направление» создаёт новое со своим стартом');
+    D.getElementById('w12Goal').value = 'Выпустить AntiSyllabus'; D.getElementById('w12Date').value = E('today()'); D.getElementById('w12Start').dispatchEvent(new w.Event('submit', { bubbles:true, cancelable:true })); await wait(30);
+    const sel = D.querySelector('[data-w12board="1"]'); sel.value = 'new'; sel.dispatchEvent(new w.Event('change', { bubbles:true })); await wait(30);
+    const bid = E('w12().weeks[0].board'); assert.equal(E(`projById('${bid}').name`), 'AntiSyllabus · Неделя 1'); ok('направления: доска недели — «AntiSyllabus · Неделя 1»');
+    assert.ok(E(`db.prefs.w12.weeks.every(k => k.board !== '${bid}') && w12OfBoard('${bid}').w === w12()`)); ok('направления: недели и доски первого направления не тронуты');
+    D.querySelector('[data-w12dir=""]').click(); await wait(20); assert.ok(E('w12() === db.prefs.w12')); ok('направления: переключение между направлениями');
+    E(`db.prefs.kind = window.__kd; ui.view = 'production'; render()`); }
   { // регулярные: «Каждый день» и «По будням»
     assert.ok(E(`FREQ.daily && FREQ.workdays`)); assert.equal(E(`nextCycle('2099-01-01', 'daily')`), '2099-01-02');
     assert.equal(E(`nextCycle('2099-01-02', 'workdays')`), '2099-01-05'); ok('регулярные: есть «Каждый день» и «По будням» (после пятницы — понедельник)'); }
