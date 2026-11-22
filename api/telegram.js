@@ -64,7 +64,7 @@ const ctxText = c => {
   return `Сегодня ${todayKz()}. Отделы: ${depts.join(', ') || 'нет данных'}.
 Команда (имя и роль/отдел): ${people.map(p => p.role ? `${p.name} (${p.role})` : p.name).join('; ') || 'нет данных'}.
 Доски, куда можно отправить задачи: ${boardsOf(c).map(b => b.label || b.name).join('; ') || 'одна'}.
-Задачи, которые УЖЕ есть (не повторяй их, даже если сказано другими словами):
+Задачи, которые УЖЕ есть на досках (если задача из текста совпадает с одной из них по смыслу — всё равно включи её, но поставь "dup": true):
 ${have.length ? have.map(t => '- ' + t).join('\n') : '- нет'}`;
 };
 const TASK_RULES = `Каждая задача: title — коротко, с глагола, до 90 символов; dept — отдел из списка, если подходит, иначе короткое название нового отдела (1–2 слова);
@@ -77,7 +77,7 @@ ${ctxText(c)}
 Выдели только РЕАЛЬНЫЕ задачи — конкретные действия. Не включай обсуждения, мнения, факты, уже сделанное. Одна задача, сказанная несколько раз разными словами, — одна.
 ${TASK_RULES}
 Если сказано, на какую доску или неделю отправить («на неделю 4», «в бэклог») — верни "board": точное название доски из списка, иначе null.
-Ответь JSON: {"tasks":[{"title":"…","dept":"…","type":"oper","due":null,"time":null,"who":null}],"board":null}
+Ответь JSON: {"tasks":[{"title":"…","dept":"…","type":"oper","due":null,"time":null,"who":null,"dup":false}],"board":null}
 
 Текст:
 ${String(text).slice(0, 12000)}`;
@@ -93,12 +93,12 @@ ${TASK_RULES}
 Ответь JSON: {"tasks":[…],"board":null}`;
 const cleanTasks = res => (Array.isArray(res && res.tasks) ? res.tasks : []).filter(t => t && String(t.title || '').trim()).slice(0, 40).map(t => ({
   title: String(t.title).trim().slice(0, 200), dept: t.dept ? String(t.dept).slice(0, 40) : '', type: t.type === 'strat' ? 'strat' : 'oper',
-  due: /^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : null, time: /^\d{1,2}:\d{2}$/.test(t.time || '') ? t.time : null, who: t.who ? String(t.who).slice(0, 60) : null, ...(t.board ? { board: String(t.board).slice(0, 60) } : {}) }));
+  due: /^\d{4}-\d{2}-\d{2}$/.test(t.due || '') ? t.due : null, time: /^\d{1,2}:\d{2}$/.test(t.time || '') ? t.time : null, who: t.who ? String(t.who).slice(0, 60) : null, ...(t.board ? { board: String(t.board).slice(0, 60) } : {}), ...(t.dup ? { dup: true } : {}) }));
 // напоминание: назвали время — за 10 минут, только день — в 10:00 (так же считает приложение, tgRemind)
 const remTxt = t => { if (!t.due) return ''; if (!t.time) return '⏰ ' + fmtDate(t.due) + ' в 10:00'; const [h, m] = t.time.split(':').map(Number); const x = h * 60 + m - 10; return `⏰ ${fmtDate(t.due)} в ${String(Math.floor((x + 1440) % 1440 / 60)).padStart(2, '0')}:${String((x + 1440) % 60).padStart(2, '0')}`; };
 const inTeam = (who, c) => !who || (c.people || []).some(p => String(p.name || '').toLowerCase() === String(who).toLowerCase());
 const fmtDate = d => d ? `${d.slice(8, 10)}.${d.slice(5, 7)}` : '';
-const listText = (tasks, head, c = {}) => `${head}\n${boardLine(tasks, c)}\n${tasks.map((t, i) => `${i + 1}. ${t.title}\n    ${[t.who ? '👤 ' + t.who + (inTeam(t.who, c) ? '' : ' (нет в «Команде»)') : '👤 не назначен', t.dept ? '🏷 ' + t.dept : '', t.due ? '📅 до ' + fmtDate(t.due) + (t.time ? ' ' + t.time : '') : '', remTxt(t), t.type === 'strat' ? '⭐ стратегическая' : ''].filter(Boolean).join(' · ')}`).join('\n')}
+const listText = (tasks, head, c = {}) => `${head}\n${boardLine(tasks, c)}\n${tasks.map((t, i) => `${i + 1}. ${t.title}${t.dup ? '  ♻️ уже есть на доске' : ''}\n    ${[t.who ? '👤 ' + t.who + (inTeam(t.who, c) ? '' : ' (нет в «Команде»)') : '👤 не назначен', t.dept ? '🏷 ' + t.dept : '', t.due ? '📅 до ' + fmtDate(t.due) + (t.time ? ' ' + t.time : '') : '', remTxt(t), t.type === 'strat' ? '⭐ стратегическая' : ''].filter(Boolean).join(' · ')}`).join('\n')}
 
 Всё верно? Нажмите ✅ или напишите «ок» — задачи уйдут в «К выполнению».
 Поправить — напишите или наговорите, что изменить.`;
@@ -107,14 +107,17 @@ const KB0 = [{ text: '✅ Отправить', callback_data: 'tg_ok' }, { text:
 const kbFor = (c, cur) => { const bs = boardsOf(c); const rows = [KB0];
   for (let i = 0; i < bs.length; i += 2) rows.push(bs.slice(i, i + 2).map(b => ({ text: (b.id === cur ? '● ' : '') + String(b.label || b.name).slice(0, 28), callback_data: ('tg_b:' + b.id).slice(0, 64) })));
   return { inline_keyboard: rows }; };
-const curBoard = (tasks, c) => (tasks.find(t => t.board) || {}).board || c.defBoard || (boardsOf(c)[0] || {}).id || null;
-const boardLine = (tasks, c) => { const n = boardName(c, curBoard(tasks, c)); return n ? `📋 Доска: ${n}${boardsOf(c).length > 1 ? ' (сменить — кнопками ниже или словами «на неделю 4»)' : ''}\n` : ''; };
+const curBoard = (tasks, c) => (tasks.find(t => t.board) || {}).board || (boardsOf(c).length <= 1 ? c.defBoard || (boardsOf(c)[0] || {}).id || null : null);
+const boardLine = (tasks, c) => { const id = curBoard(tasks, c); const n = id ? boardName(c, id) : ''; if (n) return `📋 Доска: ${n}${boardsOf(c).length > 1 ? ' (сменить — кнопками ниже или словами «на неделю 4»)' : ''}\n`;
+  return boardsOf(c).length > 1 ? '📋 В какую доску отправить? Выберите кнопкой ниже или скажите «на неделю 4».\n' : ''; };
 const say = (chat, text, extra) => tg('sendMessage', { chat_id: chat, text: text.slice(0, 4000), ...(extra || {}) });
 const unkb = (chat, msg) => msg ? tg('editMessageReplyMarkup', { chat_id: chat, message_id: msg, reply_markup: { inline_keyboard: [] } }) : null;
 
 async function approve(chat) {
   const d = await db('tg_draft_get', { p_chat: chat }).catch(() => null);
   if (!d || !Array.isArray(d.tasks) || !d.tasks.length) { await say(chat, 'Нечего отправлять — пришлите голосовое или текст с задачами.'); return; }
+  if (!d.tasks.some(t => t.board)) { const info0 = await db('tg_ctx', { p_chat: chat }).catch(() => null); const c0 = (info0 && info0.ctx) || {};
+    if (boardsOf(c0).length > 1){ await say(chat, '👇 Сначала выберите доску — кнопкой под списком или словами «на неделю 4».'); return; } }
   const ok = await db('tg_drop_tasks', { p_chat: chat, p_tasks: d.tasks }).catch(() => false);
   await unkb(chat, d.msg_id);
   const info = await db('tg_ctx', { p_chat: chat }).catch(() => null); const bn = boardName((info && info.ctx) || {}, curBoard(d.tasks, {}));
@@ -146,7 +149,7 @@ async function dialog(chat, text) {
   const tasks = cleanTasks(res);
   // доска: названа в голосовом/правке → её id; иначе — прежняя из черновика или доска текущей недели
   const named = res.board ? boardByName(c, res.board) : null; const prev = d && d.tasks ? curBoard(d.tasks, {}) : null;
-  const bid = (named && named.id) || prev || curBoard([], c); if (bid) tasks.forEach(t => { t.board = bid; });
+  const bid = (named && named.id) || prev || curBoard([], c); tasks.forEach(t => { if (bid) t.board = bid; else delete t.board; });
   if (!tasks.length) { await say(chat, d ? 'После правки задач не осталось. Напишите «отмена» или пришлите новое голосовое.' : 'Задач в сообщении не нашёл 🤔 Попробуйте сказать конкретнее: что сделать, кому и к какому сроку.'); if (d) await db('tg_draft_set', { p_chat: chat, p_tasks: [], p_msg: null }).catch(() => false); return true; }
   if (d) await unkb(chat, d.msg_id);
   const m = await say(chat, listText(tasks, d ? `✏️ Поправил. Задачи (${tasks.length}):` : `📝 Нашёл задачи (${tasks.length}):`, c) + (tasks.some(t => t.who && !inTeam(t.who, c)) ? '\n\n💡 «нет в «Команде»» — в KaizenHub → «Команда» впишите людям должность (например, «Ассистент»), тогда бот найдёт ответственного сам.' : ''), { reply_markup: kbFor(c, bid) });
