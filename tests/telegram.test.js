@@ -33,7 +33,7 @@ const msg = text => ({ channel_post: { chat: { id: 5, title: 'Kaizen Voice' }, t
   assert.ok(list && /1\. Снять 3 ролика/.test(list.body.text) && /👤 Аня/.test(list.body.text) && /до 09\.01/.test(list.body.text)); assert.ok(/⏰ 09\.01 в 14:50/.test(list.body.text) && /Ассистенты \(нет в «Команде»\)/.test(list.body.text)); ok('бот: прислал список задач с ответственным и сроком и кнопками ✅/✖');
   assert.ok(/Аня \(Ассистент\)/.test(claudeIn)); ok('бот: Claude знает команду и роли пространства');
   assert.equal(db.draft.tasks.length, 2); ok('бот: черновик сохранён');
-  assert.ok(/В какую доску отправить/.test(list.body.text) && !list.body.reply_markup.inline_keyboard.flat().some(b => /●/.test(b.text)) && db.draft.tasks.every(x => !x.board)); ok('бот: спрашивает, в какую доску отправить, под списком кнопки досок');
+  assert.ok(list.body.reply_markup.inline_keyboard.flat().some(b => b.callback_data === 'tg_q:oa') && /В какую доску отправить/.test(list.body.text) && !list.body.reply_markup.inline_keyboard.flat().some(b => /●/.test(b.text)) && db.draft.tasks.every(x => !x.board)); ok('бот: спрашивает, в какую доску отправить, под списком кнопки досок');
   sent.length = 0; await post(msg('ок')); assert.ok(sent.some(s => /Сначала выберите доску/.test(s.body.text || '')) && db.dropped.length === 0); ok('бот: без выбранной доски «ок» не отправляет');
   sent.length = 0; await post({ callback_query: { id: 'q0', data: 'tg_b:b4', message: { chat: { id: 5 } } } });
   assert.ok(db.draft.tasks.every(x => x.board === 'b4') && sent.some(s => s.m === 'editMessageText' && /Доска: Неделя 4/.test(s.body.text))); ok('бот: кнопка доски — задачи переезжают на «Неделя 4», список обновлён');
@@ -52,6 +52,9 @@ const msg = text => ({ channel_post: { chat: { id: 5, title: 'Kaizen Voice' }, t
   claudeOut = { answer: '1 — операционная, 2 — стратегическая', changed: false, tasks: db.draft.tasks };
   const before = JSON.stringify(db.draft.tasks); sent.length = 0; await post(msg('какие из них стратегические?'));
   assert.ok(sent.some(s => /💬 1 — операционная, 2 — стратегическая/.test(s.body.text || '')) && JSON.stringify(db.draft.tasks) === before && !sent.some(s => s.m === 'editMessageReplyMarkup')); ok('бот: на вопрос отвечает, список и кнопки не трогает');
+  claudeOut = { answer: 'Стратегическая: 2', changed: false, tasks: db.draft.tasks }; sent.length = 0;
+  await post({ callback_query: { id: 'qq', data: 'tg_q:st', message: { chat: { id: 5 } } } });
+  assert.ok(/Какие из этих задач стратегические/.test(claudeIn) && sent.some(s => /💬 Стратегическая: 2/.test(s.body.text || ''))); ok('бот: кнопка «⭐ Какие стратегические?» — задаёт вопрос и присылает ответ');
   sent.length = 0; await post(msg('ок'));
   assert.equal(db.dropped.length, 1); assert.equal(db.dropped[0][0].due, '2099-01-10'); assert.ok(sent.some(s => /Отправлено: 1/.test(s.body.text || ''))); ok('бот: «ок» — задачи уходят в KaizenHub');
 

@@ -43,7 +43,7 @@ const START_TEXT = `🎙 Kaizen AI — голосовой помощник Kaize
 4️⃣ Нажмите ✅ или напишите «ок» — задачи появятся в «К выполнению» на выбранной доске.
 
 Что ещё можно:
-💬 Спросить: «какие из них стратегические?», «кому что лучше отдать?» — отвечу и ничего не поменяю.
+💬 Спросить: «какие из них стратегические?», «кому что лучше отдать?» — отвечу и ничего не поменяю. Для частых вопросов и правок под списком есть кнопки.
 ✏️ Поправить голосом или текстом: «вторую убери», «срок у первой суббота», «операционные — ассистентам, стратегические — на меня».
 ✖ Отменить список: «отмена» или /cancel.
 
@@ -131,7 +131,14 @@ const listText = (tasks, head, c = {}) => `${head}\n${boardLine(tasks, c)}\n${ta
 Поправить — напишите или наговорите, что изменить.`;
 const KB0 = [{ text: '✅ Отправить', callback_data: 'tg_ok' }, { text: '✖ Отмена', callback_data: 'tg_no' }];
 // кнопки: «Отправить / Отмена» и ниже доски (выбранная — с ●), по две в ряд
-const kbFor = (c, cur) => { const bs = boardsOf(c); const rows = [KB0];
+// быстрые кнопки: вопрос и типовые правки — то же самое, что написать словами
+const QUICK = {
+  st: { label:'⭐ Какие стратегические?', text:'Какие из этих задач стратегические, а какие операционные? Ответь списком с номерами.' },
+  oa: { label:'👥 Операционные → ассистентам', text:'Все операционные задачи назначь ассистентам.' },
+  sm: { label:'🙋 Стратегические → на меня', text:'Все стратегические задачи назначь на меня.' },
+  wh: { label:'💡 Кому что отдать?', text:'Подскажи, какие задачи лучше отдать ассистентам, а какие сделать мне самому. Ответь коротко.' } };
+const QROWS = [[QUICK.st, 'st', QUICK.wh, 'wh'], [QUICK.oa, 'oa', QUICK.sm, 'sm']].map(r => [{ text:r[0].label, callback_data:'tg_q:' + r[1] }, { text:r[2].label, callback_data:'tg_q:' + r[3] }]);
+const kbFor = (c, cur) => { const bs = boardsOf(c); const rows = [KB0, ...QROWS];
   for (let i = 0; i < bs.length; i += 2) rows.push(bs.slice(i, i + 2).map(b => ({ text: (b.id === cur ? '● ' : '') + String(b.label || b.name).slice(0, 28), callback_data: ('tg_b:' + b.id).slice(0, 64) })));
   return { inline_keyboard: rows }; };
 const curBoard = (tasks, c) => (tasks.find(t => t.board) || {}).board || (boardsOf(c).length <= 1 ? c.defBoard || (boardsOf(c)[0] || {}).id || null : null);
@@ -235,6 +242,7 @@ module.exports = async (req, res) => {
       await tg('answerCallbackQuery', { callback_query_id: q.id });
       if (ch && q.data === 'tg_ok') await approve(ch); else if (ch && q.data === 'tg_no') await cancel(ch);
       else if (ch && /^tg_b:/.test(q.data || '')) await pickBoard(ch, q.data.slice(5));
+      else if (ch && /^tg_q:/.test(q.data || '') && QUICK[q.data.slice(5)]) { const ok = await dialog(ch, QUICK[q.data.slice(5)].text).catch(() => false); if (!ok) await say(ch, '⚠️ Не получилось — попробуйте ещё раз или напишите словами.'); }
       return res.status(200).json({ ok: true });
     }
     const m = u.channel_post || u.message;
