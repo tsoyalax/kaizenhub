@@ -13,7 +13,8 @@
 //   SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY — уже есть.
 // Настройка вебхука один раз: открыть /api/telegram?setup=1.
 
-const MAX_AUDIO = 20 * 1024 * 1024;   // Telegram Bot API отдаёт файлы до 20 МБ
+const MAX_AUDIO = 20 * 1024 * 1024;
+const { PF_RX, planFactText } = require('./_planfact');   // план-факт роликов: ответ по запросу и вечерний обзор   // Telegram Bot API отдаёт файлы до 20 МБ
 
 const env = k => process.env[k] || '';
 // секрет вебхука выводим из токена бота — отдельная переменная не нужна (TG_WEBHOOK_SECRET, если задан, важнее)
@@ -56,10 +57,13 @@ KaizenHub — приложение, где вы ведёте проекты, д�
 Напоминания
 Если вы назвали время, напоминание придёт за 10 минут до него. Если только день — в 10:00 этого дня.
 
+План-факт роликов
+Спросите «какой план-факт?», «отстаём?» или нажмите «📊 План-факт» — бот ответит, сколько публикаций вышло против плана недели и месяца, по каждому аккаунту, и сколько осталось. Каждый вечер в 22:00 он сам присылает такой обзор.
+
 Кнопки
-Под каждым списком есть кнопки для частых вопросов и правок. Внизу чата — показать текущий список, открыть эту инструкцию или отменить список.`;
+Под каждым списком есть кнопки для частых вопросов и правок. Внизу чата — план-факт, текущий список, эта инструкция и отмена списка.`;
 // постоянные кнопки внизу чата (только в личке; в каналах Telegram такие кнопки не показывает)
-const MAIN_KB = { keyboard: [[{ text: '📝 Текущий список' }, { text: '❓ Как работать' }], [{ text: '✖ Отменить список' }]], resize_keyboard: true, is_persistent: true, input_field_placeholder: 'Наговорите или напишите задачи…' };
+const MAIN_KB = { keyboard: [[{ text: '📊 План-факт' }, { text: '📝 Текущий список' }], [{ text: '❓ Как работать' }, { text: '✖ Отменить список' }]], resize_keyboard: true, is_persistent: true, input_field_placeholder: 'Наговорите или напишите задачи…' };
 const BTN_LIST = /^(📝\s*)?текущий список$|^\/list\b/i, BTN_HELP = /^(❓\s*)?как работать$/i, BTN_NO = /^(✖\s*)?отменить список$/i;
 const START_CONNECT = `
 
@@ -185,6 +189,14 @@ const boardLine = (tasks, c) => { const id = curBoard(tasks, c); const n = id ? 
   if (!boardsOf(c).length) return '📋 Доска: та, что открыта в KaizenHub. Чтобы выбирать доску здесь — откройте KaizenHub и обновите страницу.\n';
   return boardsOf(c).length > 1 ? '📋 В какую доску отправить? Выберите кнопкой ниже или скажите «на неделю 4».\n' : ''; };
 const say = (chat, text, extra) => tg('sendMessage', { chat_id: chat, text: text.slice(0, 4000), ...(extra || {}) });
+// план-факт роликов по сводке владельца чата; strict — вопрос задан кнопкой/командой (тогда объясняем, если сводки нет)
+async function planFact(chat, q, strict) {
+  const s = await db('pf_get', { p_chat: chat }).catch(() => undefined);
+  if (s && !s.none) { await say(chat, planFactText(s, q), { disable_web_page_preview: true }); return true; }
+  if (!strict) return false;
+  await say(chat, s === null ? 'Этот чат не подключён к KaizenHub. Подключите его кодом из приложения («Подключить Telegram»).' : s === undefined ? '⚠️ Не получилось прочитать план-факт. Попробуйте чуть позже.' : 'Сводки по роликам пока нет: она появится после вечерней проверки.');
+  return true;
+}
 const unkb = (chat, msg) => msg ? tg('editMessageReplyMarkup', { chat_id: chat, message_id: msg, reply_markup: { inline_keyboard: [] } }) : null;
 
 async function approve(chat) {
@@ -310,12 +322,23 @@ module.exports = async (req, res) => {
         const wi = await tg('getWebhookInfo'); const w = wi.result || {};
         return res.status(200).json({ webhook: { set: !!w.url, pending: w.pending_update_count || 0, last_error: w.last_error_message || '', last_error_at: w.last_error_date ? new Date(w.last_error_date * 1000).toISOString() : '', updates: w.allowed_updates || [] }, bot: !!env('TG_BOT_TOKEN'), db_secret: dbs, openai: !!env('OPENAI_API_KEY'), supabase: !!(env('SUPABASE_URL') && env('SUPABASE_PUBLISHABLE_KEY')), claude: !!env('ANTHROPIC_API_KEY') });
       }
+      if (q.digest) {   // вечерний обзор: Vercel Cron (vercel.json) в 22:00 по Алматы; без CRON_SECRET не работает
+        if (!env('CRON_SECRET') || req.headers.authorization !== 'Bearer ' + env('CRON_SECRET')) return res.status(401).end();
+        const rows = await db('pf_digest', {}).catch(() => []);
+        let sent = 0;
+        for (const r of Array.isArray(rows) ? rows : []) {
+          if (!r || !r.chat_id || !r.data) continue;
+          const m = await say(r.chat_id, '🌙 Вечерний обзор\n\n' + planFactText(r.data, 'вечер'), { disable_web_page_preview: true });
+          if (m && m.ok) sent++;
+        }
+        return res.status(200).json({ ok: true, sent });
+      }
       if (q.me) { const m = await tg('getMe'); return res.status(200).json({ bot: (m.result && m.result.username) || '' }); }
       if (q.setup && whSecret()) {   // адрес всегда наш, секрет — наш: ставить вебхук безопасно
         const host = req.headers['x-forwarded-host'] || req.headers.host;
         await tg('setMyDescription', { description: 'Kaizen AI — голосовой помощник KaizenHub. Наговорите или напишите задачи: бот разберёт их, определит ответственных, сроки и тип задачи и после вашего подтверждения отправит на нужную доску в KaizenHub.' });
         await tg('setMyShortDescription', { short_description: 'Голосовой помощник KaizenHub: задачи голосом прямо на доску.' });
-        await tg('setMyCommands', { commands: [{ command: 'start', description: 'Как пользоваться' }, { command: 'list', description: 'Показать текущий список задач' }, { command: 'cancel', description: 'Отменить текущий список' }, { command: 'help', description: 'Что умеет бот' }] });
+        await tg('setMyCommands', { commands: [{ command: 'start', description: 'Как пользоваться' }, { command: 'planfact', description: 'План-факт роликов' }, { command: 'list', description: 'Показать текущий список задач' }, { command: 'cancel', description: 'Отменить текущий список' }, { command: 'help', description: 'Что умеет бот' }] });
         const r = await tg('setWebhook', { url: `https://${host}/api/telegram`, secret_token: whSecret(), allowed_updates: ['channel_post', 'message', 'callback_query'] });
         return res.status(200).json({ ok: !!r.ok, description: r.description || '' });
       }
@@ -347,6 +370,7 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
     if (BTN_LIST.test(text)) { await showList(chat); return res.status(200).json({ ok: true }); }
+    if (/^\/planfact\b|^(📊\s*)?план-факт$/i.test(text)) { await planFact(chat, text, true); return res.status(200).json({ ok: true }); }
     if (BTN_NO.test(text)) { await cancel(chat); return res.status(200).json({ ok: true }); }
     const con = text.match(/^(?:\/connect(?:@\w+)?\s+)?([a-f0-9]{32})$/i) || text.match(/^\/connect(?:@\w+)?\s+([a-f0-9]{16,64})\b/i);
     if (con) {
@@ -367,6 +391,7 @@ module.exports = async (req, res) => {
     const plain = body.replace(/^🎙\s*/, '').trim();
     if (NO_RX.test(plain)) { await cancel(chat); return res.status(200).json({ ok: true }); }
     if (OK_RX.test(plain)) { await approve(chat); return res.status(200).json({ ok: true }); }
+    if (PF_RX.test(plain) && await planFact(chat, plain, false)) return res.status(200).json({ ok: true });   // «какой план-факт?», «отстаём?»
     if (body.startsWith('/')) return res.status(200).json({ ok: true });
     const done = env('ANTHROPIC_API_KEY') ? await dialog(chat, plain).catch(() => false) : false;
     if (!done) await db('tg_drop', { p_chat: chat, p_text: body }).catch(() => false);   // без Claude — как раньше, во «Входящие»

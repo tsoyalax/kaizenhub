@@ -267,6 +267,17 @@ select pg_temp.expect('tg2: владелец видит задачи', pg_temp.r
 select pg_temp.expect('tg2: из неподключённого канала задачи не ложатся', pg_temp.rows_as('', 'select 1 where tg_drop_tasks(' || quote_literal(:'tgsec') || ', 999, ''[{"title":"x"}]'')') = 0, true);
 select pg_temp.expect('без входа ничего не читается', pg_temp.rows_as('', $q$select * from docs$q$) = 0, true);
 
+-- план-факт роликов: сводку кладёт компьютер владельца, читает бот его чата
+select pg_temp.expect('pf: без секрета сводку не положить', pg_temp.try('', $q$select pf_put('wrong', 'o@x.y', '{"weekPlan":56}')$q$), false);
+select pg_temp.expect('pf: с секретом сводка ложится владельцу по почте', pg_temp.rows_as('', 'select 1 where pf_put(' || quote_literal(:'tgsec') || ', ''O@X.Y'', ''{"weekPlan":56,"digest":true}'')') = 1, true);
+select pg_temp.expect('pf: неизвестная почта — не ложится', pg_temp.rows_as('', 'select 1 where pf_put(' || quote_literal(:'tgsec') || ', ''nobody@x.y'', ''{"weekPlan":1}'')') = 0, true);
+select pg_temp.expect('pf: бот подключённого чата читает сводку', pg_temp.rows_as('', 'select 1 where (pf_get(' || quote_literal(:'tgsec') || ', 777) ->> ''weekPlan'') = ''56''') = 1, true);
+select pg_temp.expect('pf: неподключённый чат сводку не получает', pg_temp.rows_as('', 'select 1 where pf_get(' || quote_literal(:'tgsec') || ', 999) is null') = 1, true);
+select pg_temp.expect('pf: без секрета сводку не прочитать', pg_temp.try('', $q$select pf_get('wrong', 777)$q$), false);
+select pg_temp.expect('pf: сама таблица сводок недоступна даже владельцу', pg_temp.try(:O, $q$select * from app_private.pf_snapshots$q$), false);
+select pg_temp.expect('pf: вечерний обзор находит чат владельца', pg_temp.rows_as('', 'select * from pf_digest(' || quote_literal(:'tgsec') || ') where chat_id = 777') = 1, true);
+select pg_temp.expect('pf: без секрета список для обзора не получить', pg_temp.try('', $q$select * from pf_digest('wrong')$q$), false);
+
 select (case when ok then 'PASS ' else 'FAIL ' end) || name from results;
 select count(*) filter (where ok) || ' из ' || count(*) || ' проверок базы прошло' as total, bool_and(ok) as all_ok from results \gset
 \echo :total
