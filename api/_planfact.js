@@ -67,4 +67,32 @@ function planFactText(s, q, now) {
   return lines.join('\n');
 }
 
-module.exports = { PF_RX, planFactText };
+// живая проверка: публикации из ответа Apify (instagram-reel-scraper) → дни недели в формате сводки.
+// Один ролик в нескольких аккаунтах узнаём по длительности видео (до 0,01 с), он «новый» в день первой публикации.
+function liveDays(items, now) {
+  const t = today0(now), ws = monday(t), days = {};
+  const vids = (Array.isArray(items) ? items : []).filter(x => x && x.timestamp && x.url && !x.error && (x.videoUrl || x.videoDuration))
+    .map(x => ({ ts: Date.parse(x.timestamp), url: String(x.url).replace('/p/', '/reel/'), account: x.ownerUsername || '',
+      dur: Math.round((+x.videoDuration || 0) * 100) / 100, views: +(x.videoPlayCount || x.videoViewCount) || 0 }))
+    .filter(x => !isNaN(x.ts)).sort((a, b) => a.ts - b.ts);
+  const seen = new Set(), keys = new Set(); let best = null;
+  for (const v of vids) {
+    const k = v.url; if (keys.has(k)) continue; keys.add(k);
+    const d = iso(today0(v.ts)); if (d < iso(ws) || d > iso(t)) continue;
+    const r = days[d] || (days[d] = { pubs: 0, fresh: 0, views: 0, acc: {} });
+    const id = v.dur || v.url; const fresh = !seen.has(id); seen.add(id);
+    r.pubs++; r.fresh += fresh ? 1 : 0; r.views += v.views; r.acc[v.account] = (r.acc[v.account] || 0) + 1;
+    if (!best || v.views > best.views) best = { url: v.url, views: v.views, account: v.account };
+  }
+  return { days, best };
+}
+
+// сводка + живая проверка: дни этой недели берём из проверки, если в ней не меньше публикаций (Apify иногда пропускает ролики)
+function mergeLive(s, live, now) {
+  const t = today0(now), ws = monday(t), days = { ...(s.days || {}) };
+  for (let i = 0; i < 7; i++) { const k = iso(add(ws, i)); const l = live.days[k];
+    if (l && l.pubs >= (+(days[k] || {}).pubs || 0)) days[k] = l; }
+  return { ...s, days, best: live.best || s.best, checked_at: new Date(now || Date.now()).toISOString(), fetch_error: null };
+}
+
+module.exports = { PF_RX, planFactText, liveDays, mergeLive, sinceMonday: now => { const t = today0(now); return (t.getUTCDay() + 6) % 7 + 1; } };

@@ -10,11 +10,12 @@
 // Переменные окружения Vercel (в код и логи не попадают):
 //   TG_BOT_TOKEN — токен бота от @BotFather (из него же выводится секрет вебхука);
 //   TG_DB_SECRET — секрет из app_private.tg_config (миграция 20261119); OPENAI_API_KEY — для Whisper;
+//   APIFY_TOKEN — по желанию: на «план-факт» бот сам смотрит открытые страницы Instagram (Apify), без него — по сводке;
 //   SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY — уже есть.
 // Настройка вебхука один раз: открыть /api/telegram?setup=1.
 
 const MAX_AUDIO = 20 * 1024 * 1024;
-const { PF_RX, planFactText } = require('./_planfact');   // план-факт роликов: ответ по запросу и вечерний обзор   // Telegram Bot API отдаёт файлы до 20 МБ
+const { PF_RX, planFactText, liveDays, mergeLive, sinceMonday } = require('./_planfact');   // план-факт роликов: ответ по запросу и вечерний обзор   // Telegram Bot API отдаёт файлы до 20 МБ
 
 const env = k => process.env[k] || '';
 // секрет вебхука выводим из токена бота — отдельная переменная не нужна (TG_WEBHOOK_SECRET, если задан, важнее)
@@ -189,13 +190,48 @@ const boardLine = (tasks, c) => { const id = curBoard(tasks, c); const n = id ? 
   if (!boardsOf(c).length) return '📋 Доска: та, что открыта в KaizenHub. Чтобы выбирать доску здесь — откройте KaizenHub и обновите страницу.\n';
   return boardsOf(c).length > 1 ? '📋 В какую доску отправить? Выберите кнопкой ниже или скажите «на неделю 4».\n' : ''; };
 const say = (chat, text, extra) => tg('sendMessage', { chat_id: chat, text: text.slice(0, 4000), ...(extra || {}) });
-// план-факт роликов по сводке владельца чата; strict — вопрос задан кнопкой/командой (тогда объясняем, если сводки нет)
+// план-факт роликов по сводке владельца чата; strict — вопрос задан кнопкой/командой (тогда объясняем, если сводки нет).
+// Есть APIFY_TOKEN — бот сам идёт смотреть открытые страницы аккаунтов (Apify instagram-reel-scraper, около минуты):
+// запускает сбор и отвечает, когда Apify позовёт вебхук ?pflive (подпись = HMAC секрета вебхука по чату).
+const APIFY_ACTOR = 'apify~instagram-reel-scraper';
+const pfSig = chat => require('crypto').createHmac('sha256', whSecret()).update('pflive:' + chat).digest('hex').slice(0, 32);
+let HOST = '';
+async function startLive(chat, accounts) {
+  const hook = [{ eventTypes: ['ACTOR.RUN.SUCCEEDED', 'ACTOR.RUN.FAILED', 'ACTOR.RUN.TIMED_OUT', 'ACTOR.RUN.ABORTED'],
+    requestUrl: `https://${HOST}/api/telegram?pflive=${chat}&sig=${pfSig(chat)}` }];
+  const r = await fetch(`https://api.apify.com/v2/acts/${APIFY_ACTOR}/runs?token=${env('APIFY_TOKEN')}&webhooks=${Buffer.from(JSON.stringify(hook)).toString('base64')}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: accounts, resultsLimit: 40, onlyPostsNewerThan: `${sinceMonday()} days` })
+  });
+  if (!r.ok) throw new Error(r.status === 402 ? 'закончился лимит Apify' : 'Apify ответил ' + r.status);
+}
 async function planFact(chat, q, strict) {
   const s = await db('pf_get', { p_chat: chat }).catch(() => undefined);
-  if (s && !s.none) { await say(chat, planFactText(s, q), { disable_web_page_preview: true }); return true; }
+  if (s && !s.none) {
+    const accs = Array.isArray(s.accounts) ? s.accounts.filter(a => /^[\w.]{1,30}$/.test(a)) : [];
+    if (env('APIFY_TOKEN') && HOST && accs.length) {
+      const err = await startLive(chat, accs).then(() => null, e => e.message);
+      if (!err) { await say(chat, `🔎 Смотрю страницы ${accs.map(a => '@' + a).join(', ')} прямо сейчас. Пришлю отчёт через 1–2 минуты.`); return true; }
+      await say(chat, `⚠️ Живая проверка не получилась: ${err}. Показываю последнюю сводку.\n\n` + planFactText(s, q), { disable_web_page_preview: true });
+      return true;
+    }
+    await say(chat, planFactText(s, q), { disable_web_page_preview: true }); return true;
+  }
   if (!strict) return false;
   await say(chat, s === null ? 'Этот чат не подключён к KaizenHub. Подключите его кодом из приложения («Подключить Telegram»).' : s === undefined ? '⚠️ Не получилось прочитать план-факт. Попробуйте чуть позже.' : 'Сводки по роликам пока нет: она появится после вечерней проверки.');
   return true;
+}
+// Apify закончил сбор: статус и данные читаем у самого Apify своим токеном (телу запроса не верим)
+async function finishLive(chat, body) {
+  const id = body && body.resource && body.resource.id;
+  if (!/^\w{5,40}$/.test(String(id || ''))) return;
+  const s = await db('pf_get', { p_chat: chat }).catch(() => null);
+  if (!s || s.none) return;
+  const run = await fetch(`https://api.apify.com/v2/actor-runs/${id}?token=${env('APIFY_TOKEN')}`).then(r => r.json()).then(j => j.data || {}).catch(() => ({}));
+  let items = null;
+  if (run.status === 'SUCCEEDED' && run.defaultDatasetId) items = await fetch(`https://api.apify.com/v2/datasets/${run.defaultDatasetId}/items?clean=1&token=${env('APIFY_TOKEN')}`).then(r => r.json()).catch(() => null);
+  if (!Array.isArray(items)) { await say(chat, '⚠️ Страницы посмотреть не получилось. Последняя сводка:\n\n' + planFactText(s, ''), { disable_web_page_preview: true }); return; }
+  await say(chat, '🔎 Проверил страницы только что.\n\n' + planFactText(mergeLive(s, liveDays(items)), ''), { disable_web_page_preview: true });
 }
 const unkb = (chat, msg) => msg ? tg('editMessageReplyMarkup', { chat_id: chat, message_id: msg, reply_markup: { inline_keyboard: [] } }) : null;
 
@@ -345,6 +381,14 @@ module.exports = async (req, res) => {
       return res.status(404).json({ ok: false });
     }
     if (req.method !== 'POST') return res.status(405).end();
+    HOST = req.headers['x-forwarded-host'] || req.headers.host || '';
+    if (req.query && req.query.pflive) {   // вебхук Apify: живая проверка план-факта готова
+      const chat = String(req.query.pflive);
+      if (!whSecret() || !/^-?\d{1,20}$/.test(chat) || req.query.sig !== pfSig(chat)) return res.status(401).end();
+      const b = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+      await finishLive(+chat, b).catch(() => {});
+      return res.status(200).json({ ok: true });
+    }
     if (!whSecret() || req.headers['x-telegram-bot-api-secret-token'] !== whSecret()) return res.status(401).end();
 
     const u = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
