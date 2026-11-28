@@ -20,7 +20,12 @@ const snap = {
   checked_at: '2026-11-26T16:48+05:00'
 };
 
-const sent = []; let calls = [];
+const sent = []; let calls = []; const apify = []; let apifyFail = false, apifyBody = null;
+const reel = (code, acc, iso, dur, views) => ({ shortCode: code, url: 'https://www.instagram.com/p/' + code + '/', ownerUsername: acc, timestamp: iso, videoDuration: dur, videoUrl: 'v', videoPlayCount: views });
+// живая проверка: 27.11 (пт) вышло 4 публикации, из них 1 повтор того же ролика в другом аккаунте
+const LIVE = [reel('a1', 'rockvpn_news', '2026-11-27T05:00:00Z', 30.5, 100), reel('a2', 'therock_vpn', '2026-11-27T06:00:00Z', 30.5, 50),
+  reel('a3', 'techno_dima', '2026-11-27T07:00:00Z', 41.2, 900), reel('a4', 'techno_dima', '2026-11-27T08:00:00Z', 12.0, 10),
+  reel('old', 'techno_dima', '2026-11-20T08:00:00Z', 9.0, 10)];
 global.fetch = async (url, o = {}) => {
   const body = o.body && typeof o.body === 'string' ? JSON.parse(o.body) : {};
   const J = v => ({ ok: true, status: 200, json: async () => v });
@@ -32,6 +37,11 @@ global.fetch = async (url, o = {}) => {
     if (fn === 'tg_draft_get') return J(null);
     return J(null);
   }
+  if (url.includes('api.apify.com')) { apify.push(url);
+    if (url.includes('/acts/')) { if (apifyFail) return { ok: false, status: 402, json: async () => ({}) }; apifyBody = body; return J({ data: { id: 'runAbc123' } }); }
+    if (url.includes('/actor-runs/runAbc123')) return J({ data: { status: 'SUCCEEDED', defaultDatasetId: 'ds1' } });
+    if (url.includes('/datasets/ds1/items')) return J(LIVE);
+    return J({}); }
   if (url.includes('api.anthropic.com')) return J({ content: [{ type: 'text', text: '{"tasks":[]}' }] });
   if (url.includes('api.telegram.org')) { sent.push({ m: url.split('/').pop(), body }); return J({ ok: true, result: { message_id: 1 } }); }
   throw new Error('нет подмены для ' + url);
@@ -69,6 +79,34 @@ const pm = (text, id = 5) => ({ message: { chat: { id, type: 'private', first_na
   assert.equal(res.code, 401); assert.equal(sent.length, 0); ok('обзор: без ключа расписания не отправляется');
   res = mkRes(); await handler({ method: 'GET', query: { digest: '1' }, headers: { authorization: 'Bearer cron' } }, res);
   assert.equal(res.data.sent, 1); assert.ok(sent.some(s => s.body.chat_id === 5 && /^🌙 Вечерний обзор/.test(s.body.text))); ok('обзор: по расписанию уходит владельцу в личку');
+
+  // живая проверка страниц
+  const { liveDays, mergeLive } = require('../api/_planfact.js');
+  const NOW2 = Date.UTC(2026, 10, 27, 13, 0);
+  const lv = liveDays(LIVE, NOW2);
+  assert.deepEqual(lv.days['2026-11-27'], { pubs: 4, fresh: 3, views: 1060, acc: { rockvpn_news: 1, therock_vpn: 1, techno_dima: 2 } });
+  assert.ok(!lv.days['2026-11-20'] && lv.best.views === 900 && /\/reel\/a3/.test(lv.best.url)); ok('живая проверка: повтор по длительности, прошлая неделя не считается, лучший ролик');
+  const mg = mergeLive({ ...snap, days: { ...snap.days, '2026-11-26': { pubs: 9, fresh: 6, views: 1, acc: {} } } }, { days: { '2026-11-26': { pubs: 6, fresh: 6, views: 2, acc: {} }, '2026-11-27': lv.days['2026-11-27'] }, best: lv.best }, NOW2);
+  assert.equal(mg.days['2026-11-26'].pubs, 9); assert.equal(mg.days['2026-11-27'].pubs, 4); assert.equal(mg.fetch_error, null);
+  ok('живая проверка: Apify пропустил ролики — оставляем больше из сводки');
+
+  process.env.APIFY_TOKEN = 'ap';
+  const hp = async upd => { const res = mkRes(); await handler({ method: 'POST', query: {}, headers: { 'x-telegram-bot-api-secret-token': secret, host: 'kz.test' }, body: upd }, res); return res; };
+  sent.length = 0; apify.length = 0; await hp(pm('сколько роликов опубликовано на этой неделе?'));
+  assert.ok(apify.some(u => u.includes('/acts/apify~instagram-reel-scraper/runs')) && apifyBody.username.length === 3 && /days$/.test(apifyBody.onlyPostsNewerThan));
+  const hook = JSON.parse(Buffer.from(decodeURIComponent(apify[0].split('webhooks=')[1]), 'base64').toString());
+  assert.ok(/^https:\/\/kz\.test\/api\/telegram\?pflive=5&sig=\w{32}$/.test(hook[0].requestUrl) && sent.some(s => /Смотрю страницы @rockvpn_news/.test(s.body.text)));
+  ok('бот: на вопрос идёт смотреть страницы и обещает отчёт');
+  const hookUrl = new URL(hook[0].requestUrl);
+  let r2 = mkRes(); sent.length = 0;
+  await handler({ method: 'POST', query: { pflive: '5', sig: 'bad' }, headers: {}, body: { resource: { id: 'runAbc123' } } }, r2);
+  assert.equal(r2.code, 401); assert.equal(sent.length, 0); ok('вебхук Apify с чужой подписью отклоняется');
+  r2 = mkRes(); await handler({ method: 'POST', query: { pflive: '5', sig: hookUrl.searchParams.get('sig') }, headers: {}, body: { resource: { id: 'runAbc123' } } }, r2);
+  assert.equal(r2.code, 200); assert.ok(sent.some(s => s.body.chat_id === 5 && /^🔎 Проверил страницы только что/.test(s.body.text) && /Новых роликов/.test(s.body.text)));
+  ok('вебхук Apify: отчёт по живым данным уходит в чат');
+  apifyFail = true; sent.length = 0; await hp(pm('📊 План-факт'));
+  assert.ok(sent.some(s => /Живая проверка не получилась: закончился лимит Apify/.test(s.body.text) && /вышло 13 из 56/.test(s.body.text))); ok('Apify без денег: честно пишет и даёт сводку');
+  delete process.env.APIFY_TOKEN;
 
   console.log(`\nВсе проверки пройдены: ${n}`);
 })().catch(e => { console.error('FAIL', e); process.exit(1); });
